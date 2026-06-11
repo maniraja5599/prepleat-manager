@@ -307,12 +307,20 @@ function BookingDetail() {
         <Check className="size-5" /> {booking.status === "delivered" ? "Reopen booking" : "Mark delivered"}
       </button>
 
-      <button
-        onClick={addToGoogleCalendar}
-        className="w-full mt-2 bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
-      >
-        <CalendarPlus className="size-5" /> Add to Google Calendar
-      </button>
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <button
+          onClick={addToGoogleCalendar}
+          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
+        >
+          <CalendarPlus className="size-5" /> Calendar
+        </button>
+        <button
+          onClick={printBill}
+          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
+        >
+          <Printer className="size-5" /> Print bill
+        </button>
+      </div>
     </AppShell>
   );
 }
