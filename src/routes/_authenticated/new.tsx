@@ -4,9 +4,10 @@ import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type Service
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
+import { HorizontalPicker } from "@/components/HorizontalPicker";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
