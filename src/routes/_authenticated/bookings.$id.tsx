@@ -244,15 +244,14 @@ function BookingDetail() {
         {payments.length > 0 && (
           <ul className="mt-3 space-y-1 text-xs">
             {payments.map((p) => (
-              <li key={p.id} className="flex justify-between items-center text-muted-foreground border-t border-border pt-1.5">
-                <span className="truncate">{format(parseISO(p.date), "MMM d")} · {(p.mode ?? "gpay").toUpperCase()}{p.note ? ` · ${p.note}` : ""}</span>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="tabular-nums">{fmtINR(p.amount)}</span>
-                  <button
-                    onClick={() => { if (confirm("Delete this payment?")) deletePayment(p.id); }}
-                    className="text-destructive/70 hover:text-destructive"
-                  ><X className="size-3" /></button>
-                </div>
+              <li key={p.id}>
+                <button
+                  onClick={() => setActivePayment(p)}
+                  className="w-full flex justify-between items-center text-muted-foreground border-t border-border pt-1.5 hover:text-foreground transition"
+                >
+                  <span className="truncate text-left">{format(parseISO(p.date), "MMM d")} · {(p.mode ?? "gpay").toUpperCase()}{p.note ? ` · ${p.note}` : ""}</span>
+                  <span className="tabular-nums shrink-0">{fmtINR(p.amount)}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -305,21 +304,76 @@ function BookingDetail() {
         <Check className="size-5" /> {booking.status === "delivered" ? "Reopen booking" : "Mark delivered"}
       </button>
 
-      <div className="grid grid-cols-2 gap-2 mt-2">
+      <div className="grid grid-cols-3 gap-2 mt-2">
         <button
-          onClick={addToGoogleCalendar}
-          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
+          onClick={downloadBillPDF}
+          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
         >
-          <CalendarPlus className="size-5" /> Calendar
+          <FileDown className="size-4" /> PDF
         </button>
         <button
-          onClick={printBill}
-          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
+          onClick={sendSMS}
+          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
         >
-          <Printer className="size-5" /> Print bill
+          <MessageSquare className="size-4" /> SMS
         </button>
+        {booking.status !== "cancelled" ? (
+          <button
+            onClick={() => {
+              if (!confirm("Cancel this booking? It will stay in records as cancelled.")) return;
+              cancelBooking(booking.id);
+              toast.success("Booking cancelled");
+            }}
+            className="bg-warning/15 text-warning py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
+          >
+            <Ban className="size-4" /> Cancel
+          </button>
+        ) : (
+          <button
+            onClick={() => { updateBooking(booking.id, { status: "pending" }); toast.success("Booking re-opened"); }}
+            className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
+          >
+            <Check className="size-4" /> Reopen
+          </button>
+        )}
       </div>
+
+      {activePayment && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setActivePayment(null)}>
+          <div className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-semibold">Payment details</h3>
+              <button onClick={() => setActivePayment(null)} className="size-8 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
+            </div>
+            <div className="space-y-2 text-sm">
+              <Row label="Amount" value={fmtINR(activePayment.amount)} bold />
+              <Row label="Mode" value={(activePayment.mode ?? "gpay").toUpperCase()} />
+              <Row label="Date" value={format(parseISO(activePayment.date), "EEE, MMM d, yyyy")} />
+              <Row label="Time" value={format(parseISO(activePayment.date), "h:mm a")} />
+              {activePayment.note && <Row label="Note" value={activePayment.note} />}
+            </div>
+            <button
+              onClick={() => {
+                if (!confirm("Delete this payment?")) return;
+                deletePayment(activePayment.id);
+                setActivePayment(null);
+                toast.success("Payment removed");
+              }}
+              className="mt-4 w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-semibold flex items-center justify-center gap-2"
+            ><Trash2 className="size-4" /> Delete payment</button>
+          </div>
+        </div>
+      )}
     </AppShell>
+  );
+}
+
+function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={cn("text-sm tabular-nums", bold && "font-bold text-primary text-base")}>{value}</span>
+    </div>
   );
 }
 
