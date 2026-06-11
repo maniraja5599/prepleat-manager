@@ -163,8 +163,14 @@ function BookingDetail() {
       </div>
 
       <div className="saree-gradient rounded-3xl p-5 text-primary-foreground card-shadow">
-        <p className="text-xs uppercase tracking-wider opacity-80">{booking.service}</p>
-        <h1 className="text-2xl font-display font-semibold mt-1 truncate">{customer?.name}</h1>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-xs uppercase tracking-wider opacity-80">{booking.service}</p>
+          {booking.billNumber && (
+            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
+              {booking.billNumber}
+            </span>
+          )}
+        </div>
         <p className="text-sm opacity-90">{customer?.phone}</p>
         {customer?.address && <p className="text-xs opacity-80 mt-1 line-clamp-2">{customer.address}</p>}
         {artist && (
