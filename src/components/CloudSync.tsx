@@ -61,7 +61,7 @@ export function CloudSync() {
             settings: state.settings,
           })),
         });
-      }, 800);
+      }, 1500);
     });
     return () => { unsub(); if (debounce.current) clearTimeout(debounce.current); };
   }, []);
