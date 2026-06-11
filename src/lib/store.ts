@@ -42,12 +42,15 @@ export interface Customer {
   createdAt: string;
 }
 
+export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal";
+
 export interface Settings {
   prepleatPrice: number;
   drapePrice: number;
   defaultMeasurements: Measurement[];
   showPaymentOnCalendar: boolean;
   businessName: string;
+  theme: ThemeName;
 }
 
 interface State {
