@@ -70,6 +70,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          owner_user_id: string | null
           phone: string
           saree_count: number
           service: string
@@ -82,6 +83,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          owner_user_id?: string | null
           phone: string
           saree_count?: number
           service?: string
@@ -94,6 +96,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          owner_user_id?: string | null
           phone?: string
           saree_count?: number
           service?: string
