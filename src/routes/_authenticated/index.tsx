@@ -4,10 +4,10 @@ import { GrowthDashboard } from "@/components/GrowthDashboard";
 import { useStore, totalDue, fmtINR, fmtTime12 } from "@/lib/store";
 import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
-  format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays,
+  format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/")({
