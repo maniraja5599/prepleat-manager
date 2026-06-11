@@ -13,10 +13,10 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "brand" | "pricing" | "theme" | "data" | "activity" | "account";
+type TabId = "pricing" | "brand" | "theme" | "data" | "activity" | "account";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
-  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
   { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
+  { id: "brand",    label: "Brand",    hint: "Logo, name, presets",  icon: Upload },
   { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
   { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
   { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
@@ -30,7 +30,8 @@ const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: stri
   { id: "royal",    label: "Royal Violet", bg: "#f0eefa", fg: "#1c1340", card: "#ffffff", primary: "#5b3fc8", accent: "#cfc5f0", border: "#dcd5ee" },
   { id: "rose",     label: "Rose Pink",    bg: "#fdeef3", fg: "#3a1024", card: "#ffffff", primary: "#c9457e", accent: "#f4c4d6", border: "#eed4dd" },
   { id: "sand",     label: "Sand Desert",  bg: "#f5ecd9", fg: "#3a2614", card: "#fdf6e8", primary: "#8a5a2a", accent: "#dcc299", border: "#dcc8a8" },
-  { id: "charcoal", label: "Charcoal Gold",bg: "#1c1c1c", fg: "#f5f5f5", card: "#2a2a2a", primary: "#d4a24e", accent: "#3a342a", border: "#3a3a3a" },
+  { id: "charcoal", label: "Charcoal",     bg: "#1c1c1c", fg: "#f5f5f5", card: "#2a2a2a", primary: "#d4a24e", accent: "#3a342a", border: "#3a3a3a" },
+  { id: "gold",     label: "Pure Gold",    bg: "#fdf8e8", fg: "#3a2614", card: "#ffffff", primary: "#c89a3a", accent: "#f0d77a", border: "#ecdca2" },
 ];
 
 function SettingsPage() {
@@ -41,7 +42,8 @@ function SettingsPage() {
   const trash = useStore((s) => s.trash);
   const restoreBooking = useStore((s) => s.restoreBooking);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<TabId>("brand");
+  const [tab, setTab] = useState<TabId>("pricing");
+  const [presetDraft, setPresetDraft] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
