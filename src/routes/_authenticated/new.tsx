@@ -528,15 +528,3 @@ function ReviewRow({ label, value, bold }: { label: string; value: string; bold?
     </div>
   );
 }
-
-function CollapsibleSection({ icon, label, open, onToggle, children }: { icon: string; label: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
-  return (
-    <section className="bg-card card-shadow rounded-2xl mb-3 overflow-hidden">
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 active:bg-secondary/50">
-        <span className="flex items-center gap-2 text-sm font-semibold"><span>{icon}</span>{label}</span>
-        {open ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
-      </button>
-      {open && <div className="px-4 pb-4 pt-1">{children}</div>}
-    </section>
-  );
-}
