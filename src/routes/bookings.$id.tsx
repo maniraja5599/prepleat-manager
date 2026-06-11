@@ -14,9 +14,12 @@ export const Route = createFileRoute("/bookings/$id")({
 function BookingDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const booking = useStore((s) => s.bookings.find((b) => b.id === id));
-  const customer = useStore((s) => booking ? s.customers.find((c) => c.id === booking.customerId) : undefined);
-  const payments = useStore((s) => s.payments.filter((p) => p.bookingId === id));
+  const bookings = useStore((s) => s.bookings);
+  const customers = useStore((s) => s.customers);
+  const allPayments = useStore((s) => s.payments);
+  const booking = bookings.find((b) => b.id === id);
+  const customer = booking ? customers.find((c) => c.id === booking.customerId) : undefined;
+  const payments = allPayments.filter((p) => p.bookingId === id);
   const addPayment = useStore((s) => s.addPayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const updateBooking = useStore((s) => s.updateBooking);
