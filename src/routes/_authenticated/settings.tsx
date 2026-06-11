@@ -36,21 +36,81 @@ function SettingsPage() {
   const update = useStore((s) => s.updateSettings);
   const customers = useStore((s) => s.customers);
   const bookings = useStore((s) => s.bookings);
+  const trash = useStore((s) => s.trash);
+  const restoreBooking = useStore((s) => s.restoreBooking);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<TabId>("brand");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
     const reader = new FileReader();
     reader.onload = () => {
       update({ logoDataUrl: String(reader.result) });
-      toast.success("Logo updated");
+      toast.success("Logo updated", { duration: 1500 });
     };
     reader.readAsDataURL(file);
   };
 
   return (
     <AppShell title="Settings" subtitle="Changes save instantly">
-      <Section title="Brand">
+      <div className="sticky top-0 z-10 -mx-4 px-4 pb-2 bg-background/80 backdrop-blur">
+        <div className="flex gap-1 overflow-x-auto no-scrollbar bg-secondary rounded-full p-1">
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${active ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
+              >
+                <Icon className="size-3.5" /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {tab === "brand" && (
+        <Section title="Brand">
+          <div className="flex items-center gap-3">
+            <img
+              src={settings.logoDataUrl || logoAsset.url}
+              alt="logo"
+              className="size-16 rounded-2xl object-cover ring-2 ring-primary/20"
+            />
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold"
+              >
+                <Upload className="size-3.5" /> Change logo
+              </button>
+              {settings.logoDataUrl && (
+                <button
+                  onClick={() => { update({ logoDataUrl: undefined }); toast.success("Logo reset", { duration: 1200 }); }}
+                  className="text-[11px] text-muted-foreground underline self-start"
+                >Use default</button>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => e.target.files?.[0] && onLogoPick(e.target.files[0])}
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Business name</label>
+            <input
+              value={settings.businessName}
+              onChange={(e) => update({ businessName: e.target.value })}
+              className="input mt-1"
+            />
+          </div>
+        </Section>
+      )}
         <div className="flex items-center gap-3">
           <img
             src={settings.logoDataUrl || logoAsset.url}
