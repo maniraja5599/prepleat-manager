@@ -115,7 +115,8 @@ export function generateBillPDF(opts: {
   doc.setFontSize(10);
   for (const [label, value, bold] of totals) {
     doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setTextColor(...(bold ? accent : [60, 60, 60]));
+    const c: [number, number, number] = bold ? accent : [60, 60, 60];
+    doc.setTextColor(c[0], c[1], c[2]);
     doc.text(label, labelX, cy);
     doc.text(value, valueX, cy, { align: "right" });
     cy += rowH;
