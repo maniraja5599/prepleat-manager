@@ -452,3 +452,87 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
+
+function ActivityBlock() {
+  const activity = useStore((s) => s.activity);
+  const redoStack = useStore((s) => s.redoStack);
+  const undoLast = useStore((s) => s.undoLastEdit);
+  const redoLast = useStore((s) => s.redoLastEdit);
+  const clearActivity = useStore((s) => s.clearActivity);
+  const customers = useStore((s) => s.customers);
+  const bookings = useStore((s) => s.bookings);
+
+  const canUndo = activity.some((e) => e.kind === "update" && e.prev && e.next);
+  const canRedo = redoStack.length > 0;
+
+  const nameFor = (bid?: string) => {
+    if (!bid) return "";
+    const b = bookings.find((x) => x.id === bid);
+    const c = customers.find((x) => x.id === b?.customerId);
+    return c?.name ?? "—";
+  };
+
+  const kindStyle: Record<string, string> = {
+    create: "bg-success/15 text-success",
+    update: "bg-primary/15 text-primary",
+    delete: "bg-destructive/15 text-destructive",
+    restore: "bg-secondary text-foreground",
+    "payment-add": "bg-success/15 text-success",
+    "payment-delete": "bg-destructive/15 text-destructive",
+  };
+
+  return (
+    <>
+      <Section title="Undo / Redo edits">
+        <div className="grid grid-cols-2 gap-2">
+          <button disabled={!canUndo}
+            onClick={() => {
+              const ok = undoLast();
+              if (ok) toast.success("Edit undone", { duration: 1500 });
+              else toast.error("Nothing to undo");
+            }}
+            className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40">
+            <Undo2 className="size-3.5" /> Undo last edit
+          </button>
+          <button disabled={!canRedo}
+            onClick={() => {
+              const ok = redoLast();
+              if (ok) toast.success("Edit redone", { duration: 1500 });
+              else toast.error("Nothing to redo");
+            }}
+            className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40">
+            <Redo2 className="size-3.5" /> Redo
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">Undo reverts your most recent booking edit. Deletes are restored from the Data tab.</p>
+      </Section>
+
+      <Section title={`Activity log (${activity.length})`}>
+        {activity.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No activity yet.</p>
+        ) : (
+          <>
+            <ul className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+              {activity.map((e) => (
+                <li key={e.id} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/40">
+                  <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${kindStyle[e.kind] ?? "bg-secondary"}`}>{e.kind}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium truncate">{nameFor(e.bookingId) || "—"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{e.summary}</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+                    {formatDistanceToNow(new Date(e.ts), { addSuffix: false })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => { clearActivity(); toast.success("Activity cleared", { duration: 1200 }); }}
+              className="mt-3 w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5">
+              <Trash2 className="size-3.5" /> Clear activity log
+            </button>
+          </>
+        )}
+      </Section>
+    </>
+  );
+}
