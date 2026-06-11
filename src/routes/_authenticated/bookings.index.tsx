@@ -5,6 +5,8 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Search, IndianRupee, SlidersHorizontal, X as XIcon } from "lucide-react";
+import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
+
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   head: () => ({
@@ -82,7 +84,9 @@ function BookingsPage() {
 
   return (
     <AppShell title="Bookings" subtitle={`${list.length} shown · ${fmtINR(totalDueSum)} pending`}>
+      <BookingRequestsInbox />
       <div className="flex gap-2 mb-3">
+
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
