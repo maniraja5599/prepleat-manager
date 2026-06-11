@@ -123,34 +123,43 @@ function CalendarPage() {
     >
       <GrowthDashboard />
       <div className="grid grid-cols-4 gap-2 mb-4">
-        {[
-          { label: "New", icon: Plus, to: "/new" as const, gradient: true, search: { date: format(selected, "yyyy-MM-dd") } },
-          { label: "Today", icon: CalendarDays, onClick: () => { setCursor(new Date()); setSelected(new Date()); setView("calendar"); } },
-          { label: "Customers", icon: Users, to: "/customers" as const },
-          { label: "Payments", icon: Wallet, to: "/bookings" as const },
-        ].map((s) => {
-          const Icon = s.icon;
-          const body = (
-            <div className="flex flex-col items-center justify-center gap-1 py-3">
-              <span className={cn(
-                "size-9 rounded-full flex items-center justify-center",
-                s.gradient ? "saree-gradient text-primary-foreground" : "bg-primary/10 text-primary",
-              )}>
-                <Icon className="size-4" />
-              </span>
-              <span className="text-[11px] font-semibold">{s.label}</span>
-            </div>
-          );
-          return s.to ? (
-            <Link key={s.label} to={s.to} search={s.search as never} className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition">
-              {body}
-            </Link>
-          ) : (
-            <button key={s.label} onClick={s.onClick} className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition">
-              {body}
-            </button>
-          );
-        })}
+        <Link
+          to="/new"
+          search={{ date: format(selected, "yyyy-MM-dd") }}
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
+            <Plus className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">New</span>
+        </Link>
+        <button
+          onClick={() => { setCursor(new Date()); setSelected(new Date()); setView("calendar"); }}
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <CalendarDays className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Today</span>
+        </button>
+        <Link
+          to="/customers"
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Users className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Customers</span>
+        </Link>
+        <Link
+          to="/bookings"
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Wallet className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Payments</span>
+        </Link>
       </div>
       {view === "calendar" ? (
         <>
