@@ -106,7 +106,7 @@ function BookingDetail() {
           <div>
             <p className="opacity-70 text-xs uppercase tracking-wider">Delivery</p>
             <p className="font-semibold">{format(parseISO(booking.deliveryDate), "EEE, MMM d")}</p>
-            <p>{booking.deliveryTime}</p>
+            <p>{fmtTime12(booking.deliveryTime)}</p>
           </div>
           <div>
             <p className="opacity-70 text-xs uppercase tracking-wider">Sarees</p>
