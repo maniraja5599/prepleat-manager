@@ -213,7 +213,7 @@ function BookingDetail() {
           <ul className="mt-3 space-y-1 text-xs">
             {payments.map((p) => (
               <li key={p.id} className="flex justify-between items-center text-muted-foreground border-t border-border pt-1.5">
-                <span className="truncate">{format(parseISO(p.date), "MMM d")} · {p.note ?? "Payment"}</span>
+                <span className="truncate">{format(parseISO(p.date), "MMM d")} · {(p.mode ?? "gpay").toUpperCase()}{p.note ? ` · ${p.note}` : ""}</span>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="tabular-nums">{fmtINR(p.amount)}</span>
                   <button
