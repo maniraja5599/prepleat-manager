@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import logoAsset from "../assets/eyas-logo.png.asset.json";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ThemeApplier } from "../components/ThemeApplier";
 
 function NotFoundComponent() {
   return (
@@ -92,6 +93,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeApplier />
       <Outlet />
       <Toaster position="top-center" />
     </QueryClientProvider>
