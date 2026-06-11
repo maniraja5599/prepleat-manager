@@ -24,8 +24,11 @@ function BookingDetail() {
   const deletePayment = useStore((s) => s.deletePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const updateBooking = useStore((s) => s.updateBooking);
-  const businessName = useStore((s) => s.settings.businessName);
+  const settings = useStore((s) => s.settings);
+  const businessName = settings.businessName;
   const [payAmt, setPayAmt] = useState("");
+  const [payMode, setPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
+  const [payNote, setPayNote] = useState("");
   const [editing, setEditing] = useState(false);
 
   if (!booking) {
