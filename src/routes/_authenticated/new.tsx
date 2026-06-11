@@ -26,11 +26,15 @@ function NewBooking() {
   const navigate = useNavigate();
   const { date: presetDate } = Route.useSearch();
   const settings = useStore((s) => s.settings);
-  const customers = useStore((s) => s.customers);
+  const allCustomers = useStore((s) => s.customers);
+  const customers = useMemo(() => allCustomers.filter((c) => (c.kind ?? "client") === "client"), [allCustomers]);
+  const artists = useMemo(() => allCustomers.filter((c) => c.kind === "artist"), [allCustomers]);
   const bookings = useStore((s) => s.bookings);
   const addCustomer = useStore((s) => s.addCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
   const addBooking = useStore((s) => s.addBooking);
+
+  const [artistId, setArtistId] = useState<string>("");
 
   const [service, setService] = useState<ServiceType>("prepleat");
   const [customerId, setCustomerId] = useState<string>("");
