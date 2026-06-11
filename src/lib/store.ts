@@ -155,10 +155,31 @@ export const useStore = create<State>()(
       updateBooking: (id, b) =>
         set((s) => ({ bookings: s.bookings.map((x) => (x.id === id ? { ...x, ...b } : x)) })),
       deleteBooking: (id) =>
-        set((s) => ({
-          bookings: s.bookings.filter((x) => x.id !== id),
-          payments: s.payments.filter((p) => p.bookingId !== id),
-        })),
+        set((s) => {
+          const b = s.bookings.find((x) => x.id === id);
+          if (!b) return s;
+          const relatedPayments = s.payments.filter((p) => p.bookingId === id);
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const trash = [
+            { booking: b, payments: relatedPayments, deletedAt: new Date().toISOString() },
+            ...s.trash.filter((t) => new Date(t.deletedAt).getTime() > sevenDaysAgo),
+          ].slice(0, 50);
+          return {
+            bookings: s.bookings.filter((x) => x.id !== id),
+            payments: s.payments.filter((p) => p.bookingId !== id),
+            trash,
+          };
+        }),
+      restoreBooking: (id) =>
+        set((s) => {
+          const t = s.trash.find((x) => x.booking.id === id);
+          if (!t) return s;
+          return {
+            bookings: [t.booking, ...s.bookings],
+            payments: [...t.payments, ...s.payments],
+            trash: s.trash.filter((x) => x.booking.id !== id),
+          };
+        }),
 
       addPayment: (p) =>
         set((s) => {
