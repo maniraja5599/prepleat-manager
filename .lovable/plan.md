@@ -1,55 +1,62 @@
+# Refinement Pass — 15 fixes
 
-This is a large scope (20 items). I'll split into 4 phases so each ships working and verifiable. Confirm the order and I'll start with Phase 1.
+Grouping the 15 items by area so the work stays coherent. All changes are mobile-first.
 
-## Phase 1 — Foundations (Cloud + Auth + Data model)
+## 1. App boot & stability
+- **First-load blank screen**: SSR hydration race — the auth gate renders `null` until session resolves, causing a black flash. Fix: render a lightweight splash (logo + spinner) during auth check in `_authenticated/route.tsx` so users see content immediately, no manual refresh needed.
+- **Long-press text selection on calendar**: add `select-none`, `touch-callout: none`, and `-webkit-user-select: none` to calendar day cells so long-press doesn't trigger the iOS/Android copy menu.
 
-Enable **Lovable Cloud** so we can do Gmail login, Guest login, cloud sync, exports, and (later) automatic WhatsApp/email reminders.
+## 2. Calendar (item 2, 9)
+- Replace "Today" pill in the center of the header with the **current month + year label** that updates as you swipe.
+- Add a small **eye icon** above the calendar to toggle payment-on-calendar visibility (replaces the settings toggle for quick access).
+- Add a separate **"Today"** button (jumps back to today's date).
+- Keep swipe day/month navigation already added.
 
-- **Auth**: Email/password + **Google (Gmail) sign-in** + **Guest mode** (anonymous session that can later upgrade to Gmail without losing data).
-- **DB tables**: `profiles`, `customers`, `artists`, `bookings`, `payments`, `measurements`, `settings`, `activity_log` (for undo/redo + change history), `reminders`.
-- **RLS**: every row scoped to `auth.uid()`.
-- **Migration**: one-time push of existing localStorage data to Cloud on first login.
-- **Export**: CSV download for bookings / customers / payments from Settings.
+## 3. Bookings list & detail (items 3, 7, 11, 12, 14, 15)
+- **Remove "Calendar sync"** button from bookings page.
+- **Unique bill number**: generate sequential `EYAS-YYYYMM-NNNN` on booking creation, store on booking, show on detail & PDF.
+- **Payment auto-updates bill**: when payment recorded, bill number is preserved but status badge (Paid / Partial / Pending) refreshes live.
+- **Cancel booking**: add a "Cancel booking" action (sets `status: cancelled`, keeps record, removes from active counts). New status added to type.
+- **Payment record click**: tapping a payment row opens a sheet showing amount, mode, date/time, note, and a delete button.
+- **Date/time pickers**: replace arrow-based steppers with horizontal scroll-snap sliders (left/right swipe = one day / one 30-min slot). Same control style as the measurement slider.
+- **Measurement ON/OFF toggle**: switch at the top of the measurements section — off = collapsed, no values saved; on = expand and save to customer.
+- **Artist bookings**: when a booking is created for an `artist` customer, show a small gold "Artist" chip on the card in the list and a distinct accent on the detail page.
 
-## Phase 2 — Booking & Calendar UX (items 1, 4, 5, 6, 9, 13, 14)
+## 4. New booking quick notes (item 13)
+- Under notes, add chip buttons: **Bride, Bridesmaid, Baby ceremony, Engagement, Reception, Function, Other**. Tap appends to the notes field.
+- Settings → add an "Occasion presets" editor so the owner can add/rename/delete chips.
 
-- **Smart date conflict hint** when picking a date already booked ("2 bookings on this date — still book?").
-- **Swipeable date & month picker** (left/right), 12-hr time format with AM/PM, with a tiny inline tip the first time.
-- **Measurements + Payment toggles** — optional; skip if off. Quick review shows whatever was filled.
-- **Customer picker**: existing-customer chip row + smart fuzzy suggestions while typing; "+ New customer" inline.
-- **Client vs Artist booking**: each booking has `booked_by: client | artist`. Customers page gets two tabs: **Clients** and **Artists**.
-- **Calendar**: week starts **Sunday**, swipe months, long-press = quick peek popover, double-tap = jump to New Booking for that date, full month event list under the grid.
-- **Upcoming events tab** on home + "Add to Google Calendar" deep link per booking.
+## 5. Customers — WhatsApp + SMS (item 4)
+- Rewrite the reminder template: friendlier tone, 3-4 tasteful emojis (🌸 ✨ 📍), business name, balance line, and the configured `websiteUrl`.
+- Next to the WhatsApp button add a direct **SMS** button (`sms:` deep link) with the same message.
 
-## Phase 3 — Payments, WhatsApp, PDF (items 2, 7, 12)
+## 6. Themes (item 5)
+- Audit each preset (`maroon, midnight, emerald, royal, rose, sand, charcoal, gold`): ensure `--primary`, `--primary-foreground`, `--accent`, button hover, and ring colors are all defined per theme so buttons stay legible. Fix gold theme (red button bug).
+- Expand **Custom theme** to pick: Primary, Accent, Background, Card, and Foreground — each with a color input. Stored in `settings.customColors`.
 
-- **WhatsApp share**: use `whatsapp://send` + `intent://` fallback so it opens the **app directly** (no browser tab). Message template includes business name, itemized amounts, balance, website https://eyasdrapist.shop/, and 2–3 tasteful emojis (🧵 💛 ✨).
-- **Payment entry**: note field + **mode selector** (GPay / Cash / Other) with default configurable in Settings.
-- **Bill generator**: one tap → choose **PDF / Image / Plain text** → share sheet → WhatsApp.
+## 7. PDF bill (item 6)
+- Use `jspdf` + `jspdf-autotable` to build a branded bill:
+  - Header: logo (from `settings.logoDataUrl`), business name, website, bill number, date.
+  - Customer block, itemized service table (qty × price), totals, advance, balance, status stamp ("PAID" / "BALANCE DUE").
+  - Footer: thank-you line + website + "Developed by ManiRaja" small print.
+- Replace the current browser-print flow with a direct download / share.
 
-## Phase 4 — Settings, Theme, Reports, Polish (items 3, 8, 10, 11, 15, 16, 17, 18, 19, 20)
+## 8. Settings page order (item 10)
+Reorder mobile rail to: **Prices → Business → Occasions → Theme → Data → Account → Activity → Trash**.
 
-- **Settings redesign**: tabbed (Business · Services · Measurements · Theme · Payments · Data · About) with colored icons; per-section reset buttons (no global reset).
-- **Themes**: 6 new presets + **Custom theme** (primary/bg pickers, live preview). All tokens stay consistent.
-- **UI revamp**: card-based header, refined typography, active-tab pill in bottom nav, smoother transitions. Filters on Bookings collapse into a smart chip that expands.
-- **Toasts**: replace blocking toasts with a subtle inline "Saved ✓" pill near the action button (non-intrusive).
-- **Growth dashboard**: weekly/monthly bar chart (revenue, bookings, sarees), top customers, pending collections, completion rate. Built with `recharts`.
-- **Activity log + Undo**: every create/update/delete writes to `activity_log`; deleted bookings can be restored for 7 days; edits show "changed from X → Y".
-- **Footer credit**: "Developed by **ManiRaja**" → https://www.instagram.com/maniraja__/
+## 9. Shortcuts (item 8)
+- Home: add quick buttons → New booking, Today's deliveries, Pending balance, Inbox.
+- Bookings detail: WhatsApp / SMS / PDF / Edit / Cancel as primary row.
 
-## Verification checklist (item 20)
+## Technical notes
+- New booking field: `billNumber: string`, `status` adds `"cancelled"`.
+- Store migration bumps to v5: backfill bill numbers for existing bookings.
+- New settings fields: `occasionPresets: string[]`, `customColors?: { primary, accent, background, card, foreground }`.
+- Calendar header becomes a small state machine reacting to swipe / today button.
+- PDF generation runs client-side; install `jspdf` and `jspdf-autotable`.
 
-After each phase I'll:
-1. Run the build.
-2. Open the preview at mobile 390×844 and walk the changed flows.
-3. Check console + network for errors.
-4. Report back what I tested.
+## Out of scope for this pass
+- WhatsApp Cloud API automation (still manual deep-link).
+- Server-side bill storage (bill number lives on the booking record only).
 
----
-
-### Two quick decisions I need from you before Phase 1:
-
-1. **Profiles table**: Do you want a user profile (display name, business name, avatar per user)? — recommended **yes** so multiple staff could log in to the same shop later.
-2. **Guest mode behavior**: Should guest data **auto-upload** to their account when they later sign in with Gmail? — recommended **yes**.
-
-Reply "go" to start Phase 1, or tell me to reorder / drop anything.
+Reply **ok** to proceed, or tell me which items to drop / reorder.
