@@ -4,8 +4,8 @@ import { persist } from "zustand/middleware";
 export type ServiceType = "prepleat" | "drape";
 
 export interface Measurement {
-  label: string; // A, B, C or custom
-  value: number; // inches
+  label: string;
+  value: number;
 }
 
 export interface Booking {
@@ -17,8 +17,8 @@ export interface Booking {
   pricePerSaree: number;
   totalAmount: number;
   advancePaid: number;
-  deliveryDate: string; // ISO
-  deliveryTime: string; // HH:mm
+  deliveryDate: string;
+  deliveryTime: string;
   notes?: string;
   measurements?: Measurement[];
   createdAt: string;
@@ -44,7 +44,7 @@ export interface Customer {
   id: string;
   kind: CustomerKind;
   name: string;
-  phone: string; // for whatsapp
+  phone: string;
   address?: string;
   notes?: string;
   createdAt: string;
@@ -59,7 +59,7 @@ export interface Settings {
   showPaymentOnCalendar: boolean;
   businessName: string;
   theme: ThemeName;
-  customPrimary?: string; // CSS color value used when theme = "custom"
+  customPrimary?: string;
   logoDataUrl?: string;
   defaultPaymentMode?: PaymentMode;
   websiteUrl?: string;
@@ -68,7 +68,19 @@ export interface Settings {
 export interface DeletedBooking {
   booking: Booking;
   payments: Payment[];
-  deletedAt: string; // ISO
+  deletedAt: string;
+}
+
+export type ActivityKind = "create" | "update" | "delete" | "restore" | "payment-add" | "payment-delete";
+
+export interface ActivityEntry {
+  id: string;
+  ts: string;
+  kind: ActivityKind;
+  bookingId?: string;
+  summary: string;
+  prev?: Booking;
+  next?: Booking;
 }
 
 interface State {
@@ -77,6 +89,8 @@ interface State {
   payments: Payment[];
   settings: Settings;
   trash: DeletedBooking[];
+  activity: ActivityEntry[];
+  redoStack: ActivityEntry[];
 
   addCustomer: (c: Omit<Customer, "id" | "createdAt">) => Customer;
   updateCustomer: (id: string, c: Partial<Customer>) => void;
@@ -87,6 +101,9 @@ interface State {
   updateBooking: (id: string, b: Partial<Booking>) => void;
   deleteBooking: (id: string) => void;
   restoreBooking: (id: string) => void;
+  undoLastEdit: () => boolean;
+  redoLastEdit: () => boolean;
+  clearActivity: () => void;
 
   addPayment: (p: Omit<Payment, "id">) => void;
   deletePayment: (id: string) => void;
@@ -96,6 +113,19 @@ interface State {
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
+const describeDiff = (prev: Booking, next: Booking): string => {
+  const parts: string[] = [];
+  if (prev.service !== next.service) parts.push(`service ${prev.service}→${next.service}`);
+  if (prev.sareeCount !== next.sareeCount) parts.push(`sarees ${prev.sareeCount}→${next.sareeCount}`);
+  if (prev.pricePerSaree !== next.pricePerSaree) parts.push(`price ${prev.pricePerSaree}→${next.pricePerSaree}`);
+  if (prev.deliveryDate !== next.deliveryDate) parts.push(`date ${prev.deliveryDate.slice(0,10)}→${next.deliveryDate.slice(0,10)}`);
+  if (prev.deliveryTime !== next.deliveryTime) parts.push(`time ${prev.deliveryTime}→${next.deliveryTime}`);
+  if (prev.status !== next.status) parts.push(`status ${prev.status}→${next.status}`);
+  if ((prev.notes || "") !== (next.notes || "")) parts.push("notes changed");
+  if (prev.advancePaid !== next.advancePaid) parts.push(`paid ${prev.advancePaid}→${next.advancePaid}`);
+  return parts.length ? parts.join(", ") : "minor edit";
+};
+
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
@@ -103,6 +133,8 @@ export const useStore = create<State>()(
       bookings: [],
       payments: [],
       trash: [],
+      activity: [],
+      redoStack: [],
       settings: {
         prepleatPrice: 350,
         drapePrice: 800,
@@ -134,13 +166,16 @@ export const useStore = create<State>()(
       getCustomer: (id) => get().customers.find((c) => c.id === id),
 
       addBooking: (b) => {
-        const booking: Booking = {
-          ...b,
-          id: uid(),
-          createdAt: new Date().toISOString(),
-          status: "pending",
+        const booking: Booking = { ...b, id: uid(), createdAt: new Date().toISOString(), status: "pending" };
+        const entry: ActivityEntry = {
+          id: uid(), ts: new Date().toISOString(), kind: "create",
+          bookingId: booking.id, summary: `${booking.service} · ${booking.sareeCount} sarees`,
         };
-        set((s) => ({ bookings: [booking, ...s.bookings] }));
+        set((s) => ({
+          bookings: [booking, ...s.bookings],
+          activity: [entry, ...s.activity].slice(0, 200),
+          redoStack: [],
+        }));
         if (b.advancePaid > 0) {
           const pid = uid();
           set((s) => ({
@@ -153,7 +188,20 @@ export const useStore = create<State>()(
         return booking;
       },
       updateBooking: (id, b) =>
-        set((s) => ({ bookings: s.bookings.map((x) => (x.id === id ? { ...x, ...b } : x)) })),
+        set((s) => {
+          const prev = s.bookings.find((x) => x.id === id);
+          if (!prev) return s;
+          const next = { ...prev, ...b };
+          const entry: ActivityEntry = {
+            id: uid(), ts: new Date().toISOString(), kind: "update",
+            bookingId: id, summary: describeDiff(prev, next), prev, next,
+          };
+          return {
+            bookings: s.bookings.map((x) => (x.id === id ? next : x)),
+            activity: [entry, ...s.activity].slice(0, 200),
+            redoStack: [],
+          };
+        }),
       deleteBooking: (id) =>
         set((s) => {
           const b = s.bookings.find((x) => x.id === id);
@@ -164,31 +212,70 @@ export const useStore = create<State>()(
             { booking: b, payments: relatedPayments, deletedAt: new Date().toISOString() },
             ...s.trash.filter((t) => new Date(t.deletedAt).getTime() > sevenDaysAgo),
           ].slice(0, 50);
+          const entry: ActivityEntry = {
+            id: uid(), ts: new Date().toISOString(), kind: "delete",
+            bookingId: id, summary: `deleted ${b.service} · ${b.sareeCount} sarees`,
+          };
           return {
             bookings: s.bookings.filter((x) => x.id !== id),
             payments: s.payments.filter((p) => p.bookingId !== id),
             trash,
+            activity: [entry, ...s.activity].slice(0, 200),
+            redoStack: [],
           };
         }),
       restoreBooking: (id) =>
         set((s) => {
           const t = s.trash.find((x) => x.booking.id === id);
           if (!t) return s;
+          const entry: ActivityEntry = {
+            id: uid(), ts: new Date().toISOString(), kind: "restore",
+            bookingId: id, summary: `restored ${t.booking.service}`,
+          };
           return {
             bookings: [t.booking, ...s.bookings],
             payments: [...t.payments, ...s.payments],
             trash: s.trash.filter((x) => x.booking.id !== id),
+            activity: [entry, ...s.activity].slice(0, 200),
           };
         }),
+      undoLastEdit: () => {
+        const s = get();
+        const idx = s.activity.findIndex((e) => e.kind === "update" && e.prev && e.next);
+        if (idx === -1) return false;
+        const entry = s.activity[idx];
+        set({
+          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? entry.prev! : x)),
+          activity: s.activity.filter((_, i) => i !== idx),
+          redoStack: [entry, ...s.redoStack].slice(0, 50),
+        });
+        return true;
+      },
+      redoLastEdit: () => {
+        const s = get();
+        if (s.redoStack.length === 0) return false;
+        const [entry, ...rest] = s.redoStack;
+        if (!entry.next) return false;
+        set({
+          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? entry.next! : x)),
+          activity: [{ ...entry, id: uid(), ts: new Date().toISOString() }, ...s.activity].slice(0, 200),
+          redoStack: rest,
+        });
+        return true;
+      },
+      clearActivity: () => set({ activity: [], redoStack: [] }),
 
       addPayment: (p) =>
         set((s) => {
           const payment: Payment = { ...p, id: uid() };
-          // also update booking advancePaid
           const bookings = s.bookings.map((b) =>
             b.id === p.bookingId ? { ...b, advancePaid: b.advancePaid + p.amount } : b,
           );
-          return { payments: [payment, ...s.payments], bookings };
+          const entry: ActivityEntry = {
+            id: uid(), ts: new Date().toISOString(), kind: "payment-add",
+            bookingId: p.bookingId, summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
+          };
+          return { payments: [payment, ...s.payments], bookings, activity: [entry, ...s.activity].slice(0, 200) };
         }),
       deletePayment: (id) =>
         set((s) => {
@@ -197,14 +284,18 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) =>
             b.id === pay.bookingId ? { ...b, advancePaid: Math.max(0, b.advancePaid - pay.amount) } : b,
           );
-          return { payments: s.payments.filter((p) => p.id !== id), bookings };
+          const entry: ActivityEntry = {
+            id: uid(), ts: new Date().toISOString(), kind: "payment-delete",
+            bookingId: pay.bookingId, summary: `removed payment ₹${pay.amount}`,
+          };
+          return { payments: s.payments.filter((p) => p.id !== id), bookings, activity: [entry, ...s.activity].slice(0, 200) };
         }),
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
     }),
     {
       name: "saree-studio-v1",
-      version: 3,
+      version: 4,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -223,13 +314,14 @@ export const useStore = create<State>()(
         if (Array.isArray(persisted.customers)) {
           persisted.customers = persisted.customers.map((c: any) => ({ kind: c.kind ?? "client", ...c }));
         }
+        if (!Array.isArray(persisted.activity)) persisted.activity = [];
+        if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];
         return persisted;
       },
     },
   ),
 );
 
-// helpers
 export const fmtINR = (n: number) =>
   "₹" + Math.round(n).toLocaleString("en-IN");
 

@@ -4,10 +4,10 @@ import { GrowthDashboard } from "@/components/GrowthDashboard";
 import { useStore, totalDue, fmtINR, fmtTime12 } from "@/lib/store";
 import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
-  format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays,
+  format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -77,6 +77,7 @@ function CalendarPage() {
 
   // Swipe between months
   const touchX = useRef<number | null>(null);
+  const dayTouchX = useRef<number | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchX.current == null) return;
@@ -196,21 +197,42 @@ function CalendarPage() {
           <p className="text-[10px] text-muted-foreground text-center mt-1.5">Swipe ←/→ change month · long-press peek · double-tap to book</p>
 
           <div className="mt-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <button
+                onClick={() => setSelected((d) => subDays(d, 1))}
+                className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
+                aria-label="Previous day"
+              ><ChevronLeft className="size-4" /></button>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate flex-1 text-center">
                 {format(selected, "EEEE, MMM d")}
               </h2>
+              <button
+                onClick={() => setSelected((d) => addDays(d, 1))}
+                className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
+                aria-label="Next day"
+              ><ChevronRight className="size-4" /></button>
               <Link
                 to="/new"
                 search={{ date: format(selected, "yyyy-MM-dd") }}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full saree-gradient text-primary-foreground text-xs font-semibold shrink-0"
               >
-                <Plus className="size-3.5" /> Book this date
+                <Plus className="size-3.5" /> Book
               </Link>
             </div>
+            <div
+              className="touch-pan-y"
+              onTouchStart={(e) => { dayTouchX.current = e.touches[0].clientX; }}
+              onTouchEnd={(e) => {
+                if (dayTouchX.current == null) return;
+                const dx = e.changedTouches[0].clientX - dayTouchX.current;
+                dayTouchX.current = null;
+                if (Math.abs(dx) < 50) return;
+                setSelected((d) => (dx < 0 ? addDays(d, 1) : subDays(d, 1)));
+              }}
+            >
             {dayBookings.length === 0 ? (
               <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground">
-                No bookings on this day. Tap "Book this date" to add one.
+                No bookings on this day. Swipe ←/→ to change day.
               </div>
             ) : (
               <ul className="space-y-2">
@@ -219,6 +241,7 @@ function CalendarPage() {
                 ))}
               </ul>
             )}
+            </div>
           </div>
 
           {monthEvents.length > 0 && (
@@ -280,7 +303,7 @@ function CalendarPage() {
   );
 }
 
-function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
+const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
   const c = customers.find((x) => x.id === b.customerId);
   const due = totalDue(b);
   return (
@@ -315,4 +338,4 @@ function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.
       </Link>
     </li>
   );
-}
+});

@@ -9,14 +9,15 @@ interface Props {
   right?: ReactNode;
   children: ReactNode;
   showBrand?: boolean;
+  wide?: boolean;
 }
 
-export function AppShell({ title, subtitle, right, children, showBrand }: Props) {
+export function AppShell({ title, subtitle, right, children, showBrand, wide }: Props) {
   const settings = useStore((s) => s.settings);
   const logo = settings.logoDataUrl || logoAsset.url;
   return (
     <div className="min-h-[100dvh] bg-background pb-28">
-      <div className="max-w-md mx-auto">
+      <div className={wide ? "max-w-3xl mx-auto" : "max-w-md mx-auto"}>
         {showBrand && (
           <div className="px-5 pt-5 flex items-center gap-3">
             <img src={logo} alt={settings.businessName} className="size-10 rounded-full object-cover ring-2 ring-primary/20" />

@@ -71,18 +71,9 @@ function BookingDetail() {
   const sendWhatsApp = (kind: "reminder" | "bill" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = buildWhatsAppMessage(kind);
-    const encoded = encodeURIComponent(msg);
-    // Try native app first, fall back to wa.me without opening an extra tab
-    const native = `whatsapp://send?phone=${phone}&text=${encoded}`;
-    const fallback = `https://wa.me/${phone}?text=${encoded}`;
-    const start = Date.now();
-    window.location.href = native;
-    setTimeout(() => {
-      if (Date.now() - start < 1600 && document.visibilityState === "visible") {
-        window.location.href = fallback;
-      }
-    }, 800);
+    const encoded = encodeURIComponent(buildWhatsAppMessage(kind));
+    // Direct same-tab redirect — wa.me deep-links to the app on mobile, web on desktop.
+    window.location.href = `https://wa.me/${phone}?text=${encoded}`;
   };
 
   const addToGoogleCalendar = () => {

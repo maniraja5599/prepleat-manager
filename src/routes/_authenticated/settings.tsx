@@ -2,23 +2,25 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
   component: SettingsPage,
 });
 
-type TabId = "brand" | "pricing" | "theme" | "data" | "account";
-const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
-  { id: "brand",   label: "Brand",   icon: Upload },
-  { id: "pricing", label: "Pricing", icon: IndianRupee },
-  { id: "theme",   label: "Theme",   icon: Palette },
-  { id: "data",    label: "Data",    icon: Database },
-  { id: "account", label: "Account", icon: User },
+type TabId = "brand" | "pricing" | "theme" | "data" | "activity" | "account";
+const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
+  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
+  { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
+  { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
+  { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
+  { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
+  { id: "account",  label: "Account",  hint: "Sign in & sync",       icon: User },
 ];
 
 const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: string; primary: string; accent: string; border: string }[] = [
@@ -52,24 +54,48 @@ function SettingsPage() {
   };
 
   return (
-    <AppShell title="Settings" subtitle="Changes save instantly">
-      <div className="sticky top-0 z-10 -mx-4 px-4 pb-2 bg-background/80 backdrop-blur">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar bg-secondary rounded-full p-1">
-          {TABS.map((t) => {
-            const active = tab === t.id;
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${active ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
-              >
-                <Icon className="size-3.5" /> {t.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    <AppShell wide title="Settings" subtitle="Changes save instantly">
+      <div className="grid gap-4 sm:grid-cols-[200px_minmax(0,1fr)]">
+        {/* Left rail */}
+        <nav className="sm:sticky sm:top-2 self-start">
+          {/* Mobile: horizontal scroll pills */}
+          <div className="flex sm:hidden gap-1 overflow-x-auto no-scrollbar bg-secondary rounded-full p-1">
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              const Icon = t.icon;
+              return (
+                <button key={t.id} onClick={() => setTab(t.id)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${active ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}>
+                  <Icon className="size-3.5" /> {t.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Desktop/tablet: vertical compact list */}
+          <ul className="hidden sm:block bg-card card-shadow rounded-2xl p-2 space-y-0.5">
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              const Icon = t.icon;
+              return (
+                <li key={t.id}>
+                  <button onClick={() => setTab(t.id)}
+                    className={`w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition ${active ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
+                    <span className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-primary-foreground/15" : "bg-secondary"}`}>
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold leading-tight">{t.label}</span>
+                      <span className={`block text-[10px] leading-tight ${active ? "opacity-80" : "text-muted-foreground"}`}>{t.hint}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="min-w-0">
+
 
       {tab === "brand" && (
         <Section title="Brand">
@@ -351,12 +377,18 @@ function SettingsPage() {
         </>
       )}
 
+      {tab === "activity" && (
+        <ActivityBlock />
+      )}
+
       {tab === "account" && (
         <Section title="Account">
           <AccountBlock />
         </Section>
       )}
 
+        </div>
+      </div>
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>
@@ -418,5 +450,89 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function ActivityBlock() {
+  const activity = useStore((s) => s.activity);
+  const redoStack = useStore((s) => s.redoStack);
+  const undoLast = useStore((s) => s.undoLastEdit);
+  const redoLast = useStore((s) => s.redoLastEdit);
+  const clearActivity = useStore((s) => s.clearActivity);
+  const customers = useStore((s) => s.customers);
+  const bookings = useStore((s) => s.bookings);
+
+  const canUndo = activity.some((e) => e.kind === "update" && e.prev && e.next);
+  const canRedo = redoStack.length > 0;
+
+  const nameFor = (bid?: string) => {
+    if (!bid) return "";
+    const b = bookings.find((x) => x.id === bid);
+    const c = customers.find((x) => x.id === b?.customerId);
+    return c?.name ?? "—";
+  };
+
+  const kindStyle: Record<string, string> = {
+    create: "bg-success/15 text-success",
+    update: "bg-primary/15 text-primary",
+    delete: "bg-destructive/15 text-destructive",
+    restore: "bg-secondary text-foreground",
+    "payment-add": "bg-success/15 text-success",
+    "payment-delete": "bg-destructive/15 text-destructive",
+  };
+
+  return (
+    <>
+      <Section title="Undo / Redo edits">
+        <div className="grid grid-cols-2 gap-2">
+          <button disabled={!canUndo}
+            onClick={() => {
+              const ok = undoLast();
+              if (ok) toast.success("Edit undone", { duration: 1500 });
+              else toast.error("Nothing to undo");
+            }}
+            className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40">
+            <Undo2 className="size-3.5" /> Undo last edit
+          </button>
+          <button disabled={!canRedo}
+            onClick={() => {
+              const ok = redoLast();
+              if (ok) toast.success("Edit redone", { duration: 1500 });
+              else toast.error("Nothing to redo");
+            }}
+            className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40">
+            <Redo2 className="size-3.5" /> Redo
+          </button>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">Undo reverts your most recent booking edit. Deletes are restored from the Data tab.</p>
+      </Section>
+
+      <Section title={`Activity log (${activity.length})`}>
+        {activity.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No activity yet.</p>
+        ) : (
+          <>
+            <ul className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+              {activity.map((e) => (
+                <li key={e.id} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/40">
+                  <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${kindStyle[e.kind] ?? "bg-secondary"}`}>{e.kind}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium truncate">{nameFor(e.bookingId) || "—"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{e.summary}</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+                    {formatDistanceToNow(new Date(e.ts), { addSuffix: false })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => { clearActivity(); toast.success("Activity cleared", { duration: 1200 }); }}
+              className="mt-3 w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5">
+              <Trash2 className="size-3.5" /> Clear activity log
+            </button>
+          </>
+        )}
+      </Section>
+    </>
   );
 }
