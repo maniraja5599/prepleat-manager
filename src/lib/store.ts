@@ -76,6 +76,7 @@ interface State {
   bookings: Booking[];
   payments: Payment[];
   settings: Settings;
+  trash: DeletedBooking[];
 
   addCustomer: (c: Omit<Customer, "id" | "createdAt">) => Customer;
   updateCustomer: (id: string, c: Partial<Customer>) => void;
@@ -85,6 +86,7 @@ interface State {
   addBooking: (b: Omit<Booking, "id" | "createdAt" | "status">) => Booking;
   updateBooking: (id: string, b: Partial<Booking>) => void;
   deleteBooking: (id: string) => void;
+  restoreBooking: (id: string) => void;
 
   addPayment: (p: Omit<Payment, "id">) => void;
   deletePayment: (id: string) => void;
