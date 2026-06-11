@@ -166,7 +166,25 @@ function SettingsPage() {
             );
           })}
         </div>
+        <div className="mt-3 p-3 rounded-2xl border-2 border-dashed border-border">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">Custom primary</p>
+              <p className="text-[11px] text-muted-foreground">Pick any shade — applied live.</p>
+            </div>
+            <input
+              type="color"
+              value={settings.customPrimary || "#7a1f2a"}
+              onChange={(e) => update({ theme: "custom", customPrimary: e.target.value })}
+              className="size-10 rounded-full border-0 cursor-pointer bg-transparent"
+            />
+          </div>
+          {settings.theme === "custom" && (
+            <p className="text-[10px] uppercase tracking-wider text-primary font-semibold mt-2">Custom theme active</p>
+          )}
+        </div>
       </Section>
+
 
       <Section title="Payments">
         <p className="text-xs text-muted-foreground mb-2">Default mode when adding a payment.</p>
