@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, customerBookings, totalDue, fmtINR } from "@/lib/store";
-import { ArrowLeft, MessageCircle, Trash2, Phone, Pencil, Check, X, MapPin } from "lucide-react";
+import { ArrowLeft, MessageCircle, Trash2, Phone, Pencil, Check, X, MapPin, MessageSquare } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -17,7 +17,9 @@ function CustomerDetail() {
   const bookings = useStore((s) => s.bookings);
   const deleteCustomer = useStore((s) => s.deleteCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
-  const businessName = useStore((s) => s.settings.businessName);
+  const settings = useStore((s) => s.settings);
+  const businessName = settings.businessName;
+  const websiteUrl = settings.websiteUrl || "https://eyasdrapist.shop/";
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(customer?.name ?? "");
   const [phone, setPhone] = useState(customer?.phone ?? "");
@@ -31,14 +33,41 @@ function CustomerDetail() {
   const totalSpent = cb.reduce((s, b) => s + b.advancePaid, 0);
   const totalDueAll = cb.reduce((s, b) => s + totalDue(b), 0);
 
-  const remind = () => {
-    if (!customer.phone) return toast.error("No phone");
-    const phone = customer.phone.replace(/\D/g, "");
+  const buildMessage = (richEmojis: boolean) => {
+    const e = (s: string) => (richEmojis ? s : "");
     const pending = cb.filter((b) => totalDue(b) > 0);
-    const msg = pending.length
-      ? `Hi ${customer.name}, this is a friendly reminder from ${businessName}.\n\nYour pending balance: ${fmtINR(totalDueAll)}\n\nThank you!`
-      : `Hi ${customer.name}, thank you for choosing ${businessName}!`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+    const lines: string[] = [];
+    lines.push(`${e("💛 ")}*${businessName}*`);
+    lines.push("");
+    lines.push(`Hi ${customer.name} ${e("🙏")}`);
+    if (pending.length) {
+      lines.push(`A gentle reminder ${e("🌸")} — you have ${pending.length} pending order${pending.length > 1 ? "s" : ""}.`);
+      lines.push("");
+      lines.push(`${e("💰 ")}*Balance due:* ${fmtINR(totalDueAll)}`);
+      const next = pending[0];
+      if (next) lines.push(`${e("📅 ")}*Next delivery:* ${format(parseISO(next.deliveryDate), "EEE, MMM d")}`);
+      lines.push("");
+      lines.push(`Pay via GPay / Cash on delivery. Thank you ${e("✨")}`);
+    } else {
+      lines.push(`Thank you for choosing us ${e("💛✨")}`);
+      lines.push(`Looking forward to draping for you again soon.`);
+    }
+    lines.push("");
+    lines.push(`${e("🌐 ")}${websiteUrl}`);
+    return lines.join("\n");
+  };
+
+  const sendWhatsApp = () => {
+    if (!customer.phone) return toast.error("No phone");
+    const ph = customer.phone.replace(/\D/g, "");
+    window.location.href = `https://wa.me/${ph}?text=${encodeURIComponent(buildMessage(true))}`;
+  };
+
+  const sendSMS = () => {
+    if (!customer.phone) return toast.error("No phone");
+    const ph = customer.phone.replace(/\D/g, "");
+    const msg = buildMessage(false).replace(/\*/g, "").replace(/\n{2,}/g, "\n").trim();
+    window.location.href = `sms:${ph}?&body=${encodeURIComponent(msg)}`;
   };
 
   return (
@@ -90,9 +119,14 @@ function CustomerDetail() {
         </div>
       </div>
 
-      <button onClick={remind} className="w-full bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold mt-3 active:scale-95 transition">
-        <MessageCircle className="size-5" /> Send WhatsApp Reminder
-      </button>
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        <button onClick={sendWhatsApp} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
+          <MessageCircle className="size-5" /> WhatsApp
+        </button>
+        <button onClick={sendSMS} className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
+          <MessageSquare className="size-5" /> SMS
+        </button>
+      </div>
 
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mt-5 mb-2">History</h2>
       {cb.length === 0 ? (
