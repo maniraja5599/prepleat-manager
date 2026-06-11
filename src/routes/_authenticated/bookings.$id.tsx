@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/store";
+import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType, type PaymentMode } from "@/lib/store";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, CalendarPlus } from "lucide-react";
+import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, CalendarPlus, Receipt } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,11 @@ function BookingDetail() {
   const deletePayment = useStore((s) => s.deletePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const updateBooking = useStore((s) => s.updateBooking);
-  const businessName = useStore((s) => s.settings.businessName);
+  const settings = useStore((s) => s.settings);
+  const businessName = settings.businessName;
   const [payAmt, setPayAmt] = useState("");
+  const [payMode, setPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
+  const [payNote, setPayNote] = useState("");
   const [editing, setEditing] = useState(false);
 
   if (!booking) {
@@ -38,11 +41,47 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  const sendWhatsApp = () => {
+  const buildWhatsAppMessage = (kind: "reminder" | "bill") => {
+    const site = settings.websiteUrl || "https://eyasdrapist.shop/";
+    const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
+    const timeStr = fmtTime12(booking.deliveryTime);
+    const paid = booking.advancePaid;
+    const lines = [
+      kind === "bill" ? `🧾 *${businessName}* — Bill` : `🧵 *${businessName}*`,
+      ``,
+      `Hi ${customer?.name} ✨`,
+      kind === "bill"
+        ? `Thank you for choosing us 💛 Here are your order details:`
+        : `Friendly reminder about your saree order 💛`,
+      ``,
+      `📌 *Service:* ${booking.service.toUpperCase()}`,
+      `🪡 *Sarees:* ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
+      `📅 *Delivery:* ${dateStr}, ${timeStr}`,
+      ``,
+      `*Total:* ${fmtINR(booking.totalAmount)}`,
+      `*Paid:* ${fmtINR(paid)}`,
+      due > 0 ? `*Balance:* ${fmtINR(due)}` : `*Status:* ✅ Fully Paid`,
+      ``,
+      `🌐 ${site}`,
+    ];
+    return lines.join("\n");
+  };
+
+  const sendWhatsApp = (kind: "reminder" | "bill" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${fmtTime12(booking.deliveryTime)}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+    const msg = buildWhatsAppMessage(kind);
+    const encoded = encodeURIComponent(msg);
+    // Try native app first, fall back to wa.me without opening an extra tab
+    const native = `whatsapp://send?phone=${phone}&text=${encoded}`;
+    const fallback = `https://wa.me/${phone}?text=${encoded}`;
+    const start = Date.now();
+    window.location.href = native;
+    setTimeout(() => {
+      if (Date.now() - start < 1600 && document.visibilityState === "visible") {
+        window.location.href = fallback;
+      }
+    }, 800);
   };
 
   const addToGoogleCalendar = () => {
@@ -65,8 +104,8 @@ function BookingDetail() {
       const ok = window.confirm(`Amount ${fmtINR(n)} exceeds pending ${fmtINR(due)}. Continue anyway?`);
       if (!ok) return;
     }
-    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: new Date().toISOString() });
-    setPayAmt("");
+    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: new Date().toISOString(), mode: payMode, note: payNote.trim() || undefined });
+    setPayAmt(""); setPayNote("");
     toast.success(`Payment of ${fmtINR(n)} added`);
   };
 
@@ -160,13 +199,21 @@ function BookingDetail() {
               <button onClick={() => setPayAmt(String(due))} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Full ({fmtINR(due)})</button>
               <button onClick={() => setPayAmt("")} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Clear</button>
             </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
+                <button key={m} onClick={() => setPayMode(m)} className={cn("py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider",
+                  payMode === m ? "bg-primary text-primary-foreground" : "bg-secondary")}>{m}</button>
+              ))}
+            </div>
+            <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (optional)"
+              className="w-full mt-2 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
           </>
         )}
         {payments.length > 0 && (
           <ul className="mt-3 space-y-1 text-xs">
             {payments.map((p) => (
               <li key={p.id} className="flex justify-between items-center text-muted-foreground border-t border-border pt-1.5">
-                <span className="truncate">{format(parseISO(p.date), "MMM d")} · {p.note ?? "Payment"}</span>
+                <span className="truncate">{format(parseISO(p.date), "MMM d")} · {(p.mode ?? "gpay").toUpperCase()}{p.note ? ` · ${p.note}` : ""}</span>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="tabular-nums">{fmtINR(p.amount)}</span>
                   <button
@@ -202,20 +249,23 @@ function BookingDetail() {
       )}
 
       <div className="grid grid-cols-2 gap-2 mt-4">
-        <button onClick={sendWhatsApp} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
-          <MessageCircle className="size-5" /> WhatsApp
+        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
+          <MessageCircle className="size-5" /> Reminder
         </button>
-        <button
-          onClick={() => {
-            updateBooking(booking.id, { status: booking.status === "delivered" ? "pending" : "delivered", completedAt: new Date().toISOString() });
-            toast.success(booking.status === "delivered" ? "Marked pending" : "Marked delivered");
-          }}
-          className={cn("py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition",
-            booking.status === "delivered" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground")}
-        >
-          <Check className="size-5" /> {booking.status === "delivered" ? "Reopen" : "Delivered"}
+        <button onClick={() => sendWhatsApp("bill")} className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
+          <Receipt className="size-5" /> Send bill
         </button>
       </div>
+      <button
+        onClick={() => {
+          updateBooking(booking.id, { status: booking.status === "delivered" ? "pending" : "delivered", completedAt: new Date().toISOString() });
+          toast.success(booking.status === "delivered" ? "Marked pending" : "Marked delivered");
+        }}
+        className={cn("w-full mt-2 py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition",
+          booking.status === "delivered" ? "bg-muted text-foreground" : "bg-success/15 text-success")}
+      >
+        <Check className="size-5" /> {booking.status === "delivered" ? "Reopen booking" : "Mark delivered"}
+      </button>
 
       <button
         onClick={addToGoogleCalendar}

@@ -36,6 +36,10 @@ export function AppShell({ title, subtitle, right, children, showBrand }: Props)
           </header>
         )}
         <main className="px-5">{children}</main>
+        <p className="text-center text-[10px] text-muted-foreground/70 mt-8 pb-2">
+          Developed by{" "}
+          <a href="https://www.instagram.com/maniraja__/" target="_blank" rel="noreferrer" className="font-semibold text-primary/80 hover:underline">ManiRaja</a>
+        </p>
       </div>
       <BottomNav />
     </div>

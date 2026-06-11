@@ -26,6 +26,8 @@ export interface Booking {
   status: "pending" | "completed" | "delivered";
 }
 
+export type PaymentMode = "gpay" | "cash" | "other";
+
 export interface Payment {
   id: string;
   bookingId: string;
@@ -33,6 +35,7 @@ export interface Payment {
   amount: number;
   date: string;
   note?: string;
+  mode?: PaymentMode;
 }
 
 export type CustomerKind = "client" | "artist";
@@ -57,6 +60,8 @@ export interface Settings {
   businessName: string;
   theme: ThemeName;
   logoDataUrl?: string;
+  defaultPaymentMode?: PaymentMode;
+  websiteUrl?: string;
 }
 
 interface State {
@@ -99,6 +104,8 @@ export const useStore = create<State>()(
         showPaymentOnCalendar: false,
         businessName: "Eyas Saree Drapist",
         theme: "maroon",
+        defaultPaymentMode: "gpay",
+        websiteUrl: "https://eyasdrapist.shop/",
       },
 
       addCustomer: (c) => {
