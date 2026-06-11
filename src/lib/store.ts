@@ -102,6 +102,7 @@ export const useStore = create<State>()(
       customers: [],
       bookings: [],
       payments: [],
+      trash: [],
       settings: {
         prepleatPrice: 350,
         drapePrice: 800,
