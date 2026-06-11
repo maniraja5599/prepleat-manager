@@ -41,8 +41,21 @@ function BookingDetail() {
   const sendWhatsApp = () => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${booking.deliveryTime}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
+    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${fmtTime12(booking.deliveryTime)}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  const addToGoogleCalendar = () => {
+    const [hh, mm] = (booking.deliveryTime || "10:00").split(":").map((x) => Number(x) || 0);
+    const start = new Date(booking.deliveryDate); start.setHours(hh, mm, 0, 0);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const fmt = (d: Date) =>
+      d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0") +
+      "T" + String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "00Z";
+    const text = encodeURIComponent(`${booking.service.toUpperCase()} · ${customer?.name ?? ""} (${businessName})`);
+    const details = encodeURIComponent(`${booking.sareeCount} saree(s) · ${fmtINR(booking.totalAmount)}\nPhone: ${customer?.phone ?? ""}\n${booking.notes ?? ""}`);
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&details=${details}`;
+    window.open(url, "_blank");
   };
 
   const handlePay = () => {
