@@ -199,6 +199,14 @@ function BookingDetail() {
               <button onClick={() => setPayAmt(String(due))} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Full ({fmtINR(due)})</button>
               <button onClick={() => setPayAmt("")} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Clear</button>
             </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
+                <button key={m} onClick={() => setPayMode(m)} className={cn("py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider",
+                  payMode === m ? "bg-primary text-primary-foreground" : "bg-secondary")}>{m}</button>
+              ))}
+            </div>
+            <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (optional)"
+              className="w-full mt-2 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
           </>
         )}
         {payments.length > 0 && (
