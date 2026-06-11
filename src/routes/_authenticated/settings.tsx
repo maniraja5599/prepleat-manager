@@ -288,20 +288,44 @@ function SettingsPage() {
               })}
             </div>
             <div className="mt-3 p-3 rounded-2xl border-2 border-dashed border-border">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold">Custom primary</p>
-                  <p className="text-[11px] text-muted-foreground">Pick any shade — applied live.</p>
-                </div>
-                <input
-                  type="color"
-                  value={settings.customPrimary || "#7a1f2a"}
-                  onChange={(e) => update({ theme: "custom", customPrimary: e.target.value })}
-                  className="size-10 rounded-full border-0 cursor-pointer bg-transparent"
-                />
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold">Build your own</p>
+                {settings.theme === "custom" && (
+                  <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Active</span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-3">Pick any colour — change saves and applies live.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: "primary", label: "Primary", def: "#7a1f2a" },
+                  { key: "accent", label: "Accent", def: "#e8c878" },
+                  { key: "background", label: "Background", def: "#fdf8ef" },
+                  { key: "card", label: "Card", def: "#ffffff" },
+                  { key: "foreground", label: "Text", def: "#3a1010" },
+                ] as const).map((c) => {
+                  const current = settings.customColors?.[c.key] || (c.key === "primary" ? settings.customPrimary : undefined) || c.def;
+                  return (
+                    <label key={c.key} className="flex items-center justify-between gap-2 px-3 py-2 bg-secondary rounded-xl cursor-pointer">
+                      <span className="text-xs font-medium">{c.label}</span>
+                      <input
+                        type="color"
+                        value={current}
+                        onChange={(e) => update({
+                          theme: "custom",
+                          customColors: { ...(settings.customColors ?? {}), [c.key]: e.target.value },
+                          ...(c.key === "primary" ? { customPrimary: e.target.value } : {}),
+                        })}
+                        className="size-7 rounded-full border-0 cursor-pointer bg-transparent"
+                      />
+                    </label>
+                  );
+                })}
               </div>
               {settings.theme === "custom" && (
-                <p className="text-[10px] uppercase tracking-wider text-primary font-semibold mt-2">Custom theme active</p>
+                <button
+                  onClick={() => update({ customColors: undefined, customPrimary: undefined, theme: "maroon" })}
+                  className="mt-3 text-[11px] text-muted-foreground underline"
+                >Reset custom theme</button>
               )}
             </div>
           </Section>
