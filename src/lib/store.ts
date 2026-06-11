@@ -59,9 +59,16 @@ export interface Settings {
   showPaymentOnCalendar: boolean;
   businessName: string;
   theme: ThemeName;
+  customPrimary?: string; // CSS color value used when theme = "custom"
   logoDataUrl?: string;
   defaultPaymentMode?: PaymentMode;
   websiteUrl?: string;
+}
+
+export interface DeletedBooking {
+  booking: Booking;
+  payments: Payment[];
+  deletedAt: string; // ISO
 }
 
 interface State {
