@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, type Measurement } from "@/lib/store";
+import { useStore, fmtINR, type Measurement, type ThemeName } from "@/lib/store";
 import { useState } from "react";
 import { IndianRupee, Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -81,6 +81,31 @@ function SettingsPage() {
             <Plus className="size-4"/> Add measurement
           </button>
         )}
+      </Section>
+
+      <Section title="Theme">
+        <p className="text-xs text-muted-foreground mb-3">Pick a colour palette for the app.</p>
+        <div className="grid grid-cols-2 gap-2">
+          {THEMES.map((t) => {
+            const active = settings.theme === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => { update({ theme: t.id }); toast.success(`${t.label} theme applied`); }}
+                className={`rounded-2xl p-3 text-left border-2 transition ${active ? "border-primary" : "border-transparent"}`}
+                style={{ background: t.bg, color: t.fg }}
+              >
+                <div className="flex gap-1 mb-2">
+                  <span className="size-4 rounded-full" style={{ background: t.primary }} />
+                  <span className="size-4 rounded-full" style={{ background: t.accent }} />
+                  <span className="size-4 rounded-full border" style={{ background: t.card, borderColor: t.border }} />
+                </div>
+                <p className="text-sm font-semibold">{t.label}</p>
+                {active && <p className="text-[10px] opacity-70 uppercase tracking-wider mt-0.5">Active</p>}
+              </button>
+            );
+          })}
+        </div>
       </Section>
 
       <Section title="Display">
