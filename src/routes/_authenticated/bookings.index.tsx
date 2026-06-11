@@ -185,17 +185,25 @@ function BookingsPage() {
           {list.map((b) => {
             const c = customers.find((x) => x.id === b.customerId);
             const due = totalDue(b);
+            const isArtist = c?.kind === "artist" || !!b.artistId;
             return (
               <li key={b.id}>
-                <Link to="/bookings/$id" params={{ id: b.id }} className="block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition">
+                <Link to="/bookings/$id" params={{ id: b.id }} className={cn(
+                  "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition",
+                  isArtist && "ring-1 ring-gold/40",
+                  b.status === "cancelled" && "opacity-60",
+                )}>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                         <span className={cn(
                           "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
                           b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
                         )}>{b.service}</span>
+                        {isArtist && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gold/20 text-[oklch(0.45_0.12_70)]">★ Artist</span>}
                         {b.status === "delivered" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Delivered</span>}
+                        {b.status === "cancelled" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">Cancelled</span>}
+                        {b.billNumber && <span className="text-[9px] font-mono text-muted-foreground/70 ml-auto">#{b.billNumber.split("-").pop()}</span>}
                       </div>
                       <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
                       <p className="text-xs text-muted-foreground truncate">
