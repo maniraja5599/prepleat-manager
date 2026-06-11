@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, AlertTriangle, Palette, CreditCard, Database, User, Ruler, Trash2, RotateCw } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
