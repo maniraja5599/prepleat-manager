@@ -2,23 +2,25 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
   component: SettingsPage,
 });
 
-type TabId = "brand" | "pricing" | "theme" | "data" | "account";
-const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
-  { id: "brand",   label: "Brand",   icon: Upload },
-  { id: "pricing", label: "Pricing", icon: IndianRupee },
-  { id: "theme",   label: "Theme",   icon: Palette },
-  { id: "data",    label: "Data",    icon: Database },
-  { id: "account", label: "Account", icon: User },
+type TabId = "brand" | "pricing" | "theme" | "data" | "activity" | "account";
+const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
+  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
+  { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
+  { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
+  { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
+  { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
+  { id: "account",  label: "Account",  hint: "Sign in & sync",       icon: User },
 ];
 
 const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: string; primary: string; accent: string; border: string }[] = [
