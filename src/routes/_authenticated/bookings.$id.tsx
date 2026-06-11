@@ -216,6 +216,13 @@ function BookingDetail() {
           <Check className="size-5" /> {booking.status === "delivered" ? "Reopen" : "Delivered"}
         </button>
       </div>
+
+      <button
+        onClick={addToGoogleCalendar}
+        className="w-full mt-2 bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
+      >
+        <CalendarPlus className="size-5" /> Add to Google Calendar
+      </button>
     </AppShell>
   );
 }
