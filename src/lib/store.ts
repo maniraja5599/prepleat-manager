@@ -268,9 +268,16 @@ export const useStore = create<State>()(
       addPayment: (p) =>
         set((s) => {
           const payment: Payment = { ...p, id: uid() };
-          const bookings = s.bookings.map((b) =>
-            b.id === p.bookingId ? { ...b, advancePaid: b.advancePaid + p.amount } : b,
-          );
+          const bookings = s.bookings.map((b) => {
+            if (b.id !== p.bookingId) return b;
+            const newPaid = b.advancePaid + p.amount;
+            const fullyPaid = newPaid >= b.totalAmount;
+            return {
+              ...b,
+              advancePaid: newPaid,
+              status: fullyPaid && b.status === "pending" ? "completed" : b.status,
+            };
+          });
           const entry: ActivityEntry = {
             id: uid(), ts: new Date().toISOString(), kind: "payment-add",
             bookingId: p.bookingId, summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
@@ -281,15 +288,23 @@ export const useStore = create<State>()(
         set((s) => {
           const pay = s.payments.find((p) => p.id === id);
           if (!pay) return s;
-          const bookings = s.bookings.map((b) =>
-            b.id === pay.bookingId ? { ...b, advancePaid: Math.max(0, b.advancePaid - pay.amount) } : b,
-          );
+          const bookings = s.bookings.map((b) => {
+            if (b.id !== pay.bookingId) return b;
+            const newPaid = Math.max(0, b.advancePaid - pay.amount);
+            const stillFullyPaid = newPaid >= b.totalAmount;
+            return {
+              ...b,
+              advancePaid: newPaid,
+              status: !stillFullyPaid && b.status === "completed" ? "pending" : b.status,
+            };
+          });
           const entry: ActivityEntry = {
             id: uid(), ts: new Date().toISOString(), kind: "payment-delete",
             bookingId: pay.bookingId, summary: `removed payment ₹${pay.amount}`,
           };
           return { payments: s.payments.filter((p) => p.id !== id), bookings, activity: [entry, ...s.activity].slice(0, 200) };
         }),
+
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
     }),

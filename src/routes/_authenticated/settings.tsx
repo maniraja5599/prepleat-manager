@@ -55,35 +55,22 @@ function SettingsPage() {
 
   return (
     <AppShell wide title="Settings" subtitle="Changes save instantly">
-      <div className="grid gap-4 sm:grid-cols-[200px_minmax(0,1fr)]">
-        {/* Left rail */}
-        <nav className="sm:sticky sm:top-2 self-start">
-          {/* Mobile: horizontal scroll pills */}
-          <div className="flex sm:hidden gap-1 overflow-x-auto no-scrollbar bg-secondary rounded-full p-1">
-            {TABS.map((t) => {
-              const active = tab === t.id;
-              const Icon = t.icon;
-              return (
-                <button key={t.id} onClick={() => setTab(t.id)}
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${active ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}>
-                  <Icon className="size-3.5" /> {t.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* Desktop/tablet: vertical compact list */}
-          <ul className="hidden sm:block bg-card card-shadow rounded-2xl p-2 space-y-0.5">
+      <div className="grid gap-3 grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
+        {/* Left rail — icon-only on mobile, full list on desktop */}
+        <nav className="sticky top-2 self-start">
+          <ul className="bg-card card-shadow rounded-2xl p-1.5 sm:p-2 space-y-1">
             {TABS.map((t) => {
               const active = tab === t.id;
               const Icon = t.icon;
               return (
                 <li key={t.id}>
                   <button onClick={() => setTab(t.id)}
-                    className={`w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition ${active ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
-                    <span className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-primary-foreground/15" : "bg-secondary"}`}>
+                    title={t.label}
+                    className={`w-full flex items-center gap-2.5 px-1.5 sm:px-2.5 py-2 rounded-xl transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-secondary text-foreground"}`}>
+                    <span className={`size-9 rounded-xl flex items-center justify-center shrink-0 mx-auto sm:mx-0 ${active ? "bg-primary-foreground/20" : "bg-primary/10 text-primary"}`}>
                       <Icon className="size-4" />
                     </span>
-                    <span className="min-w-0">
+                    <span className="hidden sm:block min-w-0 text-left">
                       <span className="block text-sm font-semibold leading-tight">{t.label}</span>
                       <span className={`block text-[10px] leading-tight ${active ? "opacity-80" : "text-muted-foreground"}`}>{t.hint}</span>
                     </span>
@@ -92,9 +79,13 @@ function SettingsPage() {
               );
             })}
           </ul>
+          <p className="sm:hidden mt-2 text-[10px] text-center font-semibold uppercase tracking-wider text-muted-foreground">
+            {TABS.find((t) => t.id === tab)?.label}
+          </p>
         </nav>
 
         <div className="min-w-0">
+
 
 
       {tab === "brand" && (

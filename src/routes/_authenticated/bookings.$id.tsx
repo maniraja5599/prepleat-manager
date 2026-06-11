@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType, type PaymentMode } from "@/lib/store";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, CalendarPlus, Receipt, Printer } from "lucide-react";
+import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, CalendarPlus, Receipt, Printer, IndianRupee } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,9 @@ function BookingDetail() {
   const allPayments = useStore((s) => s.payments);
   const booking = bookings.find((b) => b.id === id);
   const customer = booking ? customers.find((c) => c.id === booking.customerId) : undefined;
+  const artist = booking?.artistId ? customers.find((c) => c.id === booking.artistId) : undefined;
   const payments = allPayments.filter((p) => p.bookingId === id);
+
   const addPayment = useStore((s) => s.addPayment);
   const deletePayment = useStore((s) => s.deletePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
@@ -42,11 +44,28 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  const buildWhatsAppMessage = (kind: "reminder" | "bill") => {
+  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance") => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
     const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
+    if (kind === "balance") {
+      return [
+        `💛 *${businessName}*`,
+        ``,
+        `Hi ${customer?.name} 🙏`,
+        `A gentle reminder — your saree order has a remaining balance.`,
+        ``,
+        `🧾 *Total:* ${fmtINR(booking.totalAmount)}`,
+        `✅ *Paid:* ${fmtINR(paid)}`,
+        `💰 *Balance due:* ${fmtINR(due)}`,
+        ``,
+        `📅 Delivery: ${dateStr}, ${timeStr}`,
+        ``,
+        `You can pay via GPay / Cash on delivery. Thank you ✨`,
+        `🌐 ${site}`,
+      ].join("\n");
+    }
     const lines = [
       kind === "bill" ? `🧾 *${businessName}* — Bill` : `🧵 *${businessName}*`,
       ``,
@@ -68,13 +87,14 @@ function BookingDetail() {
     return lines.join("\n");
   };
 
-  const sendWhatsApp = (kind: "reminder" | "bill" = "reminder") => {
+
+  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
     const encoded = encodeURIComponent(buildWhatsAppMessage(kind));
-    // Direct same-tab redirect — wa.me deep-links to the app on mobile, web on desktop.
     window.location.href = `https://wa.me/${phone}?text=${encoded}`;
   };
+
 
   const addToGoogleCalendar = () => {
     const [hh, mm] = (booking.deliveryTime || "10:00").split(":").map((x) => Number(x) || 0);
@@ -172,6 +192,11 @@ function BookingDetail() {
         <h1 className="text-2xl font-display font-semibold mt-1 truncate">{customer?.name}</h1>
         <p className="text-sm opacity-90">{customer?.phone}</p>
         {customer?.address && <p className="text-xs opacity-80 mt-1 line-clamp-2">{customer.address}</p>}
+        {artist && (
+          <p className="text-[11px] mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15">
+            <span className="opacity-80">Artist:</span> <span className="font-semibold">{artist.name}</span>
+          </p>
+        )}
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="opacity-70 text-xs uppercase tracking-wider">Delivery</p>
@@ -185,6 +210,7 @@ function BookingDetail() {
           </div>
         </div>
       </div>
+
 
       {editing && (
         <EditPanel
@@ -279,14 +305,20 @@ function BookingDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
-          <MessageCircle className="size-5" /> Reminder
+      <div className={cn("grid gap-2 mt-4", due > 0 ? "grid-cols-3" : "grid-cols-2")}>
+        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
+          <MessageCircle className="size-4" /> Remind
         </button>
-        <button onClick={() => sendWhatsApp("bill")} className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
-          <Receipt className="size-5" /> Send bill
+        {due > 0 && (
+          <button onClick={() => sendWhatsApp("balance")} className="bg-destructive text-destructive-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
+            <IndianRupee className="size-4" /> Balance
+          </button>
+        )}
+        <button onClick={() => sendWhatsApp("bill")} className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
+          <Receipt className="size-4" /> Bill
         </button>
       </div>
+
       <button
         onClick={() => {
           updateBooking(booking.id, { status: booking.status === "delivered" ? "pending" : "delivered", completedAt: new Date().toISOString() });

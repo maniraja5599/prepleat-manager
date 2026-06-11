@@ -62,6 +62,45 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_requests: {
+        Row: {
+          created_at: string
+          delivery_date: string | null
+          delivery_time: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          saree_count: number
+          service: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string | null
+          delivery_time?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          saree_count?: number
+          service?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string | null
+          delivery_time?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          saree_count?: number
+          service?: string
+          status?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           advance_paid: number
