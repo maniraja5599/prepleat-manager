@@ -7,7 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/bookings/$id")({
+export const Route = createFileRoute("/_authenticated/bookings/$id")({
   component: BookingDetail,
 });
 

@@ -6,7 +6,7 @@ import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 
-export const Route = createFileRoute("/customers/$id")({
+export const Route = createFileRoute("/_authenticated/customers/$id")({
   component: CustomerDetail,
 });
 
