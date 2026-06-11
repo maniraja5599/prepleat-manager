@@ -127,10 +127,13 @@ function BookingDetail() {
           >{editing ? <X className="size-5" /> : <Pencil className="size-5" />}</button>
           <button
             onClick={() => {
-              if (confirm("Delete this booking permanently?")) {
-                deleteBooking(booking.id);
-                navigate({ to: "/bookings" });
-              }
+              const bid = booking.id;
+              deleteBooking(bid);
+              toast.success("Booking deleted", {
+                action: { label: "Undo", onClick: () => { restoreBooking(bid); toast.success("Restored"); } },
+                duration: 6000,
+              });
+              navigate({ to: "/bookings" });
             }}
             className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center"
           ><Trash2 className="size-5" /></button>
