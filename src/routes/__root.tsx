@@ -11,7 +11,9 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
+import logoAsset from "../assets/eyas-logo.png.asset.json";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ThemeApplier } from "../components/ThemeApplier";
 
 function NotFoundComponent() {
   return (
@@ -49,20 +51,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" },
-      { name: "theme-color", content: "#5a1f1f" },
-      { title: "Eyas Saree Studio — PrePleat & Drape" },
+      { name: "theme-color", content: "#1c0030" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "Eyas Drapist" },
+      { title: "Eyas Saree Drapist — PrePleat & Drape Manager" },
       { name: "description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
-      { property: "og:title", content: "Eyas Saree Studio — PrePleat & Drape" },
-      { name: "twitter:title", content: "Eyas Saree Studio — PrePleat & Drape" },
+      { property: "og:title", content: "Eyas Saree Drapist — PrePleat & Drape Manager" },
+      { name: "twitter:title", content: "Eyas Saree Drapist — PrePleat & Drape Manager" },
       { property: "og:description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
       { name: "twitter:description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/9e529723-01c2-4c70-be89-fe82efce22c0" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/9e529723-01c2-4c70-be89-fe82efce22c0" },
+      { property: "og:image", content: logoAsset.url },
+      { name: "twitter:image", content: logoAsset.url },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: logoAsset.url },
+      { rel: "apple-touch-icon", href: logoAsset.url },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" },
@@ -87,6 +93,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeApplier />
       <Outlet />
       <Toaster position="top-center" />
     </QueryClientProvider>

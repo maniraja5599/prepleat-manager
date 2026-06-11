@@ -254,3 +254,10 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+@layer base {
+  /* Keep focused inputs visible above the mobile keyboard */
+  input, textarea, select {
+    scroll-margin-block: 8rem;
+  }
+}

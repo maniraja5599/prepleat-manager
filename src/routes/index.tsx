@@ -5,14 +5,14 @@ import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
   format, isSameMonth, isSameDay, addMonths, subMonths, parseISO,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Calendar — Saree Studio" },
+      { title: "Calendar — Eyas Saree Drapist" },
       { name: "description", content: "Booking calendar for your PrePleat & Drape work." },
     ],
   }),
@@ -49,6 +49,7 @@ function CalendarPage() {
 
   return (
     <AppShell
+      showBrand
       title="Calendar"
       subtitle={format(cursor, "MMMM yyyy")}
       right={
@@ -121,12 +122,21 @@ function CalendarPage() {
       </div>
 
       <div className="mt-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-          {format(selected, "EEEE, MMM d")}
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+            {format(selected, "EEEE, MMM d")}
+          </h2>
+          <Link
+            to="/new"
+            search={{ date: format(selected, "yyyy-MM-dd") }}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full saree-gradient text-primary-foreground text-xs font-semibold shrink-0"
+          >
+            <Plus className="size-3.5" /> Book this date
+          </Link>
+        </div>
         {dayBookings.length === 0 ? (
           <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground">
-            No bookings on this day.
+            No bookings on this day. Tap “Book this date” to add one.
           </div>
         ) : (
           <ul className="space-y-2">
