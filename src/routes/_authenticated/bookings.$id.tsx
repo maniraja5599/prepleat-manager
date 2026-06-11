@@ -171,6 +171,7 @@ function BookingDetail() {
             </span>
           )}
         </div>
+        <h1 className="text-2xl font-display font-semibold mt-1 truncate">{customer?.name}</h1>
         <p className="text-sm opacity-90">{customer?.phone}</p>
         {customer?.address && <p className="text-xs opacity-80 mt-1 line-clamp-2">{customer.address}</p>}
         {artist && (
