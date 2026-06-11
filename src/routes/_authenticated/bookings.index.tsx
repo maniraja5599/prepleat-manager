@@ -4,7 +4,7 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee } from "lucide-react";
+import { Search, IndianRupee, SlidersHorizontal, X as XIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   head: () => ({
@@ -30,6 +30,10 @@ function BookingsPage() {
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const activeFilterCount =
+    (filter !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0) + (showCompleted ? 1 : 0);
 
   const dateBounds = useMemo<{ start?: Date; end?: Date }>(() => {
     const now = new Date();
@@ -78,70 +82,95 @@ function BookingsPage() {
 
   return (
     <AppShell title="Bookings" subtitle={`${list.length} shown · ${fmtINR(totalDueSum)} pending`}>
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by customer or phone"
-          className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-        />
+      <div className="flex gap-2 mb-3">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search customer or phone"
+            className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          className={cn(
+            "shrink-0 size-11 rounded-full flex items-center justify-center relative transition",
+            showFilters || activeFilterCount > 0 ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+          )}
+          aria-label="Filters"
+        >
+          <SlidersHorizontal className="size-4" />
+          {activeFilterCount > 0 && !showFilters && (
+            <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center">{activeFilterCount}</span>
+          )}
+        </button>
       </div>
 
-      <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar">
-        {(["all", "prepleat", "drape"] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition",
-              filter === f ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+      {showFilters && (
+        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Filters</p>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => { setFilter("all"); setRange("all"); setSort("delivery"); setShowCompleted(false); setFrom(""); setTo(""); }}
+                className="text-[11px] text-primary font-semibold flex items-center gap-1"
+              ><XIcon className="size-3" /> Clear all</button>
             )}
-          >{f}</button>
-        ))}
-      </div>
-
-      <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar">
-        {([
-          { id: "all" as Range, label: "All time" },
-          { id: "thisMonth" as Range, label: "This month" },
-          { id: "lastMonth" as Range, label: "Last month" },
-          { id: "custom" as Range, label: "Custom" },
-        ]).map((r) => (
-          <button
-            key={r.id}
-            onClick={() => setRange(r.id)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition border",
-              range === r.id ? "bg-accent text-accent-foreground border-accent" : "border-border text-muted-foreground",
-            )}
-          >{r.label}</button>
-        ))}
-      </div>
-
-      {range === "custom" && (
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {(["all", "prepleat", "drape"] as Filter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap transition",
+                  filter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground",
+                )}
+              >{f}</button>
+            ))}
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {([
+              { id: "all" as Range, label: "All time" },
+              { id: "thisMonth" as Range, label: "This month" },
+              { id: "lastMonth" as Range, label: "Last month" },
+              { id: "custom" as Range, label: "Custom" },
+            ]).map((r) => (
+              <button
+                key={r.id}
+                onClick={() => setRange(r.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition",
+                  range === r.id ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground",
+                )}
+              >{r.label}</button>
+            ))}
+          </div>
+          {range === "custom" && (
+            <div className="grid grid-cols-2 gap-2">
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+          )}
+          <div className="flex gap-1.5 items-center overflow-x-auto no-scrollbar">
+            {(["delivery", "recent", "due"] as Sort[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSort(s)}
+                className={cn(
+                  "px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition",
+                  sort === s ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground",
+                )}
+              >Sort: {s}</button>
+            ))}
+            <label className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground whitespace-nowrap">
+              <input type="checkbox" checked={showCompleted} onChange={(e) => setShowCompleted(e.target.checked)} className="accent-primary" />
+              Delivered
+            </label>
+          </div>
         </div>
       )}
-
-      <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
-        {(["delivery", "recent", "due"] as Sort[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSort(s)}
-            className={cn(
-              "px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition",
-              sort === s ? "bg-primary/10 text-primary" : "text-muted-foreground",
-            )}
-          >Sort: {s}</button>
-        ))}
-        <label className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground whitespace-nowrap">
-          <input type="checkbox" checked={showCompleted} onChange={(e) => setShowCompleted(e.target.checked)} className="accent-primary" />
-          Delivered
-        </label>
-      </div>
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
