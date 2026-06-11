@@ -195,6 +195,15 @@ export const useStore = create<State>()(
 export const fmtINR = (n: number) =>
   "₹" + Math.round(n).toLocaleString("en-IN");
 
+export const fmtTime12 = (hhmm: string) => {
+  const [hStr, mStr] = (hhmm || "00:00").split(":");
+  const h = Number(hStr) || 0;
+  const m = Number(mStr) || 0;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+};
+
 export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - b.advancePaid);
 
 export const customerBookings = (cid: string, bookings: Booking[]) =>
@@ -205,4 +214,9 @@ export const lastPriceFor = (cid: string, service: ServiceType, bookings: Bookin
     .filter((b) => b.customerId === cid && b.service === service)
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   return past[0]?.pricePerSaree;
+};
+
+export const bookingsOnDate = (isoDate: string, bookings: Booking[]) => {
+  const ymd = isoDate.slice(0, 10);
+  return bookings.filter((b) => b.deliveryDate.slice(0, 10) === ymd);
 };
