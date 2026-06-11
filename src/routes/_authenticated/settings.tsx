@@ -377,12 +377,18 @@ function SettingsPage() {
         </>
       )}
 
+      {tab === "activity" && (
+        <ActivityBlock />
+      )}
+
       {tab === "account" && (
         <Section title="Account">
           <AccountBlock />
         </Section>
       )}
 
+        </div>
+      </div>
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>
