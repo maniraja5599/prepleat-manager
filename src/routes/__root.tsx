@@ -12,7 +12,6 @@ import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { ThemeApplier } from "@/components/ThemeApplier";
 
 function NotFoundComponent() {
   return (
@@ -51,8 +50,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" },
       { name: "theme-color", content: "#5a1f1f" },
-      { title: "Saree Studio — PrePleat & Drape" },
+      { title: "Eyas Saree Studio — PrePleat & Drape" },
       { name: "description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
+      { property: "og:title", content: "Eyas Saree Studio — PrePleat & Drape" },
+      { name: "twitter:title", content: "Eyas Saree Studio — PrePleat & Drape" },
+      { property: "og:description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
+      { name: "twitter:description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/9e529723-01c2-4c70-be89-fe82efce22c0" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/9e529723-01c2-4c70-be89-fe82efce22c0" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -80,7 +87,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeApplier />
       <Outlet />
       <Toaster position="top-center" />
     </QueryClientProvider>
