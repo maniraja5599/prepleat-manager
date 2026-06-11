@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, type Measurement, type ThemeName } from "@/lib/store";
+import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, AlertTriangle } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, AlertTriangle, Palette, CreditCard, Database, User, Ruler, Trash2, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
@@ -11,6 +11,15 @@ export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
   component: SettingsPage,
 });
+
+type TabId = "brand" | "pricing" | "theme" | "data" | "account";
+const TABS: { id: TabId; label: string; icon: typeof Palette }[] = [
+  { id: "brand",   label: "Brand",   icon: Upload },
+  { id: "pricing", label: "Pricing", icon: IndianRupee },
+  { id: "theme",   label: "Theme",   icon: Palette },
+  { id: "data",    label: "Data",    icon: Database },
+  { id: "account", label: "Account", icon: User },
+];
 
 const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: string; primary: string; accent: string; border: string }[] = [
   { id: "maroon",   label: "Maroon Ivory", bg: "#fdf8ef", fg: "#3a1010", card: "#ffffff", primary: "#7a1f2a", accent: "#e8c878", border: "#e7dccb" },
