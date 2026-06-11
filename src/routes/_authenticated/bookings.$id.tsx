@@ -23,6 +23,7 @@ function BookingDetail() {
   const addPayment = useStore((s) => s.addPayment);
   const deletePayment = useStore((s) => s.deletePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
+  const restoreBooking = useStore((s) => s.restoreBooking);
   const updateBooking = useStore((s) => s.updateBooking);
   const settings = useStore((s) => s.settings);
   const businessName = settings.businessName;
