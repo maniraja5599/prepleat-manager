@@ -77,6 +77,7 @@ function CalendarPage() {
 
   // Swipe between months
   const touchX = useRef<number | null>(null);
+  const dayTouchX = useRef<number | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchX.current == null) return;
