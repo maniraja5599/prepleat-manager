@@ -338,4 +338,4 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
       </Link>
     </li>
   );
-}
+});
