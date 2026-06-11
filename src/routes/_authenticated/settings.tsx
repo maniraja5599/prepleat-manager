@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type Measurement, type ThemeName } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
@@ -220,6 +220,68 @@ function SettingsPage() {
           {customers.length} customers · {bookings.length} bookings · {fmtINR(bookings.reduce((s,b)=>s+b.totalAmount,0))} lifetime
         </p>
         <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1"><Cloud className="size-3" /> Auto-syncs to your account.</p>
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          <button
+            onClick={() => {
+              const data = { exportedAt: new Date().toISOString(), customers, bookings, payments: useStore.getState().payments, settings };
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url;
+              a.download = `eyas-backup-${new Date().toISOString().slice(0,10)}.json`;
+              a.click(); URL.revokeObjectURL(url);
+              toast.success("Backup downloaded");
+            }}
+            className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
+          ><Download className="size-3.5" /> Export JSON</button>
+          <button
+            onClick={() => {
+              const rows = [["Date","Time","Customer","Phone","Service","Sarees","Total","Paid","Due","Status"]];
+              for (const b of bookings) {
+                const c = customers.find((x) => x.id === b.customerId);
+                rows.push([b.deliveryDate.slice(0,10), b.deliveryTime, c?.name ?? "", c?.phone ?? "", b.service, String(b.sareeCount), String(b.totalAmount), String(b.advancePaid), String(Math.max(0,b.totalAmount-b.advancePaid)), b.status]);
+              }
+              const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url;
+              a.download = `eyas-bookings-${new Date().toISOString().slice(0,10)}.csv`;
+              a.click(); URL.revokeObjectURL(url);
+              toast.success("CSV exported");
+            }}
+            className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
+          ><Download className="size-3.5" /> Export CSV</button>
+        </div>
+      </Section>
+
+      <Section title="Reset & Danger Zone">
+        <div className="space-y-2">
+          <button
+            onClick={() => {
+              update({ theme: "maroon", customPrimary: undefined });
+              toast.success("Theme reset");
+            }}
+            className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
+          ><RotateCcw className="size-3.5" /> Reset theme</button>
+          <button
+            onClick={() => {
+              update({
+                prepleatPrice: 350, drapePrice: 800,
+                defaultMeasurements: [{ label: "P", value: 40 }, { label: "W", value: 32 }, { label: "H", value: 38 }],
+                defaultPaymentMode: "gpay",
+              });
+              toast.success("Defaults restored");
+            }}
+            className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
+          ><RotateCcw className="size-3.5" /> Reset pricing & measurements</button>
+          <button
+            onClick={() => {
+              if (!confirm("Delete ALL local bookings, customers and payments? This cannot be undone.")) return;
+              useStore.setState({ bookings: [], customers: [], payments: [], trash: [] });
+              toast.success("All data cleared");
+            }}
+            className="w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5"
+          ><AlertTriangle className="size-3.5" /> Clear all data</button>
+        </div>
       </Section>
 
       <Section title="Account">
