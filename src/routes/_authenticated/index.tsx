@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { GrowthDashboard } from "@/components/GrowthDashboard";
 import { useStore, totalDue, fmtINR, fmtTime12 } from "@/lib/store";
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/")({
 type View = "calendar" | "upcoming";
 
 function CalendarPage() {
+  const navigate = useNavigate();
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date>(new Date());
   const [view, setView] = useState<View>("calendar");
@@ -153,6 +154,7 @@ function CalendarPage() {
                 <button
                   key={key}
                   onClick={() => setSelected(d)}
+                  onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
                   onTouchStart={() => startPress(key)}
                   onTouchEnd={cancelPress}
                   onTouchMove={cancelPress}
@@ -191,7 +193,7 @@ function CalendarPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Swipe ←/→ to change month · long-press a date to peek</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Swipe ←/→ change month · long-press peek · double-tap to book</p>
 
           <div className="mt-5">
             <div className="flex items-center justify-between mb-2">
@@ -218,6 +220,22 @@ function CalendarPage() {
               </ul>
             )}
           </div>
+
+          {monthEvents.length > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                  {format(cursor, "MMMM")} · {monthEvents.length} event{monthEvents.length > 1 ? "s" : ""}
+                </h2>
+                <span className="text-[11px] text-muted-foreground tabular-nums">{fmtINR(monthEvents.reduce((s, b) => s + b.totalAmount, 0))}</span>
+              </div>
+              <ul className="space-y-2">
+                {monthEvents.map((b) => (
+                  <BookingRow key={b.id} b={b} customers={customers} showDate />
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       ) : (
         <div>
