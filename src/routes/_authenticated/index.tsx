@@ -303,7 +303,7 @@ function CalendarPage() {
   );
 }
 
-function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
+const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
   const c = customers.find((x) => x.id === b.customerId);
   const due = totalDue(b);
   return (
