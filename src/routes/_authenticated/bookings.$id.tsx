@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR, type ServiceType } from "@/lib/store";
+import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/store";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X } from "lucide-react";
+import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -41,8 +41,21 @@ function BookingDetail() {
   const sendWhatsApp = () => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${booking.deliveryTime}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
+    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${fmtTime12(booking.deliveryTime)}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  const addToGoogleCalendar = () => {
+    const [hh, mm] = (booking.deliveryTime || "10:00").split(":").map((x) => Number(x) || 0);
+    const start = new Date(booking.deliveryDate); start.setHours(hh, mm, 0, 0);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const fmt = (d: Date) =>
+      d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0") +
+      "T" + String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "00Z";
+    const text = encodeURIComponent(`${booking.service.toUpperCase()} · ${customer?.name ?? ""} (${businessName})`);
+    const details = encodeURIComponent(`${booking.sareeCount} saree(s) · ${fmtINR(booking.totalAmount)}\nPhone: ${customer?.phone ?? ""}\n${booking.notes ?? ""}`);
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&details=${details}`;
+    window.open(url, "_blank");
   };
 
   const handlePay = () => {
@@ -93,7 +106,7 @@ function BookingDetail() {
           <div>
             <p className="opacity-70 text-xs uppercase tracking-wider">Delivery</p>
             <p className="font-semibold">{format(parseISO(booking.deliveryDate), "EEE, MMM d")}</p>
-            <p>{booking.deliveryTime}</p>
+            <p>{fmtTime12(booking.deliveryTime)}</p>
           </div>
           <div>
             <p className="opacity-70 text-xs uppercase tracking-wider">Sarees</p>
@@ -203,6 +216,13 @@ function BookingDetail() {
           <Check className="size-5" /> {booking.status === "delivered" ? "Reopen" : "Delivered"}
         </button>
       </div>
+
+      <button
+        onClick={addToGoogleCalendar}
+        className="w-full mt-2 bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
+      >
+        <CalendarPlus className="size-5" /> Add to Google Calendar
+      </button>
     </AppShell>
   );
 }

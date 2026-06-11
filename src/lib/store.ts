@@ -11,6 +11,7 @@ export interface Measurement {
 export interface Booking {
   id: string;
   customerId: string;
+  artistId?: string;
   service: ServiceType;
   sareeCount: number;
   pricePerSaree: number;
@@ -34,8 +35,11 @@ export interface Payment {
   note?: string;
 }
 
+export type CustomerKind = "client" | "artist";
+
 export interface Customer {
   id: string;
+  kind: CustomerKind;
   name: string;
   phone: string; // for whatsapp
   address?: string;
@@ -162,11 +166,10 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 2,
+      version: 3,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
-        // Update legacy defaults
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
         if (s.prepleatPrice === 150) s.prepleatPrice = 350;
         if (s.drapePrice === 300) s.drapePrice = 800;
@@ -179,6 +182,9 @@ export const useStore = create<State>()(
           ];
         }
         persisted.settings = s;
+        if (Array.isArray(persisted.customers)) {
+          persisted.customers = persisted.customers.map((c: any) => ({ kind: c.kind ?? "client", ...c }));
+        }
         return persisted;
       },
     },
@@ -188,6 +194,15 @@ export const useStore = create<State>()(
 // helpers
 export const fmtINR = (n: number) =>
   "₹" + Math.round(n).toLocaleString("en-IN");
+
+export const fmtTime12 = (hhmm: string) => {
+  const [hStr, mStr] = (hhmm || "00:00").split(":");
+  const h = Number(hStr) || 0;
+  const m = Number(mStr) || 0;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+};
 
 export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - b.advancePaid);
 
@@ -199,4 +214,9 @@ export const lastPriceFor = (cid: string, service: ServiceType, bookings: Bookin
     .filter((b) => b.customerId === cid && b.service === service)
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   return past[0]?.pricePerSaree;
+};
+
+export const bookingsOnDate = (isoDate: string, bookings: Booking[]) => {
+  const ymd = isoDate.slice(0, 10);
+  return bookings.filter((b) => b.deliveryDate.slice(0, 10) === ymd);
 };

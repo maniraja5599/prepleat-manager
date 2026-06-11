@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, lastPriceFor, fmtINR, type ServiceType, type Measurement } from "@/lib/store";
+import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, ChevronDown, ChevronUp, IndianRupee, User, Phone, MapPin, Plus, Minus } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronUp, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -26,11 +26,15 @@ function NewBooking() {
   const navigate = useNavigate();
   const { date: presetDate } = Route.useSearch();
   const settings = useStore((s) => s.settings);
-  const customers = useStore((s) => s.customers);
+  const allCustomers = useStore((s) => s.customers);
+  const customers = useMemo(() => allCustomers.filter((c) => (c.kind ?? "client") === "client"), [allCustomers]);
+  const artists = useMemo(() => allCustomers.filter((c) => c.kind === "artist"), [allCustomers]);
   const bookings = useStore((s) => s.bookings);
   const addCustomer = useStore((s) => s.addCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
   const addBooking = useStore((s) => s.addBooking);
+
+  const [artistId, setArtistId] = useState<string>("");
 
   const [service, setService] = useState<ServiceType>("prepleat");
   const [customerId, setCustomerId] = useState<string>("");
@@ -99,7 +103,7 @@ function NewBooking() {
   const confirmSave = () => {
     let cid = customerId;
     if (!cid) {
-      const c = addCustomer({ name: newName.trim(), phone: newPhone.trim(), address: newAddress.trim() || undefined });
+      const c = addCustomer({ kind: "client", name: newName.trim(), phone: newPhone.trim(), address: newAddress.trim() || undefined });
       cid = c.id;
     } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
       updateCustomer(cid, { address: newAddress.trim() });
@@ -107,6 +111,7 @@ function NewBooking() {
 
     const b = addBooking({
       customerId: cid,
+      artistId: artistId || undefined,
       service,
       sareeCount,
       pricePerSaree: effPrice,
@@ -293,7 +298,48 @@ function NewBooking() {
           <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           <input type="time" step={900} value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
+        <p className="text-[11px] text-muted-foreground mt-1.5 text-right">{fmtTime12(deliveryTime)}</p>
+        {(() => {
+          const same = bookingsOnDate(new Date(deliveryDate).toISOString(), bookings);
+          if (same.length === 0) return null;
+          const totalSarees = same.reduce((s, b) => s + b.sareeCount, 0);
+          return (
+            <div className="mt-2 flex items-start gap-2 rounded-xl bg-gold/10 px-3 py-2 text-[11px]">
+              <AlertTriangle className="size-3.5 text-gold shrink-0 mt-0.5" />
+              <span className="text-foreground/80">
+                <span className="font-semibold text-gold">{same.length} booking{same.length > 1 ? "s" : ""}</span> already on this date · {totalSarees} saree{totalSarees > 1 ? "s" : ""}. Sure?
+              </span>
+            </div>
+          );
+        })()}
       </section>
+
+      {/* Artist (optional) */}
+      {artists.length > 0 && (
+        <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="size-3.5" /> Artist (optional)
+            </p>
+            {artistId && (
+              <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
+            )}
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+            {artists.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => setArtistId(artistId === a.id ? "" : a.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition shrink-0",
+                  artistId === a.id ? "saree-gradient text-primary-foreground" : "bg-secondary text-muted-foreground",
+                )}
+              >{a.name}</button>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {/* Advance */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
@@ -368,7 +414,8 @@ function NewBooking() {
             <ReviewRow label="Service" value={service === "prepleat" ? "PrePleat" : "Drape"} />
             <ReviewRow label="Customer" value={selectedCust?.name || newName} />
             <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
-            <ReviewRow label="Delivery" value={`${format(new Date(deliveryDate), "EEE, MMM d")} · ${deliveryTime}`} />
+            <ReviewRow label="Delivery" value={`${format(new Date(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`} />
+            {artistId && <ReviewRow label="Artist" value={artists.find((a) => a.id === artistId)?.name ?? ""} />}
             <ReviewRow label="Total" value={fmtINR(total)} bold />
             <ReviewRow label="Advance" value={fmtINR(advNum)} />
             <ReviewRow label="Remaining" value={fmtINR(remaining)} />
