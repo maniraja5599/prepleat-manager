@@ -166,7 +166,7 @@ function BookingsPage() {
                       </div>
                       <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {b.deliveryTime} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+                        {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
