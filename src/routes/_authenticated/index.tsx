@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { GrowthDashboard } from "@/components/GrowthDashboard";
 import { useStore, totalDue, fmtINR, fmtTime12 } from "@/lib/store";
 import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
