@@ -419,6 +419,17 @@ function NewBooking() {
             <ReviewRow label="Total" value={fmtINR(total)} bold />
             <ReviewRow label="Advance" value={fmtINR(advNum)} />
             <ReviewRow label="Remaining" value={fmtINR(remaining)} />
+            {showMeasure && measurements.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Measurements (inch)</p>
+                <div className="flex gap-3 flex-wrap">
+                  {measurements.map((m) => (
+                    <span key={m.label} className="text-xs"><span className="text-muted-foreground">{m.label}</span> <span className="font-bold tabular-nums">{m.value}″</span></span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2 mt-4">
               <button onClick={() => setReviewOpen(false)} className="py-3 rounded-2xl bg-secondary text-sm font-semibold">Edit</button>
               <button onClick={() => { setReviewOpen(false); confirmSave(); }} className="py-3 rounded-2xl saree-gradient text-primary-foreground text-sm font-semibold">Confirm & Save</button>
