@@ -6,7 +6,7 @@ import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
   format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, Users, Wallet, X } from "lucide-react";
 import { memo, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -122,6 +122,45 @@ function CalendarPage() {
       }
     >
       <GrowthDashboard />
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        <Link
+          to="/new"
+          search={{ date: format(selected, "yyyy-MM-dd") }}
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
+            <Plus className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">New</span>
+        </Link>
+        <button
+          onClick={() => { setCursor(new Date()); setSelected(new Date()); setView("calendar"); }}
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <CalendarDays className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Today</span>
+        </button>
+        <Link
+          to="/customers"
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Users className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Customers</span>
+        </Link>
+        <Link
+          to="/bookings"
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Wallet className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Payments</span>
+        </Link>
+      </div>
       {view === "calendar" ? (
         <>
           <div className="flex items-center justify-between mb-3">

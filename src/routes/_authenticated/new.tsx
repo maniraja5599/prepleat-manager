@@ -3,10 +3,11 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, ChevronDown, ChevronUp, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowLeft, Check, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
+import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
+import { HorizontalPicker } from "@/components/HorizontalPicker";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -294,11 +295,44 @@ function NewBooking() {
       {/* Delivery */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Delivery</p>
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-          <input type="time" step={900} value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <HorizontalPicker
+          label="Date · swipe ← →"
+          itemWidth={72}
+          value={deliveryDate}
+          onChange={setDeliveryDate}
+          items={(() => {
+            const base = new Date(); base.setHours(0, 0, 0, 0);
+            const start = addDays(base, -7);
+            return Array.from({ length: 90 }, (_, i) => {
+              const d = addDays(start, i);
+              const key = format(d, "yyyy-MM-dd");
+              return {
+                key,
+                primary: format(d, "d"),
+                secondary: format(d, "EEE"),
+              };
+            });
+          })()}
+        />
+        <div className="mt-3">
+          <HorizontalPicker
+            label="Time · 15-min steps"
+            itemWidth={86}
+            value={deliveryTime}
+            onChange={setDeliveryTime}
+            items={Array.from({ length: 24 * 4 }, (_, i) => {
+              const h = Math.floor(i / 4);
+              const m = (i % 4) * 15;
+              const key = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+              const hr12 = ((h + 11) % 12) + 1;
+              const ampm = h < 12 ? "AM" : "PM";
+              return { key, primary: `${hr12}:${String(m).padStart(2, "0")}`, secondary: ampm };
+            })}
+          />
         </div>
-        <p className="text-[11px] text-muted-foreground mt-1.5 text-right">{fmtTime12(deliveryTime)}</p>
+        <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
+          {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
+        </p>
         {(() => {
           const same = bookingsOnDate(new Date(deliveryDate).toISOString(), bookings);
           if (same.length === 0) return null;
@@ -374,19 +408,48 @@ function NewBooking() {
         {advNum > total && <p className="text-xs text-destructive mt-2">Cannot exceed total {fmtINR(total)}</p>}
       </section>
 
-      <CollapsibleSection icon="📐" label="Measurements" open={showMeasure} onToggle={() => setShowMeasure(!showMeasure)}>
-        <div className="flex justify-around items-start py-2 gap-2 flex-wrap">
-          {measurements.map((m, i) => (
-            <ScrollNumber
-              key={i}
-              label={m.label}
-              value={m.value}
-              onChange={(v) => setMeasurements(measurements.map((x, j) => i === j ? { ...x, value: v } : x))}
+      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <span>📐</span>Measurements
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showMeasure}
+            onClick={() => setShowMeasure(!showMeasure)}
+            className={cn(
+              "relative inline-flex h-7 w-12 items-center rounded-full transition",
+              showMeasure ? "saree-gradient" : "bg-secondary",
+            )}
+          >
+            <span
+              className={cn(
+                "inline-block size-5 rounded-full bg-card shadow transition-transform",
+                showMeasure ? "translate-x-6" : "translate-x-1",
+              )}
             />
-          ))}
+            <span className="sr-only">Toggle measurements</span>
+          </button>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-1">Scroll inside each picker · all in inches</p>
-      </CollapsibleSection>
+        {showMeasure ? (
+          <>
+            <div className="flex justify-around items-start py-3 gap-2 flex-wrap mt-2 border-t border-border">
+              {measurements.map((m, i) => (
+                <ScrollNumber
+                  key={i}
+                  label={m.label}
+                  value={m.value}
+                  onChange={(v) => setMeasurements(measurements.map((x, j) => i === j ? { ...x, value: v } : x))}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Scroll inside each picker · all in inches</p>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-2">Turn on to record blouse measurements for this customer.</p>
+        )}
+      </section>
 
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Notes</p>
@@ -463,17 +526,5 @@ function ReviewRow({ label, value, bold }: { label: string; value: string; bold?
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className={cn("text-sm tabular-nums", bold && "font-bold text-primary text-base")}>{value}</span>
     </div>
-  );
-}
-
-function CollapsibleSection({ icon, label, open, onToggle, children }: { icon: string; label: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
-  return (
-    <section className="bg-card card-shadow rounded-2xl mb-3 overflow-hidden">
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 active:bg-secondary/50">
-        <span className="flex items-center gap-2 text-sm font-semibold"><span>{icon}</span>{label}</span>
-        {open ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
-      </button>
-      {open && <div className="px-4 pb-4 pt-1">{children}</div>}
-    </section>
   );
 }
