@@ -166,11 +166,10 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 2,
+      version: 3,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
-        // Update legacy defaults
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
         if (s.prepleatPrice === 150) s.prepleatPrice = 350;
         if (s.drapePrice === 300) s.drapePrice = 800;
@@ -183,6 +182,9 @@ export const useStore = create<State>()(
           ];
         }
         persisted.settings = s;
+        if (Array.isArray(persisted.customers)) {
+          persisted.customers = persisted.customers.map((c: any) => ({ kind: c.kind ?? "client", ...c }));
+        }
         return persisted;
       },
     },
