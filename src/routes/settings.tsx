@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, type Measurement } from "@/lib/store";
+import { useStore, fmtINR, type Measurement, type ThemeName } from "@/lib/store";
 import { useState } from "react";
 import { IndianRupee, Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,16 @@ export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Saree Studio" }] }),
   component: SettingsPage,
 });
+
+const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: string; primary: string; accent: string; border: string }[] = [
+  { id: "maroon",   label: "Maroon Ivory", bg: "#fdf8ef", fg: "#3a1010", card: "#ffffff", primary: "#7a1f2a", accent: "#e8c878", border: "#e7dccb" },
+  { id: "midnight", label: "Midnight",     bg: "#1a1014", fg: "#f5ecd9", card: "#2a1c20", primary: "#c5483f", accent: "#5a3a35", border: "#3a2c30" },
+  { id: "emerald",  label: "Emerald",      bg: "#eef7f1", fg: "#102a1c", card: "#ffffff", primary: "#1f6b4a", accent: "#bfe3cc", border: "#d4e7da" },
+  { id: "royal",    label: "Royal Violet", bg: "#f0eefa", fg: "#1c1340", card: "#ffffff", primary: "#5b3fc8", accent: "#cfc5f0", border: "#dcd5ee" },
+  { id: "rose",     label: "Rose Pink",    bg: "#fdeef3", fg: "#3a1024", card: "#ffffff", primary: "#c9457e", accent: "#f4c4d6", border: "#eed4dd" },
+  { id: "sand",     label: "Sand Desert",  bg: "#f5ecd9", fg: "#3a2614", card: "#fdf6e8", primary: "#8a5a2a", accent: "#dcc299", border: "#dcc8a8" },
+  { id: "charcoal", label: "Charcoal Gold",bg: "#1c1c1c", fg: "#f5f5f5", card: "#2a2a2a", primary: "#d4a24e", accent: "#3a342a", border: "#3a3a3a" },
+];
 
 function SettingsPage() {
   const settings = useStore((s) => s.settings);
@@ -81,6 +91,31 @@ function SettingsPage() {
             <Plus className="size-4"/> Add measurement
           </button>
         )}
+      </Section>
+
+      <Section title="Theme">
+        <p className="text-xs text-muted-foreground mb-3">Pick a colour palette for the app.</p>
+        <div className="grid grid-cols-2 gap-2">
+          {THEMES.map((t) => {
+            const active = settings.theme === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => { update({ theme: t.id }); toast.success(`${t.label} theme applied`); }}
+                className={`rounded-2xl p-3 text-left border-2 transition ${active ? "border-primary" : "border-transparent"}`}
+                style={{ background: t.bg, color: t.fg }}
+              >
+                <div className="flex gap-1 mb-2">
+                  <span className="size-4 rounded-full" style={{ background: t.primary }} />
+                  <span className="size-4 rounded-full" style={{ background: t.accent }} />
+                  <span className="size-4 rounded-full border" style={{ background: t.card, borderColor: t.border }} />
+                </div>
+                <p className="text-sm font-semibold">{t.label}</p>
+                {active && <p className="text-[10px] opacity-70 uppercase tracking-wider mt-0.5">Active</p>}
+              </button>
+            );
+          })}
+        </div>
       </Section>
 
       <Section title="Display">
