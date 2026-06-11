@@ -11,6 +11,7 @@ export interface Measurement {
 export interface Booking {
   id: string;
   customerId: string;
+  artistId?: string;
   service: ServiceType;
   sareeCount: number;
   pricePerSaree: number;
@@ -34,8 +35,11 @@ export interface Payment {
   note?: string;
 }
 
+export type CustomerKind = "client" | "artist";
+
 export interface Customer {
   id: string;
+  kind: CustomerKind;
   name: string;
   phone: string; // for whatsapp
   address?: string;
