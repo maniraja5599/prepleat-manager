@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR } from "@/lib/store";
+import { useStore, totalDue, fmtINR, type ServiceType } from "@/lib/store";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Trash2, MessageCircle, Plus, Check } from "lucide-react";
+import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -21,10 +21,12 @@ function BookingDetail() {
   const customer = booking ? customers.find((c) => c.id === booking.customerId) : undefined;
   const payments = allPayments.filter((p) => p.bookingId === id);
   const addPayment = useStore((s) => s.addPayment);
+  const deletePayment = useStore((s) => s.deletePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const updateBooking = useStore((s) => s.updateBooking);
   const businessName = useStore((s) => s.settings.businessName);
   const [payAmt, setPayAmt] = useState("");
+  const [editing, setEditing] = useState(false);
 
   if (!booking) {
     return (
@@ -39,13 +41,17 @@ function BookingDetail() {
   const sendWhatsApp = () => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = `Hi ${customer.name}, this is a friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${booking.deliveryTime}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
+    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${booking.deliveryTime}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   const handlePay = () => {
     const n = Number(payAmt);
     if (!n || n <= 0) return toast.error("Enter a valid amount");
+    if (n > due) {
+      const ok = window.confirm(`Amount ${fmtINR(n)} exceeds pending ${fmtINR(due)}. Continue anyway?`);
+      if (!ok) return;
+    }
     addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: new Date().toISOString() });
     setPayAmt("");
     toast.success(`Payment of ${fmtINR(n)} added`);
@@ -57,23 +63,32 @@ function BookingDetail() {
         <button onClick={() => navigate({ to: "/bookings" })} className="size-10 rounded-full bg-secondary flex items-center justify-center">
           <ArrowLeft className="size-5" />
         </button>
-        <button
-          onClick={() => {
-            if (confirm("Delete this booking?")) {
-              deleteBooking(booking.id);
-              navigate({ to: "/bookings" });
-            }
-          }}
-          className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center"
-        >
-          <Trash2 className="size-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setEditing((v) => !v)}
+            className={cn(
+              "size-10 rounded-full flex items-center justify-center",
+              editing ? "bg-primary text-primary-foreground" : "bg-secondary",
+            )}
+            aria-label="Edit"
+          >{editing ? <X className="size-5" /> : <Pencil className="size-5" />}</button>
+          <button
+            onClick={() => {
+              if (confirm("Delete this booking permanently?")) {
+                deleteBooking(booking.id);
+                navigate({ to: "/bookings" });
+              }
+            }}
+            className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center"
+          ><Trash2 className="size-5" /></button>
+        </div>
       </div>
 
       <div className="saree-gradient rounded-3xl p-5 text-primary-foreground card-shadow">
         <p className="text-xs uppercase tracking-wider opacity-80">{booking.service}</p>
-        <h1 className="text-2xl font-display font-semibold mt-1">{customer?.name}</h1>
+        <h1 className="text-2xl font-display font-semibold mt-1 truncate">{customer?.name}</h1>
         <p className="text-sm opacity-90">{customer?.phone}</p>
+        {customer?.address && <p className="text-xs opacity-80 mt-1 line-clamp-2">{customer.address}</p>}
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="opacity-70 text-xs uppercase tracking-wider">Delivery</p>
@@ -87,6 +102,18 @@ function BookingDetail() {
           </div>
         </div>
       </div>
+
+      {editing && (
+        <EditPanel
+          booking={booking}
+          onSave={(patch) => {
+            const total = patch.sareeCount * patch.pricePerSaree;
+            updateBooking(booking.id, { ...patch, totalAmount: total });
+            toast.success("Booking updated");
+            setEditing(false);
+          }}
+        />
+      )}
 
       <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
         <div className="flex items-baseline justify-between">
@@ -102,25 +129,38 @@ function BookingDetail() {
           <span>Paid</span><span className="font-semibold tabular-nums text-success">{fmtINR(booking.advancePaid)}</span>
         </div>
         {due > 0 && (
-          <div className="mt-3 flex gap-2">
-            <input
-              value={payAmt}
-              onChange={(e) => setPayAmt(e.target.value)}
-              type="number"
-              placeholder={`Add payment (max ${due})`}
-              className="flex-1 bg-secondary border-0 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button onClick={handlePay} className="size-10 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
-              <Plus className="size-5" />
-            </button>
-          </div>
+          <>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={payAmt}
+                onChange={(e) => setPayAmt(e.target.value)}
+                type="number"
+                placeholder={`Add payment (due ${due})`}
+                className="flex-1 min-w-0 bg-secondary border-0 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button onClick={handlePay} className="size-10 shrink-0 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
+                <Plus className="size-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <button onClick={() => setPayAmt(String(Math.round(due / 2)))} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">50%</button>
+              <button onClick={() => setPayAmt(String(due))} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Full ({fmtINR(due)})</button>
+              <button onClick={() => setPayAmt("")} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Clear</button>
+            </div>
+          </>
         )}
         {payments.length > 0 && (
           <ul className="mt-3 space-y-1 text-xs">
             {payments.map((p) => (
-              <li key={p.id} className="flex justify-between text-muted-foreground border-t border-border pt-1.5">
-                <span>{format(parseISO(p.date), "MMM d")} · {p.note ?? "Payment"}</span>
-                <span className="tabular-nums">{fmtINR(p.amount)}</span>
+              <li key={p.id} className="flex justify-between items-center text-muted-foreground border-t border-border pt-1.5">
+                <span className="truncate">{format(parseISO(p.date), "MMM d")} · {p.note ?? "Payment"}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="tabular-nums">{fmtINR(p.amount)}</span>
+                  <button
+                    onClick={() => { if (confirm("Delete this payment?")) deletePayment(p.id); }}
+                    className="text-destructive/70 hover:text-destructive"
+                  ><X className="size-3" /></button>
+                </div>
               </li>
             ))}
           </ul>
@@ -130,7 +170,7 @@ function BookingDetail() {
       {booking.measurements && booking.measurements.length > 0 && (
         <div className="bg-card card-shadow rounded-2xl p-4 mt-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Measurements (inch)</h2>
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             {booking.measurements.map((m) => (
               <div key={m.label}>
                 <p className="text-xs text-muted-foreground">{m.label}</p>
@@ -164,5 +204,63 @@ function BookingDetail() {
         </button>
       </div>
     </AppShell>
+  );
+}
+
+function EditPanel({ booking, onSave }: {
+  booking: { service: ServiceType; sareeCount: number; pricePerSaree: number; deliveryDate: string; deliveryTime: string; notes?: string };
+  onSave: (patch: { service: ServiceType; sareeCount: number; pricePerSaree: number; deliveryDate: string; deliveryTime: string; notes?: string }) => void;
+}) {
+  const [service, setService] = useState<ServiceType>(booking.service);
+  const [sareeCount, setSareeCount] = useState(booking.sareeCount);
+  const [pricePerSaree, setPricePerSaree] = useState(booking.pricePerSaree);
+  const [deliveryDate, setDeliveryDate] = useState(format(parseISO(booking.deliveryDate), "yyyy-MM-dd"));
+  const [deliveryTime, setDeliveryTime] = useState(booking.deliveryTime);
+  const [notes, setNotes] = useState(booking.notes ?? "");
+
+  return (
+    <div className="bg-card card-shadow rounded-2xl p-4 mt-4 space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Edit booking</h2>
+      <div className="grid grid-cols-2 gap-2">
+        {(["prepleat", "drape"] as ServiceType[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => setService(s)}
+            className={cn("py-2 rounded-full text-xs font-semibold uppercase tracking-wider",
+              service === s ? "bg-primary text-primary-foreground" : "bg-secondary")}
+          >{s}</button>
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm">Sarees</span>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSareeCount(Math.max(1, sareeCount - 1))} className="size-8 rounded-full bg-secondary font-bold">−</button>
+          <span className="w-6 text-center tabular-nums font-bold">{sareeCount}</span>
+          <button onClick={() => setSareeCount(sareeCount + 1)} className="size-8 rounded-full bg-secondary font-bold">+</button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm">Price/saree</span>
+        <div className="flex items-center gap-1 bg-secondary rounded-full px-1">
+          <button onClick={() => setPricePerSaree(Math.max(0, pricePerSaree - 50))} className="size-7 rounded-full font-bold">−</button>
+          <input type="number" value={pricePerSaree} onChange={(e) => setPricePerSaree(Number(e.target.value) || 0)} className="w-16 bg-transparent text-center text-sm tabular-nums focus:outline-none" />
+          <button onClick={() => setPricePerSaree(pricePerSaree + 50)} className="size-7 rounded-full font-bold">+</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <input type="time" step={900} value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Notes" className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
+      <button
+        onClick={() => onSave({
+          service, sareeCount, pricePerSaree,
+          deliveryDate: new Date(deliveryDate).toISOString(),
+          deliveryTime,
+          notes: notes.trim() || undefined,
+        })}
+        className="w-full saree-gradient text-primary-foreground py-3 rounded-2xl font-semibold"
+      >Save changes</button>
+    </div>
   );
 }
