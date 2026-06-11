@@ -408,19 +408,48 @@ function NewBooking() {
         {advNum > total && <p className="text-xs text-destructive mt-2">Cannot exceed total {fmtINR(total)}</p>}
       </section>
 
-      <CollapsibleSection icon="📐" label="Measurements" open={showMeasure} onToggle={() => setShowMeasure(!showMeasure)}>
-        <div className="flex justify-around items-start py-2 gap-2 flex-wrap">
-          {measurements.map((m, i) => (
-            <ScrollNumber
-              key={i}
-              label={m.label}
-              value={m.value}
-              onChange={(v) => setMeasurements(measurements.map((x, j) => i === j ? { ...x, value: v } : x))}
+      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <span>📐</span>Measurements
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showMeasure}
+            onClick={() => setShowMeasure(!showMeasure)}
+            className={cn(
+              "relative inline-flex h-7 w-12 items-center rounded-full transition",
+              showMeasure ? "saree-gradient" : "bg-secondary",
+            )}
+          >
+            <span
+              className={cn(
+                "inline-block size-5 rounded-full bg-card shadow transition-transform",
+                showMeasure ? "translate-x-6" : "translate-x-1",
+              )}
             />
-          ))}
+            <span className="sr-only">Toggle measurements</span>
+          </button>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-1">Scroll inside each picker · all in inches</p>
-      </CollapsibleSection>
+        {showMeasure ? (
+          <>
+            <div className="flex justify-around items-start py-3 gap-2 flex-wrap mt-2 border-t border-border">
+              {measurements.map((m, i) => (
+                <ScrollNumber
+                  key={i}
+                  label={m.label}
+                  value={m.value}
+                  onChange={(v) => setMeasurements(measurements.map((x, j) => i === j ? { ...x, value: v } : x))}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Scroll inside each picker · all in inches</p>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-2">Turn on to record blouse measurements for this customer.</p>
+        )}
+      </section>
 
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Notes</p>
