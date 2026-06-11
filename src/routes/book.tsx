@@ -2,8 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, AlertTriangle } from "lucide-react";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import { z } from "zod";
+
+const recipientSchema = z.string().uuid();
 
 export const Route = createFileRoute("/book")({
   head: () => ({
@@ -12,10 +15,13 @@ export const Route = createFileRoute("/book")({
       { name: "description", content: "Request a PrePleat or Drape booking. We'll confirm by WhatsApp." },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({ to: typeof s.to === "string" ? s.to : undefined }),
   component: PublicBookPage,
 });
 
 function PublicBookPage() {
+  const { to } = Route.useSearch();
+  const recipient = to && recipientSchema.safeParse(to).success ? to : null;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [service, setService] = useState<"prepleat" | "drape">("prepleat");
