@@ -50,7 +50,7 @@ export interface Customer {
   createdAt: string;
 }
 
-export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal";
+export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "custom";
 
 export interface Settings {
   prepleatPrice: number;
