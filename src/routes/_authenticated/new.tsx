@@ -295,11 +295,44 @@ function NewBooking() {
       {/* Delivery */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Delivery</p>
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-          <input type="time" step={900} value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <HorizontalPicker
+          label="Date · swipe ← →"
+          itemWidth={72}
+          value={deliveryDate}
+          onChange={setDeliveryDate}
+          items={(() => {
+            const base = new Date(); base.setHours(0, 0, 0, 0);
+            const start = addDays(base, -7);
+            return Array.from({ length: 90 }, (_, i) => {
+              const d = addDays(start, i);
+              const key = format(d, "yyyy-MM-dd");
+              return {
+                key,
+                primary: format(d, "d"),
+                secondary: format(d, "EEE"),
+              };
+            });
+          })()}
+        />
+        <div className="mt-3">
+          <HorizontalPicker
+            label="Time · 15-min steps"
+            itemWidth={86}
+            value={deliveryTime}
+            onChange={setDeliveryTime}
+            items={Array.from({ length: 24 * 4 }, (_, i) => {
+              const h = Math.floor(i / 4);
+              const m = (i % 4) * 15;
+              const key = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+              const hr12 = ((h + 11) % 12) + 1;
+              const ampm = h < 12 ? "AM" : "PM";
+              return { key, primary: `${hr12}:${String(m).padStart(2, "0")}`, secondary: ampm };
+            })}
+          />
         </div>
-        <p className="text-[11px] text-muted-foreground mt-1.5 text-right">{fmtTime12(deliveryTime)}</p>
+        <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
+          {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
+        </p>
         {(() => {
           const same = bookingsOnDate(new Date(deliveryDate).toISOString(), bookings);
           if (same.length === 0) return null;
