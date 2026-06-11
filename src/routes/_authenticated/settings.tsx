@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type Measurement, type ThemeName } from "@/lib/store";
-import { useRef } from "react";
-import { IndianRupee, Plus, X, Upload, Minus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
   component: SettingsPage,
 });
@@ -183,12 +184,43 @@ function SettingsPage() {
         <p className="text-xs text-muted-foreground">
           {customers.length} customers · {bookings.length} bookings · {fmtINR(bookings.reduce((s,b)=>s+b.totalAmount,0))} lifetime
         </p>
-        <p className="text-[11px] text-muted-foreground mt-2">All data is stored locally on this device.</p>
+        <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1"><Cloud className="size-3" /> Auto-syncs to your account.</p>
+      </Section>
+
+      <Section title="Account">
+        <AccountBlock />
       </Section>
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>
     </AppShell>
+  );
+}
+
+function AccountBlock() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState<string>("");
+  const [isGuest, setIsGuest] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? "");
+      setIsGuest(!!data.user?.is_anonymous);
+    });
+  }, []);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium truncate">{isGuest ? "Guest account" : email || "Signed in"}</p>
+        <p className="text-[11px] text-muted-foreground">{isGuest ? "Sign in with Google to keep your data safe across devices." : "Your data syncs to the cloud."}</p>
+      </div>
+      <button onClick={signOut} className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-full bg-secondary text-sm font-medium">
+        <LogOut className="size-3.5" /> Sign out
+      </button>
+    </div>
   );
 }
 

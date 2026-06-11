@@ -4,7 +4,7 @@ import { useStore, totalDue, fmtINR } from "@/lib/store";
 import { useState, useMemo } from "react";
 import { Search, Phone, Plus } from "lucide-react";
 
-export const Route = createFileRoute("/customers/")({
+export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({ meta: [{ title: "Customers — Saree Studio" }] }),
   component: CustomersPage,
 });
