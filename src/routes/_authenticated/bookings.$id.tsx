@@ -241,20 +241,23 @@ function BookingDetail() {
       )}
 
       <div className="grid grid-cols-2 gap-2 mt-4">
-        <button onClick={sendWhatsApp} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
-          <MessageCircle className="size-5" /> WhatsApp
+        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
+          <MessageCircle className="size-5" /> Reminder
         </button>
-        <button
-          onClick={() => {
-            updateBooking(booking.id, { status: booking.status === "delivered" ? "pending" : "delivered", completedAt: new Date().toISOString() });
-            toast.success(booking.status === "delivered" ? "Marked pending" : "Marked delivered");
-          }}
-          className={cn("py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition",
-            booking.status === "delivered" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground")}
-        >
-          <Check className="size-5" /> {booking.status === "delivered" ? "Reopen" : "Delivered"}
+        <button onClick={() => sendWhatsApp("bill")} className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition">
+          <Receipt className="size-5" /> Send bill
         </button>
       </div>
+      <button
+        onClick={() => {
+          updateBooking(booking.id, { status: booking.status === "delivered" ? "pending" : "delivered", completedAt: new Date().toISOString() });
+          toast.success(booking.status === "delivered" ? "Marked pending" : "Marked delivered");
+        }}
+        className={cn("w-full mt-2 py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition",
+          booking.status === "delivered" ? "bg-muted text-foreground" : "bg-success/15 text-success")}
+      >
+        <Check className="size-5" /> {booking.status === "delivered" ? "Reopen booking" : "Mark delivered"}
+      </button>
 
       <button
         onClick={addToGoogleCalendar}
