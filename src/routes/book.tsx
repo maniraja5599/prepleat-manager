@@ -33,9 +33,11 @@ function PublicBookPage() {
   const [done, setDone] = useState(false);
 
   const submit = async () => {
+    if (!recipient) return toast.error("Missing booking link recipient");
     if (!name.trim() || !phone.trim()) return toast.error("Name and phone are required");
     setSubmitting(true);
     const { error } = await supabase.from("booking_requests").insert({
+      owner_user_id: recipient,
       name: name.trim(),
       phone: phone.trim(),
       service,
@@ -48,6 +50,23 @@ function PublicBookPage() {
     if (error) return toast.error(error.message);
     setDone(true);
   };
+
+  if (!recipient) {
+    return (
+      <div className="min-h-[100dvh] bg-background flex items-center justify-center px-5">
+        <div className="max-w-sm w-full bg-card card-shadow rounded-3xl p-8 text-center">
+          <div className="size-16 mx-auto rounded-full bg-destructive/15 text-destructive flex items-center justify-center mb-3">
+            <AlertTriangle className="size-8" />
+          </div>
+          <h1 className="text-xl font-display font-semibold">Invalid booking link</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            This booking link is missing a recipient. Please use the personal booking link shared with you.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
 
   if (done) {
     return (
