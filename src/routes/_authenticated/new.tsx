@@ -99,7 +99,7 @@ function NewBooking() {
   const confirmSave = () => {
     let cid = customerId;
     if (!cid) {
-      const c = addCustomer({ name: newName.trim(), phone: newPhone.trim(), address: newAddress.trim() || undefined });
+      const c = addCustomer({ kind: "client", name: newName.trim(), phone: newPhone.trim(), address: newAddress.trim() || undefined });
       cid = c.id;
     } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
       updateCustomer(cid, { address: newAddress.trim() });
@@ -107,6 +107,7 @@ function NewBooking() {
 
     const b = addBooking({
       customerId: cid,
+      artistId: artistId || undefined,
       service,
       sareeCount,
       pricePerSaree: effPrice,
