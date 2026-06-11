@@ -19,7 +19,9 @@ function BookingDetail() {
   const allPayments = useStore((s) => s.payments);
   const booking = bookings.find((b) => b.id === id);
   const customer = booking ? customers.find((c) => c.id === booking.customerId) : undefined;
+  const artist = booking?.artistId ? customers.find((c) => c.id === booking.artistId) : undefined;
   const payments = allPayments.filter((p) => p.bookingId === id);
+
   const addPayment = useStore((s) => s.addPayment);
   const deletePayment = useStore((s) => s.deletePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
@@ -42,11 +44,28 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  const buildWhatsAppMessage = (kind: "reminder" | "bill") => {
+  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance") => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
     const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
+    if (kind === "balance") {
+      return [
+        `💛 *${businessName}*`,
+        ``,
+        `Hi ${customer?.name} 🙏`,
+        `A gentle reminder — your saree order has a remaining balance.`,
+        ``,
+        `🧾 *Total:* ${fmtINR(booking.totalAmount)}`,
+        `✅ *Paid:* ${fmtINR(paid)}`,
+        `💰 *Balance due:* ${fmtINR(due)}`,
+        ``,
+        `📅 Delivery: ${dateStr}, ${timeStr}`,
+        ``,
+        `You can pay via GPay / Cash on delivery. Thank you ✨`,
+        `🌐 ${site}`,
+      ].join("\n");
+    }
     const lines = [
       kind === "bill" ? `🧾 *${businessName}* — Bill` : `🧵 *${businessName}*`,
       ``,
@@ -68,13 +87,14 @@ function BookingDetail() {
     return lines.join("\n");
   };
 
-  const sendWhatsApp = (kind: "reminder" | "bill" = "reminder") => {
+
+  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
     const encoded = encodeURIComponent(buildWhatsAppMessage(kind));
-    // Direct same-tab redirect — wa.me deep-links to the app on mobile, web on desktop.
     window.location.href = `https://wa.me/${phone}?text=${encoded}`;
   };
+
 
   const addToGoogleCalendar = () => {
     const [hh, mm] = (booking.deliveryTime || "10:00").split(":").map((x) => Number(x) || 0);
