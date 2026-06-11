@@ -26,6 +26,8 @@ export interface Booking {
   status: "pending" | "completed" | "delivered";
 }
 
+export type PaymentMode = "gpay" | "cash" | "other";
+
 export interface Payment {
   id: string;
   bookingId: string;
@@ -33,6 +35,7 @@ export interface Payment {
   amount: number;
   date: string;
   note?: string;
+  mode?: PaymentMode;
 }
 
 export type CustomerKind = "client" | "artist";
