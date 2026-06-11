@@ -38,6 +38,7 @@ export interface Customer {
   id: string;
   name: string;
   phone: string; // for whatsapp
+  address?: string;
   notes?: string;
   createdAt: string;
 }
@@ -51,6 +52,7 @@ export interface Settings {
   showPaymentOnCalendar: boolean;
   businessName: string;
   theme: ThemeName;
+  logoDataUrl?: string;
 }
 
 interface State {
@@ -83,15 +85,15 @@ export const useStore = create<State>()(
       bookings: [],
       payments: [],
       settings: {
-        prepleatPrice: 150,
-        drapePrice: 300,
+        prepleatPrice: 350,
+        drapePrice: 800,
         defaultMeasurements: [
-          { label: "A", value: 40 },
-          { label: "B", value: 55 },
-          { label: "C", value: 45 },
+          { label: "P", value: 40 },
+          { label: "W", value: 32 },
+          { label: "H", value: 38 },
         ],
         showPaymentOnCalendar: false,
-        businessName: "Saree Studio",
+        businessName: "Eyas Saree Drapist",
         theme: "maroon",
       },
 
@@ -158,7 +160,28 @@ export const useStore = create<State>()(
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
     }),
-    { name: "saree-studio-v1" },
+    {
+      name: "saree-studio-v1",
+      version: 2,
+      migrate: (persisted: any, _version) => {
+        if (!persisted) return persisted;
+        const s = persisted.settings ?? {};
+        // Update legacy defaults
+        if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
+        if (s.prepleatPrice === 150) s.prepleatPrice = 350;
+        if (s.drapePrice === 300) s.drapePrice = 800;
+        if (Array.isArray(s.defaultMeasurements)) {
+          const labels = s.defaultMeasurements.map((m: any) => m.label).join(",");
+          if (labels === "A,B,C") s.defaultMeasurements = [
+            { label: "P", value: 40 },
+            { label: "W", value: 32 },
+            { label: "H", value: 38 },
+          ];
+        }
+        persisted.settings = s;
+        return persisted;
+      },
+    },
   ),
 );
 
