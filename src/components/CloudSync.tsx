@@ -54,12 +54,12 @@ export function CloudSync() {
         if (!auth.user) return;
         await supabase.from("app_settings").upsert({
           user_id: auth.user.id,
-          data: {
+          data: JSON.parse(JSON.stringify({
             customers: state.customers,
             bookings: state.bookings,
             payments: state.payments,
             settings: state.settings,
-          },
+          })),
         });
       }, 800);
     });
