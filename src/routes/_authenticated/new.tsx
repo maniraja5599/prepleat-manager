@@ -390,6 +390,22 @@ function NewBooking() {
 
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Notes</p>
+        {(settings.occasionPresets ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {(settings.occasionPresets ?? []).map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => {
+                  const current = notes.trim();
+                  if (current.toLowerCase().includes(preset.toLowerCase())) return;
+                  setNotes(current ? `${current} · ${preset}` : preset);
+                }}
+                className="px-2.5 py-1 rounded-full bg-secondary text-[11px] font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition"
+              >+ {preset}</button>
+            ))}
+          </div>
+        )}
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
