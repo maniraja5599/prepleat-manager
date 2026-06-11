@@ -108,6 +108,7 @@ function CalendarPage() {
         </div>
       }
     >
+      <GrowthDashboard />
       {view === "calendar" ? (
         <>
           <div className="flex items-center justify-between mb-3">
