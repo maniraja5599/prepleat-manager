@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type Measurement, type ThemeName } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, CloudOff } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
