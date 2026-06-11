@@ -92,6 +92,7 @@ export const useStore = create<State>()(
         ],
         showPaymentOnCalendar: false,
         businessName: "Saree Studio",
+        theme: "maroon",
       },
 
       addCustomer: (c) => {
