@@ -14,7 +14,7 @@ function roundUpToQuarter(d = new Date()) {
   return `${String(r.getHours()).padStart(2, "0")}:${String(r.getMinutes()).padStart(2, "0")}`;
 }
 
-export const Route = createFileRoute("/new")({
+export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (s: Record<string, unknown>) => ({
     date: typeof s.date === "string" ? s.date : undefined,
   }),

@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, Plus } from "lucid
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Calendar — Eyas Saree Drapist" },

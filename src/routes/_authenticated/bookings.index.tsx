@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Search, IndianRupee } from "lucide-react";
 
-export const Route = createFileRoute("/bookings/")({
+export const Route = createFileRoute("/_authenticated/bookings/")({
   head: () => ({
     meta: [
       { title: "Bookings — Eyas Saree Drapist" },

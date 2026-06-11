@@ -6,7 +6,7 @@ import { IndianRupee, Plus, X, Upload, Minus } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
   component: SettingsPage,
 });
