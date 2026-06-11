@@ -60,6 +60,8 @@ export interface Settings {
   businessName: string;
   theme: ThemeName;
   logoDataUrl?: string;
+  defaultPaymentMode?: PaymentMode;
+  websiteUrl?: string;
 }
 
 interface State {
