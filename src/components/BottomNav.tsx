@@ -2,13 +2,14 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Calendar, ListChecks, Plus, Users, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const tabs = [
+type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
+const tabs: Tab[] = [
   { to: "/", label: "Calendar", icon: Calendar },
   { to: "/bookings", label: "Bookings", icon: ListChecks },
   { to: "/new", label: "New", icon: Plus, primary: true },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
-] as const;
+];
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
