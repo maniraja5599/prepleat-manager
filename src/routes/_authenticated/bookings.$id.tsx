@@ -41,11 +41,47 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  const sendWhatsApp = () => {
+  const buildWhatsAppMessage = (kind: "reminder" | "bill") => {
+    const site = settings.websiteUrl || "https://eyasdrapist.shop/";
+    const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
+    const timeStr = fmtTime12(booking.deliveryTime);
+    const paid = booking.advancePaid;
+    const lines = [
+      kind === "bill" ? `🧾 *${businessName}* — Bill` : `🧵 *${businessName}*`,
+      ``,
+      `Hi ${customer?.name} ✨`,
+      kind === "bill"
+        ? `Thank you for choosing us 💛 Here are your order details:`
+        : `Friendly reminder about your saree order 💛`,
+      ``,
+      `📌 *Service:* ${booking.service.toUpperCase()}`,
+      `🪡 *Sarees:* ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
+      `📅 *Delivery:* ${dateStr}, ${timeStr}`,
+      ``,
+      `*Total:* ${fmtINR(booking.totalAmount)}`,
+      `*Paid:* ${fmtINR(paid)}`,
+      due > 0 ? `*Balance:* ${fmtINR(due)}` : `*Status:* ✅ Fully Paid`,
+      ``,
+      `🌐 ${site}`,
+    ];
+    return lines.join("\n");
+  };
+
+  const sendWhatsApp = (kind: "reminder" | "bill" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = `Hi ${customer.name}, friendly reminder from ${businessName}.\n\nYour ${booking.service} order (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}) is scheduled for delivery on ${format(parseISO(booking.deliveryDate), "MMM d")} at ${fmtTime12(booking.deliveryTime)}.\n\nPending amount: ${fmtINR(due)}\n\nThank you!`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+    const msg = buildWhatsAppMessage(kind);
+    const encoded = encodeURIComponent(msg);
+    // Try native app first, fall back to wa.me without opening an extra tab
+    const native = `whatsapp://send?phone=${phone}&text=${encoded}`;
+    const fallback = `https://wa.me/${phone}?text=${encoded}`;
+    const start = Date.now();
+    window.location.href = native;
+    setTimeout(() => {
+      if (Date.now() - start < 1600 && document.visibilityState === "visible") {
+        window.location.href = fallback;
+      }
+    }, 800);
   };
 
   const addToGoogleCalendar = () => {
