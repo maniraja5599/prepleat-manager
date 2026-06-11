@@ -10,6 +10,7 @@ export interface Measurement {
 
 export interface Booking {
   id: string;
+  billNumber?: string;
   customerId: string;
   artistId?: string;
   service: ServiceType;
@@ -23,7 +24,7 @@ export interface Booking {
   measurements?: Measurement[];
   createdAt: string;
   completedAt?: string;
-  status: "pending" | "completed" | "delivered";
+  status: "pending" | "completed" | "delivered" | "cancelled";
 }
 
 export type PaymentMode = "gpay" | "cash" | "other";
@@ -50,7 +51,15 @@ export interface Customer {
   createdAt: string;
 }
 
-export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "custom";
+export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "gold" | "custom";
+
+export interface CustomColors {
+  primary?: string;
+  accent?: string;
+  background?: string;
+  card?: string;
+  foreground?: string;
+}
 
 export interface Settings {
   prepleatPrice: number;
@@ -60,9 +69,11 @@ export interface Settings {
   businessName: string;
   theme: ThemeName;
   customPrimary?: string;
+  customColors?: CustomColors;
   logoDataUrl?: string;
   defaultPaymentMode?: PaymentMode;
   websiteUrl?: string;
+  occasionPresets?: string[];
 }
 
 export interface DeletedBooking {
@@ -71,7 +82,7 @@ export interface DeletedBooking {
   deletedAt: string;
 }
 
-export type ActivityKind = "create" | "update" | "delete" | "restore" | "payment-add" | "payment-delete";
+export type ActivityKind = "create" | "update" | "delete" | "restore" | "payment-add" | "payment-delete" | "cancel";
 
 export interface ActivityEntry {
   id: string;
@@ -97,8 +108,9 @@ interface State {
   deleteCustomer: (id: string) => void;
   getCustomer: (id: string) => Customer | undefined;
 
-  addBooking: (b: Omit<Booking, "id" | "createdAt" | "status">) => Booking;
+  addBooking: (b: Omit<Booking, "id" | "createdAt" | "status" | "billNumber">) => Booking;
   updateBooking: (id: string, b: Partial<Booking>) => void;
+  cancelBooking: (id: string) => void;
   deleteBooking: (id: string) => void;
   restoreBooking: (id: string) => void;
   undoLastEdit: () => boolean;
@@ -112,6 +124,18 @@ interface State {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+const generateBillNumber = (existing: Booking[]): string => {
+  const now = new Date();
+  const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prefix = `EYAS-${ym}-`;
+  const usedNumbers = existing
+    .map((b) => b.billNumber)
+    .filter((n): n is string => !!n && n.startsWith(prefix))
+    .map((n) => Number(n.slice(prefix.length)) || 0);
+  const next = (usedNumbers.length ? Math.max(...usedNumbers) : 0) + 1;
+  return `${prefix}${String(next).padStart(4, "0")}`;
+};
 
 const describeDiff = (prev: Booking, next: Booking): string => {
   const parts: string[] = [];
@@ -148,6 +172,7 @@ export const useStore = create<State>()(
         theme: "maroon",
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
+        occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
       },
 
       addCustomer: (c) => {
@@ -166,10 +191,11 @@ export const useStore = create<State>()(
       getCustomer: (id) => get().customers.find((c) => c.id === id),
 
       addBooking: (b) => {
-        const booking: Booking = { ...b, id: uid(), createdAt: new Date().toISOString(), status: "pending" };
+        const billNumber = generateBillNumber(get().bookings);
+        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: new Date().toISOString(), status: "pending" };
         const entry: ActivityEntry = {
           id: uid(), ts: new Date().toISOString(), kind: "create",
-          bookingId: booking.id, summary: `${booking.service} · ${booking.sareeCount} sarees`,
+          bookingId: booking.id, summary: `${billNumber} · ${booking.service} · ${booking.sareeCount} sarees`,
         };
         set((s) => ({
           bookings: [booking, ...s.bookings],
@@ -202,6 +228,21 @@ export const useStore = create<State>()(
             redoStack: [],
           };
         }),
+      cancelBooking: (id) =>
+        set((s) => {
+          const prev = s.bookings.find((x) => x.id === id);
+          if (!prev) return s;
+          const next: Booking = { ...prev, status: "cancelled" };
+          const entry: ActivityEntry = {
+            id: uid(), ts: new Date().toISOString(), kind: "cancel",
+            bookingId: id, summary: `cancelled ${prev.billNumber ?? prev.service}`, prev, next,
+          };
+          return {
+            bookings: s.bookings.map((x) => (x.id === id ? next : x)),
+            activity: [entry, ...s.activity].slice(0, 200),
+            redoStack: [],
+          };
+        }),
       deleteBooking: (id) =>
         set((s) => {
           const b = s.bookings.find((x) => x.id === id);
@@ -214,7 +255,7 @@ export const useStore = create<State>()(
           ].slice(0, 50);
           const entry: ActivityEntry = {
             id: uid(), ts: new Date().toISOString(), kind: "delete",
-            bookingId: id, summary: `deleted ${b.service} · ${b.sareeCount} sarees`,
+            bookingId: id, summary: `deleted ${b.billNumber ?? b.service}`,
           };
           return {
             bookings: s.bookings.filter((x) => x.id !== id),
@@ -230,7 +271,7 @@ export const useStore = create<State>()(
           if (!t) return s;
           const entry: ActivityEntry = {
             id: uid(), ts: new Date().toISOString(), kind: "restore",
-            bookingId: id, summary: `restored ${t.booking.service}`,
+            bookingId: id, summary: `restored ${t.booking.billNumber ?? t.booking.service}`,
           };
           return {
             bookings: [t.booking, ...s.bookings],
@@ -241,7 +282,7 @@ export const useStore = create<State>()(
         }),
       undoLastEdit: () => {
         const s = get();
-        const idx = s.activity.findIndex((e) => e.kind === "update" && e.prev && e.next);
+        const idx = s.activity.findIndex((e) => (e.kind === "update" || e.kind === "cancel") && e.prev && e.next);
         if (idx === -1) return false;
         const entry = s.activity[idx];
         set({
@@ -310,7 +351,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 4,
+      version: 5,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -325,9 +366,27 @@ export const useStore = create<State>()(
             { label: "H", value: 38 },
           ];
         }
+        if (!Array.isArray(s.occasionPresets)) {
+          s.occasionPresets = ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"];
+        }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
           persisted.customers = persisted.customers.map((c: any) => ({ kind: c.kind ?? "client", ...c }));
+        }
+        // Backfill bill numbers
+        if (Array.isArray(persisted.bookings)) {
+          const monthCounters = new Map<string, number>();
+          // Sort by created date so existing order yields stable numbering
+          const sorted = [...persisted.bookings].sort((a: any, b: any) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
+          for (const b of sorted) {
+            if (b.billNumber) continue;
+            const d = new Date(b.createdAt || Date.now());
+            const ym = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+            const prefix = `EYAS-${ym}-`;
+            const n = (monthCounters.get(ym) ?? 0) + 1;
+            monthCounters.set(ym, n);
+            b.billNumber = `${prefix}${String(n).padStart(4, "0")}`;
+          }
         }
         if (!Array.isArray(persisted.activity)) persisted.activity = [];
         if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];

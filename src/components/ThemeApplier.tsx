@@ -9,24 +9,41 @@ const THEME_CLASSES = [
   "theme-rose",
   "theme-sand",
   "theme-charcoal",
+  "theme-gold",
   "theme-custom",
+];
+
+const CUSTOM_VARS: Array<[keyof NonNullable<ReturnType<typeof useStore.getState>["settings"]["customColors"]>, string]> = [
+  ["primary", "--primary"],
+  ["accent", "--accent"],
+  ["background", "--background"],
+  ["card", "--card"],
+  ["foreground", "--foreground"],
 ];
 
 export function ThemeApplier() {
   const theme = useStore((s) => s.settings.theme);
   const customPrimary = useStore((s) => s.settings.customPrimary);
+  const customColors = useStore((s) => s.settings.customColors);
+
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
     THEME_CLASSES.forEach((c) => root.classList.remove(c));
     if (theme && theme !== "maroon") root.classList.add(`theme-${theme}`);
-    if (theme === "custom" && customPrimary) {
-      root.style.setProperty("--primary", customPrimary);
-      root.style.setProperty("--ring", customPrimary);
-    } else {
-      root.style.removeProperty("--primary");
-      root.style.removeProperty("--ring");
+
+    // Reset all custom-set vars first
+    CUSTOM_VARS.forEach(([, css]) => root.style.removeProperty(css));
+    root.style.removeProperty("--ring");
+
+    if (theme === "custom") {
+      const colors = customColors || { primary: customPrimary };
+      CUSTOM_VARS.forEach(([key, css]) => {
+        const v = colors[key];
+        if (v) root.style.setProperty(css, v);
+      });
+      if (colors.primary) root.style.setProperty("--ring", colors.primary);
     }
-  }, [theme, customPrimary]);
+  }, [theme, customPrimary, customColors]);
   return null;
 }

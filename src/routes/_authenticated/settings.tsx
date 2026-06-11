@@ -13,10 +13,10 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "brand" | "pricing" | "theme" | "data" | "activity" | "account";
+type TabId = "pricing" | "brand" | "theme" | "data" | "activity" | "account";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
-  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
   { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
+  { id: "brand",    label: "Brand",    hint: "Logo, name, presets",  icon: Upload },
   { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
   { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
   { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
@@ -30,7 +30,8 @@ const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: stri
   { id: "royal",    label: "Royal Violet", bg: "#f0eefa", fg: "#1c1340", card: "#ffffff", primary: "#5b3fc8", accent: "#cfc5f0", border: "#dcd5ee" },
   { id: "rose",     label: "Rose Pink",    bg: "#fdeef3", fg: "#3a1024", card: "#ffffff", primary: "#c9457e", accent: "#f4c4d6", border: "#eed4dd" },
   { id: "sand",     label: "Sand Desert",  bg: "#f5ecd9", fg: "#3a2614", card: "#fdf6e8", primary: "#8a5a2a", accent: "#dcc299", border: "#dcc8a8" },
-  { id: "charcoal", label: "Charcoal Gold",bg: "#1c1c1c", fg: "#f5f5f5", card: "#2a2a2a", primary: "#d4a24e", accent: "#3a342a", border: "#3a3a3a" },
+  { id: "charcoal", label: "Charcoal",     bg: "#1c1c1c", fg: "#f5f5f5", card: "#2a2a2a", primary: "#d4a24e", accent: "#3a342a", border: "#3a3a3a" },
+  { id: "gold",     label: "Pure Gold",    bg: "#fdf8e8", fg: "#3a2614", card: "#ffffff", primary: "#c89a3a", accent: "#f0d77a", border: "#ecdca2" },
 ];
 
 function SettingsPage() {
@@ -41,7 +42,8 @@ function SettingsPage() {
   const trash = useStore((s) => s.trash);
   const restoreBooking = useStore((s) => s.restoreBooking);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<TabId>("brand");
+  const [tab, setTab] = useState<TabId>("pricing");
+  const [presetDraft, setPresetDraft] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
@@ -125,6 +127,55 @@ function SettingsPage() {
               onChange={(e) => update({ businessName: e.target.value })}
               className="input mt-1"
             />
+          </div>
+        </Section>
+      )}
+
+      {tab === "brand" && (
+        <Section title="Quick note presets">
+          <p className="text-xs text-muted-foreground mb-2">Tap chips appear under the Notes field when creating a booking.</p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {(settings.occasionPresets ?? []).map((p) => (
+              <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-xs">
+                {p}
+                <button
+                  onClick={() => update({ occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== p) })}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Remove ${p}`}
+                ><X className="size-3" /></button>
+              </span>
+            ))}
+            {(settings.occasionPresets ?? []).length === 0 && (
+              <p className="text-xs text-muted-foreground italic">No presets yet.</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={presetDraft}
+              onChange={(e) => setPresetDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && presetDraft.trim()) {
+                  const v = presetDraft.trim();
+                  if (!(settings.occasionPresets ?? []).includes(v)) {
+                    update({ occasionPresets: [...(settings.occasionPresets ?? []), v] });
+                  }
+                  setPresetDraft("");
+                }
+              }}
+              placeholder="Add preset (e.g. Engagement)"
+              className="input flex-1"
+            />
+            <button
+              onClick={() => {
+                const v = presetDraft.trim();
+                if (!v) return;
+                if (!(settings.occasionPresets ?? []).includes(v)) {
+                  update({ occasionPresets: [...(settings.occasionPresets ?? []), v] });
+                }
+                setPresetDraft("");
+              }}
+              className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
+            >Add</button>
           </div>
         </Section>
       )}
@@ -237,20 +288,44 @@ function SettingsPage() {
               })}
             </div>
             <div className="mt-3 p-3 rounded-2xl border-2 border-dashed border-border">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold">Custom primary</p>
-                  <p className="text-[11px] text-muted-foreground">Pick any shade — applied live.</p>
-                </div>
-                <input
-                  type="color"
-                  value={settings.customPrimary || "#7a1f2a"}
-                  onChange={(e) => update({ theme: "custom", customPrimary: e.target.value })}
-                  className="size-10 rounded-full border-0 cursor-pointer bg-transparent"
-                />
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold">Build your own</p>
+                {settings.theme === "custom" && (
+                  <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Active</span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-3">Pick any colour — change saves and applies live.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: "primary", label: "Primary", def: "#7a1f2a" },
+                  { key: "accent", label: "Accent", def: "#e8c878" },
+                  { key: "background", label: "Background", def: "#fdf8ef" },
+                  { key: "card", label: "Card", def: "#ffffff" },
+                  { key: "foreground", label: "Text", def: "#3a1010" },
+                ] as const).map((c) => {
+                  const current = settings.customColors?.[c.key] || (c.key === "primary" ? settings.customPrimary : undefined) || c.def;
+                  return (
+                    <label key={c.key} className="flex items-center justify-between gap-2 px-3 py-2 bg-secondary rounded-xl cursor-pointer">
+                      <span className="text-xs font-medium">{c.label}</span>
+                      <input
+                        type="color"
+                        value={current}
+                        onChange={(e) => update({
+                          theme: "custom",
+                          customColors: { ...(settings.customColors ?? {}), [c.key]: e.target.value },
+                          ...(c.key === "primary" ? { customPrimary: e.target.value } : {}),
+                        })}
+                        className="size-7 rounded-full border-0 cursor-pointer bg-transparent"
+                      />
+                    </label>
+                  );
+                })}
               </div>
               {settings.theme === "custom" && (
-                <p className="text-[10px] uppercase tracking-wider text-primary font-semibold mt-2">Custom theme active</p>
+                <button
+                  onClick={() => update({ customColors: undefined, customPrimary: undefined, theme: "maroon" })}
+                  className="mt-3 text-[11px] text-muted-foreground underline"
+                >Reset custom theme</button>
               )}
             </div>
           </Section>

@@ -125,13 +125,22 @@ function CalendarPage() {
       {view === "calendar" ? (
         <>
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setCursor(subMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center">
+            <button onClick={() => setCursor(subMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center" aria-label="Previous month">
               <ChevronLeft className="size-5" />
             </button>
-            <button onClick={() => { setCursor(new Date()); setSelected(new Date()); }} className="text-sm font-medium px-3 py-1.5 rounded-full bg-secondary">Today</button>
-            <button onClick={() => setCursor(addMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center">
-              <ChevronRight className="size-5" />
-            </button>
+            <div className="flex-1 text-center">
+              <p className="text-base font-display font-semibold leading-tight">{format(cursor, "MMMM")}</p>
+              <p className="text-[11px] text-muted-foreground tabular-nums leading-tight">{format(cursor, "yyyy")}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { setCursor(new Date()); setSelected(new Date()); }}
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary"
+              >Today</button>
+              <button onClick={() => setCursor(addMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center" aria-label="Next month">
+                <ChevronRight className="size-5" />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
@@ -139,7 +148,7 @@ function CalendarPage() {
           </div>
 
           <div
-            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow touch-pan-y"
+            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow touch-pan-y no-select"
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >
