@@ -17,6 +17,7 @@ function CustomersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
 
   const list = useMemo(() => {
     const ql = q.toLowerCase().trim();
@@ -41,17 +42,20 @@ function CustomersPage() {
       }
     >
       {showAdd && (
-        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 grid grid-cols-[1fr_1fr_auto] gap-2">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none" />
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" inputMode="tel" className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none" />
+        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none" />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" inputMode="tel" className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none" />
+          </div>
+          <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Address (optional)" className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none resize-none" />
           <button
             onClick={() => {
               if (!name.trim() || !phone.trim()) return;
-              addCustomer({ name: name.trim(), phone: phone.trim() });
-              setName(""); setPhone(""); setShowAdd(false);
+              addCustomer({ name: name.trim(), phone: phone.trim(), address: address.trim() || undefined });
+              setName(""); setPhone(""); setAddress(""); setShowAdd(false);
             }}
-            className="px-3 rounded-full bg-primary text-primary-foreground text-sm font-semibold"
-          >Add</button>
+            className="w-full px-3 py-2 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
+          >Add customer</button>
         </div>
       )}
 
