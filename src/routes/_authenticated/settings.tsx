@@ -54,24 +54,48 @@ function SettingsPage() {
   };
 
   return (
-    <AppShell title="Settings" subtitle="Changes save instantly">
-      <div className="sticky top-0 z-10 -mx-4 px-4 pb-2 bg-background/80 backdrop-blur">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar bg-secondary rounded-full p-1">
-          {TABS.map((t) => {
-            const active = tab === t.id;
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${active ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}
-              >
-                <Icon className="size-3.5" /> {t.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    <AppShell wide title="Settings" subtitle="Changes save instantly">
+      <div className="grid gap-4 sm:grid-cols-[200px_minmax(0,1fr)]">
+        {/* Left rail */}
+        <nav className="sm:sticky sm:top-2 self-start">
+          {/* Mobile: horizontal scroll pills */}
+          <div className="flex sm:hidden gap-1 overflow-x-auto no-scrollbar bg-secondary rounded-full p-1">
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              const Icon = t.icon;
+              return (
+                <button key={t.id} onClick={() => setTab(t.id)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${active ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}>
+                  <Icon className="size-3.5" /> {t.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Desktop/tablet: vertical compact list */}
+          <ul className="hidden sm:block bg-card card-shadow rounded-2xl p-2 space-y-0.5">
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              const Icon = t.icon;
+              return (
+                <li key={t.id}>
+                  <button onClick={() => setTab(t.id)}
+                    className={`w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition ${active ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
+                    <span className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-primary-foreground/15" : "bg-secondary"}`}>
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold leading-tight">{t.label}</span>
+                      <span className={`block text-[10px] leading-tight ${active ? "opacity-80" : "text-muted-foreground"}`}>{t.hint}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="min-w-0">
+
 
       {tab === "brand" && (
         <Section title="Brand">
