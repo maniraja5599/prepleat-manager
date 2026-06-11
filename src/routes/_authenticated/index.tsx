@@ -63,6 +63,17 @@ function CalendarPage() {
       .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
   }, [bookings]);
 
+  const monthEvents = useMemo(() => {
+    const s = startOfMonth(cursor);
+    const e = endOfMonth(cursor);
+    return bookings
+      .filter((b) => {
+        const d = parseISO(b.deliveryDate);
+        return d >= s && d <= e;
+      })
+      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
+  }, [bookings, cursor]);
+
   // Swipe between months
   const touchX = useRef<number | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
