@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, ChevronDown, ChevronUp, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
