@@ -104,6 +104,8 @@ export const useStore = create<State>()(
         showPaymentOnCalendar: false,
         businessName: "Eyas Saree Drapist",
         theme: "maroon",
+        defaultPaymentMode: "gpay",
+        websiteUrl: "https://eyasdrapist.shop/",
       },
 
       addCustomer: (c) => {
