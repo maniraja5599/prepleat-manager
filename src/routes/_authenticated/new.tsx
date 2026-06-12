@@ -178,7 +178,7 @@ function NewBooking() {
       pricePerSaree: effPrice,
       totalAmount: total,
       advancePaid: 0,
-      deliveryDate: new Date(deliveryDate).toISOString(),
+      deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
       deliveryTime,
       notes: notes.trim() || undefined,
       measurements: showMeasure ? measurements : undefined,
