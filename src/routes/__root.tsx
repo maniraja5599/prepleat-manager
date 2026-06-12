@@ -100,7 +100,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeApplier />
       <Outlet />
-      <Toaster position="top-center" duration={2200} closeButton={false} richColors={false} toastOptions={{ style: { background: "var(--color-card)", color: "var(--color-foreground)", border: "1px solid var(--color-border)", fontSize: "13px" } }} />
+      <Toaster position="top-center" style={{ top: "10%" }} duration={2200} closeButton={false} richColors={false} toastOptions={{ style: { background: "var(--color-card)", color: "var(--color-foreground)", border: "1px solid var(--color-border)", fontSize: "13px" } }} />
     </QueryClientProvider>
   );
 }
