@@ -269,14 +269,14 @@ function SegRow<T extends string>({ value, onChange, items }: {
   value: T; onChange: (v: T) => void; items: { id: T; label: string }[];
 }) {
   return (
-    <div className="bg-secondary rounded-full p-0.5 flex">
+    <div className="bg-card border border-border/60 rounded-2xl p-1 flex gap-0.5 shadow-sm">
       {items.map((it) => (
         <button
           key={it.id}
           onClick={() => onChange(it.id)}
           className={cn(
-            "flex-1 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition",
-            value === it.id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground",
+            "flex-1 py-1.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider transition",
+            value === it.id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-secondary/80",
           )}
         >{it.label}</button>
       ))}
