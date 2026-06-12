@@ -79,18 +79,9 @@ function NewBooking() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [deliveryDate, setDeliveryDate] = useState(presetDate || today);
   const [deliveryTime, setDeliveryTime] = useState(roundUpToQuarter());
-  // Hidden native pickers, opened on double-tap of the swipeable picker.
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const timeInputRef = useRef<HTMLInputElement>(null);
-  const openNative = (el: HTMLInputElement | null) => {
-    if (!el) return;
-    // showPicker is the modern API; fall back to focus/click for older browsers.
-    const anyEl = el as HTMLInputElement & { showPicker?: () => void };
-    if (typeof anyEl.showPicker === "function") {
-      try { anyEl.showPicker(); return; } catch { /* fall through */ }
-    }
-    el.focus(); el.click();
-  };
+  // Popover open state for tap-once calendar / clock pickers (works on iOS & Android).
+  const [dateOpen, setDateOpen] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
 
   useEffect(() => { if (presetDate) setDeliveryDate(presetDate); }, [presetDate]);
 
