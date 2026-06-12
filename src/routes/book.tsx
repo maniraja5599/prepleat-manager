@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
@@ -36,19 +35,32 @@ function PublicBookPage() {
     if (!recipient) return toast.error("Missing booking link recipient");
     if (!name.trim() || !phone.trim()) return toast.error("Name and phone are required");
     setSubmitting(true);
-    const { error } = await supabase.from("booking_requests").insert({
-      owner_user_id: recipient,
-      name: name.trim(),
-      phone: phone.trim(),
-      service,
-      saree_count: sareeCount,
-      delivery_date: deliveryDate || null,
-      delivery_time: deliveryTime || null,
-      notes: notes.trim() || null,
-    });
-    setSubmitting(false);
-    if (error) return toast.error(error.message);
-    setDone(true);
+    try {
+      const res = await fetch("/api/public/booking-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner_user_id: recipient,
+          name: name.trim(),
+          phone: phone.trim(),
+          service,
+          saree_count: sareeCount,
+          delivery_date: deliveryDate || null,
+          delivery_time: deliveryTime || null,
+          notes: notes.trim() || null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(json?.error || "Could not submit request");
+        return;
+      }
+      setDone(true);
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!recipient) {
