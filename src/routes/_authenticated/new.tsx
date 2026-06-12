@@ -317,8 +317,11 @@ function NewBooking() {
       {/* Delivery */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Delivery</p>
+        <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+          <CalendarDays className="size-3.5 text-primary/70" />
+          <span>Date · swipe ← →</span>
+        </div>
         <HorizontalPicker
-          label="Date · swipe ← →"
           itemWidth={72}
           value={deliveryDate}
           onChange={setDeliveryDate}
@@ -337,8 +340,11 @@ function NewBooking() {
           })()}
         />
         <div className="mt-3">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+            <Clock className="size-3.5 text-primary/70" />
+            <span>Time · 15-min steps</span>
+          </div>
           <HorizontalPicker
-            label="Time · 15-min steps"
             itemWidth={86}
             value={deliveryTime}
             onChange={setDeliveryTime}
