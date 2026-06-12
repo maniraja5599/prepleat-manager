@@ -6,10 +6,32 @@ import logoAsset from "@/assets/eyas-logo.png.asset.json";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   pendingComponent: AuthSplash,
+  pendingMs: 0,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    // First try the cached session (synchronous from localStorage) — this avoids
+    // a network round-trip on first launch that can cause a flash of blank page
+    // when the app is opened from the Home-screen bookmark.
+    let { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      // On a cold standalone (PWA) launch the Supabase client may still be
+      // re-hydrating its persisted session. Wait briefly for the INITIAL_SESSION
+      // event before deciding the user is unauthenticated.
+      session = await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          sub?.subscription.unsubscribe();
+          resolve(null);
+        }, 1200);
+        const sub = supabase.auth.onAuthStateChange((_e, s) => {
+          if (s) {
+            clearTimeout(timer);
+            sub.subscription.unsubscribe();
+            resolve(s);
+          }
+        });
+      });
+    }
+    if (!session) throw redirect({ to: "/auth" });
+    return { user: session.user };
   },
   component: () => (
     <>
