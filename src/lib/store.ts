@@ -442,7 +442,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 8,
+      version: 9,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -461,6 +461,9 @@ export const useStore = create<State>()(
         }
         if (!Array.isArray(s.occasionPresets)) {
           s.occasionPresets = ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"];
+        }
+        if (!Array.isArray(s.expenseCategories)) {
+          s.expenseCategories = ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"];
         }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
@@ -490,6 +493,7 @@ export const useStore = create<State>()(
         if (!Array.isArray(persisted.activity)) persisted.activity = [];
         if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];
         if (!Array.isArray(persisted.tombstones)) persisted.tombstones = [];
+        if (!Array.isArray(persisted.expenses)) persisted.expenses = [];
         if (Array.isArray(persisted.bookings)) {
           for (const b of persisted.bookings) {
             if (!b.updatedAt) b.updatedAt = b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt;
