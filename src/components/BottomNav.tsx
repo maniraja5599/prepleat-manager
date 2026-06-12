@@ -1,12 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Calendar, ListChecks, Plus, Users, Settings as SettingsIcon } from "lucide-react";
+import { Calendar, ListChecks, IndianRupee, Users, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
 const tabs: Tab[] = [
-  { to: "/", label: "Calendar", icon: Calendar },
+  { to: "/payments", label: "Payments", icon: IndianRupee },
   { to: "/bookings", label: "Bookings", icon: ListChecks },
-  { to: "/new", label: "New", icon: Plus, primary: true },
+  { to: "/", label: "Calendar", icon: Calendar, primary: true },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -24,7 +24,10 @@ export function BottomNav() {
               <li key={t.to} className="flex justify-center -mt-5">
                 <Link
                   to={t.to}
-                  className="size-14 rounded-full saree-gradient text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 active:scale-95 transition"
+                  className={cn(
+                    "size-14 rounded-full saree-gradient text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 active:scale-95 transition",
+                    active && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
+                  )}
                 >
                   <Icon className="size-7" strokeWidth={2.5} />
                 </Link>
