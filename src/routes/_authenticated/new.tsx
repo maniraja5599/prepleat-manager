@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock, Users } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Palette, CalendarDays, Clock, Users, Search, X } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -47,6 +47,9 @@ function NewBooking() {
 
   const [bookingSource, setBookingSource] = useState<"direct" | "artist">("direct");
   const [artistId, setArtistId] = useState<string>("");
+  const [artistSearch, setArtistSearch] = useState("");
+  const [showArtistSearch, setShowArtistSearch] = useState(false);
+  const [showCustomerForArtist, setShowCustomerForArtist] = useState(false);
 
   const [service, setService] = useState<ServiceType>("prepleat");
   const [customerId, setCustomerId] = useState<string>("");
@@ -124,7 +127,8 @@ function NewBooking() {
 
   const openReview = () => {
     if (bookingSource === "artist" && !artistId) return toast.error("Select or add an artist");
-    if (!customerId) {
+    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
+    if (customerRequired && !customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
       if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
     }
@@ -136,12 +140,19 @@ function NewBooking() {
 
   const confirmSave = () => {
     let cid = customerId;
+    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
     if (!cid) {
-      const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
-      cid = c.id;
+      if (customerRequired && newName.trim()) {
+        const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
+        cid = c.id;
+      } else if (bookingSource === "artist" && artistId) {
+        // No customer captured — record the booking under the artist.
+        cid = artistId;
+      }
     } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
       updateCustomer(cid, { address: newAddress.trim() });
     }
+    if (!cid) return toast.error("Customer required");
 
     const b = addBooking({
       customerId: cid,
@@ -179,7 +190,7 @@ function NewBooking() {
         <div className="grid grid-cols-2 gap-2">
           {([
             { id: "direct" as const, label: "Direct Client", icon: User },
-            { id: "artist" as const, label: "Via Artist", icon: Sparkles },
+            { id: "artist" as const, label: "Via Artist", icon: Palette },
           ]).map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -194,16 +205,59 @@ function NewBooking() {
         </div>
         {bookingSource === "artist" && (
           <div className="mt-3 pt-3 border-t border-border">
-            {artists.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
-                {artists.map((a) => (
-                  <button key={a.id} type="button" onClick={() => { setArtistId(a.id); setPriceTouched(false); }}
-                    className={cn("px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0", artistId === a.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                    {a.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            {artists.length > 0 && (() => {
+              const compact = artists.length > 5;
+              const ql = artistSearch.toLowerCase().trim();
+              const visible = compact
+                ? (showArtistSearch
+                    ? artists.filter((a) => !ql || a.name.toLowerCase().includes(ql)).slice(0, 12)
+                    : artists.slice(0, 4))
+                : artists;
+              const selected = artists.find((a) => a.id === artistId);
+              const selectedHidden = selected && !visible.some((a) => a.id === selected.id);
+              return (
+                <div className="mb-2">
+                  <div className="flex gap-2 items-center overflow-x-auto no-scrollbar -mx-1 px-1">
+                    {selectedHidden && (
+                      <button type="button" onClick={() => { setArtistId(selected!.id); setPriceTouched(false); }}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 bg-primary text-primary-foreground">
+                        {selected!.name}
+                      </button>
+                    )}
+                    {visible.map((a) => (
+                      <button key={a.id} type="button" onClick={() => { setArtistId(a.id); setPriceTouched(false); }}
+                        className={cn("px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0", artistId === a.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                        {a.name}
+                      </button>
+                    ))}
+                    {compact && (
+                      <button type="button" onClick={() => { setShowArtistSearch((v) => !v); if (showArtistSearch) setArtistSearch(""); }}
+                        aria-label="Search artists"
+                        className={cn("size-7 shrink-0 rounded-full flex items-center justify-center", showArtistSearch ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground")}>
+                        <Search className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {compact && showArtistSearch && (
+                    <div className="relative mt-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                      <input
+                        autoFocus
+                        value={artistSearch}
+                        onChange={(e) => setArtistSearch(e.target.value)}
+                        placeholder={`Search ${artists.length} artists`}
+                        className="w-full bg-secondary rounded-full pl-8 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      {artistSearch && (
+                        <button type="button" onClick={() => setArtistSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 size-5 rounded-full bg-background/60 flex items-center justify-center">
+                          <X className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <AddArtistInline onAdd={(name) => {
               const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
               setArtistId(c.id); setPriceTouched(false); toast.success(`Artist “${c.name}” added`);
@@ -233,15 +287,27 @@ function NewBooking() {
         ))}
       </div>
 
-      {/* Customer */}
+      {/* Customer — hidden by default when booking via artist (often unknown). */}
+      {bookingSource === "artist" && !showCustomerForArtist && !selectedCust ? (
+        <button type="button" onClick={() => setShowCustomerForArtist(true)}
+          className="w-full mb-3 py-2.5 rounded-2xl bg-card card-shadow text-xs font-semibold text-muted-foreground hover:text-primary flex items-center justify-center gap-1.5">
+          <Plus className="size-3.5" /> Add customer details <span className="font-normal">(optional)</span>
+        </button>
+      ) : (
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</p>
-          {!selectedCust && (
-            <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
-              <Users className="size-3" /> Existing
-            </button>
-          )}
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer{bookingSource === "artist" && <span className="ml-1 text-[10px] normal-case font-normal text-muted-foreground">(optional)</span>}</p>
+          <div className="flex items-center gap-1.5">
+            {!selectedCust && (
+              <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
+                <Users className="size-3" /> Existing
+              </button>
+            )}
+            {bookingSource === "artist" && (
+              <button type="button" onClick={() => { setShowCustomerForArtist(false); setCustomerId(""); setNewName(""); setNewPhone(""); setNewAddress(""); }}
+                className="text-[10px] text-muted-foreground px-2 py-1">Hide</button>
+            )}
+          </div>
         </div>
         {selectedCust ? (
           <div>
@@ -348,6 +414,7 @@ function NewBooking() {
           </div>
         )}
       </section>
+      )}
 
       {/* Order */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
