@@ -70,7 +70,7 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
       {label && (
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 text-center">{label}</p>
       )}
-      <div className="relative">
+      <div className="relative" onDoubleClick={onDoubleTap}>
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-primary/10 border border-primary/30 z-0"
           style={{ width: itemWidth - 6, height: 56 }}
