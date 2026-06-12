@@ -30,18 +30,23 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTap = useRef<number>(0);
 
-  const idx = Math.max(0, items.findIndex((i) => i.key === value));
+  const rawIdx = items.findIndex((i) => i.key === value);
+  const inRange = rawIdx >= 0;
+  const idx = inRange ? rawIdx : 0;
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || idx < 0) return;
+    // If the current value is outside the strip (e.g. user picked a far date
+    // from a calendar popover), don't scroll — that would let handleScroll
+    // overwrite the value with whatever item ends up centered.
+    if (!el || !inRange) return;
     const target = idx * itemWidth;
     if (Math.abs(el.scrollLeft - target) > 1) {
       settling.current = true;
       el.scrollTo({ left: target, behavior: "smooth" });
       setTimeout(() => { settling.current = false; }, 220);
     }
-  }, [idx, itemWidth]);
+  }, [idx, itemWidth, inRange]);
 
   const handleScroll = () => {
     if (settling.current) return;
@@ -59,6 +64,12 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
   };
 
   const step = (dir: -1 | 1) => {
+    if (!inRange) {
+      // Snap back into the strip first so ← / → behave intuitively.
+      const fallback = items[0];
+      if (fallback) onChange(fallback.key);
+      return;
+    }
     const next = items[Math.max(0, Math.min(items.length - 1, idx + dir))];
     if (next) onChange(next.key);
   };

@@ -529,8 +529,16 @@ function NewBooking() {
           onDoubleTap={() => setDateOpen(true)}
           items={(() => {
             const base = new Date(); base.setHours(0, 0, 0, 0);
-            const start = addDays(base, -7);
-            return Array.from({ length: 90 }, (_, i) => {
+            // Default window: 7 days before today → 82 days after.
+            let start = addDays(base, -7);
+            let end = addDays(base, 82);
+            // Ensure the currently selected date is inside the strip so the
+            // picker can centre on it (otherwise it would snap to today).
+            const picked = parseISO(deliveryDate);
+            if (picked < start) start = addDays(picked, -3);
+            if (picked > end) end = addDays(picked, 30);
+            const span = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+            return Array.from({ length: span }, (_, i) => {
               const d = addDays(start, i);
               const key = format(d, "yyyy-MM-dd");
               return {
