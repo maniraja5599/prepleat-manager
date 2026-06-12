@@ -701,3 +701,5 @@ function KpiCard({ icon, label, value, sub, tint }: { icon: React.ReactNode; lab
       <p className="text-[10px] text-muted-foreground truncate mt-0.5">{sub}</p>
     </div>
   );
+}
+
