@@ -724,7 +724,7 @@ function NewBooking() {
             <ReviewRow label="Service" value={service === "prepleat" ? "PrePleat" : "Drape"} />
             <ReviewRow label="Customer" value={selectedCust?.name || newName} />
             <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
-            <ReviewRow label="Delivery" value={`${format(new Date(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`} />
+            <ReviewRow label="Delivery" value={`${format(parseISO(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`} />
             {artistId && <ReviewRow label="Artist" value={artists.find((a) => a.id === artistId)?.name ?? ""} />}
             <ReviewRow label="Total" value={fmtINR(total)} bold />
             <ReviewRow label="Advance" value={fmtINR(advNum)} />
