@@ -287,8 +287,20 @@ function NewBooking() {
         ))}
       </div>
 
-      {/* Customer */}
+      {/* Customer — hidden by default when booking via artist (often unknown). */}
+      {bookingSource === "artist" && !showCustomerForArtist && !selectedCust ? (
+        <button type="button" onClick={() => setShowCustomerForArtist(true)}
+          className="w-full mb-3 py-2.5 rounded-2xl bg-card card-shadow text-xs font-semibold text-muted-foreground hover:text-primary flex items-center justify-center gap-1.5">
+          <Plus className="size-3.5" /> Add customer details <span className="font-normal">(optional)</span>
+        </button>
+      ) : (
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+        {bookingSource === "artist" && (
+          <button type="button" onClick={() => { setShowCustomerForArtist(false); setCustomerId(""); setNewName(""); setNewPhone(""); setNewAddress(""); }}
+            className="absolute -mt-1 ml-auto right-7 text-[10px] text-muted-foreground" style={{ position: "relative", float: "right" }}>
+            Hide
+          </button>
+        )}
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</p>
           {!selectedCust && (
