@@ -391,6 +391,12 @@ export const useStore = create<State>()(
             monthCounters.set(ym, n);
             b.billNumber = `${prefix}${String(n).padStart(4, "0")}`;
           }
+          // Backfill workflow timestamps
+          for (const b of persisted.bookings) {
+            if (!b.receivedAt) b.receivedAt = b.createdAt;
+            if (b.status === "delivered" && !b.deliveredAt) b.deliveredAt = b.completedAt || b.createdAt;
+            if ((b.status === "delivered" || b.status === "completed") && !b.workDoneAt) b.workDoneAt = b.completedAt || b.createdAt;
+          }
         }
         if (!Array.isArray(persisted.activity)) persisted.activity = [];
         if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];
