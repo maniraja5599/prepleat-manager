@@ -106,14 +106,20 @@ function NewBooking() {
   const nameSuggestions = useMemo(() => {
     const q = newName.toLowerCase().trim();
     if (!q) return [] as typeof customers;
-    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 5);
+    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6);
   }, [customers, newName]);
 
   const phoneSuggestions = useMemo(() => {
     const q = newPhone.replace(/\D/g, "");
     if (q.length < 3) return [] as typeof customers;
-    return customers.filter((c) => c.phone.replace(/\D/g, "").includes(q)).slice(0, 5);
+    return customers.filter((c) => c.phone.replace(/\D/g, "").includes(q)).slice(0, 6);
   }, [customers, newPhone]);
+
+  // Full list shown when user taps "Existing" without typing a query.
+  const existingList = useMemo(
+    () => [...customers].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50),
+    [customers],
+  );
 
   const selectedCust = customers.find((c) => c.id === customerId);
 
