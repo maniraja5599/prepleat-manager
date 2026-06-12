@@ -195,7 +195,8 @@ export const useStore = create<State>()(
 
       addBooking: (b) => {
         const billNumber = generateBillNumber(get().bookings);
-        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: new Date().toISOString(), status: "pending" };
+        const now = new Date().toISOString();
+        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: now, receivedAt: now, status: "pending" };
         const entry: ActivityEntry = {
           id: uid(), ts: new Date().toISOString(), kind: "create",
           bookingId: booking.id, summary: `${billNumber} · ${booking.service} · ${booking.sareeCount} sarees`,
