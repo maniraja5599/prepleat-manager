@@ -106,14 +106,20 @@ function NewBooking() {
   const nameSuggestions = useMemo(() => {
     const q = newName.toLowerCase().trim();
     if (!q) return [] as typeof customers;
-    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 5);
+    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6);
   }, [customers, newName]);
 
   const phoneSuggestions = useMemo(() => {
     const q = newPhone.replace(/\D/g, "");
     if (q.length < 3) return [] as typeof customers;
-    return customers.filter((c) => c.phone.replace(/\D/g, "").includes(q)).slice(0, 5);
+    return customers.filter((c) => c.phone.replace(/\D/g, "").includes(q)).slice(0, 6);
   }, [customers, newPhone]);
+
+  // Full list shown when user taps "Existing" without typing a query.
+  const existingList = useMemo(
+    () => [...customers].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50),
+    [customers],
+  );
 
   const selectedCust = customers.find((c) => c.id === customerId);
 
@@ -143,8 +149,25 @@ function NewBooking() {
     const customerRequired = bookingSource === "direct" || showCustomerForArtist;
     if (!cid) {
       if (customerRequired && newName.trim()) {
-        const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
-        cid = c.id;
+        // Dedupe: if a client already exists with the same 10-digit phone, reuse them.
+        const phoneDigits = newPhone.replace(/\D/g, "");
+        const existingByPhone = phoneDigits.length === 10
+          ? customers.find((c) => c.phone.replace(/\D/g, "").endsWith(phoneDigits))
+          : undefined;
+        const nameKey = newName.trim().toLowerCase();
+        const existingByName = !existingByPhone
+          ? customers.find((c) => c.name.trim().toLowerCase() === nameKey)
+          : undefined;
+        const existing = existingByPhone ?? existingByName;
+        if (existing) {
+          cid = existing.id;
+          if (newAddress.trim() && !existing.address) {
+            updateCustomer(existing.id, { address: newAddress.trim() });
+          }
+        } else {
+          const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
+          cid = c.id;
+        }
       } else if (bookingSource === "artist" && artistId) {
         // No customer captured — record the booking under the artist.
         cid = artistId;
@@ -345,13 +368,29 @@ function NewBooking() {
                 placeholder="Customer name"
                 className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {showExisting && nameFocus && nameSuggestions.length > 0 && (
+              {nameFocus && nameSuggestions.length > 0 && (
                 <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {nameSuggestions.map((c) => (
                     <li key={c.id}>
                       <button
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); }}
+                        className="w-full text-left px-3 py-2 hover:bg-secondary"
+                      >
+                        <p className="text-sm font-medium">{c.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {showExisting && !newName.trim() && existingList.length > 0 && (
+                <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                  {existingList.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); setShowExisting(false); }}
                         className="w-full text-left px-3 py-2 hover:bg-secondary"
                       >
                         <p className="text-sm font-medium">{c.name}</p>
@@ -382,7 +421,7 @@ function NewBooking() {
               {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
                 <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
               )}
-              {showExisting && phoneSuggestions.length > 0 && (
+              {phoneSuggestions.length > 0 && !customerId && (
                 <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {phoneSuggestions.map((c) => (
                     <li key={c.id}>
