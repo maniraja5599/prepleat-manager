@@ -14,25 +14,24 @@ interface Props {
   onChange: (key: string) => void;
   itemWidth?: number;
   label?: string;
-  /** Called when the user double-taps the active value — handy for opening a
-   *  native date/time picker. */
+  /** Double-tap on the active value — handy for opening a native picker. */
   onDoubleTap?: () => void;
 }
 
 /**
  * Horizontal scroll-snap picker. The centred item is the active value.
  * Tap an item or use the ← → buttons to step one-by-one. Fast swipes are
- * supported — the centred item updates immediately when scrolling settles.
- * Double-tap the centred item to trigger {@link Props.onDoubleTap}.
+ * supported. Double-tap the picker to trigger {@link Props.onDoubleTap} —
+ * works for both mouse and touch (iOS Safari).
  */
 export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label, onDoubleTap }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const settling = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTap = useRef<number>(0);
 
   const idx = Math.max(0, items.findIndex((i) => i.key === value));
 
-  // Centre on the active value
   useEffect(() => {
     const el = ref.current;
     if (!el || idx < 0) return;
@@ -49,7 +48,6 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
     const el = ref.current;
     if (!el) return;
     if (timer.current) clearTimeout(timer.current);
-    // Update quickly while swiping (live), then confirm on settle.
     const live = () => {
       const i = Math.round(el.scrollLeft / itemWidth);
       const clamped = Math.max(0, Math.min(items.length - 1, i));
@@ -65,12 +63,24 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
     if (next) onChange(next.key);
   };
 
+  // Unified double-tap detection — works on touch (iOS) and mouse.
+  const fireDoubleTap = () => {
+    if (!onDoubleTap) return;
+    const now = Date.now();
+    if (now - lastTap.current < 320) {
+      lastTap.current = 0;
+      onDoubleTap();
+    } else {
+      lastTap.current = now;
+    }
+  };
+
   return (
     <div className="select-none">
       {label && (
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 text-center">{label}</p>
       )}
-      <div className="relative" onDoubleClick={onDoubleTap}>
+      <div className="relative">
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-primary/10 border border-primary/30 z-0"
           style={{ width: itemWidth - 6, height: 56 }}
@@ -105,7 +115,8 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
               <button
                 type="button"
                 key={it.key}
-                onClick={() => onChange(it.key)}
+                onClick={() => { onChange(it.key); fireDoubleTap(); }}
+                onTouchEnd={() => { /* tap counted via onClick */ }}
                 className={cn(
                   "snap-center shrink-0 h-14 flex flex-col items-center justify-center rounded-xl transition relative z-10",
                   active ? "text-primary" : "text-muted-foreground/70",
