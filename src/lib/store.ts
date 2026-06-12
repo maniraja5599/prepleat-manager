@@ -44,6 +44,16 @@ export interface Payment {
   updatedAt?: string;
 }
 
+export interface Expense {
+  id: string;
+  amount: number;
+  category: string;
+  note?: string;
+  date: string;
+  mode?: PaymentMode;
+  updatedAt?: string;
+}
+
 export type CustomerKind = "client" | "artist";
 
 export interface Customer {
@@ -82,6 +92,7 @@ export interface Settings {
   defaultPaymentMode?: PaymentMode;
   websiteUrl?: string;
   occasionPresets?: string[];
+  expenseCategories?: string[];
 }
 
 export interface DeletedBooking {
