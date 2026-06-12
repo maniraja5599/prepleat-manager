@@ -163,3 +163,16 @@ function CustomersPage() {
     </AppShell>
   );
 }
+
+function StatChip({ icon, label, value, tone = "default" }: { icon: React.ReactNode; label: string; value: string; tone?: "default" | "warn" | "danger" }) {
+  const toneCls = tone === "danger" ? "text-destructive" : tone === "warn" ? "text-warning" : "text-foreground";
+  return (
+    <div className="bg-card card-shadow rounded-xl px-2 py-1.5 flex items-center gap-1.5 min-w-0">
+      <span className={cn("shrink-0", toneCls)}>{icon}</span>
+      <div className="min-w-0 leading-tight">
+        <p className="text-[9px] uppercase tracking-wider text-muted-foreground truncate">{label}</p>
+        <p className={cn("text-xs font-bold truncate tabular-nums", toneCls)}>{value}</p>
+      </div>
+    </div>
+  );
+}
