@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock, Users, ChevronDown } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -45,6 +45,7 @@ function NewBooking() {
   const updateCustomer = useStore((s) => s.updateCustomer);
   const addBooking = useStore((s) => s.addBooking);
 
+  const [bookingSource, setBookingSource] = useState<"direct" | "artist">("direct");
   const [artistId, setArtistId] = useState<string>("");
 
   const [service, setService] = useState<ServiceType>("prepleat");
@@ -53,13 +54,21 @@ function NewBooking() {
   const [newPhone, setNewPhone] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [nameFocus, setNameFocus] = useState(false);
+  const [showExisting, setShowExisting] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
 
   const [sareeCount, setSareeCount] = useState(1);
-  const defaultPrice = service === "prepleat" ? settings.prepleatPrice : settings.drapePrice;
+  const defaultPrice = bookingSource === "artist"
+    ? (service === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
+    : (service === "prepleat" ? settings.prepleatPrice : settings.drapePrice);
   const lastPrice = customerId ? lastPriceFor(customerId, service, bookings) : undefined;
+  const lastArtistPrice = artistId
+    ? bookings.find((b) => b.artistId === artistId && b.service === service)?.pricePerSaree
+    : undefined;
+  const quotedLastPrice = bookingSource === "artist" ? lastArtistPrice : lastPrice;
   const [pricePerSaree, setPricePerSaree] = useState<number>(defaultPrice);
   const [priceTouched, setPriceTouched] = useState(false);
-  const effPrice = priceTouched ? pricePerSaree : (lastPrice ?? defaultPrice);
+  const effPrice = priceTouched ? pricePerSaree : (quotedLastPrice ?? defaultPrice);
   const total = sareeCount * effPrice;
 
   const today = format(new Date(), "yyyy-MM-dd");
