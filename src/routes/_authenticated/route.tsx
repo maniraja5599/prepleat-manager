@@ -17,17 +17,17 @@ export const Route = createFileRoute("/_authenticated")({
       // re-hydrating its persisted session. Wait briefly for the INITIAL_SESSION
       // event before deciding the user is unauthenticated.
       session = await new Promise((resolve) => {
-        const timer = setTimeout(() => {
-          sub?.subscription.unsubscribe();
-          resolve(null);
-        }, 1200);
-        const sub = supabase.auth.onAuthStateChange((_e, s) => {
+        const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
           if (s) {
             clearTimeout(timer);
             sub.subscription.unsubscribe();
             resolve(s);
           }
         });
+        const timer = setTimeout(() => {
+          sub.subscription.unsubscribe();
+          resolve(null);
+        }, 1200);
       });
     }
     if (!session) throw redirect({ to: "/auth" });
