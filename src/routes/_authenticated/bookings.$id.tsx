@@ -321,6 +321,29 @@ function BookingDetail() {
               </div>
             ))}
           </div>
+          {/* Stage-aware notify — sends the right message for the current step */}
+          {currentStage !== "new" && (
+            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Notify customer</p>
+                <p className="text-xs font-semibold truncate">
+                  {currentStage === "received" && "Saree received update"}
+                  {currentStage === "ready" && (booking.service === "prepleat" ? "PrePleat ready" : "Drape ready")}
+                  {currentStage === "delivered" && "Delivered · full bill"}
+                </p>
+              </div>
+              <div className="flex gap-1.5 shrink-0">
+                <button
+                  onClick={() => sendWhatsApp("status")}
+                  className="px-3 py-2 rounded-full bg-[oklch(0.62_0.18_150)] text-white text-xs font-semibold flex items-center gap-1.5"
+                ><MessageCircle className="size-3.5" /> WhatsApp</button>
+                <button
+                  onClick={() => sendSMS("status")}
+                  className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center gap-1.5"
+                ><MessageSquare className="size-3.5" /> SMS</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
