@@ -41,11 +41,26 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
     // overwrite the value with whatever item ends up centered.
     if (!el || !inRange) return;
     const target = idx * itemWidth;
-    if (Math.abs(el.scrollLeft - target) > 1) {
-      settling.current = true;
-      el.scrollTo({ left: target, behavior: "smooth" });
-      setTimeout(() => { settling.current = false; }, 220);
-    }
+    const distance = Math.abs(el.scrollLeft - target);
+    if (distance <= 1) return;
+    settling.current = true;
+    // For long jumps (picking a far date from the calendar), smooth scroll
+    // can take >1s — during which handleScroll would overwrite the picked
+    // value. Use an instant jump for big distances.
+    const instant = distance > itemWidth * 6;
+    el.scrollTo({ left: target, behavior: instant ? "auto" : "smooth" });
+    // Release `settling` only after scrollLeft actually reaches the target.
+    let tries = 0;
+    const release = () => {
+      tries++;
+      if (!ref.current) { settling.current = false; return; }
+      if (Math.abs(ref.current.scrollLeft - target) <= 1 || tries > 40) {
+        settling.current = false;
+        return;
+      }
+      setTimeout(release, 50);
+    };
+    setTimeout(release, instant ? 30 : 80);
   }, [idx, itemWidth, inRange]);
 
   const handleScroll = () => {
