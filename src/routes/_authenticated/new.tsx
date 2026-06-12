@@ -295,19 +295,19 @@ function NewBooking() {
         </button>
       ) : (
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        {bookingSource === "artist" && (
-          <button type="button" onClick={() => { setShowCustomerForArtist(false); setCustomerId(""); setNewName(""); setNewPhone(""); setNewAddress(""); }}
-            className="absolute -mt-1 ml-auto right-7 text-[10px] text-muted-foreground" style={{ position: "relative", float: "right" }}>
-            Hide
-          </button>
-        )}
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</p>
-          {!selectedCust && (
-            <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
-              <Users className="size-3" /> Existing
-            </button>
-          )}
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer{bookingSource === "artist" && <span className="ml-1 text-[10px] normal-case font-normal text-muted-foreground">(optional)</span>}</p>
+          <div className="flex items-center gap-1.5">
+            {!selectedCust && (
+              <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
+                <Users className="size-3" /> Existing
+              </button>
+            )}
+            {bookingSource === "artist" && (
+              <button type="button" onClick={() => { setShowCustomerForArtist(false); setCustomerId(""); setNewName(""); setNewPhone(""); setNewAddress(""); }}
+                className="text-[10px] text-muted-foreground px-2 py-1">Hide</button>
+            )}
+          </div>
         </div>
         {selectedCust ? (
           <div>
