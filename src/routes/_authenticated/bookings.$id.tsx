@@ -173,8 +173,13 @@ function BookingDetail() {
       const ok = window.confirm(`Amount ${fmtINR(n)} exceeds pending ${fmtINR(due)}. Continue anyway?`);
       if (!ok) return;
     }
-    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: new Date().toISOString(), mode: payMode, note: payNote.trim() || undefined });
-    setPayAmt(""); setPayNote("");
+    // Preserve the picked date but use current time-of-day so chronological order stays sane.
+    const today = new Date().toISOString().slice(0, 10);
+    const dateIso = payDate === today
+      ? new Date().toISOString()
+      : new Date(payDate + "T12:00:00").toISOString();
+    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: dateIso, mode: payMode, note: payNote.trim() || undefined });
+    setPayAmt(""); setPayNote(""); setPayDate(today);
     toast.success(`Payment of ${fmtINR(n)} added`);
   };
 
