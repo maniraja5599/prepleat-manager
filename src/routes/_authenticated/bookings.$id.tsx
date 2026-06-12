@@ -34,6 +34,7 @@ function BookingDetail() {
   const [payAmt, setPayAmt] = useState("");
   const [payMode, setPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
   const [payNote, setPayNote] = useState("");
+  const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [editing, setEditing] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
 
@@ -172,8 +173,13 @@ function BookingDetail() {
       const ok = window.confirm(`Amount ${fmtINR(n)} exceeds pending ${fmtINR(due)}. Continue anyway?`);
       if (!ok) return;
     }
-    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: new Date().toISOString(), mode: payMode, note: payNote.trim() || undefined });
-    setPayAmt(""); setPayNote("");
+    // Preserve the picked date but use current time-of-day so chronological order stays sane.
+    const today = new Date().toISOString().slice(0, 10);
+    const dateIso = payDate === today
+      ? new Date().toISOString()
+      : new Date(payDate + "T12:00:00").toISOString();
+    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: dateIso, mode: payMode, note: payNote.trim() || undefined });
+    setPayAmt(""); setPayNote(""); setPayDate(today);
     toast.success(`Payment of ${fmtINR(n)} added`);
   };
 
@@ -288,6 +294,20 @@ function BookingDetail() {
                 <button key={m} onClick={() => setPayMode(m)} className={cn("py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider",
                   payMode === m ? "bg-primary text-primary-foreground" : "bg-secondary")}>{m}</button>
               ))}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="date"
+                value={payDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setPayDate(e.target.value)}
+                className="flex-1 min-w-0 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="button"
+                onClick={() => setPayDate(new Date().toISOString().slice(0, 10))}
+                className="px-3 py-1.5 rounded-full bg-secondary text-[11px] font-semibold uppercase tracking-wider"
+              >Today</button>
             </div>
             <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (optional)"
               className="w-full mt-2 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
