@@ -188,6 +188,7 @@ export const useStore = create<State>()(
       customers: [],
       bookings: [],
       payments: [],
+      expenses: [],
       trash: [],
       activity: [],
       redoStack: [],
@@ -208,6 +209,7 @@ export const useStore = create<State>()(
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
         occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
+        expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
       },
 
       addCustomer: (c) => {
