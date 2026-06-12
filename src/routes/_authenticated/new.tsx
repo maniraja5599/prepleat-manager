@@ -592,7 +592,7 @@ function NewBooking() {
         </p>
         <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">Tip · tap the 📅 / 🕒 icon for a full picker</p>
         {(() => {
-          const same = bookingsOnDate(new Date(deliveryDate).toISOString(), bookings);
+          const same = bookingsOnDate(new Date(deliveryDate + "T12:00:00").toISOString(), bookings);
           if (same.length === 0) return null;
           const totalSarees = same.reduce((s, b) => s + b.sareeCount, 0);
           return (
