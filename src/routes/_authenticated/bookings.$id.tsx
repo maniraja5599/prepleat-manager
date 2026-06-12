@@ -136,7 +136,7 @@ function BookingDetail() {
   };
 
 
-  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" = "reminder") => {
+  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" | "status" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
     const encoded = encodeURIComponent(buildWhatsAppMessage(kind));
@@ -154,10 +154,10 @@ function BookingDetail() {
     }
   };
 
-  const sendSMS = () => {
+  const sendSMS = (kind: "reminder" | "bill" | "balance" | "status" = "status") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = buildWhatsAppMessage(due > 0 ? "balance" : "bill")
+    const msg = buildWhatsAppMessage(kind)
       .replace(/\*/g, "")
       .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏]/g, "")
       .replace(/\n{2,}/g, "\n")
