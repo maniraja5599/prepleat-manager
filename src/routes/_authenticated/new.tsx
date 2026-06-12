@@ -205,16 +205,59 @@ function NewBooking() {
         </div>
         {bookingSource === "artist" && (
           <div className="mt-3 pt-3 border-t border-border">
-            {artists.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
-                {artists.map((a) => (
-                  <button key={a.id} type="button" onClick={() => { setArtistId(a.id); setPriceTouched(false); }}
-                    className={cn("px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0", artistId === a.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                    {a.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            {artists.length > 0 && (() => {
+              const compact = artists.length > 5;
+              const ql = artistSearch.toLowerCase().trim();
+              const visible = compact
+                ? (showArtistSearch
+                    ? artists.filter((a) => !ql || a.name.toLowerCase().includes(ql)).slice(0, 12)
+                    : artists.slice(0, 4))
+                : artists;
+              const selected = artists.find((a) => a.id === artistId);
+              const selectedHidden = selected && !visible.some((a) => a.id === selected.id);
+              return (
+                <div className="mb-2">
+                  <div className="flex gap-2 items-center overflow-x-auto no-scrollbar -mx-1 px-1">
+                    {selectedHidden && (
+                      <button type="button" onClick={() => { setArtistId(selected!.id); setPriceTouched(false); }}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 bg-primary text-primary-foreground">
+                        {selected!.name}
+                      </button>
+                    )}
+                    {visible.map((a) => (
+                      <button key={a.id} type="button" onClick={() => { setArtistId(a.id); setPriceTouched(false); }}
+                        className={cn("px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0", artistId === a.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                        {a.name}
+                      </button>
+                    ))}
+                    {compact && (
+                      <button type="button" onClick={() => { setShowArtistSearch((v) => !v); if (showArtistSearch) setArtistSearch(""); }}
+                        aria-label="Search artists"
+                        className={cn("size-7 shrink-0 rounded-full flex items-center justify-center", showArtistSearch ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground")}>
+                        <Search className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {compact && showArtistSearch && (
+                    <div className="relative mt-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                      <input
+                        autoFocus
+                        value={artistSearch}
+                        onChange={(e) => setArtistSearch(e.target.value)}
+                        placeholder={`Search ${artists.length} artists`}
+                        className="w-full bg-secondary rounded-full pl-8 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      {artistSearch && (
+                        <button type="button" onClick={() => setArtistSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 size-5 rounded-full bg-background/60 flex items-center justify-center">
+                          <X className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <AddArtistInline onAdd={(name) => {
               const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
               setArtistId(c.id); setPriceTouched(false); toast.success(`Artist “${c.name}” added`);
