@@ -47,11 +47,56 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance") => {
+  // Workflow-aware messages: the content adapts to whichever step the booking
+  // is in (received / ready / delivered) so the customer always gets the
+  // right update at the right time.
+  const currentStage: "received" | "ready" | "delivered" | "new" =
+    booking.deliveredAt ? "delivered"
+    : booking.workDoneAt ? "ready"
+    : booking.receivedAt ? "received"
+    : "new";
+
+  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance" | "status") => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
     const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
+    if (kind === "status") {
+      const head = `🧵 *${businessName}*`;
+      const greet = `Hi ${customer?.name} ✨`;
+      if (currentStage === "received") {
+        return [head, "", greet,
+          `We've *received your saree* for ${booking.service.toUpperCase()} 🪡`,
+          `Sarees: ${booking.sareeCount}`,
+          `Delivery: 📅 ${dateStr}, ${timeStr}`,
+          due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully paid`,
+          "", `🌐 ${site}`,
+        ].join("\n");
+      }
+      if (currentStage === "ready") {
+        const label = booking.service === "prepleat" ? "PrePleat is ready" : "Drape is ready";
+        return [head, "", greet,
+          `Good news — your *${label}* 💛`,
+          `Pickup / Delivery: 📅 ${dateStr}, ${timeStr}`,
+          due > 0 ? `Balance to pay: ${fmtINR(due)} (GPay / Cash)` : `Already fully paid — thank you!`,
+          "", `🌐 ${site}`,
+        ].join("\n");
+      }
+      if (currentStage === "delivered") {
+        return [head, "", greet,
+          `Your order has been *delivered* ✅ Thank you for trusting us 💛`,
+          ``,
+          `🧾 *Bill:* ${booking.billNumber ?? booking.id.slice(0,6).toUpperCase()}`,
+          `Sarees: ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
+          `Total: ${fmtINR(booking.totalAmount)}`,
+          `Paid: ${fmtINR(paid)}`,
+          due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully Paid`,
+          "", `Hope to drape for you again ✨`, `🌐 ${site}`,
+        ].join("\n");
+      }
+      // new — same as bill
+      kind = "bill";
+    }
     if (kind === "balance") {
       return [
         `💛 *${businessName}*`,
