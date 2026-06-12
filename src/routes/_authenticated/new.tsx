@@ -375,15 +375,14 @@ function NewBooking() {
         <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
           {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
         </p>
-        {/* Hidden native inputs — visually invisible but still focusable so
-            showPicker() works on iOS/Android Chrome. */}
+        {/* Hidden native pickers — opacity 0 (NOT sr-only) so iOS Safari
+            allows showPicker() to surface the calendar / clock UI. */}
         <input
           ref={dateInputRef}
           type="date"
           value={deliveryDate}
           onChange={(e) => e.target.value && setDeliveryDate(e.target.value)}
-          className="sr-only"
-          tabIndex={-1}
+          className="absolute opacity-0 pointer-events-none w-px h-px"
           aria-hidden
         />
         <input
@@ -392,8 +391,7 @@ function NewBooking() {
           step={900}
           value={deliveryTime}
           onChange={(e) => e.target.value && setDeliveryTime(e.target.value)}
-          className="sr-only"
-          tabIndex={-1}
+          className="absolute opacity-0 pointer-events-none w-px h-px"
           aria-hidden
         />
         <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">Tip · double-tap date or time for calendar / clock picker</p>
@@ -412,18 +410,19 @@ function NewBooking() {
         })()}
       </section>
 
-      {/* Artist (optional) */}
-      {artists.length > 0 && (
-        <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="size-3.5" /> Artist (optional)
-            </p>
-            {artistId && (
-              <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
-            )}
-          </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+      {/* Artist (optional) — always visible so bookings that come via an
+          artist can be tagged. Add new artists inline. */}
+      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Sparkles className="size-3.5" /> Via Artist (optional)
+          </p>
+          {artistId && (
+            <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
+          )}
+        </div>
+        {artists.length > 0 ? (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
             {artists.map((a) => (
               <button
                 key={a.id}
@@ -435,8 +434,17 @@ function NewBooking() {
               >{a.name}</button>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="text-[11px] text-muted-foreground mb-2">No artists yet. Add one below if this booking came through an artist or referral.</p>
+        )}
+        <AddArtistInline
+          onAdd={(name) => {
+            const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
+            setArtistId(c.id);
+            toast.success(`Artist “${c.name}” added`);
+          }}
+        />
+      </section>
 
 
       {/* Advance */}
