@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, type CustomerKind } from "@/lib/store";
 import { useState, useMemo } from "react";
-import { Search, Phone, Plus } from "lucide-react";
+import { Search, Phone, Plus, SlidersHorizontal, Users, IndianRupee, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
@@ -17,6 +17,9 @@ function CustomersPage() {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<CustomerKind>("client");
   const [showAdd, setShowAdd] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [dueOnly, setDueOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"due" | "name" | "orders">("due");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -31,22 +34,51 @@ function CustomersPage() {
         return { ...c, count: cb.length, due };
       })
       .filter((c) => !ql || c.name.toLowerCase().includes(ql) || c.phone.includes(ql))
-      .sort((a, b) => b.due - a.due || a.name.localeCompare(b.name));
-  }, [customers, bookings, q, tab]);
+      .filter((c) => !dueOnly || c.due > 0)
+      .sort((a, b) => {
+        if (sortBy === "name") return a.name.localeCompare(b.name);
+        if (sortBy === "orders") return b.count - a.count || a.name.localeCompare(b.name);
+        return b.due - a.due || a.name.localeCompare(b.name);
+      });
+  }, [customers, bookings, q, tab, dueOnly, sortBy]);
 
   const clientCount = customers.filter((c) => (c.kind ?? "client") === "client").length;
   const artistCount = customers.filter((c) => c.kind === "artist").length;
+
+  const visibleSummary = useMemo(() => {
+    const totalDueAll = list.reduce((s, c) => s + c.due, 0);
+    const totalOrders = list.reduce((s, c) => s + c.count, 0);
+    const withDue = list.filter((c) => c.due > 0).length;
+    return { count: list.length, totalDueAll, totalOrders, withDue };
+  }, [list]);
 
   return (
     <AppShell
       title={tab === "client" ? "Clients" : "Artists"}
       subtitle={`${tab === "client" ? clientCount : artistCount} ${tab === "client" ? "clients" : "artists"}`}
       right={
-        <button onClick={() => setShowAdd((v) => !v)} className="size-10 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
-          <Plus className="size-5" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setShowFilter((v) => !v)}
+            aria-label="Filters"
+            className={cn(
+              "size-10 rounded-full flex items-center justify-center",
+              showFilter || dueOnly || sortBy !== "due" ? "bg-primary text-primary-foreground" : "bg-secondary",
+            )}
+          ><SlidersHorizontal className="size-4" /></button>
+          <button onClick={() => setShowAdd((v) => !v)} className="size-10 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
+            <Plus className="size-5" />
+          </button>
+        </div>
       }
     >
+      {/* Slim stats chip bar (mirrors bookings page) */}
+      <div className="grid grid-cols-3 gap-1.5 mb-3">
+        <StatChip icon={<Users className="size-3.5" />} label="Total" value={String(visibleSummary.count)} />
+        <StatChip icon={<AlertCircle className="size-3.5" />} label="With due" value={String(visibleSummary.withDue)} tone={visibleSummary.withDue > 0 ? "warn" : "default"} />
+        <StatChip icon={<IndianRupee className="size-3.5" />} label="Outstanding" value={fmtINR(visibleSummary.totalDueAll)} tone={visibleSummary.totalDueAll > 0 ? "danger" : "default"} />
+      </div>
+
       <div className="grid grid-cols-2 gap-2 mb-3">
         {(["client", "artist"] as CustomerKind[]).map((k) => (
           <button
@@ -59,6 +91,29 @@ function CustomersPage() {
           >{k === "client" ? `Clients · ${clientCount}` : `Artists · ${artistCount}`}</button>
         ))}
       </div>
+
+      {showFilter && (
+        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold">Only show with balance</span>
+            <button
+              onClick={() => setDueOnly((v) => !v)}
+              className={cn("relative h-6 w-11 rounded-full transition", dueOnly ? "saree-gradient" : "bg-secondary")}
+            >
+              <span className={cn("absolute top-0.5 size-5 rounded-full bg-card shadow transition-transform", dueOnly ? "translate-x-5" : "translate-x-0.5")} />
+            </button>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Sort by</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {(["due","orders","name"] as const).map((s) => (
+                <button key={s} onClick={() => setSortBy(s)} className={cn("py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider",
+                  sortBy === s ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground")}>{s}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAdd && (
         <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2">
@@ -106,5 +161,18 @@ function CustomersPage() {
         </ul>
       )}
     </AppShell>
+  );
+}
+
+function StatChip({ icon, label, value, tone = "default" }: { icon: React.ReactNode; label: string; value: string; tone?: "default" | "warn" | "danger" }) {
+  const toneCls = tone === "danger" ? "text-destructive" : tone === "warn" ? "text-warning" : "text-foreground";
+  return (
+    <div className="bg-card card-shadow rounded-xl px-2 py-1.5 flex items-center gap-1.5 min-w-0">
+      <span className={cn("shrink-0", toneCls)}>{icon}</span>
+      <div className="min-w-0 leading-tight">
+        <p className="text-[9px] uppercase tracking-wider text-muted-foreground truncate">{label}</p>
+        <p className={cn("text-xs font-bold truncate tabular-nums", toneCls)}>{value}</p>
+      </div>
+    </div>
   );
 }

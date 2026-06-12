@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
@@ -65,6 +65,18 @@ function NewBooking() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [deliveryDate, setDeliveryDate] = useState(presetDate || today);
   const [deliveryTime, setDeliveryTime] = useState(roundUpToQuarter());
+  // Hidden native pickers, opened on double-tap of the swipeable picker.
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const timeInputRef = useRef<HTMLInputElement>(null);
+  const openNative = (el: HTMLInputElement | null) => {
+    if (!el) return;
+    // showPicker is the modern API; fall back to focus/click for older browsers.
+    const anyEl = el as HTMLInputElement & { showPicker?: () => void };
+    if (typeof anyEl.showPicker === "function") {
+      try { anyEl.showPicker(); return; } catch { /* fall through */ }
+    }
+    el.focus(); el.click();
+  };
 
   useEffect(() => { if (presetDate) setDeliveryDate(presetDate); }, [presetDate]);
 
@@ -325,6 +337,7 @@ function NewBooking() {
           itemWidth={72}
           value={deliveryDate}
           onChange={setDeliveryDate}
+          onDoubleTap={() => openNative(dateInputRef.current)}
           items={(() => {
             const base = new Date(); base.setHours(0, 0, 0, 0);
             const start = addDays(base, -7);
@@ -342,12 +355,13 @@ function NewBooking() {
         <div className="mt-3">
           <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             <Clock className="size-3.5 text-primary/70" />
-            <span>Time · 15-min steps</span>
+            <span>Time · 15-min · double-tap for clock</span>
           </div>
           <HorizontalPicker
             itemWidth={86}
             value={deliveryTime}
             onChange={setDeliveryTime}
+            onDoubleTap={() => openNative(timeInputRef.current)}
             items={Array.from({ length: 24 * 4 }, (_, i) => {
               const h = Math.floor(i / 4);
               const m = (i % 4) * 15;
@@ -361,6 +375,28 @@ function NewBooking() {
         <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
           {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
         </p>
+        {/* Hidden native inputs — visually invisible but still focusable so
+            showPicker() works on iOS/Android Chrome. */}
+        <input
+          ref={dateInputRef}
+          type="date"
+          value={deliveryDate}
+          onChange={(e) => e.target.value && setDeliveryDate(e.target.value)}
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+        />
+        <input
+          ref={timeInputRef}
+          type="time"
+          step={900}
+          value={deliveryTime}
+          onChange={(e) => e.target.value && setDeliveryTime(e.target.value)}
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+        />
+        <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">Tip · double-tap date or time for calendar / clock picker</p>
         {(() => {
           const same = bookingsOnDate(new Date(deliveryDate).toISOString(), bookings);
           if (same.length === 0) return null;

@@ -47,11 +47,56 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance") => {
+  // Workflow-aware messages: the content adapts to whichever step the booking
+  // is in (received / ready / delivered) so the customer always gets the
+  // right update at the right time.
+  const currentStage: "received" | "ready" | "delivered" | "new" =
+    booking.deliveredAt ? "delivered"
+    : booking.workDoneAt ? "ready"
+    : booking.receivedAt ? "received"
+    : "new";
+
+  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance" | "status") => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
     const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
+    if (kind === "status") {
+      const head = `🧵 *${businessName}*`;
+      const greet = `Hi ${customer?.name} ✨`;
+      if (currentStage === "received") {
+        return [head, "", greet,
+          `We've *received your saree* for ${booking.service.toUpperCase()} 🪡`,
+          `Sarees: ${booking.sareeCount}`,
+          `Delivery: 📅 ${dateStr}, ${timeStr}`,
+          due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully paid`,
+          "", `🌐 ${site}`,
+        ].join("\n");
+      }
+      if (currentStage === "ready") {
+        const label = booking.service === "prepleat" ? "PrePleat is ready" : "Drape is ready";
+        return [head, "", greet,
+          `Good news — your *${label}* 💛`,
+          `Pickup / Delivery: 📅 ${dateStr}, ${timeStr}`,
+          due > 0 ? `Balance to pay: ${fmtINR(due)} (GPay / Cash)` : `Already fully paid — thank you!`,
+          "", `🌐 ${site}`,
+        ].join("\n");
+      }
+      if (currentStage === "delivered") {
+        return [head, "", greet,
+          `Your order has been *delivered* ✅ Thank you for trusting us 💛`,
+          ``,
+          `🧾 *Bill:* ${booking.billNumber ?? booking.id.slice(0,6).toUpperCase()}`,
+          `Sarees: ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
+          `Total: ${fmtINR(booking.totalAmount)}`,
+          `Paid: ${fmtINR(paid)}`,
+          due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully Paid`,
+          "", `Hope to drape for you again ✨`, `🌐 ${site}`,
+        ].join("\n");
+      }
+      // new — same as bill
+      kind = "bill";
+    }
     if (kind === "balance") {
       return [
         `💛 *${businessName}*`,
@@ -91,7 +136,7 @@ function BookingDetail() {
   };
 
 
-  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" = "reminder") => {
+  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" | "status" = "reminder") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
     const encoded = encodeURIComponent(buildWhatsAppMessage(kind));
@@ -99,9 +144,9 @@ function BookingDetail() {
   };
 
 
-  const downloadBillPDF = () => {
+  const downloadBillPDF = async () => {
     try {
-      generateBillPDF({ booking, customer, artist, payments, settings });
+      await generateBillPDF({ booking, customer, artist, payments, settings });
       toast.success("Bill downloaded");
     } catch (e) {
       console.error(e);
@@ -109,10 +154,10 @@ function BookingDetail() {
     }
   };
 
-  const sendSMS = () => {
+  const sendSMS = (kind: "reminder" | "bill" | "balance" | "status" = "status") => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = buildWhatsAppMessage(due > 0 ? "balance" : "bill")
+    const msg = buildWhatsAppMessage(kind)
       .replace(/\*/g, "")
       .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏]/g, "")
       .replace(/\n{2,}/g, "\n")
@@ -276,6 +321,29 @@ function BookingDetail() {
               </div>
             ))}
           </div>
+          {/* Stage-aware notify — sends the right message for the current step */}
+          {currentStage !== "new" && (
+            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Notify customer</p>
+                <p className="text-xs font-semibold truncate">
+                  {currentStage === "received" && "Saree received update"}
+                  {currentStage === "ready" && (booking.service === "prepleat" ? "PrePleat ready" : "Drape ready")}
+                  {currentStage === "delivered" && "Delivered · full bill"}
+                </p>
+              </div>
+              <div className="flex gap-1.5 shrink-0">
+                <button
+                  onClick={() => sendWhatsApp("status")}
+                  className="px-3 py-2 rounded-full bg-[oklch(0.62_0.18_150)] text-white text-xs font-semibold flex items-center gap-1.5"
+                ><MessageCircle className="size-3.5" /> WhatsApp</button>
+                <button
+                  onClick={() => sendSMS("status")}
+                  className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center gap-1.5"
+                ><MessageSquare className="size-3.5" /> SMS</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -369,7 +437,7 @@ function BookingDetail() {
           <FileDown className="size-4" /> PDF
         </button>
         <button
-          onClick={sendSMS}
+          onClick={() => sendSMS()}
           className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
         >
           <MessageSquare className="size-4" /> SMS
