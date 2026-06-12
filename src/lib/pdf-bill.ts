@@ -3,12 +3,29 @@ import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import type { Booking, Customer, Settings, Payment } from "./store";
 import { fmtTime12, totalDue } from "./store";
+import logoAsset from "@/assets/eyas-logo.png.asset.json";
 
 // Helvetica (jsPDF default) lacks the ₹ glyph — it renders as ? or a box.
 // Use the universally-supported "Rs." prefix inside the PDF only.
 const rs = (n: number) => "Rs. " + Math.round(n).toLocaleString("en-IN");
 
-export function generateBillPDF(opts: {
+// Best-effort fetch + base64 conversion for the brand logo. Returns null on
+// failure (CORS, offline, etc.) so the caller can still render without it.
+async function fetchAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { cache: "force-cache" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(typeof r.result === "string" ? r.result : null);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
+    });
+  } catch { return null; }
+}
+
+export async function generateBillPDF(opts: {
   booking: Booking;
   customer?: Customer;
   artist?: Customer;
@@ -16,6 +33,17 @@ export function generateBillPDF(opts: {
   settings: Settings;
 }) {
   const { booking, customer, artist, payments, settings } = opts;
+  // Resolve a usable logo — prefer the user-uploaded one in settings, else
+  // fall back to the bundled brand asset (fetched async into a data-URL).
+  let logoData: string | undefined =
+    settings.logoDataUrl && settings.logoDataUrl.startsWith("data:image")
+      ? settings.logoDataUrl
+      : undefined;
+  if (!logoData && logoAsset?.url) {
+    const fetched = await fetchAsDataUrl(logoAsset.url);
+    if (fetched) logoData = fetched;
+  }
+
   const doc = new jsPDF({ unit: "pt", format: "a5" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -30,26 +58,30 @@ export function generateBillPDF(opts: {
   doc.rect(0, 0, W, 78, "F");
 
   // Round logo: draw a white circle then clipped square image on top.
-  if (settings.logoDataUrl && settings.logoDataUrl.startsWith("data:image")) {
+  if (logoData) {
     try {
       const cx = 38;
       const cy = 39;
       const r = 22;
       doc.setFillColor(255, 248, 230);
       doc.circle(cx, cy, r + 2, "F");
-      doc.addImage(settings.logoDataUrl, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
+      doc.addImage(logoData, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
     } catch { /* ignore bad logo */ }
   }
 
   doc.setTextColor(255, 248, 230);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text(settings.businessName || "Eyas Saree Drapist", 72, 34);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text(settings.websiteUrl || "https://eyasdrapist.shop/", 72, 50);
+  doc.setFontSize(17);
+  doc.text(settings.businessName || "Eyas Saree Drapist", 72, 36);
+  // Tagline / slogan (sits under the business name) — drawn from the brand site.
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8.5);
+  doc.setTextColor(245, 215, 180);
+  doc.text("Drape with grace · Pleat with love", 72, 50);
 
+  doc.setTextColor(255, 248, 230);
   doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
   doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 30, { align: "right" });
   doc.text(format(new Date(), "MMM d, yyyy"), W - 18, 42, { align: "right" });
   doc.text(`Booked ${format(parseISO(booking.createdAt), "MMM d, yyyy")}`, W - 18, 54, { align: "right" });
@@ -133,18 +165,26 @@ export function generateBillPDF(opts: {
     cy += rowH;
   }
 
-  // Status stamp on the left
-  const stampTop = cy - rowH * 3;
-  const stamp = due === 0 ? "PAID IN FULL" : "BALANCE DUE";
-  const stampColor: [number, number, number] = due === 0 ? [40, 140, 80] : [200, 60, 60];
+  // Round rubber-stamp on the left — two concentric circles + label.
+  const stamp = due === 0 ? "PAID" : "DUE";
+  const subStamp = due === 0 ? "IN FULL" : "BALANCE";
+  const stampColor: [number, number, number] = due === 0 ? [38, 130, 70] : [190, 50, 50];
+  const sx = 60;
+  const sy = cy - rowH * 2;
   doc.setDrawColor(...stampColor);
   doc.setTextColor(...stampColor);
-  doc.setLineWidth(1.5);
+  doc.setLineWidth(1.8);
+  doc.circle(sx, sy, 28);
+  doc.setLineWidth(0.6);
+  doc.circle(sx, sy, 24);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  const stampW = doc.getTextWidth(stamp) + 16;
-  doc.roundedRect(20, stampTop, stampW, 24, 5, 5);
-  doc.text(stamp, 28, stampTop + 16);
+  doc.setFontSize(16);
+  doc.text(stamp, sx, sy + 2, { align: "center" });
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(subStamp, sx, sy + 11, { align: "center" });
+  doc.setFontSize(5.5);
+  doc.text(format(new Date(), "dd MMM yyyy").toUpperCase(), sx, sy - 11, { align: "center" });
 
   cy += 8;
 
@@ -177,17 +217,23 @@ export function generateBillPDF(opts: {
   }
 
   // ===== Notes =====
-  if (booking.notes) {
-    cy += 14;
+  if (booking.notes && booking.notes.trim()) {
+    cy += 16;
+    // Soft tinted card so notes don't disappear among the other rows.
+    const notesLines = doc.splitTextToSize(booking.notes.trim(), W - 56);
+    const boxH = 22 + notesLines.length * 11;
+    doc.setFillColor(252, 245, 232);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(20, cy - 4, W - 40, boxH, 6, 6, "FD");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...muted);
-    doc.text("NOTES", 20, cy);
+    doc.setFontSize(8);
+    doc.setTextColor(...accent);
+    doc.text("NOTES / REMARKS", 28, cy + 8);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(60, 60, 60);
-    const lines = doc.splitTextToSize(booking.notes, W - 40);
-    doc.text(lines, 20, cy + 12);
+    doc.text(notesLines, 28, cy + 20);
   }
 
   // ===== Footer =====
