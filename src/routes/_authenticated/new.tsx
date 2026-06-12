@@ -600,3 +600,38 @@ function ReviewRow({ label, value, bold }: { label: string; value: string; bold?
     </div>
   );
 }
+
+function AddArtistInline({ onAdd }: { onAdd: (name: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full py-2 rounded-full border border-dashed border-border text-[12px] font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition flex items-center justify-center gap-1.5"
+      >
+        <Plus className="size-3.5" /> Add artist
+      </button>
+    );
+  }
+  const submit = () => {
+    if (!name.trim()) return toast.error("Artist name required");
+    onAdd(name);
+    setName(""); setOpen(false);
+  };
+  return (
+    <div className="flex gap-2">
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+        placeholder="Artist name"
+        className="flex-1 min-w-0 bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+      <button type="button" onClick={submit} className="px-4 rounded-full saree-gradient text-primary-foreground text-xs font-semibold">Add</button>
+      <button type="button" onClick={() => { setOpen(false); setName(""); }} className="px-3 rounded-full bg-secondary text-xs font-semibold">×</button>
+    </div>
+  );
+}
