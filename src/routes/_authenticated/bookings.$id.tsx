@@ -99,9 +99,9 @@ function BookingDetail() {
   };
 
 
-  const downloadBillPDF = () => {
+  const downloadBillPDF = async () => {
     try {
-      generateBillPDF({ booking, customer, artist, payments, settings });
+      await generateBillPDF({ booking, customer, artist, payments, settings });
       toast.success("Bill downloaded");
     } catch (e) {
       console.error(e);
