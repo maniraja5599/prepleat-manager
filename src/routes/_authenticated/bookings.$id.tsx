@@ -295,6 +295,20 @@ function BookingDetail() {
                   payMode === m ? "bg-primary text-primary-foreground" : "bg-secondary")}>{m}</button>
               ))}
             </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="date"
+                value={payDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setPayDate(e.target.value)}
+                className="flex-1 min-w-0 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="button"
+                onClick={() => setPayDate(new Date().toISOString().slice(0, 10))}
+                className="px-3 py-1.5 rounded-full bg-secondary text-[11px] font-semibold uppercase tracking-wider"
+              >Today</button>
+            </div>
             <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (optional)"
               className="w-full mt-2 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
           </>
