@@ -47,6 +47,9 @@ function NewBooking() {
 
   const [bookingSource, setBookingSource] = useState<"direct" | "artist">("direct");
   const [artistId, setArtistId] = useState<string>("");
+  const [artistSearch, setArtistSearch] = useState("");
+  const [showArtistSearch, setShowArtistSearch] = useState(false);
+  const [showCustomerForArtist, setShowCustomerForArtist] = useState(false);
 
   const [service, setService] = useState<ServiceType>("prepleat");
   const [customerId, setCustomerId] = useState<string>("");
