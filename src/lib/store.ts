@@ -24,6 +24,9 @@ export interface Booking {
   measurements?: Measurement[];
   createdAt: string;
   completedAt?: string;
+  receivedAt?: string;
+  workDoneAt?: string;
+  deliveredAt?: string;
   status: "pending" | "completed" | "delivered" | "cancelled";
 }
 
