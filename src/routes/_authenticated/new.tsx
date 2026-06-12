@@ -149,8 +149,25 @@ function NewBooking() {
     const customerRequired = bookingSource === "direct" || showCustomerForArtist;
     if (!cid) {
       if (customerRequired && newName.trim()) {
-        const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
-        cid = c.id;
+        // Dedupe: if a client already exists with the same 10-digit phone, reuse them.
+        const phoneDigits = newPhone.replace(/\D/g, "");
+        const existingByPhone = phoneDigits.length === 10
+          ? customers.find((c) => c.phone.replace(/\D/g, "").endsWith(phoneDigits))
+          : undefined;
+        const nameKey = newName.trim().toLowerCase();
+        const existingByName = !existingByPhone
+          ? customers.find((c) => c.name.trim().toLowerCase() === nameKey)
+          : undefined;
+        const existing = existingByPhone ?? existingByName;
+        if (existing) {
+          cid = existing.id;
+          if (newAddress.trim() && !existing.address) {
+            updateCustomer(existing.id, { address: newAddress.trim() });
+          }
+        } else {
+          const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
+          cid = c.id;
+        }
       } else if (bookingSource === "artist" && artistId) {
         // No customer captured — record the booking under the artist.
         cid = artistId;
