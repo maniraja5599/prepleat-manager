@@ -3,10 +3,9 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, totalDue } from "@/lib/store";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, addMonths } from "date-fns";
-import { Search, IndianRupee, ChevronLeft, ChevronRight, TrendingUp, AlertCircle, Wallet, Calendar as CalIcon, Trash2, Download, FileText, SlidersHorizontal, X as XIcon } from "lucide-react";
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
+import { IndianRupee, TrendingUp, AlertCircle, Wallet, Download, FileText, Sparkles, TrendingDown, Users, Crown, CalendarCheck, ArrowRight } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid } from "recharts";
-import { Sparkles, TrendingDown, Users, Crown, CalendarCheck } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -14,15 +13,11 @@ export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({
     meta: [
       { title: "Payments — Eyas Saree Drapist" },
-      { name: "description", content: "All payments, analytics, customer-wise totals and history." },
+      { name: "description", content: "Lifetime collection, analytics, top customers and payment trends." },
     ],
   }),
   component: PaymentsPage,
 });
-
-type Tab = "log" | "customer" | "analytics";
-type StatusFilter = "all" | "paid" | "due";
-type RangeMode = "month" | "custom";
 
 const rs = (n: number) => "Rs. " + Math.round(n).toLocaleString("en-IN");
 
@@ -31,104 +26,28 @@ function PaymentsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const businessName = useStore((s) => s.settings.businessName);
-  const deletePayment = useStore((s) => s.deletePayment);
 
-  const [tab, setTab] = useState<Tab>("analytics");
-  const [monthRef, setMonthRef] = useState(new Date());
-  const [rangeMode, setRangeMode] = useState<RangeMode>("month");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [minAmt, setMinAmt] = useState("");
-  const [maxAmt, setMaxAmt] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
-  const bounds = useMemo(() => {
-    if (rangeMode === "custom") {
-      return {
-        start: from ? new Date(from + "T00:00:00") : new Date(0),
-        end: to ? new Date(to + "T23:59:59") : new Date(8640000000000000),
-        label: `${from || "…"} → ${to || "…"}`,
-      };
-    }
-    return { start: startOfMonth(monthRef), end: endOfMonth(monthRef), label: format(monthRef, "MMMM yyyy") };
-  }, [rangeMode, monthRef, from, to]);
+  // === All-time aggregates ===
+  const lifetime = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  const totalPending = useMemo(() => bookings.reduce((s, b) => s + totalDue(b), 0), [bookings]);
+  const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
+  const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((lifetime / totalBilled) * 100)) : 0;
 
-  const rangedPayments = useMemo(
-    () => payments.filter((p) => isWithinInterval(parseISO(p.date), { start: bounds.start, end: bounds.end })),
-    [payments, bounds],
-  );
-
-  const activeFilterCount = (status !== "all" ? 1 : 0) + (minAmt ? 1 : 0) + (maxAmt ? 1 : 0) + (rangeMode === "custom" ? 1 : 0);
-
-  // Filter payments by status (via booking due), amount, search
-  const filteredPayments = useMemo(() => {
-    const ql = q.trim().toLowerCase();
-    const min = minAmt ? Number(minAmt) : -Infinity;
-    const max = maxAmt ? Number(maxAmt) : Infinity;
-    return rangedPayments.filter((p) => {
-      if (p.amount < min || p.amount > max) return false;
-      const c = customers.find((x) => x.id === p.customerId);
-      if (ql && !(c?.name.toLowerCase().includes(ql) || c?.phone.includes(ql))) return false;
-      if (status !== "all") {
-        const b = bookings.find((x) => x.id === p.bookingId);
-        const due = b ? totalDue(b) : 0;
-        if (status === "paid" && due > 0) return false;
-        if (status === "due" && due === 0) return false;
-      }
-      return true;
-    });
-  }, [rangedPayments, q, minAmt, maxAmt, status, customers, bookings]);
-
-  const collected = filteredPayments.reduce((s, p) => s + p.amount, 0);
-  const totalPending = bookings.reduce((s, b) => s + totalDue(b), 0);
-  const lifetime = payments.reduce((s, p) => s + p.amount, 0);
-  const rangedBilled = bookings
-    .filter((b) => isWithinInterval(parseISO(b.deliveryDate), { start: bounds.start, end: bounds.end }))
-    .reduce((s, b) => s + b.totalAmount, 0);
-  const rangedPaidVsBilled = rangedBilled > 0 ? Math.min(100, Math.round((collected / rangedBilled) * 100)) : 0;
-
-  // Daily chart for filtered range
-  const dailyChart = useMemo(() => {
-    const map = new Map<string, number>();
-    filteredPayments.forEach((p) => {
-      const k = p.date.slice(0, 10);
-      map.set(k, (map.get(k) ?? 0) + p.amount);
-    });
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([d, v]) => ({ day: format(parseISO(d), "MMM d"), amount: v }));
-  }, [filteredPayments]);
-
-  const modeSplit = useMemo(() => {
-    const m: Record<string, number> = { gpay: 0, cash: 0, other: 0 };
-    filteredPayments.forEach((p) => { m[p.mode ?? "other"] = (m[p.mode ?? "other"] ?? 0) + p.amount; });
-    return m;
-  }, [filteredPayments]);
-
-  // Extra analytics
-  const analytics = useMemo(() => {
-    const count = filteredPayments.length;
-    const avg = count ? collected / count : 0;
-    const top = dailyChart.reduce((a, b) => (b.amount > (a?.amount ?? 0) ? b : a), null as null | { day: string; amount: number });
-    const uniqueCustomers = new Set(filteredPayments.map((p) => p.customerId)).size;
-    // Top customer in range
-    const byCust = new Map<string, number>();
-    filteredPayments.forEach((p) => byCust.set(p.customerId, (byCust.get(p.customerId) ?? 0) + p.amount));
-    type TopCust = { name: string; amount: number };
-    let topCust: TopCust | null = null;
-    byCust.forEach((amount, cid) => {
-      const cur: TopCust | null = topCust;
-      if (!cur || amount > cur.amount) {
-        const c = customers.find((x) => x.id === cid);
-        topCust = { name: c?.name ?? "Unknown", amount };
-      }
-    });
-
-    return { count, avg, topDay: top, uniqueCustomers, topCust };
-  }, [filteredPayments, collected, dailyChart, customers]);
+  const now = new Date();
+  const today = useMemo(() => {
+    const s = startOfDay(now), e = endOfDay(now);
+    return payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+  }, [payments]);
+  const thisWeek = useMemo(() => {
+    const s = startOfWeek(now, { weekStartsOn: 1 }), e = endOfWeek(now, { weekStartsOn: 1 });
+    return payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+  }, [payments]);
+  const thisMonth = useMemo(() => {
+    const s = startOfMonth(now), e = endOfMonth(now);
+    return payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+  }, [payments]);
 
   // 12-month earning trend
   const trend12 = useMemo(() => {
@@ -148,50 +67,47 @@ function PaymentsPage() {
     return { pct: Math.abs(pct), up: pct >= 0 };
   }, [trend12]);
 
+  // Mode split (lifetime)
+  const modeSplit = useMemo(() => {
+    const m: Record<string, number> = { gpay: 0, cash: 0, other: 0 };
+    payments.forEach((p) => { m[p.mode ?? "other"] = (m[p.mode ?? "other"] ?? 0) + p.amount; });
+    return m;
+  }, [payments]);
 
-  // Customer-wise — scoped to the same range/filters
-  const customerSummary = useMemo(() => {
-    const ql = q.trim().toLowerCase();
-    const min = minAmt ? Number(minAmt) : -Infinity;
-    const max = maxAmt ? Number(maxAmt) : Infinity;
-    const rows = customers.map((c) => {
-      const cb = bookings.filter(
-        (b) =>
-          (b.customerId === c.id || b.artistId === c.id) &&
-          isWithinInterval(parseISO(b.deliveryDate), { start: bounds.start, end: bounds.end }),
-      );
-      const cp = filteredPayments.filter((p) => p.customerId === c.id);
-      const billed = cb.reduce((s, b) => s + b.totalAmount, 0);
-      const paid = cp.reduce((s, p) => s + p.amount, 0);
-      const due = cb.reduce((s, b) => s + totalDue(b), 0);
-      const lastPay = cp.sort((a, b) => b.date.localeCompare(a.date))[0];
-      return { c, billed, paid, due, count: cb.length, lastPay };
-    }).filter((r) => r.count > 0 || r.paid > 0);
-    return rows
-      .filter((r) => !ql || r.c.name.toLowerCase().includes(ql) || r.c.phone.includes(ql))
-      .filter((r) => r.paid >= min && r.paid <= max)
-      .filter((r) => status === "all" || (status === "paid" ? r.due === 0 : r.due > 0))
-      .sort((a, b) => b.due - a.due || b.paid - a.paid);
-  }, [customers, bookings, filteredPayments, q, minAmt, maxAmt, status, bounds]);
+  // KPI extras (lifetime)
+  const kpis = useMemo(() => {
+    const count = payments.length;
+    const avg = count ? lifetime / count : 0;
+    const uniqueCustomers = new Set(payments.map((p) => p.customerId)).size;
+    // Best month from trend12
+    const best = trend12.reduce((a, b) => (b.amount > (a?.amount ?? 0) ? b : a), null as null | { month: string; amount: number });
+    return { count, avg, uniqueCustomers, bestMonth: best };
+  }, [payments, lifetime, trend12]);
 
-  const searchedTotals = customerSummary.reduce(
-    (acc, r) => ({ billed: acc.billed + r.billed, paid: acc.paid + r.paid, due: acc.due + r.due }),
-    { billed: 0, paid: 0, due: 0 },
-  );
+  // Top 5 customers by lifetime paid
+  const topCustomers = useMemo(() => {
+    const map = new Map<string, number>();
+    payments.forEach((p) => map.set(p.customerId, (map.get(p.customerId) ?? 0) + p.amount));
+    return Array.from(map.entries())
+      .map(([cid, amount]) => ({ c: customers.find((x) => x.id === cid), amount }))
+      .filter((r) => r.c)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+  }, [payments, customers]);
 
-  const logList = useMemo(() => {
-    return filteredPayments
+  // Recent payments (latest 8)
+  const recent = useMemo(() => {
+    return [...payments]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 8)
       .map((p) => ({
         p,
         c: customers.find((x) => x.id === p.customerId),
         b: bookings.find((x) => x.id === p.bookingId),
-      }))
-      .sort((a, b) => b.p.date.localeCompare(a.p.date));
-  }, [filteredPayments, customers, bookings]);
+      }));
+  }, [payments, customers, bookings]);
 
-  const clearFilters = () => { setStatus("all"); setMinAmt(""); setMaxAmt(""); setRangeMode("month"); setFrom(""); setTo(""); };
-
-  // ========= Exports =========
+  // ========= Exports (lifetime) =========
   const downloadBlob = (data: BlobPart, filename: string, type: string) => {
     const blob = new Blob([data], { type });
     const url = URL.createObjectURL(blob);
@@ -199,35 +115,28 @@ function PaymentsPage() {
     a.href = url; a.download = filename; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-
   const csvEscape = (v: string | number) => {
     const s = String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
 
   const exportCSV = () => {
-    const rangeLabel = bounds.label.replace(/[^a-z0-9]+/gi, "-");
-    if (tab === "customer") {
-      const header = ["Customer", "Phone", "Kind", "Bookings", "Billed", "Paid", "Due", "Last Payment"];
-      const rows = customerSummary.map((r) => [
-        r.c.name, r.c.phone, r.c.kind, r.count, r.billed, r.paid, r.due,
-        r.lastPay ? format(parseISO(r.lastPay.date), "yyyy-MM-dd") : "",
-      ]);
-      rows.push(["TOTAL", "", "", "", searchedTotals.billed, searchedTotals.paid, searchedTotals.due, ""]);
-      const csv = [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
-      downloadBlob(csv, `payments-customers-${rangeLabel}.csv`, "text/csv;charset=utf-8");
-    } else {
-      const header = ["Date", "Customer", "Phone", "Booking", "Service", "Mode", "Amount", "Note"];
-      const rows = logList.map(({ p, c, b }) => [
-        format(parseISO(p.date), "yyyy-MM-dd HH:mm"),
-        c?.name ?? "Unknown", c?.phone ?? "",
-        b?.billNumber ?? b?.id ?? "", b?.service ?? "",
-        p.mode ?? "other", p.amount, p.note ?? "",
-      ]);
-      rows.push(["TOTAL", "", "", "", "", "", collected, ""]);
-      const csv = [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
-      downloadBlob(csv, `payments-log-${rangeLabel}.csv`, "text/csv;charset=utf-8");
-    }
+    const header = ["Date", "Customer", "Phone", "Booking", "Service", "Mode", "Amount", "Note"];
+    const rows = [...payments]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .map((p) => {
+        const c = customers.find((x) => x.id === p.customerId);
+        const b = bookings.find((x) => x.id === p.bookingId);
+        return [
+          format(parseISO(p.date), "yyyy-MM-dd HH:mm"),
+          c?.name ?? "Unknown", c?.phone ?? "",
+          b?.billNumber ?? b?.id ?? "", b?.service ?? "",
+          p.mode ?? "other", p.amount, p.note ?? "",
+        ];
+      });
+    rows.push(["TOTAL", "", "", "", "", "", lifetime, ""]);
+    const csv = [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
+    downloadBlob(csv, `payments-lifetime.csv`, "text/csv;charset=utf-8");
     setExportOpen(false);
   };
 
@@ -237,440 +146,274 @@ function PaymentsPage() {
     doc.setFont("helvetica", "bold"); doc.setFontSize(16);
     doc.text(businessName || "Payments Report", 40, 50);
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-    doc.text(`Range: ${bounds.label}`, 40, 68);
+    doc.text(`Lifetime Report`, 40, 68);
     doc.text(`Generated: ${format(new Date(), "PPp")}`, 40, 82);
 
-    // Summary box
     doc.setDrawColor(220); doc.roundedRect(40, 96, w - 80, 70, 6, 6);
     doc.setFontSize(9); doc.setTextColor(120);
-    doc.text("COLLECTED", 56, 116); doc.text("PENDING (ALL)", 200, 116);
-    doc.text("BILLED (RANGE)", 344, 116); doc.text("PAID / BILLED", 470, 116);
+    doc.text("LIFETIME COLLECTED", 56, 116); doc.text("PENDING", 220, 116);
+    doc.text("BILLED", 344, 116); doc.text("COLLECTION %", 470, 116);
     doc.setFontSize(13); doc.setTextColor(0); doc.setFont("helvetica", "bold");
-    doc.text(rs(collected), 56, 138);
-    doc.text(rs(totalPending), 200, 138);
-    doc.text(rs(rangedBilled), 344, 138);
-    doc.text(`${rangedPaidVsBilled}%`, 470, 138);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120);
-    const filterDesc: string[] = [];
-    if (status !== "all") filterDesc.push(`Status: ${status}`);
-    if (minAmt) filterDesc.push(`Min: ${rs(Number(minAmt))}`);
-    if (maxAmt) filterDesc.push(`Max: ${rs(Number(maxAmt))}`);
-    if (q.trim()) filterDesc.push(`Search: "${q.trim()}"`);
-    doc.text(filterDesc.length ? `Filters — ${filterDesc.join(" · ")}` : "Filters — none", 56, 158);
-    doc.setTextColor(0);
+    doc.text(rs(lifetime), 56, 138);
+    doc.text(rs(totalPending), 220, 138);
+    doc.text(rs(totalBilled), 344, 138);
+    doc.text(`${collectionRate}%`, 470, 138);
 
-    if (tab === "customer") {
-      autoTable(doc, {
-        startY: 184,
-        head: [["Customer", "Phone", "Bookings", "Billed", "Paid", "Due"]],
-        body: customerSummary.map((r) => [
-          r.c.name + (r.c.kind === "artist" ? "  ★" : ""),
-          r.c.phone, String(r.count),
-          rs(r.billed), rs(r.paid), rs(r.due),
-        ]),
-        foot: [["TOTAL", "", "", rs(searchedTotals.billed), rs(searchedTotals.paid), rs(searchedTotals.due)]],
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [80, 30, 50], textColor: 255 },
-        footStyles: { fillColor: [240, 235, 230], textColor: 0, fontStyle: "bold" },
-      });
-    } else {
-      autoTable(doc, {
-        startY: 184,
-        head: [["Date", "Customer", "Booking", "Mode", "Amount"]],
-        body: logList.map(({ p, c, b }) => [
-          format(parseISO(p.date), "dd MMM, HH:mm"),
+    autoTable(doc, {
+      startY: 184,
+      head: [["Date", "Customer", "Booking", "Mode", "Amount"]],
+      body: [...payments].sort((a, b) => b.date.localeCompare(a.date)).map((p) => {
+        const c = customers.find((x) => x.id === p.customerId);
+        const b = bookings.find((x) => x.id === p.bookingId);
+        return [
+          format(parseISO(p.date), "dd MMM yy, HH:mm"),
           c?.name ?? "Unknown",
           (b?.billNumber ?? "").split("-").pop() || "—",
           (p.mode ?? "other").toUpperCase(),
           rs(p.amount),
-        ]),
-        foot: [["", "", "", "TOTAL", rs(collected)]],
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [80, 30, 50], textColor: 255 },
-        footStyles: { fillColor: [240, 235, 230], textColor: 0, fontStyle: "bold" },
-      });
-    }
+        ];
+      }),
+      foot: [["", "", "", "TOTAL", rs(lifetime)]],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [80, 30, 50], textColor: 255 },
+      footStyles: { fillColor: [240, 235, 230], textColor: 0, fontStyle: "bold" },
+    });
 
-    // Mode split footer
-    const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 200;
-    if (finalY < 720) {
-      doc.setFontSize(10); doc.setFont("helvetica", "bold");
-      doc.text("Payment mode split", 40, finalY + 28);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-      const total = collected || 1;
-      (["gpay", "cash", "other"] as const).forEach((m, i) => {
-        const pct = Math.round(((modeSplit[m] ?? 0) / total) * 100);
-        doc.text(`${m.toUpperCase()}: ${rs(modeSplit[m] ?? 0)} (${pct}%)`, 40 + i * 170, finalY + 44);
-      });
-    }
-
-    const rangeLabel = bounds.label.replace(/[^a-z0-9]+/gi, "-");
-    doc.save(`payments-${tab}-${rangeLabel}.pdf`);
+    doc.save(`payments-lifetime.pdf`);
     setExportOpen(false);
   };
 
   return (
     <AppShell title="Payments">
-      {/* Range switcher */}
-      <div className="flex items-center justify-between mb-2 bg-card card-shadow rounded-2xl px-2 py-1.5">
-        <button
-          onClick={() => { setRangeMode("month"); setMonthRef(subMonths(monthRef, 1)); }}
-          className="size-9 rounded-full flex items-center justify-center active:bg-secondary"
-          disabled={rangeMode === "custom"}
-        ><ChevronLeft className={cn("size-5", rangeMode === "custom" && "opacity-30")} /></button>
-        <div className="flex items-center gap-1.5 font-display font-semibold text-sm">
-          <CalIcon className="size-4 text-primary" />
-          {bounds.label}
-        </div>
-        <button
-          onClick={() => { setRangeMode("month"); setMonthRef(addMonths(monthRef, 1)); }}
-          className="size-9 rounded-full flex items-center justify-center active:bg-secondary"
-          disabled={rangeMode === "custom"}
-        ><ChevronRight className={cn("size-5", rangeMode === "custom" && "opacity-30")} /></button>
-      </div>
-
-      {/* Hero stats */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Collected" value={fmtINR(collected)} />
-        <Stat tint="danger" icon={<AlertCircle className="size-3.5" />} label="Pending (all)" value={fmtINR(totalPending)} />
-        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Billed (range)" value={fmtINR(rangedBilled)} />
-        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Paid / Billed" value={`${rangedPaidVsBilled}%`} />
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-secondary rounded-full p-0.5 flex mb-2">
-        {(["log", "customer", "analytics"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "flex-1 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition",
-              tab === t ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground",
-            )}
-          >{t === "log" ? "Log" : t === "customer" ? "Customer" : "Analytics"}</button>
-        ))}
-      </div>
-
-      {/* Search + filter + export */}
-      <div className="flex gap-2 mb-2">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search customer or phone"
-            className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-          />
-        </div>
-        <button
-          onClick={() => setShowFilters((v) => !v)}
-          className={cn(
-            "shrink-0 size-11 rounded-full flex items-center justify-center relative transition",
-            showFilters || activeFilterCount > 0 ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
-          )}
-          aria-label="Filters"
-        >
-          <SlidersHorizontal className="size-4" />
-          {activeFilterCount > 0 && !showFilters && (
-            <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center">{activeFilterCount}</span>
-          )}
-        </button>
+      {/* === LIFETIME HERO — always on top === */}
+      <div className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground bg-gradient-to-br from-primary via-primary to-accent card-shadow mb-3">
+        <div className="absolute -right-8 -top-8 size-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -left-6 -bottom-10 size-32 rounded-full bg-white/5 blur-2xl" />
         <div className="relative">
-          <button
-            onClick={() => setExportOpen((v) => !v)}
-            className="shrink-0 size-11 rounded-full flex items-center justify-center bg-card border border-border text-muted-foreground active:bg-secondary"
-            aria-label="Export"
-          ><Download className="size-4" /></button>
-          {exportOpen && (
-            <>
-              <div className="fixed inset-0 z-30" onClick={() => setExportOpen(false)} />
-              <div className="absolute right-0 top-12 z-40 bg-card card-shadow rounded-2xl p-1.5 min-w-[160px] border border-border">
-                <button onClick={exportCSV} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left">
-                  <FileText className="size-4 text-success" /> Export CSV
-                </button>
-                <button onClick={exportPDF} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left">
-                  <FileText className="size-4 text-destructive" /> Export PDF
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {showFilters && (
-        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Filters</p>
-            {activeFilterCount > 0 && (
-              <button onClick={clearFilters} className="text-[11px] text-primary font-semibold flex items-center gap-1">
-                <XIcon className="size-3" /> Clear
-              </button>
-            )}
-          </div>
-
-          {/* Range mode */}
-          <div className="flex gap-1.5">
-            {(["month", "custom"] as RangeMode[]).map((m) => (
-              <button key={m} onClick={() => setRangeMode(m)}
-                className={cn("px-3 py-1.5 rounded-full text-[11px] font-medium", rangeMode === m ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground")}>
-                {m === "month" ? "By month" : "Custom range"}
-              </button>
-            ))}
-          </div>
-          {rangeMode === "custom" && (
-            <div className="grid grid-cols-2 gap-2">
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm" />
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm" />
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold opacity-90">
+              <Sparkles className="size-3.5" /> Total collection
             </div>
-          )}
-
-          {/* Status */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Status</p>
-            <div className="flex gap-1.5">
-              {(["all", "paid", "due"] as StatusFilter[]).map((s) => (
-                <button key={s} onClick={() => setStatus(s)}
-                  className={cn("flex-1 px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase", status === s ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground")}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Amount */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Amount (₹)</p>
-            <div className="grid grid-cols-2 gap-2">
-              <input inputMode="numeric" placeholder="Min" value={minAmt} onChange={(e) => setMinAmt(e.target.value.replace(/[^0-9]/g, ""))} className="bg-secondary rounded-xl px-3 py-2 text-sm" />
-              <input inputMode="numeric" placeholder="Max" value={maxAmt} onChange={(e) => setMaxAmt(e.target.value.replace(/[^0-9]/g, ""))} className="bg-secondary rounded-xl px-3 py-2 text-sm" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tab === "log" && (
-        <div className="space-y-2">
-          {logList.length === 0 ? (
-            <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
-              No payments match.
-            </div>
-          ) : (
-            <>
-              <div className="text-[11px] text-muted-foreground px-1 flex justify-between">
-                <span>{logList.length} payment{logList.length > 1 ? "s" : ""}</span>
-                <span className="font-semibold tabular-nums">{fmtINR(collected)}</span>
-              </div>
-              <ul className="space-y-2">
-                {logList.map(({ p, c, b }) => (
-                  <li key={p.id} className="bg-card card-shadow rounded-2xl p-3 flex items-start gap-3">
-                    <div className={cn(
-                      "shrink-0 size-10 rounded-xl flex items-center justify-center text-[10px] font-bold uppercase",
-                      p.mode === "gpay" ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
-                        : p.mode === "cash" ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
-                        : "bg-muted text-muted-foreground",
-                    )}>{(p.mode ?? "other").slice(0, 4)}</div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
-                        <p className="font-bold tabular-nums text-success">{fmtINR(p.amount)}</p>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {format(parseISO(p.date), "EEE, MMM d · h:mm a")}
-                        {b ? ` · ${b.service} ×${b.sareeCount}` : ""}
-                      </p>
-                      {p.note && <p className="text-[11px] text-muted-foreground italic mt-0.5 truncate">"{p.note}"</p>}
-                      <div className="flex items-center gap-2 mt-1.5">
-                        {b && (
-                          <Link to="/bookings/$id" params={{ id: b.id }} className="text-[10px] font-semibold text-primary">View booking →</Link>
-                        )}
-                        <button
-                          onClick={() => { if (confirm("Delete this payment?")) deletePayment(p.id); }}
-                          className="ml-auto text-[10px] font-semibold text-destructive flex items-center gap-0.5"
-                        ><Trash2 className="size-3" /> Delete</button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      )}
-
-      {tab === "customer" && (
-        <div className="space-y-2">
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl p-3 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Billed</p>
-              <p className="font-bold tabular-nums text-sm">{fmtINR(searchedTotals.billed)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Paid</p>
-              <p className="font-bold tabular-nums text-sm text-success">{fmtINR(searchedTotals.paid)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Due</p>
-              <p className={cn("font-bold tabular-nums text-sm", searchedTotals.due > 0 ? "text-destructive" : "text-success")}>{fmtINR(searchedTotals.due)}</p>
-            </div>
-          </div>
-          {customerSummary.length === 0 ? (
-            <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">No matching customers.</div>
-          ) : (
-            <ul className="space-y-2">
-              {customerSummary.map(({ c, billed, paid, due, count, lastPay }) => (
-                <li key={c.id}>
-                  <Link to="/customers/$id" params={{ id: c.id }} className="block bg-card card-shadow rounded-2xl p-3 active:scale-[0.99] transition">
-                    <div className="flex items-baseline justify-between gap-2 mb-1">
-                      <div className="min-w-0">
-                        <p className="font-semibold truncate flex items-center gap-1.5">
-                          {c.name}
-                          {c.kind === "artist" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gold/20 text-gold font-bold">ARTIST</span>}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">{count} booking{count > 1 ? "s" : ""}{lastPay ? ` · last paid ${format(parseISO(lastPay.date), "MMM d")}` : ""}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold tabular-nums">{fmtINR(paid)}</p>
-                        <p className={cn("text-[11px] font-semibold tabular-nums", due > 0 ? "text-destructive" : "text-success")}>
-                          {due > 0 ? `${fmtINR(due)} due` : "Paid"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-success" style={{ width: `${billed > 0 ? Math.min(100, (paid / billed) * 100) : 0}%` }} />
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {tab === "analytics" && (
-        <div className="space-y-3">
-          {/* Lifetime hero */}
-          <div className="relative overflow-hidden rounded-2xl p-4 text-primary-foreground bg-gradient-to-br from-primary via-primary to-accent card-shadow">
-            <div className="absolute -right-6 -top-6 size-32 rounded-full bg-white/10 blur-2xl" />
             <div className="relative">
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold opacity-90">
-                <Sparkles className="size-3.5" /> Total collection (lifetime)
-              </div>
-              <p className="font-display font-bold text-3xl mt-1 tabular-nums">{fmtINR(lifetime)}</p>
-              <div className="flex items-center gap-3 mt-2 text-[11px] opacity-95">
-                <span className="flex items-center gap-1">
-                  {trendDelta.up ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
-                  {trendDelta.pct}% vs last month
-                </span>
-                <span>·</span>
-                <span>{payments.length} payments</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 12-month earnings area chart */}
-          <div className="bg-card card-shadow rounded-2xl p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Earnings trend</p>
-                <p className="text-[10px] text-muted-foreground">Last 12 months</p>
-              </div>
-              <p className="text-sm font-bold tabular-nums">{fmtINR(trend12.reduce((s, m) => s + m.amount, 0))}</p>
-            </div>
-            <div className="h-44 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.45} />
-                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                  <YAxis hide />
-                  <Tooltip
-                    cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
-                    contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                    formatter={(v: number) => [fmtINR(v), "Earned"]}
-                  />
-                  <Area type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#earnGrad)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* KPI grid */}
-          <div className="grid grid-cols-2 gap-2">
-            <KpiCard icon={<CalendarCheck className="size-3.5" />} label="Payments" value={String(analytics.count)} sub={`avg ${fmtINR(analytics.avg)}`} tint="primary" />
-            <KpiCard icon={<Users className="size-3.5" />} label="Unique customers" value={String(analytics.uniqueCustomers)} sub="in range" tint="accent" />
-            <KpiCard icon={<TrendingUp className="size-3.5" />} label="Best day" value={analytics.topDay ? fmtINR(analytics.topDay.amount) : "—"} sub={analytics.topDay?.day ?? "no data"} tint="success" />
-            {(() => {
-              const tc = analytics.topCust as { name: string; amount: number } | null;
-              return <KpiCard icon={<Crown className="size-3.5" />} label="Top customer" value={tc ? fmtINR(tc.amount) : "—"} sub={tc?.name ?? "—"} tint="gold" />;
-            })()}
-          </div>
-
-          {/* Paid vs Pending bar */}
-          <div className="bg-card card-shadow rounded-2xl p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Paid vs Pending (range)</p>
-              <p className="text-[11px] font-bold tabular-nums">{rangedPaidVsBilled}%</p>
-            </div>
-            <div className="h-3 rounded-full overflow-hidden bg-secondary flex">
-              <div className="bg-success h-full" style={{ width: `${rangedPaidVsBilled}%` }} />
-              <div className="bg-destructive/60 h-full" style={{ width: `${100 - rangedPaidVsBilled}%` }} />
-            </div>
-            <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
-              <span>Paid <span className="font-bold text-success tabular-nums">{fmtINR(collected)}</span></span>
-              <span>Unpaid <span className="font-bold text-destructive tabular-nums">{fmtINR(Math.max(0, rangedBilled - collected))}</span></span>
-            </div>
-          </div>
-
-          {/* Daily collection */}
-          <div className="bg-card card-shadow rounded-2xl p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Daily collection</p>
-              <p className="text-[11px] font-bold tabular-nums">{fmtINR(collected)}</p>
-            </div>
-            <div className="h-36">
-              {dailyChart.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No data</div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyChart} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                    <Tooltip
-                      cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
-                      contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                      formatter={(v: number) => [fmtINR(v), "Collected"]}
-                    />
-                    <Bar dataKey="amount" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <button
+                onClick={() => setExportOpen((v) => !v)}
+                className="size-9 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition"
+                aria-label="Export"
+              ><Download className="size-4" /></button>
+              {exportOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setExportOpen(false)} />
+                  <div className="absolute right-0 top-11 z-40 bg-card card-shadow rounded-2xl p-1.5 min-w-[160px] border border-border text-foreground">
+                    <button onClick={exportCSV} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left">
+                      <FileText className="size-4 text-success" /> Export CSV
+                    </button>
+                    <button onClick={exportPDF} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left">
+                      <FileText className="size-4 text-destructive" /> Export PDF
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
+          <p className="font-display font-bold text-4xl mt-1.5 tabular-nums">{fmtINR(lifetime)}</p>
+          <div className="flex items-center gap-3 mt-2 text-[11px] opacity-95">
+            <span className="flex items-center gap-1">
+              {trendDelta.up ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+              {trendDelta.pct}% vs last month
+            </span>
+            <span>·</span>
+            <span>{payments.length} payments</span>
+          </div>
 
-          {/* Mode split */}
-          <div className="bg-card card-shadow rounded-2xl p-3">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Payment mode split</p>
-            <div className="grid grid-cols-3 gap-2">
-              {(["gpay", "cash", "other"] as const).map((m) => {
-                const pct = collected > 0 ? Math.round((modeSplit[m] / collected) * 100) : 0;
-                return (
-                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{m}</p>
-                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(modeSplit[m])}</p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
-                  </div>
-                );
-              })}
-            </div>
+          {/* mini-period chips inside hero */}
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <MiniChip label="Today" value={fmtINR(today)} />
+            <MiniChip label="This week" value={fmtINR(thisWeek)} />
+            <MiniChip label="This month" value={fmtINR(thisMonth)} />
           </div>
         </div>
-      )}
+      </div>
 
+      {/* Overview stats */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Collected" value={fmtINR(lifetime)} />
+        <Stat tint="danger" icon={<AlertCircle className="size-3.5" />} label="Pending" value={fmtINR(totalPending)} />
+        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Billed" value={fmtINR(totalBilled)} />
+        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Collection %" value={`${collectionRate}%`} />
+      </div>
+
+      {/* 12-month earnings area chart */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Earnings trend</p>
+            <p className="text-[10px] text-muted-foreground">Last 12 months</p>
+          </div>
+          <p className="text-sm font-bold tabular-nums">{fmtINR(trend12.reduce((s, m) => s + m.amount, 0))}</p>
+        </div>
+        <div className="h-44 -mx-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
+              <YAxis hide />
+              <Tooltip
+                cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
+                contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                formatter={(v: number) => [fmtINR(v), "Earned"]}
+              />
+              <Area type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#earnGrad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <KpiCard icon={<CalendarCheck className="size-3.5" />} label="Payments" value={String(kpis.count)} sub={`avg ${fmtINR(kpis.avg)}`} tint="primary" />
+        <KpiCard icon={<Users className="size-3.5" />} label="Unique customers" value={String(kpis.uniqueCustomers)} sub="all time" tint="accent" />
+        <KpiCard icon={<TrendingUp className="size-3.5" />} label="Best month" value={kpis.bestMonth ? fmtINR(kpis.bestMonth.amount) : "—"} sub={kpis.bestMonth?.month ?? "—"} tint="success" />
+        <KpiCard icon={<Crown className="size-3.5" />} label="Top customer" value={topCustomers[0] ? fmtINR(topCustomers[0].amount) : "—"} sub={topCustomers[0]?.c?.name ?? "—"} tint="gold" />
+      </div>
+
+      {/* Paid vs Pending bar (lifetime) */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Paid vs Pending</p>
+          <p className="text-[11px] font-bold tabular-nums">{collectionRate}%</p>
+        </div>
+        <div className="h-3 rounded-full overflow-hidden bg-secondary flex">
+          <div className="bg-success h-full" style={{ width: `${collectionRate}%` }} />
+          <div className="bg-destructive/60 h-full" style={{ width: `${100 - collectionRate}%` }} />
+        </div>
+        <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
+          <span>Paid <span className="font-bold text-success tabular-nums">{fmtINR(lifetime)}</span></span>
+          <span>Pending <span className="font-bold text-destructive tabular-nums">{fmtINR(totalPending)}</span></span>
+        </div>
+      </div>
+
+      {/* Mode split */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Payment mode split</p>
+        <div className="grid grid-cols-3 gap-2">
+          {(["gpay", "cash", "other"] as const).map((m) => {
+            const pct = lifetime > 0 ? Math.round((modeSplit[m] / lifetime) * 100) : 0;
+            return (
+              <div key={m} className="bg-secondary rounded-xl p-2 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{m}</p>
+                <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(modeSplit[m])}</p>
+                <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Top customers */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Top customers</p>
+          <Crown className="size-3.5 text-gold" />
+        </div>
+        {topCustomers.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {topCustomers.map((r, i) => (
+              <li key={r.c!.id}>
+                <Link to="/customers/$id" params={{ id: r.c!.id }} className="flex items-center gap-2 p-2 -mx-1 rounded-xl active:bg-secondary">
+                  <div className={cn(
+                    "size-7 rounded-full flex items-center justify-center text-[11px] font-bold",
+                    i === 0 ? "bg-gold/20 text-gold" : i === 1 ? "bg-secondary text-foreground" : "bg-muted text-muted-foreground"
+                  )}>{i + 1}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">{r.c!.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{r.c!.phone}</p>
+                  </div>
+                  <p className="font-bold text-sm tabular-nums text-success">{fmtINR(r.amount)}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Monthly bars */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Monthly collection</p>
+        <div className="h-36">
+          {trend12.every((m) => m.amount === 0) ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trend12} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
+                <Tooltip
+                  cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
+                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                  formatter={(v: number) => [fmtINR(v), "Collected"]}
+                />
+                <Bar dataKey="amount" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* Recent payments */}
+      <div className="bg-card card-shadow rounded-2xl p-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Recent payments</p>
+          <span className="text-[10px] text-muted-foreground">last {recent.length}</span>
+        </div>
+        {recent.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {recent.map(({ p, c, b }) => (
+              <li key={p.id} className="flex items-center gap-2 p-1.5 rounded-xl">
+                <div className={cn(
+                  "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
+                  p.mode === "gpay" ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
+                    : p.mode === "cash" ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
+                    : "bg-muted text-muted-foreground",
+                )}>{(p.mode ?? "other").slice(0, 4)}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
+                    <p className="font-bold tabular-nums text-sm text-success">{fmtINR(p.amount)}</p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {format(parseISO(p.date), "MMM d · h:mm a")}
+                    {b ? ` · ${b.service}` : ""}
+                  </p>
+                </div>
+                {b && (
+                  <Link to="/bookings/$id" params={{ id: b.id }} className="shrink-0 text-primary">
+                    <ArrowRight className="size-4" />
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </AppShell>
+  );
+}
+
+function MiniChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white/15 backdrop-blur rounded-xl px-2 py-1.5">
+      <p className="text-[9px] uppercase tracking-wider opacity-80 font-semibold">{label}</p>
+      <p className="text-xs font-bold tabular-nums mt-0.5 truncate">{value}</p>
+    </div>
   );
 }
 
@@ -700,9 +443,8 @@ function KpiCard({ icon, label, value, sub, tint }: { icon: React.ReactNode; lab
       <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}>
         {icon}<span className="truncate">{label}</span>
       </div>
-      <p className="text-base font-display font-semibold mt-1 tabular-nums truncate">{value}</p>
-      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{sub}</p>
+      <p className="text-base font-display font-bold mt-1 tabular-nums truncate">{value}</p>
+      <p className="text-[10px] text-muted-foreground truncate">{sub}</p>
     </div>
   );
 }
-
