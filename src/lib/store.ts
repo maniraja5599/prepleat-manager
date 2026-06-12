@@ -355,7 +355,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 5,
+      version: 6,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
