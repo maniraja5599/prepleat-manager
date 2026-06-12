@@ -277,6 +277,7 @@
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .safe-header-top { padding-top: calc(env(safe-area-inset-top, 0px) + 1rem); }
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
   .no-select {
     user-select: none;
