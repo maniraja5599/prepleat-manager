@@ -414,7 +414,7 @@ function BookingDetail() {
           <FileDown className="size-4" /> PDF
         </button>
         <button
-          onClick={sendSMS}
+          onClick={() => sendSMS()}
           className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
         >
           <MessageSquare className="size-4" /> SMS
