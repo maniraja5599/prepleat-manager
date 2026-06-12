@@ -24,7 +24,7 @@ export function AppShell({ title, subtitle, right, children, wide }: Props) {
           <img
             src={logo}
             alt={settings.businessName}
-            className="size-8 rounded-full object-cover ring-1 ring-primary/25"
+            className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25"
           />
           <p className="text-[13px] font-display font-semibold tracking-tight truncate">{settings.businessName}</p>
           <span className="ml-auto size-1.5 rounded-full bg-gold/60" aria-hidden />

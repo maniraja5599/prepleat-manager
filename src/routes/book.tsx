@@ -104,7 +104,9 @@ function PublicBookPage() {
     <div className="min-h-[100dvh] bg-background pb-12">
       <div className="max-w-md mx-auto px-5 pt-8">
         <div className="flex items-center gap-3 mb-6">
-          <img src={logoAsset.url} alt="Eyas Saree Drapist" className="size-12 rounded-full object-cover ring-2 ring-primary/20" />
+          <div className="size-12 rounded-full overflow-hidden ring-2 ring-primary/20 shrink-0">
+            <img src={logoAsset.url} alt="Eyas Saree Drapist" className="size-full rounded-full object-cover scale-[1.18]" />
+          </div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Eyas Saree Drapist</p>
             <h1 className="text-xl font-display font-semibold">Request a booking</h1>

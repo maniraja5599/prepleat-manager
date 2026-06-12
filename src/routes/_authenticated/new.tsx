@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock, Users } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -45,6 +45,7 @@ function NewBooking() {
   const updateCustomer = useStore((s) => s.updateCustomer);
   const addBooking = useStore((s) => s.addBooking);
 
+  const [bookingSource, setBookingSource] = useState<"direct" | "artist">("direct");
   const [artistId, setArtistId] = useState<string>("");
 
   const [service, setService] = useState<ServiceType>("prepleat");
@@ -53,13 +54,21 @@ function NewBooking() {
   const [newPhone, setNewPhone] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [nameFocus, setNameFocus] = useState(false);
+  const [showExisting, setShowExisting] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
 
   const [sareeCount, setSareeCount] = useState(1);
-  const defaultPrice = service === "prepleat" ? settings.prepleatPrice : settings.drapePrice;
+  const defaultPrice = bookingSource === "artist"
+    ? (service === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
+    : (service === "prepleat" ? settings.prepleatPrice : settings.drapePrice);
   const lastPrice = customerId ? lastPriceFor(customerId, service, bookings) : undefined;
+  const lastArtistPrice = artistId
+    ? bookings.find((b) => b.artistId === artistId && b.service === service)?.pricePerSaree
+    : undefined;
+  const quotedLastPrice = bookingSource === "artist" ? lastArtistPrice : lastPrice;
   const [pricePerSaree, setPricePerSaree] = useState<number>(defaultPrice);
   const [priceTouched, setPriceTouched] = useState(false);
-  const effPrice = priceTouched ? pricePerSaree : (lastPrice ?? defaultPrice);
+  const effPrice = priceTouched ? pricePerSaree : (quotedLastPrice ?? defaultPrice);
   const total = sareeCount * effPrice;
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -114,6 +123,7 @@ function NewBooking() {
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const openReview = () => {
+    if (bookingSource === "artist" && !artistId) return toast.error("Select or add an artist");
     if (!customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
       if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
@@ -163,6 +173,45 @@ function NewBooking() {
         <div className="size-10" />
       </div>
 
+      {/* Booking source — always decide this first because pricing differs. */}
+      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Booking for</p>
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            { id: "direct" as const, label: "Direct Client", icon: User },
+            { id: "artist" as const, label: "Via Artist", icon: Sparkles },
+          ]).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { setBookingSource(id); setPriceTouched(false); if (id === "direct") setArtistId(""); }}
+              className={cn(
+                "rounded-2xl px-3 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition",
+                bookingSource === id ? "saree-gradient text-primary-foreground" : "bg-secondary text-foreground",
+              )}
+            ><Icon className="size-4" />{label}</button>
+          ))}
+        </div>
+        {bookingSource === "artist" && (
+          <div className="mt-3 pt-3 border-t border-border">
+            {artists.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
+                {artists.map((a) => (
+                  <button key={a.id} type="button" onClick={() => { setArtistId(a.id); setPriceTouched(false); }}
+                    className={cn("px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0", artistId === a.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                    {a.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <AddArtistInline onAdd={(name) => {
+              const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
+              setArtistId(c.id); setPriceTouched(false); toast.success(`Artist “${c.name}” added`);
+            }} />
+          </div>
+        )}
+      </section>
+
       {/* Service toggle */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         {(["prepleat", "drape"] as ServiceType[]).map((s) => (
@@ -170,19 +219,30 @@ function NewBooking() {
             key={s}
             onClick={() => {
               setService(s); setPriceTouched(false);
-              setPricePerSaree(s === "prepleat" ? settings.prepleatPrice : settings.drapePrice);
+              setPricePerSaree(bookingSource === "artist"
+                ? (s === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
+                : (s === "prepleat" ? settings.prepleatPrice : settings.drapePrice));
             }}
             className={cn(
               "py-4 rounded-2xl font-semibold uppercase tracking-wider text-sm transition card-shadow",
               service === s ? "saree-gradient text-primary-foreground" : "bg-card text-foreground",
             )}
-          >{s === "prepleat" ? `PrePleat · ₹${settings.prepleatPrice}` : `Drape · ₹${settings.drapePrice}`}</button>
+          >{s === "prepleat"
+            ? `PrePleat · ₹${bookingSource === "artist" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.prepleatPrice}`
+            : `Drape · ₹${bookingSource === "artist" ? settings.artistDrapePrice ?? settings.drapePrice : settings.drapePrice}`}</button>
         ))}
       </div>
 
       {/* Customer */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Customer</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</p>
+          {!selectedCust && (
+            <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
+              <Users className="size-3" /> Existing
+            </button>
+          )}
+        </div>
         {selectedCust ? (
           <div>
             <div className="flex items-center justify-between">
@@ -190,7 +250,7 @@ function NewBooking() {
                 <p className="font-semibold truncate">{selectedCust.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{selectedCust.phone}</p>
                 {selectedCust.address && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedCust.address}</p>}
-                {lastPrice && <p className="text-xs text-gold mt-1">Last {service}: {fmtINR(lastPrice)}</p>}
+                {quotedLastPrice && <p className="text-xs text-gold mt-1">Last {service}: {fmtINR(quotedLastPrice)}</p>}
               </div>
               <button onClick={() => setCustomerId("")} className="text-xs text-primary font-semibold shrink-0">Change</button>
             </div>
@@ -214,12 +274,12 @@ function NewBooking() {
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                onFocus={() => setNameFocus(true)}
+                onFocus={() => { setNameFocus(true); if (showExisting) setShowExisting(true); }}
                 onBlur={() => setTimeout(() => setNameFocus(false), 150)}
                 placeholder="Customer name"
                 className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {nameFocus && nameSuggestions.length > 0 && (
+              {showExisting && nameFocus && nameSuggestions.length > 0 && (
                 <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {nameSuggestions.map((c) => (
                     <li key={c.id}>
@@ -256,7 +316,7 @@ function NewBooking() {
               {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
                 <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
               )}
-              {phoneSuggestions.length > 0 && (
+              {showExisting && phoneSuggestions.length > 0 && (
                 <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {phoneSuggestions.map((c) => (
                     <li key={c.id}>
@@ -273,16 +333,18 @@ function NewBooking() {
                 </ul>
               )}
             </div>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-              <textarea
-                value={newAddress}
-                onChange={(e) => setNewAddress(e.target.value)}
-                rows={2}
-                placeholder="Address (optional)"
-                className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-              />
-            </div>
+            {!showAddress ? (
+              <button type="button" onClick={() => setShowAddress(true)} className="inline-flex items-center gap-1.5 px-1 py-1 text-xs font-semibold text-muted-foreground">
+                <Plus className="size-3.5" /> Add address <span className="font-normal">(optional)</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                <textarea value={newAddress} onChange={(e) => setNewAddress(e.target.value)} rows={2} autoFocus placeholder="Address (optional)"
+                  className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
+                <button type="button" onClick={() => { setShowAddress(false); setNewAddress(""); }} className="absolute right-3 top-2.5 text-muted-foreground">×</button>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -320,6 +382,11 @@ function NewBooking() {
             ><Plus className="size-3.5 mx-auto" /></button>
           </div>
         </div>
+        {quotedLastPrice && (
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Last charged</span><span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
+          </div>
+        )}
         <div className="mt-3 pt-3 border-t border-border flex justify-between items-baseline">
           <span className="text-sm text-muted-foreground">Total</span>
           <span className="text-2xl font-display font-bold text-primary">{fmtINR(total)}</span>
@@ -409,43 +476,6 @@ function NewBooking() {
           );
         })()}
       </section>
-
-      {/* Artist (optional) — always visible so bookings that come via an
-          artist can be tagged. Add new artists inline. */}
-      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <Sparkles className="size-3.5" /> Via Artist (optional)
-          </p>
-          {artistId && (
-            <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
-          )}
-        </div>
-        {artists.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
-            {artists.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => setArtistId(artistId === a.id ? "" : a.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition shrink-0",
-                  artistId === a.id ? "saree-gradient text-primary-foreground" : "bg-secondary text-muted-foreground",
-                )}
-              >{a.name}</button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[11px] text-muted-foreground mb-2">No artists yet. Add one below if this booking came through an artist or referral.</p>
-        )}
-        <AddArtistInline
-          onAdd={(name) => {
-            const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
-            setArtistId(c.id);
-            toast.success(`Artist “${c.name}” added`);
-          }}
-        />
-      </section>
-
 
       {/* Advance */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">

@@ -96,7 +96,7 @@ function SettingsPage() {
             <img
               src={settings.logoDataUrl || logoAsset.url}
               alt="logo"
-              className="size-16 rounded-2xl object-cover ring-2 ring-primary/20"
+              className="size-16 rounded-full object-cover scale-[1.18] ring-2 ring-primary/20"
             />
             <div className="flex-1 min-w-0 flex flex-col gap-2">
               <button
@@ -182,9 +182,15 @@ function SettingsPage() {
 
       {tab === "pricing" && (
         <>
-          <Section title="Default Pricing (per saree)">
+          <Section title="Direct Client Pricing (per saree)">
             <PriceRow label="PrePleat" value={settings.prepleatPrice} onChange={(v) => update({ prepleatPrice: v })} />
             <PriceRow label="Drape"    value={settings.drapePrice}    onChange={(v) => update({ drapePrice: v })} />
+            <p className="text-[11px] text-muted-foreground mt-2">Tap +/- to step by ₹50.</p>
+          </Section>
+
+          <Section title="Artist Pricing (per saree)">
+            <PriceRow label="PrePleat" value={settings.artistPrepleatPrice ?? settings.prepleatPrice} onChange={(v) => update({ artistPrepleatPrice: v })} />
+            <PriceRow label="Drape" value={settings.artistDrapePrice ?? settings.drapePrice} onChange={(v) => update({ artistDrapePrice: v })} />
             <p className="text-[11px] text-muted-foreground mt-2">Tap +/- to step by ₹50.</p>
           </Section>
 

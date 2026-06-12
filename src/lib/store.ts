@@ -67,6 +67,8 @@ export interface CustomColors {
 export interface Settings {
   prepleatPrice: number;
   drapePrice: number;
+  artistPrepleatPrice?: number;
+  artistDrapePrice?: number;
   defaultMeasurements: Measurement[];
   showPaymentOnCalendar: boolean;
   businessName: string;
@@ -165,6 +167,8 @@ export const useStore = create<State>()(
       settings: {
         prepleatPrice: 350,
         drapePrice: 800,
+        artistPrepleatPrice: 300,
+        artistDrapePrice: 700,
         defaultMeasurements: [
           { label: "P", value: 40 },
           { label: "W", value: 32 },
@@ -355,13 +359,15 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 6,
+      version: 7,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
         if (s.prepleatPrice === 150) s.prepleatPrice = 350;
         if (s.drapePrice === 300) s.drapePrice = 800;
+        if (typeof s.artistPrepleatPrice !== "number") s.artistPrepleatPrice = s.prepleatPrice ?? 350;
+        if (typeof s.artistDrapePrice !== "number") s.artistDrapePrice = s.drapePrice ?? 800;
         if (Array.isArray(s.defaultMeasurements)) {
           const labels = s.defaultMeasurements.map((m: any) => m.label).join(",");
           if (labels === "A,B,C") s.defaultMeasurements = [
