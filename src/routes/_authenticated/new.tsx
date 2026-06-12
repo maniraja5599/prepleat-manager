@@ -414,6 +414,7 @@ function NewBooking() {
           </div>
         )}
       </section>
+      )}
 
       {/* Order */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
