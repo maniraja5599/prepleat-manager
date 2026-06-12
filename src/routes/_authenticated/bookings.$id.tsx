@@ -25,6 +25,7 @@ function BookingDetail() {
 
   const addPayment = useStore((s) => s.addPayment);
   const deletePayment = useStore((s) => s.deletePayment);
+  const updatePayment = useStore((s) => s.updatePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const cancelBooking = useStore((s) => s.cancelBooking);
   const restoreBooking = useStore((s) => s.restoreBooking);
@@ -494,7 +495,27 @@ function BookingDetail() {
             <div className="space-y-2 text-sm">
               <Row label="Amount" value={fmtINR(activePayment.amount)} bold />
               <Row label="Mode" value={(activePayment.mode ?? "gpay").toUpperCase()} />
-              <Row label="Date" value={format(parseISO(activePayment.date), "EEE, MMM d, yyyy")} />
+              <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border">
+                <span className="text-xs text-muted-foreground">Date</span>
+                <input
+                  type="date"
+                  value={activePayment.date.slice(0, 10)}
+                  onChange={(e) => {
+                    const ymd = e.target.value;
+                    if (!ymd) return;
+                    // Preserve existing time-of-day to keep chronological order.
+                    const old = parseISO(activePayment.date);
+                    const hh = String(old.getHours()).padStart(2, "0");
+                    const mm = String(old.getMinutes()).padStart(2, "0");
+                    const ss = String(old.getSeconds()).padStart(2, "0");
+                    const nextIso = new Date(`${ymd}T${hh}:${mm}:${ss}`).toISOString();
+                    updatePayment(activePayment.id, { date: nextIso });
+                    setActivePayment({ ...activePayment, date: nextIso });
+                    toast.success("Payment date updated");
+                  }}
+                  className="bg-secondary rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
               <Row label="Time" value={format(parseISO(activePayment.date), "h:mm a")} />
               {activePayment.note && <Row label="Note" value={activePayment.note} />}
             </div>
