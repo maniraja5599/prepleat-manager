@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, addMonths } from "date-fns";
 import { Search, IndianRupee, ChevronLeft, ChevronRight, TrendingUp, AlertCircle, Wallet, Calendar as CalIcon, Trash2, Download, FileText, SlidersHorizontal, X as XIcon } from "lucide-react";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid } from "recharts";
+import { Sparkles, TrendingDown, Users, Crown, CalendarCheck } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
