@@ -375,15 +375,14 @@ function NewBooking() {
         <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
           {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
         </p>
-        {/* Hidden native inputs — visually invisible but still focusable so
-            showPicker() works on iOS/Android Chrome. */}
+        {/* Hidden native pickers — opacity 0 (NOT sr-only) so iOS Safari
+            allows showPicker() to surface the calendar / clock UI. */}
         <input
           ref={dateInputRef}
           type="date"
           value={deliveryDate}
           onChange={(e) => e.target.value && setDeliveryDate(e.target.value)}
-          className="sr-only"
-          tabIndex={-1}
+          className="absolute opacity-0 pointer-events-none w-px h-px"
           aria-hidden
         />
         <input
@@ -392,8 +391,7 @@ function NewBooking() {
           step={900}
           value={deliveryTime}
           onChange={(e) => e.target.value && setDeliveryTime(e.target.value)}
-          className="sr-only"
-          tabIndex={-1}
+          className="absolute opacity-0 pointer-events-none w-px h-px"
           aria-hidden
         />
         <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">Tip · double-tap date or time for calendar / clock picker</p>
@@ -412,18 +410,19 @@ function NewBooking() {
         })()}
       </section>
 
-      {/* Artist (optional) */}
-      {artists.length > 0 && (
-        <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="size-3.5" /> Artist (optional)
-            </p>
-            {artistId && (
-              <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
-            )}
-          </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+      {/* Artist (optional) — always visible so bookings that come via an
+          artist can be tagged. Add new artists inline. */}
+      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Sparkles className="size-3.5" /> Via Artist (optional)
+          </p>
+          {artistId && (
+            <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
+          )}
+        </div>
+        {artists.length > 0 ? (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
             {artists.map((a) => (
               <button
                 key={a.id}
@@ -435,8 +434,17 @@ function NewBooking() {
               >{a.name}</button>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="text-[11px] text-muted-foreground mb-2">No artists yet. Add one below if this booking came through an artist or referral.</p>
+        )}
+        <AddArtistInline
+          onAdd={(name) => {
+            const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
+            setArtistId(c.id);
+            toast.success(`Artist “${c.name}” added`);
+          }}
+        />
+      </section>
 
 
       {/* Advance */}
@@ -589,6 +597,41 @@ function ReviewRow({ label, value, bold }: { label: string; value: string; bold?
     <div className="flex items-baseline justify-between py-1.5 border-b border-border last:border-0">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className={cn("text-sm tabular-nums", bold && "font-bold text-primary text-base")}>{value}</span>
+    </div>
+  );
+}
+
+function AddArtistInline({ onAdd }: { onAdd: (name: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full py-2 rounded-full border border-dashed border-border text-[12px] font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition flex items-center justify-center gap-1.5"
+      >
+        <Plus className="size-3.5" /> Add artist
+      </button>
+    );
+  }
+  const submit = () => {
+    if (!name.trim()) return toast.error("Artist name required");
+    onAdd(name);
+    setName(""); setOpen(false);
+  };
+  return (
+    <div className="flex gap-2">
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+        placeholder="Artist name"
+        className="flex-1 min-w-0 bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+      <button type="button" onClick={submit} className="px-4 rounded-full saree-gradient text-primary-foreground text-xs font-semibold">Add</button>
+      <button type="button" onClick={() => { setOpen(false); setName(""); }} className="px-3 rounded-full bg-secondary text-xs font-semibold">×</button>
     </div>
   );
 }
