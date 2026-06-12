@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock, Users, ChevronDown } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock, Users } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -332,16 +332,18 @@ function NewBooking() {
                 </ul>
               )}
             </div>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-              <textarea
-                value={newAddress}
-                onChange={(e) => setNewAddress(e.target.value)}
-                rows={2}
-                placeholder="Address (optional)"
-                className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-              />
-            </div>
+            {!showAddress ? (
+              <button type="button" onClick={() => setShowAddress(true)} className="inline-flex items-center gap-1.5 px-1 py-1 text-xs font-semibold text-muted-foreground">
+                <Plus className="size-3.5" /> Add address <span className="font-normal">(optional)</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                <textarea value={newAddress} onChange={(e) => setNewAddress(e.target.value)} rows={2} autoFocus placeholder="Address (optional)"
+                  className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
+                <button type="button" onClick={() => { setShowAddress(false); setNewAddress(""); }} className="absolute right-3 top-2.5 text-muted-foreground">×</button>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -379,6 +381,11 @@ function NewBooking() {
             ><Plus className="size-3.5 mx-auto" /></button>
           </div>
         </div>
+        {quotedLastPrice && (
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Last charged</span><span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
+          </div>
+        )}
         <div className="mt-3 pt-3 border-t border-border flex justify-between items-baseline">
           <span className="text-sm text-muted-foreground">Total</span>
           <span className="text-2xl font-display font-bold text-primary">{fmtINR(total)}</span>
@@ -468,43 +475,6 @@ function NewBooking() {
           );
         })()}
       </section>
-
-      {/* Artist (optional) — always visible so bookings that come via an
-          artist can be tagged. Add new artists inline. */}
-      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <Sparkles className="size-3.5" /> Via Artist (optional)
-          </p>
-          {artistId && (
-            <button onClick={() => setArtistId("")} className="text-[11px] text-primary font-semibold">Clear</button>
-          )}
-        </div>
-        {artists.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-2">
-            {artists.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => setArtistId(artistId === a.id ? "" : a.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition shrink-0",
-                  artistId === a.id ? "saree-gradient text-primary-foreground" : "bg-secondary text-muted-foreground",
-                )}
-              >{a.name}</button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[11px] text-muted-foreground mb-2">No artists yet. Add one below if this booking came through an artist or referral.</p>
-        )}
-        <AddArtistInline
-          onAdd={(name) => {
-            const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
-            setArtistId(c.id);
-            toast.success(`Artist “${c.name}” added`);
-          }}
-        />
-      </section>
-
 
       {/* Advance */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
