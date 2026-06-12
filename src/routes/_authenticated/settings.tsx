@@ -44,6 +44,7 @@ function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
+  const [expCatDraft, setExpCatDraft] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
@@ -264,6 +265,53 @@ function SettingsPage() {
             </div>
             <label className="text-[11px] uppercase tracking-wider text-muted-foreground mt-3 block">Website (for WhatsApp bills)</label>
             <input value={settings.websiteUrl ?? ""} onChange={(e) => update({ websiteUrl: e.target.value })} placeholder="https://eyasdrapist.shop/" className="input mt-1" />
+          </Section>
+
+          <Section title="Expense Categories">
+            <p className="text-xs text-muted-foreground mb-2">Headers used when logging expenses on the Payments page.</p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {(settings.expenseCategories ?? []).map((p) => (
+                <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-xs">
+                  {p}
+                  <button
+                    onClick={() => update({ expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== p) })}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Remove ${p}`}
+                  ><X className="size-3" /></button>
+                </span>
+              ))}
+              {(settings.expenseCategories ?? []).length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No categories yet.</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={expCatDraft}
+                onChange={(e) => setExpCatDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && expCatDraft.trim()) {
+                    const v = expCatDraft.trim();
+                    if (!(settings.expenseCategories ?? []).includes(v)) {
+                      update({ expenseCategories: [...(settings.expenseCategories ?? []), v] });
+                    }
+                    setExpCatDraft("");
+                  }
+                }}
+                placeholder="Add category (e.g. Material)"
+                className="input flex-1"
+              />
+              <button
+                onClick={() => {
+                  const v = expCatDraft.trim();
+                  if (!v) return;
+                  if (!(settings.expenseCategories ?? []).includes(v)) {
+                    update({ expenseCategories: [...(settings.expenseCategories ?? []), v] });
+                  }
+                  setExpCatDraft("");
+                }}
+                className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
+              >Add</button>
+            </div>
           </Section>
         </>
       )}

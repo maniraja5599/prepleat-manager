@@ -44,6 +44,16 @@ export interface Payment {
   updatedAt?: string;
 }
 
+export interface Expense {
+  id: string;
+  amount: number;
+  category: string;
+  note?: string;
+  date: string;
+  mode?: PaymentMode;
+  updatedAt?: string;
+}
+
 export type CustomerKind = "client" | "artist";
 
 export interface Customer {
@@ -82,6 +92,7 @@ export interface Settings {
   defaultPaymentMode?: PaymentMode;
   websiteUrl?: string;
   occasionPresets?: string[];
+  expenseCategories?: string[];
 }
 
 export interface DeletedBooking {
@@ -112,6 +123,7 @@ interface State {
   customers: Customer[];
   bookings: Booking[];
   payments: Payment[];
+  expenses: Expense[];
   settings: Settings;
   trash: DeletedBooking[];
   activity: ActivityEntry[];
@@ -135,6 +147,10 @@ interface State {
   addPayment: (p: Omit<Payment, "id">) => void;
   updatePayment: (id: string, p: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
+
+  addExpense: (e: Omit<Expense, "id" | "updatedAt">) => Expense;
+  updateExpense: (id: string, e: Partial<Expense>) => void;
+  deleteExpense: (id: string) => void;
 
   updateSettings: (s: Partial<Settings>) => void;
 }
@@ -172,6 +188,7 @@ export const useStore = create<State>()(
       customers: [],
       bookings: [],
       payments: [],
+      expenses: [],
       trash: [],
       activity: [],
       redoStack: [],
@@ -192,6 +209,7 @@ export const useStore = create<State>()(
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
         occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
+        expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
       },
 
       addCustomer: (c) => {
@@ -405,11 +423,26 @@ export const useStore = create<State>()(
         }),
 
 
+      addExpense: (e) => {
+        const now = new Date().toISOString();
+        const expense: Expense = { ...e, id: uid(), updatedAt: now };
+        set((s) => ({ expenses: [expense, ...s.expenses] }));
+        return expense;
+      },
+      updateExpense: (id, patch) =>
+        set((s) => ({
+          expenses: s.expenses.map((e) =>
+            e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e,
+          ),
+        })),
+      deleteExpense: (id) =>
+        set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
     }),
     {
       name: "saree-studio-v1",
-      version: 8,
+      version: 9,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -428,6 +461,9 @@ export const useStore = create<State>()(
         }
         if (!Array.isArray(s.occasionPresets)) {
           s.occasionPresets = ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"];
+        }
+        if (!Array.isArray(s.expenseCategories)) {
+          s.expenseCategories = ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"];
         }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
@@ -457,6 +493,7 @@ export const useStore = create<State>()(
         if (!Array.isArray(persisted.activity)) persisted.activity = [];
         if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];
         if (!Array.isArray(persisted.tombstones)) persisted.tombstones = [];
+        if (!Array.isArray(persisted.expenses)) persisted.expenses = [];
         if (Array.isArray(persisted.bookings)) {
           for (const b of persisted.bookings) {
             if (!b.updatedAt) b.updatedAt = b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt;
