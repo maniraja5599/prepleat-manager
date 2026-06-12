@@ -351,13 +351,29 @@ function NewBooking() {
                 placeholder="Customer name"
                 className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {showExisting && nameFocus && nameSuggestions.length > 0 && (
+              {nameFocus && nameSuggestions.length > 0 && (
                 <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {nameSuggestions.map((c) => (
                     <li key={c.id}>
                       <button
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); }}
+                        className="w-full text-left px-3 py-2 hover:bg-secondary"
+                      >
+                        <p className="text-sm font-medium">{c.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {showExisting && !newName.trim() && existingList.length > 0 && (
+                <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                  {existingList.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); setShowExisting(false); }}
                         className="w-full text-left px-3 py-2 hover:bg-secondary"
                       >
                         <p className="text-sm font-medium">{c.name}</p>
