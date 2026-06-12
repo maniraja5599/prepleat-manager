@@ -140,12 +140,19 @@ function NewBooking() {
 
   const confirmSave = () => {
     let cid = customerId;
+    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
     if (!cid) {
-      const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
-      cid = c.id;
+      if (customerRequired && newName.trim()) {
+        const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
+        cid = c.id;
+      } else if (bookingSource === "artist" && artistId) {
+        // No customer captured — record the booking under the artist.
+        cid = artistId;
+      }
     } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
       updateCustomer(cid, { address: newAddress.trim() });
     }
+    if (!cid) return toast.error("Customer required");
 
     const b = addBooking({
       customerId: cid,
