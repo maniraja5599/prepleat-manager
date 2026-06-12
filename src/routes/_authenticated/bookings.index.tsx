@@ -18,24 +18,25 @@ export const Route = createFileRoute("/_authenticated/bookings/")({
   component: BookingsPage,
 });
 
-type Filter = "all" | ServiceType;
+type SvcFilter = "all" | ServiceType;
+type PayFilter = "all" | "paid" | "due";
 type Sort = "delivery" | "recent" | "due";
 type Range = "all" | "thisMonth" | "lastMonth" | "custom";
 
 function BookingsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [svc, setSvc] = useState<SvcFilter>("all");
+  const [pay, setPay] = useState<PayFilter>("all");
   const [sort, setSort] = useState<Sort>("delivery");
   const [q, setQ] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
-  const activeFilterCount =
-    (filter !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0) + (showCompleted ? 1 : 0);
+  const moreCount = (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0) + (showCompleted ? 1 : 0);
 
   const dateBounds = useMemo<{ start?: Date; end?: Date }>(() => {
     const now = new Date();
@@ -55,7 +56,9 @@ function BookingsPage() {
 
   const list = useMemo(() => {
     let arr = bookings.slice();
-    if (filter !== "all") arr = arr.filter((b) => b.service === filter);
+    if (svc !== "all") arr = arr.filter((b) => b.service === svc);
+    if (pay === "paid") arr = arr.filter((b) => totalDue(b) === 0);
+    if (pay === "due") arr = arr.filter((b) => totalDue(b) > 0);
     if (!showCompleted) arr = arr.filter((b) => b.status !== "delivered");
     if (dateBounds.start || dateBounds.end) {
       arr = arr.filter((b) => {
@@ -78,15 +81,23 @@ function BookingsPage() {
       return totalDue(b) - totalDue(a);
     });
     return arr;
-  }, [bookings, filter, sort, q, showCompleted, customers, dateBounds]);
+  }, [bookings, svc, pay, sort, q, showCompleted, customers, dateBounds]);
 
-  const totalDueSum = list.reduce((s, b) => s + totalDue(b), 0);
+  const collected = list.reduce((s, b) => s + b.advancePaid, 0);
+  const pending = list.reduce((s, b) => s + totalDue(b), 0);
 
   return (
-    <AppShell title="Bookings" subtitle={`${list.length} shown · ${fmtINR(totalDueSum)} pending`}>
-      <BookingRequestsInbox />
-      <div className="flex gap-2 mb-3">
+    <AppShell title="Bookings">
+      {/* Slim stat chips */}
+      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar">
+        <StatChip label="Total" value={String(list.length)} />
+        <StatChip label="Collected" value={fmtINR(collected)} tone="success" />
+        <StatChip label="Pending" value={fmtINR(pending)} tone={pending > 0 ? "danger" : "muted"} />
+      </div>
 
+      <BookingRequestsInbox />
+
+      <div className="flex gap-2 mb-2">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
@@ -97,42 +108,44 @@ function BookingsPage() {
           />
         </div>
         <button
-          onClick={() => setShowFilters((v) => !v)}
+          onClick={() => setShowMore((v) => !v)}
           className={cn(
             "shrink-0 size-11 rounded-full flex items-center justify-center relative transition",
-            showFilters || activeFilterCount > 0 ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+            showMore || moreCount > 0 ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
           )}
-          aria-label="Filters"
+          aria-label="More filters"
         >
           <SlidersHorizontal className="size-4" />
-          {activeFilterCount > 0 && !showFilters && (
-            <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center">{activeFilterCount}</span>
+          {moreCount > 0 && !showMore && (
+            <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center">{moreCount}</span>
           )}
         </button>
       </div>
 
-      {showFilters && (
+      {/* Always-visible primary filters */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <SegRow value={svc} onChange={setSvc} items={[
+          { id: "all", label: "All" },
+          { id: "prepleat", label: "PrePleat" },
+          { id: "drape", label: "Drape" },
+        ] as { id: SvcFilter; label: string }[]} />
+        <SegRow value={pay} onChange={setPay} items={[
+          { id: "all", label: "All" },
+          { id: "due", label: "Due" },
+          { id: "paid", label: "Paid" },
+        ] as { id: PayFilter; label: string }[]} />
+      </div>
+
+      {showMore && (
         <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Filters</p>
-            {activeFilterCount > 0 && (
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">More filters</p>
+            {moreCount > 0 && (
               <button
-                onClick={() => { setFilter("all"); setRange("all"); setSort("delivery"); setShowCompleted(false); setFrom(""); setTo(""); }}
+                onClick={() => { setRange("all"); setSort("delivery"); setShowCompleted(false); setFrom(""); setTo(""); }}
                 className="text-[11px] text-primary font-semibold flex items-center gap-1"
-              ><XIcon className="size-3" /> Clear all</button>
+              ><XIcon className="size-3" /> Clear</button>
             )}
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            {(["all", "prepleat", "drape"] as Filter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap transition",
-                  filter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground",
-                )}
-              >{f}</button>
-            ))}
           </div>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
             {([
@@ -184,15 +197,21 @@ function BookingsPage() {
         <ul className="space-y-2">
           {list.map((b) => {
             const c = customers.find((x) => x.id === b.customerId);
+            const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
             const due = totalDue(b);
-            const isArtist = c?.kind === "artist" || !!b.artistId;
+            const isArtistBooking = !!b.artistId || c?.kind === "artist";
             return (
               <li key={b.id}>
                 <Link to="/bookings/$id" params={{ id: b.id }} className={cn(
-                  "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition",
-                  isArtist && "ring-1 ring-gold/40",
+                  "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden",
+                  isArtistBooking && "ring-1 ring-gold/50 bg-gradient-to-br from-card to-gold/5",
                   b.status === "cancelled" && "opacity-60",
                 )}>
+                  {isArtistBooking && (
+                    <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
+                      ★ Artist
+                    </span>
+                  )}
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -200,17 +219,19 @@ function BookingsPage() {
                           "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
                           b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
                         )}>{b.service}</span>
-                        {isArtist && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gold/20 text-[oklch(0.45_0.12_70)]">★ Artist</span>}
                         {b.status === "delivered" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Delivered</span>}
                         {b.status === "cancelled" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">Cancelled</span>}
-                        {b.billNumber && <span className="text-[9px] font-mono text-muted-foreground/70 ml-auto">#{b.billNumber.split("-").pop()}</span>}
+                        {b.billNumber && <span className="text-[9px] font-mono text-muted-foreground/70">#{b.billNumber.split("-").pop()}</span>}
                       </div>
                       <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
                       </p>
+                      {a && (
+                        <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
+                      )}
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 pt-1">
                       <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
                       {due > 0 ? (
                         <p className="text-xs text-destructive font-semibold flex items-center justify-end"><IndianRupee className="size-3" />{Math.round(due).toLocaleString("en-IN")} due</p>
@@ -226,5 +247,39 @@ function BookingsPage() {
         </ul>
       )}
     </AppShell>
+  );
+}
+
+function StatChip({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "success" | "danger" | "muted" }) {
+  const toneClass = {
+    default: "bg-card text-foreground",
+    success: "bg-success/10 text-success",
+    danger: "bg-destructive/10 text-destructive",
+    muted: "bg-muted text-muted-foreground",
+  }[tone];
+  return (
+    <div className={cn("shrink-0 rounded-full px-3 py-1.5 flex items-baseline gap-1.5 card-shadow", toneClass)}>
+      <span className="text-[10px] uppercase tracking-wider opacity-80">{label}</span>
+      <span className="text-xs font-bold tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function SegRow<T extends string>({ value, onChange, items }: {
+  value: T; onChange: (v: T) => void; items: { id: T; label: string }[];
+}) {
+  return (
+    <div className="bg-secondary rounded-full p-0.5 flex">
+      {items.map((it) => (
+        <button
+          key={it.id}
+          onClick={() => onChange(it.id)}
+          className={cn(
+            "flex-1 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition",
+            value === it.id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground",
+          )}
+        >{it.label}</button>
+      ))}
+    </div>
   );
 }
