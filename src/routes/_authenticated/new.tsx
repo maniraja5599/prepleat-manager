@@ -15,6 +15,16 @@ function roundUpToQuarter(d = new Date()) {
   return `${String(r.getHours()).padStart(2, "0")}:${String(r.getMinutes()).padStart(2, "0")}`;
 }
 
+// Indian mobile number — strip +91 / 0091 / 0 / non-digits, keep last 10 digits.
+function sanitizeIndianPhone(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0091")) digits = digits.slice(4);
+  else if (digits.startsWith("91") && digits.length > 10) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return digits.slice(0, 10);
+}
+const isValidIndianMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
+
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (s: Record<string, unknown>) => ({
     date: typeof s.date === "string" ? s.date : undefined,
