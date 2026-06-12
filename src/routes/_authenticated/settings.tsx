@@ -44,6 +44,7 @@ function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
+  const [expCatDraft, setExpCatDraft] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
