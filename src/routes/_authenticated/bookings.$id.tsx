@@ -34,6 +34,7 @@ function BookingDetail() {
   const [payAmt, setPayAmt] = useState("");
   const [payMode, setPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
   const [payNote, setPayNote] = useState("");
+  const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [editing, setEditing] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
 
