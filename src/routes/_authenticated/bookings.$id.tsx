@@ -383,8 +383,9 @@ function BookingDetail() {
                     }
                     if (step.key === "deliveredAt" && due > 0) {
                       const ok = window.confirm(`Balance ${fmtINR(due)} pending. Mark as paid (${(settings.defaultPaymentMode ?? "gpay").toUpperCase()}) and deliver?`);
-                      if (!ok) return;
-                      addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: due, date: new Date().toISOString(), mode: settings.defaultPaymentMode ?? "gpay", note: "On delivery" });
+                      if (ok) {
+                        addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: due, date: new Date().toISOString(), mode: settings.defaultPaymentMode ?? "gpay", note: "On delivery" });
+                      }
                     }
                     const patch: Partial<typeof booking> = { [step.key]: new Date().toISOString() } as Partial<typeof booking>;
                     if (step.key === "deliveredAt") {
