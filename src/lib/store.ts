@@ -24,6 +24,9 @@ export interface Booking {
   measurements?: Measurement[];
   createdAt: string;
   completedAt?: string;
+  receivedAt?: string;
+  workDoneAt?: string;
+  deliveredAt?: string;
   status: "pending" | "completed" | "delivered" | "cancelled";
 }
 
@@ -192,7 +195,8 @@ export const useStore = create<State>()(
 
       addBooking: (b) => {
         const billNumber = generateBillNumber(get().bookings);
-        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: new Date().toISOString(), status: "pending" };
+        const now = new Date().toISOString();
+        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: now, receivedAt: now, status: "pending" };
         const entry: ActivityEntry = {
           id: uid(), ts: new Date().toISOString(), kind: "create",
           bookingId: booking.id, summary: `${billNumber} · ${booking.service} · ${booking.sareeCount} sarees`,
@@ -351,7 +355,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 5,
+      version: 6,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -386,6 +390,12 @@ export const useStore = create<State>()(
             const n = (monthCounters.get(ym) ?? 0) + 1;
             monthCounters.set(ym, n);
             b.billNumber = `${prefix}${String(n).padStart(4, "0")}`;
+          }
+          // Backfill workflow timestamps
+          for (const b of persisted.bookings) {
+            if (!b.receivedAt) b.receivedAt = b.createdAt;
+            if (b.status === "delivered" && !b.deliveredAt) b.deliveredAt = b.completedAt || b.createdAt;
+            if ((b.status === "delivered" || b.status === "completed") && !b.workDoneAt) b.workDoneAt = b.completedAt || b.createdAt;
           }
         }
         if (!Array.isArray(persisted.activity)) persisted.activity = [];

@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, Phone, MapPin, Plus, Minus, AlertTriangle, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Sparkles, CalendarDays, Clock } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -14,6 +14,16 @@ function roundUpToQuarter(d = new Date()) {
   const r = new Date(Math.ceil(d.getTime() / ms) * ms);
   return `${String(r.getHours()).padStart(2, "0")}:${String(r.getMinutes()).padStart(2, "0")}`;
 }
+
+// Indian mobile number — strip +91 / 0091 / 0 / non-digits, keep last 10 digits.
+function sanitizeIndianPhone(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0091")) digits = digits.slice(4);
+  else if (digits.startsWith("91") && digits.length > 10) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return digits.slice(0, 10);
+}
+const isValidIndianMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -92,8 +102,9 @@ function NewBooking() {
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const openReview = () => {
-    if (!customerId && (!newName.trim() || !newPhone.trim())) {
-      return toast.error("Add customer name & phone");
+    if (!customerId) {
+      if (!newName.trim()) return toast.error("Customer name required");
+      if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
     }
     if (!sareeCount || sareeCount < 1) return toast.error("Saree count required");
     if (!deliveryDate || !deliveryTime) return toast.error("Delivery date & time required");
@@ -104,7 +115,7 @@ function NewBooking() {
   const confirmSave = () => {
     let cid = customerId;
     if (!cid) {
-      const c = addCustomer({ kind: "client", name: newName.trim(), phone: newPhone.trim(), address: newAddress.trim() || undefined });
+      const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
       cid = c.id;
     } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
       updateCustomer(cid, { address: newAddress.trim() });
@@ -213,17 +224,28 @@ function NewBooking() {
                 </ul>
               )}
             </div>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                placeholder="Phone"
-                inputMode="tel"
-                className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+            <div>
+              <div className="relative flex items-stretch bg-secondary rounded-full overflow-hidden focus-within:ring-2 focus-within:ring-primary">
+                <span className="px-3 flex items-center text-sm font-semibold text-muted-foreground border-r border-border bg-background/40">+91</span>
+                <input
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const txt = e.clipboardData.getData("text");
+                    setNewPhone(sanitizeIndianPhone(txt));
+                  }}
+                  placeholder="10-digit mobile"
+                  inputMode="numeric"
+                  maxLength={10}
+                  className="flex-1 min-w-0 bg-transparent pl-3 pr-3 py-2.5 text-sm tabular-nums focus:outline-none"
+                />
+              </div>
+              {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
+                <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
+              )}
               {phoneSuggestions.length > 0 && (
-                <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {phoneSuggestions.map((c) => (
                     <li key={c.id}>
                       <button
@@ -295,8 +317,11 @@ function NewBooking() {
       {/* Delivery */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Delivery</p>
+        <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+          <CalendarDays className="size-3.5 text-primary/70" />
+          <span>Date · swipe ← →</span>
+        </div>
         <HorizontalPicker
-          label="Date · swipe ← →"
           itemWidth={72}
           value={deliveryDate}
           onChange={setDeliveryDate}
@@ -315,8 +340,11 @@ function NewBooking() {
           })()}
         />
         <div className="mt-3">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+            <Clock className="size-3.5 text-primary/70" />
+            <span>Time · 15-min steps</span>
+          </div>
           <HorizontalPicker
-            label="Time · 15-min steps"
             itemWidth={86}
             value={deliveryTime}
             onChange={setDeliveryTime}

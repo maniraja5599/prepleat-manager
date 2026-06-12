@@ -76,7 +76,7 @@ function AuthPage() {
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src={logoAsset.url} alt="" className="size-16 rounded-2xl object-cover ring-2 ring-primary/30 mb-3" />
+          <img src={logoAsset.url} alt="" className="size-16 rounded-full object-cover ring-2 ring-primary/30 mb-3" />
           <h1 className="text-2xl font-display font-semibold tracking-tight">Eyas Saree Drapist</h1>
           <p className="text-sm text-muted-foreground mt-1">PrePleat & Drape manager</p>
         </div>

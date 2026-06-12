@@ -286,30 +286,80 @@ function BookingDetail() {
         </div>
       )}
 
-      <div className={cn("grid gap-2 mt-4", due > 0 ? "grid-cols-3" : "grid-cols-2")}>
-        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
-          <MessageCircle className="size-4" /> Remind
-        </button>
-        {due > 0 && (
-          <button onClick={() => sendWhatsApp("balance")} className="bg-destructive text-destructive-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
-            <IndianRupee className="size-4" /> Balance
-          </button>
-        )}
+      {/* Workflow steps */}
+      {booking.status !== "cancelled" && (
+        <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Workflow</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { key: "receivedAt" as const, label: "Saree Received", short: "Received" },
+              { key: "workDoneAt" as const, label: booking.service === "prepleat" ? "PrePleat Done" : "Drape Done", short: "Done" },
+              { key: "deliveredAt" as const, label: "Delivered", short: "Delivered" },
+            ]).map((step, i, arr) => {
+              const ts = booking[step.key];
+              const prevDone = i === 0 ? true : !!booking[arr[i - 1].key];
+              const isDone = !!ts;
+              return (
+                <button
+                  key={step.key}
+                  disabled={!prevDone && !isDone}
+                  onClick={() => {
+                    if (isDone) {
+                      // Untick this step and any later ones
+                      const patch: Partial<typeof booking> = {};
+                      for (let j = i; j < arr.length; j++) (patch as Record<string, undefined>)[arr[j].key] = undefined;
+                      if (booking.status === "delivered") patch.status = "pending";
+                      updateBooking(booking.id, patch);
+                      toast.success("Step undone");
+                      return;
+                    }
+                    if (step.key === "deliveredAt" && due > 0) {
+                      const ok = window.confirm(`Balance ${fmtINR(due)} pending. Mark as paid (${(settings.defaultPaymentMode ?? "gpay").toUpperCase()}) and deliver?`);
+                      if (!ok) return;
+                      addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: due, date: new Date().toISOString(), mode: settings.defaultPaymentMode ?? "gpay", note: "On delivery" });
+                    }
+                    const patch: Partial<typeof booking> = { [step.key]: new Date().toISOString() } as Partial<typeof booking>;
+                    if (step.key === "deliveredAt") {
+                      patch.status = "delivered";
+                      patch.completedAt = new Date().toISOString();
+                      if (!booking.workDoneAt) patch.workDoneAt = new Date().toISOString();
+                      if (!booking.receivedAt) patch.receivedAt = new Date().toISOString();
+                    }
+                    updateBooking(booking.id, patch);
+                    toast.success(`${step.short} ✓`);
+                  }}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition active:scale-95",
+                    isDone ? "bg-success/15 border-success text-success" : prevDone ? "bg-secondary border-transparent text-foreground" : "bg-secondary/50 border-transparent text-muted-foreground/50",
+                  )}
+                >
+                  <div className={cn(
+                    "size-7 rounded-full flex items-center justify-center text-xs font-bold",
+                    isDone ? "bg-success text-success-foreground" : "bg-background text-muted-foreground",
+                  )}>{isDone ? <Check className="size-4" /> : i + 1}</div>
+                  <span className="text-[10px] font-semibold leading-tight text-center">{step.label}</span>
+                  {ts && <span className="text-[9px] opacity-70">{format(parseISO(ts), "MMM d, h:mma")}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Communication buttons */}
+      <div className={cn("grid gap-2 mt-4", due > 0 && booking.status !== "cancelled" ? "grid-cols-3" : "grid-cols-2")}>
         <button onClick={() => sendWhatsApp("bill")} className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
           <Receipt className="size-4" /> Bill
         </button>
+        {due > 0 && booking.status !== "cancelled" && (
+          <button onClick={() => sendWhatsApp("balance")} className="bg-destructive text-destructive-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
+            <IndianRupee className="size-4" /> Remind
+          </button>
+        )}
+        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
+          <MessageCircle className="size-4" /> Message
+        </button>
       </div>
-
-      <button
-        onClick={() => {
-          updateBooking(booking.id, { status: booking.status === "delivered" ? "pending" : "delivered", completedAt: new Date().toISOString() });
-          toast.success(booking.status === "delivered" ? "Marked pending" : "Marked delivered");
-        }}
-        className={cn("w-full mt-2 py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition",
-          booking.status === "delivered" ? "bg-muted text-foreground" : "bg-success/15 text-success")}
-      >
-        <Check className="size-5" /> {booking.status === "delivered" ? "Reopen booking" : "Mark delivered"}
-      </button>
 
       <div className="grid grid-cols-3 gap-2 mt-2">
         <button
