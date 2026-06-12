@@ -223,17 +223,28 @@ function NewBooking() {
                 </ul>
               )}
             </div>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                placeholder="Phone"
-                inputMode="tel"
-                className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+            <div>
+              <div className="relative flex items-stretch bg-secondary rounded-full overflow-hidden focus-within:ring-2 focus-within:ring-primary">
+                <span className="px-3 flex items-center text-sm font-semibold text-muted-foreground border-r border-border bg-background/40">+91</span>
+                <input
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const txt = e.clipboardData.getData("text");
+                    setNewPhone(sanitizeIndianPhone(txt));
+                  }}
+                  placeholder="10-digit mobile"
+                  inputMode="numeric"
+                  maxLength={10}
+                  className="flex-1 min-w-0 bg-transparent pl-3 pr-3 py-2.5 text-sm tabular-nums focus:outline-none"
+                />
+              </div>
+              {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
+                <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
+              )}
               {phoneSuggestions.length > 0 && (
-                <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {phoneSuggestions.map((c) => (
                     <li key={c.id}>
                       <button
