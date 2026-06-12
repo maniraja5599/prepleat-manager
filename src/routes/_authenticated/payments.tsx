@@ -33,7 +33,7 @@ function PaymentsPage() {
   const businessName = useStore((s) => s.settings.businessName);
   const deletePayment = useStore((s) => s.deletePayment);
 
-  const [tab, setTab] = useState<Tab>("log");
+  const [tab, setTab] = useState<Tab>("analytics");
   const [monthRef, setMonthRef] = useState(new Date());
   const [rangeMode, setRangeMode] = useState<RangeMode>("month");
   const [from, setFrom] = useState("");
