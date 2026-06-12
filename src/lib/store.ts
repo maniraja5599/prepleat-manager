@@ -370,6 +370,12 @@ export const useStore = create<State>()(
           };
           return { payments: [payment, ...s.payments], bookings, activity: [entry, ...s.activity].slice(0, 200) };
         }),
+      updatePayment: (id, patch) =>
+        set((s) => ({
+          payments: s.payments.map((p) =>
+            p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p,
+          ),
+        })),
       deletePayment: (id) =>
         set((s) => {
           const pay = s.payments.find((p) => p.id === id);
