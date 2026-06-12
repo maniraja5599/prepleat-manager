@@ -102,8 +102,9 @@ function NewBooking() {
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const openReview = () => {
-    if (!customerId && (!newName.trim() || !newPhone.trim())) {
-      return toast.error("Add customer name & phone");
+    if (!customerId) {
+      if (!newName.trim()) return toast.error("Customer name required");
+      if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
     }
     if (!sareeCount || sareeCount < 1) return toast.error("Saree count required");
     if (!deliveryDate || !deliveryTime) return toast.error("Delivery date & time required");
@@ -114,7 +115,7 @@ function NewBooking() {
   const confirmSave = () => {
     let cid = customerId;
     if (!cid) {
-      const c = addCustomer({ kind: "client", name: newName.trim(), phone: newPhone.trim(), address: newAddress.trim() || undefined });
+      const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
       cid = c.id;
     } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
       updateCustomer(cid, { address: newAddress.trim() });
