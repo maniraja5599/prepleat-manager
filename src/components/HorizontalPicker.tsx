@@ -14,13 +14,18 @@ interface Props {
   onChange: (key: string) => void;
   itemWidth?: number;
   label?: string;
+  /** Called when the user double-taps the active value — handy for opening a
+   *  native date/time picker. */
+  onDoubleTap?: () => void;
 }
 
 /**
  * Horizontal scroll-snap picker. The centred item is the active value.
- * Tap an item or use the ← → buttons to step one-by-one.
+ * Tap an item or use the ← → buttons to step one-by-one. Fast swipes are
+ * supported — the centred item updates immediately when scrolling settles.
+ * Double-tap the centred item to trigger {@link Props.onDoubleTap}.
  */
-export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label }: Props) {
+export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label, onDoubleTap }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const settling = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,12 +49,15 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
     const el = ref.current;
     if (!el) return;
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
+    // Update quickly while swiping (live), then confirm on settle.
+    const live = () => {
       const i = Math.round(el.scrollLeft / itemWidth);
       const clamped = Math.max(0, Math.min(items.length - 1, i));
       const next = items[clamped];
       if (next && next.key !== value) onChange(next.key);
-    }, 90);
+    };
+    live();
+    timer.current = setTimeout(live, 40);
   };
 
   const step = (dir: -1 | 1) => {
