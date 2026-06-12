@@ -127,7 +127,8 @@ function NewBooking() {
 
   const openReview = () => {
     if (bookingSource === "artist" && !artistId) return toast.error("Select or add an artist");
-    if (!customerId) {
+    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
+    if (customerRequired && !customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
       if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
     }
