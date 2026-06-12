@@ -685,3 +685,19 @@ function Stat({ icon, label, value, tint }: { icon: React.ReactNode; label: stri
     </div>
   );
 }
+
+function KpiCard({ icon, label, value, sub, tint }: { icon: React.ReactNode; label: string; value: string; sub: string; tint: "primary" | "success" | "accent" | "gold" }) {
+  const tintCls =
+    tint === "primary" ? "text-primary"
+    : tint === "success" ? "text-success"
+    : tint === "gold" ? "text-gold"
+    : "text-accent-foreground";
+  return (
+    <div className="bg-card card-shadow rounded-2xl p-3">
+      <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}>
+        {icon}<span className="truncate">{label}</span>
+      </div>
+      <p className="text-base font-display font-semibold mt-1 tabular-nums truncate">{value}</p>
+      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{sub}</p>
+    </div>
+  );
