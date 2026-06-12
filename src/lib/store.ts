@@ -133,6 +133,7 @@ interface State {
   clearActivity: () => void;
 
   addPayment: (p: Omit<Payment, "id">) => void;
+  updatePayment: (id: string, p: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
 
   updateSettings: (s: Partial<Settings>) => void;
