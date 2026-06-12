@@ -123,6 +123,7 @@ interface State {
   customers: Customer[];
   bookings: Booking[];
   payments: Payment[];
+  expenses: Expense[];
   settings: Settings;
   trash: DeletedBooking[];
   activity: ActivityEntry[];
@@ -146,6 +147,10 @@ interface State {
   addPayment: (p: Omit<Payment, "id">) => void;
   updatePayment: (id: string, p: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
+
+  addExpense: (e: Omit<Expense, "id" | "updatedAt">) => Expense;
+  updateExpense: (id: string, e: Partial<Expense>) => void;
+  deleteExpense: (id: string) => void;
 
   updateSettings: (s: Partial<Settings>) => void;
 }
