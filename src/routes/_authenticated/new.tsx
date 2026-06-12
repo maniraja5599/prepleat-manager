@@ -179,7 +179,7 @@ function NewBooking() {
         <div className="grid grid-cols-2 gap-2">
           {([
             { id: "direct" as const, label: "Direct Client", icon: User },
-            { id: "artist" as const, label: "Via Artist", icon: Sparkles },
+            { id: "artist" as const, label: "Via Artist", icon: Palette },
           ]).map(({ id, label, icon: Icon }) => (
             <button
               key={id}
