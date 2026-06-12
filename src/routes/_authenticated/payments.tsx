@@ -545,6 +545,65 @@ function PaymentsPage() {
 
       {tab === "analytics" && (
         <div className="space-y-3">
+          {/* Lifetime hero */}
+          <div className="relative overflow-hidden rounded-2xl p-4 text-primary-foreground bg-gradient-to-br from-primary via-primary to-accent card-shadow">
+            <div className="absolute -right-6 -top-6 size-32 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold opacity-90">
+                <Sparkles className="size-3.5" /> Total collection (lifetime)
+              </div>
+              <p className="font-display font-bold text-3xl mt-1 tabular-nums">{fmtINR(lifetime)}</p>
+              <div className="flex items-center gap-3 mt-2 text-[11px] opacity-95">
+                <span className="flex items-center gap-1">
+                  {trendDelta.up ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                  {trendDelta.pct}% vs last month
+                </span>
+                <span>·</span>
+                <span>{payments.length} payments</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 12-month earnings area chart */}
+          <div className="bg-card card-shadow rounded-2xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Earnings trend</p>
+                <p className="text-[10px] text-muted-foreground">Last 12 months</p>
+              </div>
+              <p className="text-sm font-bold tabular-nums">{fmtINR(trend12.reduce((s, m) => s + m.amount, 0))}</p>
+            </div>
+            <div className="h-44 -mx-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
+                  <YAxis hide />
+                  <Tooltip
+                    cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
+                    contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                    formatter={(v: number) => [fmtINR(v), "Earned"]}
+                  />
+                  <Area type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#earnGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* KPI grid */}
+          <div className="grid grid-cols-2 gap-2">
+            <KpiCard icon={<CalendarCheck className="size-3.5" />} label="Payments" value={String(analytics.count)} sub={`avg ${fmtINR(analytics.avg)}`} tint="primary" />
+            <KpiCard icon={<Users className="size-3.5" />} label="Unique customers" value={String(analytics.uniqueCustomers)} sub="in range" tint="accent" />
+            <KpiCard icon={<TrendingUp className="size-3.5" />} label="Best day" value={analytics.topDay ? fmtINR(analytics.topDay.amount) : "—"} sub={analytics.topDay?.day ?? "no data"} tint="success" />
+            <KpiCard icon={<Crown className="size-3.5" />} label="Top customer" value={analytics.topCust ? fmtINR(analytics.topCust.amount) : "—"} sub={analytics.topCust?.name ?? "—"} tint="gold" />
+          </div>
+
           {/* Paid vs Pending bar */}
           <div className="bg-card card-shadow rounded-2xl p-3">
             <div className="flex items-center justify-between mb-2">
@@ -561,6 +620,7 @@ function PaymentsPage() {
             </div>
           </div>
 
+          {/* Daily collection */}
           <div className="bg-card card-shadow rounded-2xl p-3">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Daily collection</p>
@@ -585,6 +645,7 @@ function PaymentsPage() {
             </div>
           </div>
 
+          {/* Mode split */}
           <div className="bg-card card-shadow rounded-2xl p-3">
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Payment mode split</p>
             <div className="grid grid-cols-3 gap-2">
@@ -600,32 +661,9 @@ function PaymentsPage() {
               })}
             </div>
           </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Last 6 months</p>
-            <ul className="space-y-1.5">
-              {(() => {
-                const months = Array.from({ length: 6 }).map((_, i) => {
-                  const ref = subMonths(new Date(), i);
-                  const s = startOfMonth(ref), e = endOfMonth(ref);
-                  const sum = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
-                  return { ref, sum };
-                });
-                const max = Math.max(1, ...months.map((m) => m.sum));
-                return months.map((m, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs">
-                    <span className="w-12 text-muted-foreground">{format(m.ref, "MMM")}</span>
-                    <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: `${(m.sum / max) * 100}%` }} />
-                    </div>
-                    <span className="w-20 text-right font-semibold tabular-nums">{fmtINR(m.sum)}</span>
-                  </li>
-                ));
-              })()}
-            </ul>
-          </div>
         </div>
       )}
+
     </AppShell>
   );
 }
