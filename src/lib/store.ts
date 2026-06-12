@@ -23,6 +23,7 @@ export interface Booking {
   notes?: string;
   measurements?: Measurement[];
   createdAt: string;
+  updatedAt?: string;
   completedAt?: string;
   receivedAt?: string;
   workDoneAt?: string;
@@ -40,6 +41,7 @@ export interface Payment {
   date: string;
   note?: string;
   mode?: PaymentMode;
+  updatedAt?: string;
 }
 
 export type CustomerKind = "client" | "artist";
@@ -52,6 +54,7 @@ export interface Customer {
   address?: string;
   notes?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "gold" | "custom";
@@ -99,6 +102,12 @@ export interface ActivityEntry {
   next?: Booking;
 }
 
+export interface Tombstone {
+  id: string;
+  type: "booking" | "payment" | "customer";
+  ts: string;
+}
+
 interface State {
   customers: Customer[];
   bookings: Booking[];
@@ -107,6 +116,7 @@ interface State {
   trash: DeletedBooking[];
   activity: ActivityEntry[];
   redoStack: ActivityEntry[];
+  tombstones: Tombstone[];
 
   addCustomer: (c: Omit<Customer, "id" | "createdAt">) => Customer;
   updateCustomer: (id: string, c: Partial<Customer>) => void;
@@ -164,6 +174,7 @@ export const useStore = create<State>()(
       trash: [],
       activity: [],
       redoStack: [],
+      tombstones: [],
       settings: {
         prepleatPrice: 350,
         drapePrice: 800,
@@ -183,24 +194,38 @@ export const useStore = create<State>()(
       },
 
       addCustomer: (c) => {
-        const customer: Customer = { ...c, id: uid(), createdAt: new Date().toISOString() };
+        const now = new Date().toISOString();
+        const customer: Customer = { ...c, id: uid(), createdAt: now, updatedAt: now };
         set((s) => ({ customers: [customer, ...s.customers] }));
         return customer;
       },
       updateCustomer: (id, c) =>
-        set((s) => ({ customers: s.customers.map((x) => (x.id === id ? { ...x, ...c } : x)) })),
-      deleteCustomer: (id) =>
         set((s) => ({
-          customers: s.customers.filter((x) => x.id !== id),
-          bookings: s.bookings.filter((b) => b.customerId !== id),
-          payments: s.payments.filter((p) => p.customerId !== id),
+          customers: s.customers.map((x) =>
+            x.id === id ? { ...x, ...c, updatedAt: new Date().toISOString() } : x,
+          ),
         })),
+      deleteCustomer: (id) =>
+        set((s) => {
+          const ts = new Date().toISOString();
+          const newTombs: Tombstone[] = [
+            { id, type: "customer", ts },
+            ...s.bookings.filter((b) => b.customerId === id).map((b) => ({ id: b.id, type: "booking" as const, ts })),
+            ...s.payments.filter((p) => p.customerId === id).map((p) => ({ id: p.id, type: "payment" as const, ts })),
+          ];
+          return {
+            customers: s.customers.filter((x) => x.id !== id),
+            bookings: s.bookings.filter((b) => b.customerId !== id),
+            payments: s.payments.filter((p) => p.customerId !== id),
+            tombstones: [...newTombs, ...s.tombstones].slice(0, 1000),
+          };
+        }),
       getCustomer: (id) => get().customers.find((c) => c.id === id),
 
       addBooking: (b) => {
         const billNumber = generateBillNumber(get().bookings);
         const now = new Date().toISOString();
-        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: now, receivedAt: now, status: "pending" };
+        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: now, updatedAt: now, receivedAt: now, status: "pending" };
         const entry: ActivityEntry = {
           id: uid(), ts: new Date().toISOString(), kind: "create",
           bookingId: booking.id, summary: `${billNumber} · ${booking.service} · ${booking.sareeCount} sarees`,
@@ -214,7 +239,7 @@ export const useStore = create<State>()(
           const pid = uid();
           set((s) => ({
             payments: [
-              { id: pid, bookingId: booking.id, customerId: b.customerId, amount: b.advancePaid, date: new Date().toISOString(), note: "Advance" },
+              { id: pid, bookingId: booking.id, customerId: b.customerId, amount: b.advancePaid, date: now, note: "Advance", updatedAt: now },
               ...s.payments,
             ],
           }));
@@ -225,7 +250,7 @@ export const useStore = create<State>()(
         set((s) => {
           const prev = s.bookings.find((x) => x.id === id);
           if (!prev) return s;
-          const next = { ...prev, ...b };
+          const next = { ...prev, ...b, updatedAt: new Date().toISOString() };
           const entry: ActivityEntry = {
             id: uid(), ts: new Date().toISOString(), kind: "update",
             bookingId: id, summary: describeDiff(prev, next), prev, next,
@@ -240,7 +265,7 @@ export const useStore = create<State>()(
         set((s) => {
           const prev = s.bookings.find((x) => x.id === id);
           if (!prev) return s;
-          const next: Booking = { ...prev, status: "cancelled" };
+          const next: Booking = { ...prev, status: "cancelled", updatedAt: new Date().toISOString() };
           const entry: ActivityEntry = {
             id: uid(), ts: new Date().toISOString(), kind: "cancel",
             bookingId: id, summary: `cancelled ${prev.billNumber ?? prev.service}`, prev, next,
@@ -257,34 +282,43 @@ export const useStore = create<State>()(
           if (!b) return s;
           const relatedPayments = s.payments.filter((p) => p.bookingId === id);
           const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const deletedAt = new Date().toISOString();
           const trash = [
-            { booking: b, payments: relatedPayments, deletedAt: new Date().toISOString() },
+            { booking: b, payments: relatedPayments, deletedAt },
             ...s.trash.filter((t) => new Date(t.deletedAt).getTime() > sevenDaysAgo),
           ].slice(0, 50);
           const entry: ActivityEntry = {
-            id: uid(), ts: new Date().toISOString(), kind: "delete",
+            id: uid(), ts: deletedAt, kind: "delete",
             bookingId: id, summary: `deleted ${b.billNumber ?? b.service}`,
           };
+          const newTombs: Tombstone[] = [
+            { id, type: "booking", ts: deletedAt },
+            ...relatedPayments.map((p) => ({ id: p.id, type: "payment" as const, ts: deletedAt })),
+          ];
           return {
             bookings: s.bookings.filter((x) => x.id !== id),
             payments: s.payments.filter((p) => p.bookingId !== id),
             trash,
             activity: [entry, ...s.activity].slice(0, 200),
             redoStack: [],
+            tombstones: [...newTombs, ...s.tombstones].slice(0, 1000),
           };
         }),
       restoreBooking: (id) =>
         set((s) => {
           const t = s.trash.find((x) => x.booking.id === id);
           if (!t) return s;
+          const now = new Date().toISOString();
           const entry: ActivityEntry = {
-            id: uid(), ts: new Date().toISOString(), kind: "restore",
+            id: uid(), ts: now, kind: "restore",
             bookingId: id, summary: `restored ${t.booking.billNumber ?? t.booking.service}`,
           };
+          const restoredIds = new Set([t.booking.id, ...t.payments.map((p) => p.id)]);
           return {
-            bookings: [t.booking, ...s.bookings],
-            payments: [...t.payments, ...s.payments],
+            bookings: [{ ...t.booking, updatedAt: now }, ...s.bookings],
+            payments: [...t.payments.map((p) => ({ ...p, updatedAt: now })), ...s.payments],
             trash: s.trash.filter((x) => x.booking.id !== id),
+            tombstones: s.tombstones.filter((tb) => !restoredIds.has(tb.id)),
             activity: [entry, ...s.activity].slice(0, 200),
           };
         }),
@@ -294,7 +328,7 @@ export const useStore = create<State>()(
         if (idx === -1) return false;
         const entry = s.activity[idx];
         set({
-          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? entry.prev! : x)),
+          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x)),
           activity: s.activity.filter((_, i) => i !== idx),
           redoStack: [entry, ...s.redoStack].slice(0, 50),
         });
@@ -306,7 +340,7 @@ export const useStore = create<State>()(
         const [entry, ...rest] = s.redoStack;
         if (!entry.next) return false;
         set({
-          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? entry.next! : x)),
+          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.next!, updatedAt: new Date().toISOString() } : x)),
           activity: [{ ...entry, id: uid(), ts: new Date().toISOString() }, ...s.activity].slice(0, 200),
           redoStack: rest,
         });
@@ -316,7 +350,8 @@ export const useStore = create<State>()(
 
       addPayment: (p) =>
         set((s) => {
-          const payment: Payment = { ...p, id: uid() };
+          const now = new Date().toISOString();
+          const payment: Payment = { ...p, id: uid(), updatedAt: now };
           const bookings = s.bookings.map((b) => {
             if (b.id !== p.bookingId) return b;
             const newPaid = b.advancePaid + p.amount;
@@ -325,10 +360,11 @@ export const useStore = create<State>()(
               ...b,
               advancePaid: newPaid,
               status: fullyPaid && b.status === "pending" ? "completed" : b.status,
+              updatedAt: now,
             };
           });
           const entry: ActivityEntry = {
-            id: uid(), ts: new Date().toISOString(), kind: "payment-add",
+            id: uid(), ts: now, kind: "payment-add",
             bookingId: p.bookingId, summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
           };
           return { payments: [payment, ...s.payments], bookings, activity: [entry, ...s.activity].slice(0, 200) };
@@ -337,6 +373,7 @@ export const useStore = create<State>()(
         set((s) => {
           const pay = s.payments.find((p) => p.id === id);
           if (!pay) return s;
+          const now = new Date().toISOString();
           const bookings = s.bookings.map((b) => {
             if (b.id !== pay.bookingId) return b;
             const newPaid = Math.max(0, b.advancePaid - pay.amount);
@@ -345,13 +382,19 @@ export const useStore = create<State>()(
               ...b,
               advancePaid: newPaid,
               status: !stillFullyPaid && b.status === "completed" ? "pending" : b.status,
+              updatedAt: now,
             };
           });
           const entry: ActivityEntry = {
-            id: uid(), ts: new Date().toISOString(), kind: "payment-delete",
+            id: uid(), ts: now, kind: "payment-delete",
             bookingId: pay.bookingId, summary: `removed payment ₹${pay.amount}`,
           };
-          return { payments: s.payments.filter((p) => p.id !== id), bookings, activity: [entry, ...s.activity].slice(0, 200) };
+          return {
+            payments: s.payments.filter((p) => p.id !== id),
+            bookings,
+            activity: [entry, ...s.activity].slice(0, 200),
+            tombstones: [{ id, type: "payment" as const, ts: now }, ...s.tombstones].slice(0, 1000),
+          };
         }),
 
 
@@ -359,7 +402,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 7,
+      version: 8,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -406,6 +449,18 @@ export const useStore = create<State>()(
         }
         if (!Array.isArray(persisted.activity)) persisted.activity = [];
         if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];
+        if (!Array.isArray(persisted.tombstones)) persisted.tombstones = [];
+        if (Array.isArray(persisted.bookings)) {
+          for (const b of persisted.bookings) {
+            if (!b.updatedAt) b.updatedAt = b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt;
+          }
+        }
+        if (Array.isArray(persisted.customers)) {
+          for (const c of persisted.customers) if (!c.updatedAt) c.updatedAt = c.createdAt;
+        }
+        if (Array.isArray(persisted.payments)) {
+          for (const p of persisted.payments) if (!p.updatedAt) p.updatedAt = p.date;
+        }
         return persisted;
       },
     },
