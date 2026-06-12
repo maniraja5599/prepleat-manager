@@ -178,7 +178,7 @@ function NewBooking() {
       pricePerSaree: effPrice,
       totalAmount: total,
       advancePaid: 0,
-      deliveryDate: new Date(deliveryDate).toISOString(),
+      deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
       deliveryTime,
       notes: notes.trim() || undefined,
       measurements: showMeasure ? measurements : undefined,
@@ -592,7 +592,7 @@ function NewBooking() {
         </p>
         <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">Tip · tap the 📅 / 🕒 icon for a full picker</p>
         {(() => {
-          const same = bookingsOnDate(new Date(deliveryDate).toISOString(), bookings);
+          const same = bookingsOnDate(new Date(deliveryDate + "T12:00:00").toISOString(), bookings);
           if (same.length === 0) return null;
           const totalSarees = same.reduce((s, b) => s + b.sareeCount, 0);
           return (
@@ -724,7 +724,7 @@ function NewBooking() {
             <ReviewRow label="Service" value={service === "prepleat" ? "PrePleat" : "Drape"} />
             <ReviewRow label="Customer" value={selectedCust?.name || newName} />
             <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
-            <ReviewRow label="Delivery" value={`${format(new Date(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`} />
+            <ReviewRow label="Delivery" value={`${format(parseISO(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`} />
             {artistId && <ReviewRow label="Artist" value={artists.find((a) => a.id === artistId)?.name ?? ""} />}
             <ReviewRow label="Total" value={fmtINR(total)} bold />
             <ReviewRow label="Advance" value={fmtINR(advNum)} />
