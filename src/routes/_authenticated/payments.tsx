@@ -604,7 +604,10 @@ function PaymentsPage() {
             <KpiCard icon={<CalendarCheck className="size-3.5" />} label="Payments" value={String(analytics.count)} sub={`avg ${fmtINR(analytics.avg)}`} tint="primary" />
             <KpiCard icon={<Users className="size-3.5" />} label="Unique customers" value={String(analytics.uniqueCustomers)} sub="in range" tint="accent" />
             <KpiCard icon={<TrendingUp className="size-3.5" />} label="Best day" value={analytics.topDay ? fmtINR(analytics.topDay.amount) : "—"} sub={analytics.topDay?.day ?? "no data"} tint="success" />
-            <KpiCard icon={<Crown className="size-3.5" />} label="Top customer" value={analytics.topCust ? fmtINR(analytics.topCust.amount) : "—"} sub={analytics.topCust?.name ?? "—"} tint="gold" />
+            {(() => {
+              const tc = analytics.topCust as { name: string; amount: number } | null;
+              return <KpiCard icon={<Crown className="size-3.5" />} label="Top customer" value={tc ? fmtINR(tc.amount) : "—"} sub={tc?.name ?? "—"} tint="gold" />;
+            })()}
           </div>
 
           {/* Paid vs Pending bar */}
