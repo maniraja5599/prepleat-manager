@@ -96,7 +96,7 @@ function SettingsPage() {
             <img
               src={settings.logoDataUrl || logoAsset.url}
               alt="logo"
-              className="size-16 rounded-2xl object-cover ring-2 ring-primary/20"
+              className="size-16 rounded-full object-cover scale-[1.18] ring-2 ring-primary/20"
             />
             <div className="flex-1 min-w-0 flex flex-col gap-2">
               <button

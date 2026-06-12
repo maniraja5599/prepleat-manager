@@ -44,7 +44,9 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthSplash() {
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center gap-4">
-      <img src={logoAsset.url} alt="Eyas Saree Drapist" className="size-20 rounded-full ring-4 ring-primary/20 animate-pulse" />
+      <div className="size-20 rounded-full overflow-hidden ring-4 ring-primary/20 animate-pulse">
+        <img src={logoAsset.url} alt="Eyas Saree Drapist" className="size-full rounded-full object-cover scale-[1.18]" />
+      </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span className="size-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
         <span className="size-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "120ms" }} />

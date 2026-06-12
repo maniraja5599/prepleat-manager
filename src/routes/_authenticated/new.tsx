@@ -123,6 +123,7 @@ function NewBooking() {
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const openReview = () => {
+    if (bookingSource === "artist" && !artistId) return toast.error("Select or add an artist");
     if (!customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
       if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
@@ -315,7 +316,7 @@ function NewBooking() {
               {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
                 <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
               )}
-              {phoneSuggestions.length > 0 && (
+              {showExisting && phoneSuggestions.length > 0 && (
                 <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {phoneSuggestions.map((c) => (
                     <li key={c.id}>
