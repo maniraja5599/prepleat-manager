@@ -404,7 +404,7 @@ function NewBooking() {
               {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
                 <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
               )}
-              {showExisting && phoneSuggestions.length > 0 && (
+              {phoneSuggestions.length > 0 && !customerId && (
                 <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {phoneSuggestions.map((c) => (
                     <li key={c.id}>
