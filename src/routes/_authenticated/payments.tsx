@@ -108,6 +108,44 @@ function PaymentsPage() {
     return m;
   }, [filteredPayments]);
 
+  // Extra analytics
+  const analytics = useMemo(() => {
+    const count = filteredPayments.length;
+    const avg = count ? collected / count : 0;
+    const top = dailyChart.reduce((a, b) => (b.amount > (a?.amount ?? 0) ? b : a), null as null | { day: string; amount: number });
+    const uniqueCustomers = new Set(filteredPayments.map((p) => p.customerId)).size;
+    // Top customer in range
+    const byCust = new Map<string, number>();
+    filteredPayments.forEach((p) => byCust.set(p.customerId, (byCust.get(p.customerId) ?? 0) + p.amount));
+    let topCust: { name: string; amount: number } | null = null;
+    byCust.forEach((amount, cid) => {
+      if (!topCust || amount > topCust.amount) {
+        const c = customers.find((x) => x.id === cid);
+        topCust = { name: c?.name ?? "Unknown", amount };
+      }
+    });
+    return { count, avg, topDay: top, uniqueCustomers, topCust };
+  }, [filteredPayments, collected, dailyChart, customers]);
+
+  // 12-month earning trend
+  const trend12 = useMemo(() => {
+    return Array.from({ length: 12 }).map((_, i) => {
+      const ref = subMonths(new Date(), 11 - i);
+      const s = startOfMonth(ref), e = endOfMonth(ref);
+      const sum = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+      return { month: format(ref, "MMM"), amount: sum };
+    });
+  }, [payments]);
+
+  const trendDelta = useMemo(() => {
+    const last = trend12[trend12.length - 1]?.amount ?? 0;
+    const prev = trend12[trend12.length - 2]?.amount ?? 0;
+    if (prev === 0) return { pct: last > 0 ? 100 : 0, up: last >= 0 };
+    const pct = Math.round(((last - prev) / prev) * 100);
+    return { pct: Math.abs(pct), up: pct >= 0 };
+  }, [trend12]);
+
+
   // Customer-wise — scoped to the same range/filters
   const customerSummary = useMemo(() => {
     const ql = q.trim().toLowerCase();
