@@ -423,6 +423,21 @@ export const useStore = create<State>()(
         }),
 
 
+      addExpense: (e) => {
+        const now = new Date().toISOString();
+        const expense: Expense = { ...e, id: uid(), updatedAt: now };
+        set((s) => ({ expenses: [expense, ...s.expenses] }));
+        return expense;
+      },
+      updateExpense: (id, patch) =>
+        set((s) => ({
+          expenses: s.expenses.map((e) =>
+            e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e,
+          ),
+        })),
+      deleteExpense: (id) =>
+        set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
     }),
     {
