@@ -117,13 +117,16 @@ function PaymentsPage() {
     // Top customer in range
     const byCust = new Map<string, number>();
     filteredPayments.forEach((p) => byCust.set(p.customerId, (byCust.get(p.customerId) ?? 0) + p.amount));
-    let topCust: { name: string; amount: number } | null = null;
+    type TopCust = { name: string; amount: number };
+    let topCust: TopCust | null = null;
     byCust.forEach((amount, cid) => {
-      if (!topCust || amount > topCust.amount) {
+      const cur: TopCust | null = topCust;
+      if (!cur || amount > cur.amount) {
         const c = customers.find((x) => x.id === cid);
         topCust = { name: c?.name ?? "Unknown", amount };
       }
     });
+
     return { count, avg, topDay: top, uniqueCustomers, topCust };
   }, [filteredPayments, collected, dailyChart, customers]);
 
