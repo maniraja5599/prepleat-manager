@@ -81,7 +81,8 @@ function NewBooking() {
   const [deliveryTime, setDeliveryTime] = useState(roundUpToQuarter());
   // Popover open state for tap-once calendar / clock pickers (works on iOS & Android).
   const [dateOpen, setDateOpen] = useState(false);
-  const [timeOpen, setTimeOpen] = useState(false);
+  const timeInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => { if (presetDate) setDeliveryDate(presetDate); }, [presetDate]);
 
