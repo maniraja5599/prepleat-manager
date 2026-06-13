@@ -33,7 +33,7 @@ function CustomersPage() {
         const due = cb.reduce((s, b) => s + totalDue(b), 0);
         return { ...c, count: cb.length, due };
       })
-      .filter((c) => !ql || c.name.toLowerCase().includes(ql) || c.phone.includes(ql))
+      .filter((c) => !ql || c.name.toLowerCase().includes(ql) || c.phone.includes(ql) || (c.address ?? "").toLowerCase().includes(ql) || (c.reference ?? "").toLowerCase().includes(ql))
       .filter((c) => !dueOnly || c.due > 0)
       .sort((a, b) => {
         if (sortBy === "name") return a.name.localeCompare(b.name);
