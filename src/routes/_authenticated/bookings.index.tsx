@@ -100,15 +100,42 @@ function BookingsPage() {
         <StatChip label="Collected" value={fmtINR(collected)} tone="success" />
         <StatChip label="Pending" value={fmtINR(pending)} tone={pending > 0 ? "danger" : "muted"} />
         <button
-          onClick={() => { setShowCompleted((v) => !v); setSort("recent"); }}
+          onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
           className={cn(
             "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition",
+            selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+          )}
+        >
+          <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
+        </button>
+        <button
+          onClick={() => { setShowCompleted((v) => !v); setSort("recent"); }}
+          className={cn(
+            "shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition",
             showCompleted ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
           )}
         >
           <History className="size-3.5" /> Past
         </button>
       </div>
+
+      {selectMode && (
+        <div className="bg-card card-shadow rounded-2xl p-2 mb-3 flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (selected.size === list.length) setSelected(new Set());
+              else setSelected(new Set(list.map((b) => b.id)));
+            }}
+            className="px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold"
+          >{selected.size === list.length && list.length > 0 ? "Clear all" : "Select all"}</button>
+          <span className="text-xs text-muted-foreground flex-1">{selected.size} selected</span>
+          <button
+            disabled={selected.size === 0}
+            onClick={() => setConfirmOpen(true)}
+            className="px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
+          ><Trash2 className="size-3.5" /> Delete {selected.size || ""}</button>
+        </div>
+      )}
 
       <BookingRequestsInbox />
 
