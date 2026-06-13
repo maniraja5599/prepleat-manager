@@ -24,6 +24,7 @@ function CustomerDetail() {
   const [name, setName] = useState(customer?.name ?? "");
   const [phone, setPhone] = useState(customer?.phone ?? "");
   const [address, setAddress] = useState(customer?.address ?? "");
+  const [reference, setReference] = useState(customer?.reference ?? "");
 
   if (!customer) {
     return <AppShell title="Customer"><p className="text-sm text-muted-foreground">Not found.</p></AppShell>;
