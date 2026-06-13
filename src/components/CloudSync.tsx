@@ -134,6 +134,13 @@ export function CloudSync() {
   const [showStatus, setShowStatus] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).__syncStatus = { syncStatus, showStatus };
+      window.dispatchEvent(new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus } }));
+    }
+  }, [syncStatus, showStatus]);
+
   const clearHideTimer = () => {
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
@@ -374,63 +381,5 @@ export function CloudSync() {
     };
   }, [pushNow]);
 
-  return (
-    <>
-      {showStatus && (
-        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[60] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-          <div
-            className={cn(
-              "px-3.5 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 shadow-md backdrop-blur-md transition-all duration-300 pointer-events-auto",
-              syncStatus === "syncing" && "bg-blue-500/10 border-blue-500/30 text-blue-500",
-              syncStatus === "offline" && "bg-amber-500/10 border-amber-500/30 text-amber-500",
-              syncStatus === "error" && "bg-red-500/15 border-red-500/35 text-red-500 animate-shake",
-              syncStatus === "synced" && "bg-[oklch(0.55_0.13_150)]/10 border-[oklch(0.55_0.13_150)]/30 text-[oklch(0.55_0.13_150)]"
-            )}
-          >
-            {syncStatus === "syncing" && (
-              <>
-                <RefreshCw className="size-3.5 animate-spin" />
-                <span>Syncing changes...</span>
-              </>
-            )}
-            {syncStatus === "offline" && (
-              <>
-                <CloudOff className="size-3.5 animate-bounce-slow" />
-                <span>Offline Mode</span>
-              </>
-            )}
-            {syncStatus === "error" && (
-              <>
-                <AlertCircle className="size-3.5 animate-pulse" />
-                <span>Sync error, retrying...</span>
-              </>
-            )}
-            {syncStatus === "synced" && (
-              <>
-                <Check className="size-3.5" />
-                <span>All synced</span>
-              </>
-            )}
-          </div>
-          <style>{`
-            @keyframes status-shake {
-              0%, 100% { transform: translateX(0); }
-              20%, 60% { transform: translateX(-4px); }
-              40%, 80% { transform: translateX(4px); }
-            }
-            .animate-shake {
-              animation: status-shake 0.4s ease-in-out;
-            }
-            @keyframes bounce-slow {
-              0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(-2px); }
-            }
-            .animate-bounce-slow {
-              animation: bounce-slow 2s infinite ease-in-out;
-            }
-          `}</style>
-        </div>
-      )}
-    </>
-  );
+  return null;
 }
