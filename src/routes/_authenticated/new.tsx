@@ -563,7 +563,7 @@ function NewBooking() {
                 // Native picker — if user cancels, nothing else is shown.
                 // showPicker() works on modern Chrome/Safari/Firefox.
                 try {
-                  // @ts-expect-error — showPicker is not in older TS lib
+                  
                   if (typeof el.showPicker === "function") el.showPicker();
                   else { el.focus(); el.click(); }
                 } catch {
