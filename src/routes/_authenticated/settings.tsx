@@ -284,6 +284,35 @@ function SettingsPage() {
             onAdd={(v) => update({ occasionPresets: Array.from(new Set([...(settings.occasionPresets ?? []), v])) })}
             onRemove={(v) => update({ occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== v) })}
           />
+
+          <ChipListSection
+            title="Payment Modes"
+            hint="Add your own payment modes (gpay, cash, card, upi, cheque, etc). Appears when logging income & expenses."
+            placeholder="Add payment mode (e.g. UPI)"
+            tone="primary"
+            items={settings.paymentModes ?? []}
+            draft={modeDraft}
+            setDraft={setModeDraft}
+            onAdd={(v) => update({ paymentModes: Array.from(new Set([...(settings.paymentModes ?? []), v.toLowerCase()])) })}
+            onRemove={(v) => update({
+              paymentModes: (settings.paymentModes ?? []).filter((x) => x !== v),
+              defaultPaymentMode: settings.defaultPaymentMode === v ? "gpay" : settings.defaultPaymentMode,
+            })}
+          />
+          <Section title="Default Payment Mode">
+            <p className="text-xs text-muted-foreground mb-2">Pre-selected when adding a new payment.</p>
+            <div className="flex flex-wrap gap-2">
+              {(settings.paymentModes ?? []).map((m) => {
+                const active = (settings.defaultPaymentMode ?? "gpay") === m;
+                return (
+                  <button key={m} onClick={() => update({ defaultPaymentMode: m })}
+                    className={`px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider ${active ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                    <CreditCard className="inline size-3 mr-1" />{m}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
         </>
       )}
 
@@ -468,6 +497,10 @@ function SettingsPage() {
         <Section title="Account">
           <AccountBlock />
         </Section>
+      )}
+
+      {tab === "help" && (
+        <HelpBlock query={helpQuery} setQuery={setHelpQuery} />
       )}
 
         </div>
