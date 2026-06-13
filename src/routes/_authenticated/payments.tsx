@@ -563,6 +563,63 @@ function IncomeView(p: {
           </ul>
         )}
       </div>
+
+      {/* Extra income */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mt-3 mb-20">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Extra income</p>
+            <p className="text-[10px] text-muted-foreground">Not tied to bookings · tap + below to add</p>
+          </div>
+          <p className="text-sm font-bold tabular-nums text-success">{fmtINR(p.extraTotal)}</p>
+        </div>
+        {p.extraByCategory.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-3">No extra income yet</p>
+        ) : (
+          <>
+            <ul className="space-y-1.5 mb-3">
+              {p.extraByCategory.map((row, i) => (
+                <li key={row.cat}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <span className={cn(
+                        "size-2 rounded-full",
+                        i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                      )} />
+                      {row.cat}
+                    </span>
+                    <span className="tabular-nums font-bold">{fmtINR(row.amount)} <span className="text-muted-foreground font-normal">· {row.pct}%</span></span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div className={cn("h-full", i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent")} style={{ width: `${row.pct}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <ul className="space-y-1.5 pt-2 border-t border-border">
+              {p.recentExtra.map((e) => (
+                <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl">
+                  <div className="shrink-0 size-9 rounded-xl bg-success/15 text-success flex items-center justify-center">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-semibold text-sm truncate">{e.category}</p>
+                      <p className="font-bold tabular-nums text-sm text-success">+{fmtINR(e.amount)}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={() => p.onDeleteExtra(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
     </>
   );
 }
