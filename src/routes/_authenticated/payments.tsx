@@ -899,12 +899,12 @@ function AddExpenseSheet({
         />
 
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
-        <div className="grid grid-cols-3 gap-2 mt-1 mb-3">
-          {(["gpay", "cash", "other"] as const).map((m) => {
+        <div className="flex flex-wrap gap-2 mt-1 mb-3">
+          {modes.map((m) => {
             const active = mode === m;
             return (
               <button key={m} onClick={() => setMode(m)}
-                className={cn("py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                className={cn("px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
                 {m}
               </button>
             );
@@ -928,10 +928,11 @@ function AddExpenseSheet({
 }
 
 function AddIncomeSheet({
-  categories, defaultMode, onClose, onSave,
+  categories, defaultMode, modes, onClose, onSave,
 }: {
   categories: string[];
   defaultMode: PaymentMode;
+  modes: string[];
   onClose: () => void;
   onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
 }) {
@@ -997,12 +998,12 @@ function AddIncomeSheet({
         />
 
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
-        <div className="grid grid-cols-3 gap-2 mt-1 mb-3">
-          {(["gpay", "cash", "other"] as const).map((m) => {
+        <div className="flex flex-wrap gap-2 mt-1 mb-3">
+          {modes.map((m) => {
             const active = mode === m;
             return (
               <button key={m} onClick={() => setMode(m)}
-                className={cn("py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                className={cn("px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
                 {m}
               </button>
             );
