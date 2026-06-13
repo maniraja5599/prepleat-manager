@@ -4,8 +4,10 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History } from "lucide-react";
+import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2 } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
@@ -26,6 +28,10 @@ type Range = "all" | "thisMonth" | "lastMonth" | "custom";
 function BookingsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
+  const deleteBooking = useStore((s) => s.deleteBooking);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [svc, setSvc] = useState<SvcFilter>("all");
   const [pay, setPay] = useState<PayFilter>("all");
   const [sort, setSort] = useState<Sort>("delivery");
