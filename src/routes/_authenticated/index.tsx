@@ -197,7 +197,11 @@ function CalendarPage() {
               >Today</button>
               <button
                 onClick={() => setCursor(addMonths(cursor, 1))}
-                className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select"
+                onPointerDown={() => startMonthHold(1)}
+                onPointerUp={stopMonthHold}
+                onPointerLeave={stopMonthHold}
+                onPointerCancel={stopMonthHold}
+                className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
                 aria-label="Next month"
               >
                 <ChevronRight className="size-5" />
