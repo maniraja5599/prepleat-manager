@@ -41,7 +41,7 @@ export function AppShell({ title, subtitle, right, children, wide }: Props) {
     <div className="min-h-[100dvh] bg-background pb-28">
       <div className={wide ? "max-w-3xl mx-auto" : "max-w-md mx-auto"}>
         {/* Uniform brand strip — every page */}
-        <div className="safe-header-top px-5 pb-1 flex items-center gap-2.5">
+        <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/10 safe-header-top px-5 pb-2 flex items-center gap-2.5">
           <img
             src={logo}
             alt={settings.businessName}
