@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType, type PaymentMode, type Payment } from "@/lib/store";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, Receipt, FileDown, IndianRupee, Ban, MessageSquare } from "lucide-react";
+import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, Receipt, FileDown, IndianRupee, Ban, MessageSquare, Phone, Calendar, Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -184,18 +184,37 @@ function BookingDetail() {
     toast.success(`Payment of ${fmtINR(n)} added`);
   };
 
+  const getStatusInfo = () => {
+    if (booking.status === "cancelled") {
+      return { label: "Cancelled", style: "bg-red-500/10 border-red-500/20 text-red-500" };
+    }
+    if (booking.deliveredAt) {
+      return { label: "Delivered", style: "bg-[oklch(0.55_0.13_150)]/10 border-[oklch(0.55_0.13_150)]/20 text-[oklch(0.55_0.13_150)]" };
+    }
+    if (booking.workDoneAt) {
+      return { label: "Ready", style: "bg-blue-500/10 border-blue-500/20 text-blue-500" };
+    }
+    if (booking.receivedAt) {
+      return { label: "Received", style: "bg-amber-500/10 border-amber-500/20 text-amber-500" };
+    }
+    return { label: "Pending", style: "bg-orange-500/10 border-orange-500/20 text-orange-500" };
+  };
+  const statusInfo = getStatusInfo();
+  const phoneClean = customer?.phone ? customer.phone.replace(/\D/g, "") : "";
+  const paidPercent = booking.totalAmount > 0 ? Math.min(100, Math.round((booking.advancePaid / booking.totalAmount) * 100)) : 0;
+
   return (
     <AppShell>
       <div className="flex items-center justify-between pt-4 pb-3">
-        <button onClick={() => navigate({ to: "/bookings" })} className="size-10 rounded-full bg-secondary flex items-center justify-center">
+        <button onClick={() => navigate({ to: "/bookings" })} className="size-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer">
           <ArrowLeft className="size-5" />
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setEditing((v) => !v)}
             className={cn(
-              "size-10 rounded-full flex items-center justify-center",
-              editing ? "bg-primary text-primary-foreground" : "bg-secondary",
+              "size-10 rounded-full flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer",
+              editing ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-secondary",
             )}
             aria-label="Edit"
           >{editing ? <X className="size-5" /> : <Pencil className="size-5" />}</button>
@@ -209,42 +228,86 @@ function BookingDetail() {
               });
               navigate({ to: "/bookings" });
             }}
-            className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center"
+            className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 active:scale-95 transition cursor-pointer"
           ><Trash2 className="size-5" /></button>
         </div>
       </div>
 
-      <div className="saree-gradient rounded-3xl p-5 text-primary-foreground card-shadow">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-xs uppercase tracking-wider opacity-80">{booking.service}</p>
-          {booking.billNumber && (
-            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
-              {booking.billNumber}
+      {/* Hero Header Card */}
+      <div className="saree-gradient rounded-3xl p-5 text-primary-foreground card-shadow relative overflow-hidden">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/20 border border-white/10">
+            {booking.service}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {booking.billNumber && (
+              <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
+                {booking.billNumber}
+              </span>
+            )}
+            <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/20 bg-white/10 text-white")}>
+              {statusInfo.label}
             </span>
+          </div>
+        </div>
+
+        <h1 className="text-2xl font-display font-bold mt-3 truncate">{customer?.name}</h1>
+        
+        <div className="mt-1 flex items-center gap-2">
+          <p className="text-xs opacity-90">{customer?.phone}</p>
+          {phoneClean && (
+            <div className="flex gap-1.5 ml-1">
+              <a
+                href={`tel:${phoneClean}`}
+                className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
+                title="Call Customer"
+              >
+                <Phone className="size-3 text-white" />
+              </a>
+              <a
+                href={`https://wa.me/${phoneClean}`}
+                target="_blank"
+                rel="noreferrer"
+                className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
+                title="WhatsApp Chat"
+              >
+                <MessageCircle className="size-3 text-white" />
+              </a>
+            </div>
           )}
         </div>
-        <h1 className="text-2xl font-display font-semibold mt-1 truncate">{customer?.name}</h1>
-        <p className="text-sm opacity-90">{customer?.phone}</p>
-        {customer?.address && <p className="text-xs opacity-80 mt-1 line-clamp-2">{customer.address}</p>}
+
+        {customer?.address && <p className="text-xs opacity-80 mt-1.5 line-clamp-2 italic">{customer.address}</p>}
+        
         {artist && (
-          <p className="text-[11px] mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15">
-            <span className="opacity-80">Artist:</span> <span className="font-semibold">{artist.name}</span>
+          <p className="text-[10px] mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 font-medium">
+            <span className="opacity-80">Artist Reference:</span> <span className="font-semibold">{artist.name}</span>
           </p>
         )}
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+
+        <div className="mt-4.5 grid grid-cols-2 gap-4 text-xs pt-3.5 border-t border-white/10">
           <div>
-            <p className="opacity-70 text-xs uppercase tracking-wider">Delivery</p>
-            <p className="font-semibold">{format(parseISO(booking.deliveryDate), "EEE, MMM d")}</p>
-            <p>{fmtTime12(booking.deliveryTime)}</p>
+            <p className="opacity-70 text-[9px] uppercase font-bold tracking-wider">Delivery Schedule</p>
+            <p className="font-semibold text-sm mt-0.5 flex items-center gap-1">
+              <Calendar className="size-3.5 shrink-0" />
+              {format(parseISO(booking.deliveryDate), "EEE, MMM d")}
+            </p>
+            <p className="opacity-95 text-[11px] mt-0.5 ml-4.5 flex items-center gap-1">
+              <Clock className="size-3 shrink-0" />
+              {fmtTime12(booking.deliveryTime)}
+            </p>
           </div>
           <div>
-            <p className="opacity-70 text-xs uppercase tracking-wider">Sarees</p>
-            <p className="font-semibold">{booking.sareeCount} × {fmtINR(booking.pricePerSaree)}</p>
-            <p>= {fmtINR(booking.totalAmount)}</p>
+            <p className="opacity-70 text-[9px] uppercase font-bold tracking-wider">Saree Counter</p>
+            <p className="font-semibold text-sm mt-0.5">
+              {booking.sareeCount} {booking.sareeCount === 1 ? "Saree" : "Sarees"}
+            </p>
+            <p className="opacity-95 text-[11px] mt-0.5">
+              {fmtINR(booking.pricePerSaree)} each = <span className="font-bold">{fmtINR(booking.totalAmount)}</span>
+            </p>
           </div>
         </div>
       </div>
-
 
       {editing && (
         <EditPanel
@@ -258,177 +321,82 @@ function BookingDetail() {
         />
       )}
 
-      <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Payment</h2>
-          {due === 0 ? (
-            <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-success/15 text-success">Fully paid</span>
-          ) : <span className="text-xs font-semibold text-destructive">{fmtINR(due)} due</span>}
-        </div>
-        <div className="mt-2 flex items-center justify-between text-sm">
-          <span>Total</span><span className="font-semibold tabular-nums">{fmtINR(booking.totalAmount)}</span>
-        </div>
-        <div className="mt-1 flex items-center justify-between text-sm">
-          <span>Paid</span><span className="font-semibold tabular-nums text-success">{fmtINR(booking.advancePaid)}</span>
-        </div>
-        {due > 0 && (
-          <>
-            <div className="mt-3 flex gap-2">
-              <input
-                value={payAmt}
-                onChange={(e) => setPayAmt(e.target.value)}
-                type="number"
-                placeholder={`Add payment (due ${due})`}
-                className="flex-1 min-w-0 bg-secondary border-0 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button onClick={handlePay} className="size-10 shrink-0 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
-                <Plus className="size-5" />
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              <button onClick={() => setPayAmt(String(Math.round(due / 2)))} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">50%</button>
-              <button onClick={() => setPayAmt(String(due))} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Full ({fmtINR(due)})</button>
-              <button onClick={() => setPayAmt("")} className="py-1.5 rounded-full bg-secondary text-xs font-semibold">Clear</button>
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
-                <button key={m} onClick={() => setPayMode(m)} className={cn("py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider",
-                  payMode === m ? "bg-primary text-primary-foreground" : "bg-secondary")}>{m}</button>
-              ))}
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="date"
-                value={payDate}
-                max={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setPayDate(e.target.value)}
-                className="flex-1 min-w-0 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button
-                type="button"
-                onClick={() => setPayDate(new Date().toISOString().slice(0, 10))}
-                className="px-3 py-1.5 rounded-full bg-secondary text-[11px] font-semibold uppercase tracking-wider"
-              >Today</button>
-            </div>
-            <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note (optional)"
-              className="w-full mt-2 bg-secondary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
-          </>
-        )}
-        {payments.length > 0 && (
-          <ul className="mt-3 space-y-1 text-xs">
-            {payments.map((p) => (
-              <li key={p.id}>
-                <button
-                  onClick={() => setActivePayment(p)}
-                  className="w-full flex justify-between items-center text-muted-foreground border-t border-border pt-1.5 hover:text-foreground transition"
-                >
-                  <span className="truncate text-left">{format(parseISO(p.date), "MMM d")} · {(p.mode ?? "gpay").toUpperCase()}{p.note ? ` · ${p.note}` : ""}</span>
-                  <span className="tabular-nums shrink-0">{fmtINR(p.amount)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {booking.measurements && booking.measurements.length > 0 && (
-        <div className="bg-card card-shadow rounded-2xl p-4 mt-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Measurements (inch)</h2>
-          <div className="flex gap-4 flex-wrap">
-            {booking.measurements.map((m) => (
-              <div key={m.label}>
-                <p className="text-xs text-muted-foreground">{m.label}</p>
-                <p className="text-lg font-bold tabular-nums">{m.value}″</p>
-              </div>
-            ))}
-          </div>
-          {/* Stage-aware notify — sends the right message for the current step */}
-          {currentStage !== "new" && (
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Notify customer</p>
-                <p className="text-xs font-semibold truncate">
-                  {currentStage === "received" && "Saree received update"}
-                  {currentStage === "ready" && (booking.service === "prepleat" ? "PrePleat ready" : "Drape ready")}
-                  {currentStage === "delivered" && "Delivered · full bill"}
-                </p>
-              </div>
-              <div className="flex gap-1.5 shrink-0">
-                <button
-                  onClick={() => sendWhatsApp("status")}
-                  className="px-3 py-2 rounded-full bg-[oklch(0.62_0.18_150)] text-white text-xs font-semibold flex items-center gap-1.5"
-                ><MessageCircle className="size-3.5" /> WhatsApp</button>
-                <button
-                  onClick={() => sendSMS("status")}
-                  className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center gap-1.5"
-                ><MessageSquare className="size-3.5" /> SMS</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {booking.notes && (
-        <div className="bg-card card-shadow rounded-2xl p-4 mt-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">Notes</h2>
-          <p className="text-sm whitespace-pre-wrap">{booking.notes}</p>
-        </div>
-      )}
-
-      {/* Workflow steps */}
+      {/* Interactive horizontal stepper timeline */}
       {booking.status !== "cancelled" && (
         <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Workflow</h2>
-          <div className="grid grid-cols-3 gap-2">
-            {([
-              { key: "receivedAt" as const, label: "Saree Received", short: "Received" },
-              { key: "workDoneAt" as const, label: booking.service === "prepleat" ? "PrePleat Done" : "Drape Done", short: "Done" },
-              { key: "deliveredAt" as const, label: "Delivered", short: "Delivered" },
-            ]).map((step, i, arr) => {
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Workflow Status</h2>
+          <div className="relative flex items-center justify-between mt-2 px-1">
+            {/* Stepper connecting line */}
+            <div className="absolute top-[18px] left-[15%] right-[15%] h-0.5 bg-border -z-10" />
+            
+            {/* Active track color */}
+            <div
+              className="absolute top-[18px] left-[15%] h-0.5 bg-success transition-all duration-300 -z-10"
+              style={{
+                width: booking.deliveredAt ? "70%" : booking.workDoneAt ? "35%" : "0%"
+              }}
+            />
+
+            {[
+              { key: "receivedAt" as const, label: "Received", fullLabel: "Saree Received" },
+              { key: "workDoneAt" as const, label: booking.service === "prepleat" ? "PrePleat Done" : "Drape Done", fullLabel: "Work Done" },
+              { key: "deliveredAt" as const, label: "Delivered", fullLabel: "Order Delivered" }
+            ].map((step, i, arr) => {
               const ts = booking[step.key];
               const prevDone = i === 0 ? true : !!booking[arr[i - 1].key];
               const isDone = !!ts;
+              
+              const handleStepClick = () => {
+                if (isDone) {
+                  const patch: Partial<typeof booking> = {};
+                  for (let j = i; j < arr.length; j++) (patch as Record<string, undefined>)[arr[j].key] = undefined;
+                  if (booking.status === "delivered") patch.status = "pending";
+                  updateBooking(booking.id, patch);
+                  toast.success("Workflow reverted");
+                  return;
+                }
+                if (step.key === "deliveredAt" && due > 0) {
+                  const ok = window.confirm(`Balance ${fmtINR(due)} pending. Mark as paid (${(settings.defaultPaymentMode ?? "gpay").toUpperCase()}) and deliver?`);
+                  if (ok) {
+                    addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: due, date: new Date().toISOString(), mode: settings.defaultPaymentMode ?? "gpay", note: "On delivery" });
+                  }
+                }
+                const patch: Partial<typeof booking> = { [step.key]: new Date().toISOString() } as Partial<typeof booking>;
+                if (step.key === "deliveredAt") {
+                  patch.status = "delivered";
+                  patch.completedAt = new Date().toISOString();
+                  if (!booking.workDoneAt) patch.workDoneAt = new Date().toISOString();
+                  if (!booking.receivedAt) patch.receivedAt = new Date().toISOString();
+                }
+                updateBooking(booking.id, patch);
+                toast.success(`${step.fullLabel} ✓`);
+              };
+
               return (
                 <button
                   key={step.key}
                   disabled={!prevDone && !isDone}
-                  onClick={() => {
-                    if (isDone) {
-                      // Untick this step and any later ones
-                      const patch: Partial<typeof booking> = {};
-                      for (let j = i; j < arr.length; j++) (patch as Record<string, undefined>)[arr[j].key] = undefined;
-                      if (booking.status === "delivered") patch.status = "pending";
-                      updateBooking(booking.id, patch);
-                      toast.success("Step undone");
-                      return;
-                    }
-                    if (step.key === "deliveredAt" && due > 0) {
-                      const ok = window.confirm(`Balance ${fmtINR(due)} pending. Mark as paid (${(settings.defaultPaymentMode ?? "gpay").toUpperCase()}) and deliver?`);
-                      if (ok) {
-                        addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: due, date: new Date().toISOString(), mode: settings.defaultPaymentMode ?? "gpay", note: "On delivery" });
-                      }
-                    }
-                    const patch: Partial<typeof booking> = { [step.key]: new Date().toISOString() } as Partial<typeof booking>;
-                    if (step.key === "deliveredAt") {
-                      patch.status = "delivered";
-                      patch.completedAt = new Date().toISOString();
-                      if (!booking.workDoneAt) patch.workDoneAt = new Date().toISOString();
-                      if (!booking.receivedAt) patch.receivedAt = new Date().toISOString();
-                    }
-                    updateBooking(booking.id, patch);
-                    toast.success(`${step.short} ✓`);
-                  }}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition active:scale-95",
-                    isDone ? "bg-success/15 border-success text-success" : prevDone ? "bg-secondary border-transparent text-foreground" : "bg-secondary/50 border-transparent text-muted-foreground/50",
-                  )}
+                  onClick={handleStepClick}
+                  className="flex flex-col items-center flex-1 focus:outline-none disabled:opacity-50"
                 >
-                  <div className={cn(
-                    "size-7 rounded-full flex items-center justify-center text-xs font-bold",
-                    isDone ? "bg-success text-success-foreground" : "bg-background text-muted-foreground",
-                  )}>{isDone ? <Check className="size-4" /> : i + 1}</div>
-                  <span className="text-[10px] font-semibold leading-tight text-center">{step.label}</span>
-                  {ts && <span className="text-[9px] opacity-70">{format(parseISO(ts), "MMM d, h:mma")}</span>}
+                  <div
+                    className={cn(
+                      "size-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition active:scale-95 cursor-pointer shadow-sm",
+                      isDone
+                        ? "bg-success border-success text-success-foreground"
+                        : prevDone
+                        ? "bg-background border-primary text-primary"
+                        : "bg-background border-border text-muted-foreground/40"
+                    )}
+                  >
+                    {isDone ? <Check className="size-4 stroke-[3]" /> : i + 1}
+                  </div>
+                  <span className="text-[10px] font-bold mt-1.5 leading-tight text-center">{step.label}</span>
+                  {ts && (
+                    <span className="text-[8px] text-muted-foreground/80 mt-0.5 leading-none">
+                      {format(parseISO(ts), "MMM d")}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -436,53 +404,246 @@ function BookingDetail() {
         </div>
       )}
 
-      {/* Communication buttons */}
-      <div className={cn("grid gap-2 mt-4", due > 0 && booking.status !== "cancelled" ? "grid-cols-3" : "grid-cols-2")}>
-        <button onClick={() => sendWhatsApp("bill")} className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
-          <Receipt className="size-4" /> Bill
-        </button>
-        {due > 0 && booking.status !== "cancelled" && (
-          <button onClick={() => sendWhatsApp("balance")} className="bg-destructive text-destructive-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
-            <IndianRupee className="size-4" /> Remind
-          </button>
+      {/* Details (Measurements & Notes) */}
+      {( (booking.measurements && booking.measurements.length > 0) || booking.notes ) && (
+        <div className="grid grid-cols-1 gap-3 mt-3">
+          {booking.measurements && booking.measurements.length > 0 && (
+            <div className="bg-card card-shadow rounded-2xl p-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">Measurements (inch)</h2>
+              <div className="flex gap-4 flex-wrap">
+                {booking.measurements.map((m) => (
+                  <div key={m.label} className="min-w-[45px]">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{m.label}</p>
+                    <p className="text-base font-bold tabular-nums text-foreground mt-0.5">{m.value}″</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {booking.notes && (
+            <div className="bg-card card-shadow rounded-2xl p-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Notes & Custom Request</h2>
+              <p className="text-xs text-foreground/95 leading-relaxed whitespace-pre-wrap">{booking.notes}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Financial Summary & Payments */}
+      <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Financial Summary</h2>
+          {due === 0 ? (
+            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">Fully paid</span>
+          ) : (
+            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">{fmtINR(due)} Pending</span>
+          )}
+        </div>
+
+        {/* Paid Progress Bar */}
+        <div className="mt-3.5">
+          <div className="flex justify-between items-center text-[10px] text-muted-foreground mb-1">
+            <span>Paid Progress</span>
+            <span className="font-semibold">{paidPercent}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+            <div
+              className="h-full saree-gradient transition-all duration-500 rounded-full"
+              style={{ width: `${paidPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Amount Row Stats */}
+        <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-border/40 text-center">
+          <div>
+            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground">Total Bill</p>
+            <p className="text-sm font-bold mt-0.5">{fmtINR(booking.totalAmount)}</p>
+          </div>
+          <div className="border-l border-border/30">
+            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground">Advance Paid</p>
+            <p className="text-sm font-bold text-[oklch(0.55_0.13_150)] mt-0.5">{fmtINR(booking.advancePaid)}</p>
+          </div>
+          <div className="border-l border-border/30">
+            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground">Balance Due</p>
+            <p className={cn("text-sm font-bold mt-0.5", due > 0 ? "text-destructive" : "text-muted-foreground")}>
+              {due > 0 ? fmtINR(due) : "₹0"}
+            </p>
+          </div>
+        </div>
+
+        {/* Add Payment Form (Hidden if Fully Paid) */}
+        {due > 0 && (
+          <div className="mt-4 pt-4 border-t border-border/40">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-2">Collect Payment</p>
+            
+            <div className="flex gap-2">
+              <input
+                value={payAmt}
+                onChange={(e) => setPayAmt(e.target.value)}
+                type="number"
+                placeholder={`Amount (due ${due})`}
+                className="flex-1 min-w-0 bg-secondary border-0 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button onClick={handlePay} className="size-8.5 shrink-0 rounded-xl saree-gradient text-primary-foreground flex items-center justify-center active:scale-95 transition cursor-pointer shadow-sm shadow-primary/20">
+                <Plus className="size-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 mt-2">
+              <button onClick={() => setPayAmt(String(Math.round(due / 2)))} className="py-1.5 rounded-lg bg-secondary text-[10px] font-bold uppercase hover:bg-secondary/80 active:scale-95 transition cursor-pointer">50%</button>
+              <button onClick={() => setPayAmt(String(due))} className="py-1.5 rounded-lg bg-secondary text-[10px] font-bold uppercase hover:bg-secondary/80 active:scale-95 transition cursor-pointer">Full</button>
+              <button onClick={() => setPayAmt("")} className="py-1.5 rounded-lg bg-secondary text-[10px] font-bold uppercase hover:bg-secondary/80 active:scale-95 transition cursor-pointer">Clear</button>
+            </div>
+
+            {/* Segmented Mode Selector */}
+            <div className="grid grid-cols-3 gap-1.5 mt-2">
+              {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setPayMode(m)}
+                  className={cn(
+                    "py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer active:scale-95",
+                    payMode === m ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/80"
+                  )}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="date"
+                value={payDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setPayDate(e.target.value)}
+                className="flex-1 min-w-0 bg-secondary rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button
+                type="button"
+                onClick={() => setPayDate(new Date().toISOString().slice(0, 10))}
+                className="px-2.5 py-1.5 rounded-lg bg-secondary text-[10px] font-bold uppercase tracking-wider hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+              >
+                Today
+              </button>
+            </div>
+            
+            <input
+              value={payNote}
+              onChange={(e) => setPayNote(e.target.value)}
+              placeholder="Note / reference (optional)"
+              className="w-full mt-2 bg-secondary rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
         )}
-        <button onClick={() => sendWhatsApp("reminder")} className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition">
-          <MessageCircle className="size-4" /> Message
-        </button>
+
+        {/* Transaction History Logs */}
+        {payments.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border/40">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-2">Transaction Logs</p>
+            <ul className="space-y-1.5">
+              {payments.map((p) => (
+                <li key={p.id}>
+                  <button
+                    onClick={() => setActivePayment(p)}
+                    className="w-full flex justify-between items-center text-[11px] text-muted-foreground border border-border/20 rounded-xl px-3 py-2 bg-secondary/30 hover:bg-secondary/60 hover:text-foreground transition text-left cursor-pointer"
+                  >
+                    <span className="truncate pr-2">
+                      <span className="font-semibold">{format(parseISO(p.date), "MMM d")}</span>
+                      {" · "}
+                      <span className="uppercase font-bold text-[9px] border border-border rounded px-1 py-0.5 bg-background">
+                        {p.mode ?? "gpay"}
+                      </span>
+                      {p.note ? ` · ${p.note}` : ""}
+                    </span>
+                    <span className="tabular-nums font-bold text-foreground shrink-0">{fmtINR(p.amount)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        <button
-          onClick={downloadBillPDF}
-          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
-        >
-          <FileDown className="size-4" /> PDF
-        </button>
-        <button
-          onClick={() => sendSMS()}
-          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
-        >
-          <MessageSquare className="size-4" /> SMS
-        </button>
-        {booking.status !== "cancelled" ? (
-          <button
-            onClick={() => {
-              if (!confirm("Cancel this booking? It will stay in records as cancelled.")) return;
-              cancelBooking(booking.id);
-              toast.success("Booking cancelled");
-            }}
-            className="bg-warning/15 text-warning py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
-          >
-            <Ban className="size-4" /> Cancel
-          </button>
-        ) : (
-          <button
-            onClick={() => { updateBooking(booking.id, { status: "pending" }); toast.success("Booking re-opened"); }}
-            className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 font-semibold text-sm active:scale-95 transition"
-          >
-            <Check className="size-4" /> Reopen
-          </button>
+      {/* Share & Action Center */}
+      <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Share & Action Center</h2>
+        
+        {/* Stage aware notification prompt */}
+        {currentStage !== "new" && (
+          <div className="mb-3.5 p-3 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase font-bold tracking-wider text-primary">Recommend stage update</p>
+              <p className="text-xs font-semibold text-foreground mt-0.5 truncate">
+                {currentStage === "received" && "Saree Received Update"}
+                {currentStage === "ready" && (booking.service === "prepleat" ? "PrePleat Done Notice" : "Drape Done Notice")}
+                {currentStage === "delivered" && "Delivered Invoice Receipt"}
+              </p>
+            </div>
+            <button
+              onClick={() => sendWhatsApp("status")}
+              className="px-4 py-2 saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-primary/20"
+            >
+              <MessageCircle className="size-4" /> Send Update
+            </button>
+          </div>
         )}
+
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            onClick={() => sendWhatsApp("bill")}
+            className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+          >
+            <Receipt className="size-4 text-primary" /> WhatsApp Bill
+          </button>
+          
+          <button
+            onClick={downloadBillPDF}
+            className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+          >
+            <FileDown className="size-4 text-primary" /> Download PDF
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-2.5">
+          <button
+            onClick={() => sendSMS()}
+            className="py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+          >
+            <MessageSquare className="size-3.5" /> SMS Update
+          </button>
+
+          {due > 0 && booking.status !== "cancelled" && (
+            <button
+              onClick={() => sendWhatsApp("balance")}
+              className="py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+            >
+              <IndianRupee className="size-3.5" /> Remind Due
+            </button>
+          )}
+
+          {booking.status !== "cancelled" ? (
+            <button
+              onClick={() => {
+                if (!confirm("Cancel this booking? It will stay in records as cancelled.")) return;
+                cancelBooking(booking.id);
+                toast.success("Booking cancelled");
+              }}
+              className="py-2.5 rounded-xl bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+            >
+              <Ban className="size-3.5" /> Cancel Order
+            </button>
+          ) : (
+            <button
+              onClick={() => { updateBooking(booking.id, { status: "pending" }); toast.success("Booking re-opened"); }}
+              className="py-2.5 rounded-xl bg-[oklch(0.55_0.13_150)]/10 text-[oklch(0.55_0.13_150)] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+            >
+              <Check className="size-3.5" /> Reopen Order
+            </button>
+          )}
+        </div>
       </div>
 
       {activePayment && (
