@@ -161,7 +161,11 @@ function CalendarPage() {
       {view === "calendar" ? (
         <>
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setCursor(subMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center" aria-label="Previous month">
+            <button
+              onClick={() => setCursor(subMonths(cursor, 1))}
+              className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select"
+              aria-label="Previous month"
+            >
               <ChevronLeft className="size-5" />
             </button>
             <div className="flex-1 text-center">
@@ -173,7 +177,11 @@ function CalendarPage() {
                 onClick={() => { setCursor(new Date()); setSelected(new Date()); }}
                 className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary"
               >Today</button>
-              <button onClick={() => setCursor(addMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center" aria-label="Next month">
+              <button
+                onClick={() => setCursor(addMonths(cursor, 1))}
+                className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select"
+                aria-label="Next month"
+              >
                 <ChevronRight className="size-5" />
               </button>
             </div>
@@ -185,6 +193,20 @@ function CalendarPage() {
 
           <div
             className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select"
+            onTouchStart={(e) => {
+              monthTouchX.current = e.touches[0].clientX;
+              monthTouchY.current = e.touches[0].clientY;
+            }}
+            onTouchEnd={(e) => {
+              if (monthTouchX.current == null || monthTouchY.current == null) return;
+              const dx = e.changedTouches[0].clientX - monthTouchX.current;
+              const dy = e.changedTouches[0].clientY - monthTouchY.current;
+              monthTouchX.current = null;
+              monthTouchY.current = null;
+              // Ignore vertical-dominant swipes and very short horizontal swipes
+              if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return;
+              setCursor((c) => (dx < 0 ? addMonths(c, 1) : subMonths(c, 1)));
+            }}
           >
 
             {days.map((d) => {
