@@ -134,54 +134,6 @@ function SettingsPage() {
         </Section>
       )}
 
-      {tab === "brand" && (
-        <Section title="Quick note presets">
-          <p className="text-xs text-muted-foreground mb-2">Tap chips appear under the Notes field when creating a booking.</p>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {(settings.occasionPresets ?? []).map((p) => (
-              <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-xs">
-                {p}
-                <button
-                  onClick={() => update({ occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== p) })}
-                  className="text-muted-foreground hover:text-destructive"
-                  aria-label={`Remove ${p}`}
-                ><X className="size-3" /></button>
-              </span>
-            ))}
-            {(settings.occasionPresets ?? []).length === 0 && (
-              <p className="text-xs text-muted-foreground italic">No presets yet.</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={presetDraft}
-              onChange={(e) => setPresetDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && presetDraft.trim()) {
-                  const v = presetDraft.trim();
-                  if (!(settings.occasionPresets ?? []).includes(v)) {
-                    update({ occasionPresets: [...(settings.occasionPresets ?? []), v] });
-                  }
-                  setPresetDraft("");
-                }
-              }}
-              placeholder="Add preset (e.g. Engagement)"
-              className="input flex-1"
-            />
-            <button
-              onClick={() => {
-                const v = presetDraft.trim();
-                if (!v) return;
-                if (!(settings.occasionPresets ?? []).includes(v)) {
-                  update({ occasionPresets: [...(settings.occasionPresets ?? []), v] });
-                }
-                setPresetDraft("");
-              }}
-              className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
-            >Add</button>
-          </div>
-        </Section>
-      )}
 
       {tab === "pricing" && (
         <>
