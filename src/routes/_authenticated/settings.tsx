@@ -2,11 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
 import { formatDistanceToNow } from "date-fns";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const APP_VERSION = "1.0.0";
 
@@ -44,11 +45,14 @@ function SettingsPage() {
   const bookings = useStore((s) => s.bookings);
   const trash = useStore((s) => s.trash);
   const restoreBooking = useStore((s) => s.restoreBooking);
+  const resetApp = useStore((s) => s.resetApp);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
   const [incCatDraft, setIncCatDraft] = useState("");
+  const [restoreId, setRestoreId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<null | "resetTheme" | "resetPricing" | "clearData" | "factoryReset">(null);
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
@@ -405,7 +409,7 @@ function SettingsPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => { restoreBooking(t.booking.id); toast.success("Booking restored", { duration: 1500 }); }}
+                        onClick={() => setRestoreId(t.booking.id)}
                         className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
                       ><RotateCw className="size-3" /> Restore</button>
                     </li>
@@ -418,31 +422,22 @@ function SettingsPage() {
           <Section title="Reset & Danger Zone">
             <div className="space-y-2">
               <button
-                onClick={() => {
-                  update({ theme: "maroon", customPrimary: undefined });
-                  toast.success("Theme reset", { duration: 1200 });
-                }}
+                onClick={() => setConfirmAction("resetTheme")}
                 className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
               ><RotateCcw className="size-3.5" /> Reset theme</button>
               <button
-                onClick={() => {
-                  update({
-                    prepleatPrice: 350, drapePrice: 800,
-                    defaultMeasurements: [{ label: "P", value: 40 }, { label: "W", value: 32 }, { label: "H", value: 38 }],
-                    defaultPaymentMode: "gpay",
-                  });
-                  toast.success("Defaults restored", { duration: 1500 });
-                }}
+                onClick={() => setConfirmAction("resetPricing")}
                 className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
               ><RotateCcw className="size-3.5" /> Reset pricing & measurements</button>
               <button
-                onClick={() => {
-                  if (!confirm("Delete ALL local bookings, customers and payments? This cannot be undone.")) return;
-                  useStore.setState({ bookings: [], customers: [], payments: [], trash: [] });
-                  toast.success("All data cleared", { duration: 1500 });
-                }}
+                onClick={() => setConfirmAction("clearData")}
                 className="w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5"
               ><Trash2 className="size-3.5" /> Clear all data</button>
+              <button
+                onClick={() => setConfirmAction("factoryReset")}
+                className="w-full px-3 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center justify-center gap-1.5"
+              ><AlertTriangle className="size-3.5" /> Factory reset (like new)</button>
+              <p className="text-[11px] text-muted-foreground text-center mt-1">Factory reset wipes everything — data, settings, theme, activity.</p>
             </div>
           </Section>
         </>
@@ -464,6 +459,76 @@ function SettingsPage() {
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>
+
+      <ConfirmDialog
+        open={!!restoreId}
+        onOpenChange={(v) => !v && setRestoreId(null)}
+        title="Restore this booking?"
+        description="It will be moved back to the active bookings list with its payments."
+        confirmLabel="Restore"
+        onConfirm={() => {
+          if (restoreId) { restoreBooking(restoreId); toast.success("Booking restored"); }
+          setRestoreId(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "resetTheme"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Reset theme to default?"
+        description="Switches back to Maroon Ivory and clears custom colours."
+        confirmLabel="Reset"
+        onConfirm={() => {
+          update({ theme: "maroon", customPrimary: undefined, customColors: undefined });
+          toast.success("Theme reset");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "resetPricing"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Reset pricing & measurements?"
+        description="Restores default prices (₹350 / ₹800) and default P/W/H measurements."
+        confirmLabel="Reset"
+        onConfirm={() => {
+          update({
+            prepleatPrice: 350, drapePrice: 800,
+            defaultMeasurements: [{ label: "P", value: 40 }, { label: "W", value: 32 }, { label: "H", value: 38 }],
+            defaultPaymentMode: "gpay",
+          });
+          toast.success("Defaults restored");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "clearData"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Delete all bookings, customers & payments?"
+        description="Your settings, theme and categories are kept. This cannot be undone."
+        confirmLabel="Delete all"
+        tone="danger"
+        onConfirm={() => {
+          useStore.setState({ bookings: [], customers: [], payments: [], trash: [], expenses: [], extraIncomes: [], activity: [], redoStack: [] });
+          toast.success("All data cleared");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "factoryReset"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Factory reset the entire app?"
+        description="Wipes ALL data, settings, theme, categories, activity log and recycle bin. The app will be like newly installed. This cannot be undone."
+        confirmLabel="Reset everything"
+        tone="danger"
+        onConfirm={() => {
+          resetApp();
+          toast.success("App reset to defaults");
+          setConfirmAction(null);
+        }}
+      />
     </AppShell>
   );
 }

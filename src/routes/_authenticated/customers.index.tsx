@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, type CustomerKind } from "@/lib/store";
 import { useState, useMemo } from "react";
-import { Search, Phone, Plus, SlidersHorizontal, Users, IndianRupee, AlertCircle } from "lucide-react";
+import { Search, Phone, Plus, SlidersHorizontal, Users, IndianRupee, AlertCircle, CheckSquare, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({ meta: [{ title: "Customers — Saree Studio" }] }),
@@ -14,6 +16,10 @@ function CustomersPage() {
   const customers = useStore((s) => s.customers);
   const bookings = useStore((s) => s.bookings);
   const addCustomer = useStore((s) => s.addCustomer);
+  const deleteCustomer = useStore((s) => s.deleteCustomer);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<CustomerKind>("client");
   const [showAdd, setShowAdd] = useState(false);
@@ -58,6 +64,14 @@ function CustomersPage() {
       subtitle={`${tab === "client" ? clientCount : artistCount} ${tab === "client" ? "clients" : "artists"}`}
       right={
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
+            aria-label="Select"
+            className={cn(
+              "size-10 rounded-full flex items-center justify-center",
+              selectMode ? "bg-primary text-primary-foreground" : "bg-secondary",
+            )}
+          ><CheckSquare className="size-4" /></button>
           <button
             onClick={() => setShowFilter((v) => !v)}
             aria-label="Filters"
@@ -138,30 +152,90 @@ function CustomersPage() {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${tab}`} className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary" />
       </div>
 
+      {selectMode && (
+        <div className="bg-card card-shadow rounded-2xl p-2 mb-3 flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (selected.size === list.length) setSelected(new Set());
+              else setSelected(new Set(list.map((c) => c.id)));
+            }}
+            className="px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold"
+          >{selected.size === list.length && list.length > 0 ? "Clear all" : "Select all"}</button>
+          <span className="text-xs text-muted-foreground flex-1">{selected.size} selected</span>
+          <button
+            disabled={selected.size === 0}
+            onClick={() => setConfirmOpen(true)}
+            className="px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
+          ><Trash2 className="size-3.5" /> Delete {selected.size || ""}</button>
+        </div>
+      )}
+
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">No {tab}s yet.</div>
       ) : (
         <ul className="space-y-2">
-          {list.map((c) => (
-            <li key={c.id}>
-              <Link to="/customers/$id" params={{ id: c.id }} className="block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">{c.name}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="size-3"/>{c.phone}</p>
-                    {c.address && <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">{c.address}</p>}
-                    {c.reference && <p className="text-[10px] text-primary/80 truncate mt-0.5">ref: {c.reference}</p>}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">{c.count} order{c.count !== 1 && "s"}</p>
-                    {c.due > 0 && <p className="text-xs text-destructive font-semibold">{fmtINR(c.due)} due</p>}
-                  </div>
+          {list.map((c) => {
+            const isSelected = selected.has(c.id);
+            const inner = (
+              <div className="flex items-center justify-between gap-2">
+                {selectMode && (
+                  <input type="checkbox" readOnly checked={isSelected} className="size-5 accent-primary shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="size-3"/>{c.phone}</p>
+                  {c.address && <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">{c.address}</p>}
+                  {c.reference && <p className="text-[10px] text-primary/80 truncate mt-0.5">ref: {c.reference}</p>}
                 </div>
-              </Link>
-            </li>
-          ))}
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">{c.count} order{c.count !== 1 && "s"}</p>
+                  {c.due > 0 && <p className="text-xs text-destructive font-semibold">{fmtINR(c.due)} due</p>}
+                </div>
+              </div>
+            );
+            const cls = cn(
+              "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition w-full text-left",
+              isSelected && "ring-2 ring-primary",
+            );
+            return (
+              <li key={c.id}>
+                {selectMode ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelected((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
+                        return next;
+                      });
+                    }}
+                    className={cls}
+                  >{inner}</button>
+                ) : (
+                  <Link to="/customers/$id" params={{ id: c.id }} className={cls}>{inner}</Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete ${selected.size} ${tab}${selected.size > 1 ? "s" : ""}?`}
+        description="This also deletes their bookings and payments. This cannot be undone."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => {
+          const n = selected.size;
+          selected.forEach((id) => deleteCustomer(id));
+          setSelected(new Set());
+          setSelectMode(false);
+          setConfirmOpen(false);
+          toast.success(`${n} ${tab}${n > 1 ? "s" : ""} deleted`);
+        }}
+      />
     </AppShell>
   );
 }

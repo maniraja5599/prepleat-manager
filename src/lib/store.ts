@@ -170,6 +170,7 @@ interface State {
   deleteExtraIncome: (id: string) => void;
 
   updateSettings: (s: Partial<Settings>) => void;
+  resetApp: () => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -480,6 +481,28 @@ export const useStore = create<State>()(
         set((s) => ({ extraIncomes: s.extraIncomes.filter((e) => e.id !== id) })),
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
+
+      resetApp: () => set({
+        customers: [], bookings: [], payments: [], expenses: [], extraIncomes: [],
+        trash: [], activity: [], redoStack: [], tombstones: [],
+        settings: {
+          prepleatPrice: 350, drapePrice: 800,
+          artistPrepleatPrice: 300, artistDrapePrice: 700,
+          defaultMeasurements: [
+            { label: "P", value: 40 },
+            { label: "W", value: 32 },
+            { label: "H", value: 38 },
+          ],
+          showPaymentOnCalendar: false,
+          businessName: "Eyas Saree Drapist",
+          theme: "maroon",
+          defaultPaymentMode: "gpay",
+          websiteUrl: "https://eyasdrapist.shop/",
+          occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
+          expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
+          incomeCategories: ["Tips", "Sale", "Other Income"],
+        },
+      }),
     }),
     {
       name: "saree-studio-v1",
