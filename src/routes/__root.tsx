@@ -102,7 +102,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeApplier />
       <Outlet />
-      <Toaster position="bottom-center" className="sonner-toast-center-override" duration={2500} expand visibleToasts={3} />
+      <Toaster position="bottom-center" className="sonner-toast-center-override" duration={1600} expand visibleToasts={3} />
     </QueryClientProvider>
   );
 }
