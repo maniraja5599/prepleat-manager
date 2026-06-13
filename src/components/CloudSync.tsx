@@ -1,6 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore, type Booking, type Customer, type Payment, type Tombstone } from "@/lib/store";
+import { CloudOff, RefreshCw, AlertCircle, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
  * Offline-first two-way cloud sync for the local zustand store.
@@ -125,19 +127,69 @@ export function CloudSync() {
   const isApplyingRemote = useRef(false);
   const dirty = useRef(false);
 
+  // Sync state variables
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">(
+    typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "synced"
+  );
+  const [showStatus, setShowStatus] = useState(false);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHideTimer = () => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+  };
+
+  const triggerSyncedFadeOut = () => {
+    clearHideTimer();
+    hideTimer.current = setTimeout(() => {
+      setShowStatus(false);
+    }, 2000);
+  };
+
+  const triggerErrorFadeOut = () => {
+    clearHideTimer();
+    hideTimer.current = setTimeout(() => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setSyncStatus("offline");
+      } else {
+        setShowStatus(false);
+      }
+    }, 3000);
+  };
+
   // ---- PULL --------------------------------------------------------------
   const pullAndMerge = useRef(async () => {
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setSyncStatus("offline");
+        setShowStatus(true);
+        return;
+      }
+      clearHideTimer();
+      setSyncStatus("syncing");
+      setShowStatus(true);
+
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return;
+      if (!auth.user) {
+        setShowStatus(false);
+        return;
+      }
       const { data: row, error } = await supabase
         .from("app_settings")
         .select("data, updated_at")
         .eq("user_id", auth.user.id)
         .maybeSingle();
-      if (error) return; // offline / network error — keep local data, retry later
+      if (error) {
+        setSyncStatus("error");
+        triggerErrorFadeOut();
+        return; // offline / network error — keep local data, retry later
+      }
       if (!row?.data || typeof row.data !== "object") {
         pulledOnce.current = true;
+        setSyncStatus("synced");
+        triggerSyncedFadeOut();
         return;
       }
       const cloud = row.data as Snapshot;
@@ -165,18 +217,34 @@ export function CloudSync() {
       isApplyingRemote.current = false;
       lastServerUpdatedAt.current = row.updated_at ?? null;
       pulledOnce.current = true;
+
+      setSyncStatus("synced");
+      triggerSyncedFadeOut();
     } catch {
       // Offline — local store keeps working; we retry on reconnect.
       isApplyingRemote.current = false;
+      setSyncStatus("error");
+      triggerErrorFadeOut();
     }
   }).current;
 
   // ---- PUSH --------------------------------------------------------------
   const pushNow = useRef(async () => {
     try {
-      if (typeof navigator !== "undefined" && !navigator.onLine) return; // stay dirty, retry on reconnect
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setSyncStatus("offline");
+        setShowStatus(true);
+        return; // stay dirty, retry on reconnect
+      }
+      clearHideTimer();
+      setSyncStatus("syncing");
+      setShowStatus(true);
+
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return;
+      if (!auth.user) {
+        setShowStatus(false);
+        return;
+      }
       // Re-check cloud for newer writes before overwriting.
       const { data: row } = await supabase
         .from("app_settings")
@@ -202,11 +270,20 @@ export function CloudSync() {
         .upsert({ user_id: auth.user.id, data: payload })
         .select("updated_at")
         .maybeSingle();
-      if (error) return; // stay dirty, retry on reconnect
+      if (error) {
+        setSyncStatus("error");
+        triggerErrorFadeOut();
+        return; // stay dirty, retry on reconnect
+      }
       if (upserted?.updated_at) lastServerUpdatedAt.current = upserted.updated_at;
       dirty.current = false;
+
+      setSyncStatus("synced");
+      triggerSyncedFadeOut();
     } catch {
       // Offline — stay dirty, retry when back online.
+      setSyncStatus("error");
+      triggerErrorFadeOut();
     }
   }).current;
 
@@ -227,12 +304,20 @@ export function CloudSync() {
 
     // Internet came back → pull latest, then push anything saved offline.
     const onOnline = () => {
+      setSyncStatus("syncing");
+      setShowStatus(true);
       void (async () => {
         await pullAndMerge();
         if (dirty.current) await pushNow();
       })();
     };
+    const onOffline = () => {
+      clearHideTimer();
+      setSyncStatus("offline");
+      setShowStatus(true);
+    };
     window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
 
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") void pullAndMerge();
@@ -268,8 +353,10 @@ export function CloudSync() {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onVisibility);
       window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
       authSub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
+      clearHideTimer();
     };
   }, [pullAndMerge, pushNow]);
 
@@ -287,5 +374,63 @@ export function CloudSync() {
     };
   }, [pushNow]);
 
-  return null;
+  return (
+    <>
+      {showStatus && (
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[60] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={cn(
+              "px-3.5 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 shadow-md backdrop-blur-md transition-all duration-300 pointer-events-auto",
+              syncStatus === "syncing" && "bg-blue-500/10 border-blue-500/30 text-blue-500",
+              syncStatus === "offline" && "bg-amber-500/10 border-amber-500/30 text-amber-500",
+              syncStatus === "error" && "bg-red-500/15 border-red-500/35 text-red-500 animate-shake",
+              syncStatus === "synced" && "bg-[oklch(0.55_0.13_150)]/10 border-[oklch(0.55_0.13_150)]/30 text-[oklch(0.55_0.13_150)]"
+            )}
+          >
+            {syncStatus === "syncing" && (
+              <>
+                <RefreshCw className="size-3.5 animate-spin" />
+                <span>Syncing changes...</span>
+              </>
+            )}
+            {syncStatus === "offline" && (
+              <>
+                <CloudOff className="size-3.5 animate-bounce-slow" />
+                <span>Offline Mode</span>
+              </>
+            )}
+            {syncStatus === "error" && (
+              <>
+                <AlertCircle className="size-3.5 animate-pulse" />
+                <span>Sync error, retrying...</span>
+              </>
+            )}
+            {syncStatus === "synced" && (
+              <>
+                <Check className="size-3.5" />
+                <span>All synced</span>
+              </>
+            )}
+          </div>
+          <style>{`
+            @keyframes status-shake {
+              0%, 100% { transform: translateX(0); }
+              20%, 60% { transform: translateX(-4px); }
+              40%, 80% { transform: translateX(4px); }
+            }
+            .animate-shake {
+              animation: status-shake 0.4s ease-in-out;
+            }
+            @keyframes bounce-slow {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-2px); }
+            }
+            .animate-bounce-slow {
+              animation: bounce-slow 2s infinite ease-in-out;
+            }
+          `}</style>
+        </div>
+      )}
+    </>
+  );
 }

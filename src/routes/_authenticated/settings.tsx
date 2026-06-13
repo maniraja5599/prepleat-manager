@@ -983,36 +983,62 @@ const HELP_DOCS: { title: string; body: string }[] = [
 function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   const q = query.trim().toLowerCase();
   const filtered = q ? HELP_DOCS.filter((d) => d.title.toLowerCase().includes(q) || d.body.toLowerCase().includes(q)) : HELP_DOCS;
+  
+  const handleStartTour = () => {
+    window.dispatchEvent(new Event("trigger-app-tour"));
+  };
+
   return (
-    <Section title={`Documentation (${filtered.length}${q ? ` / ${HELP_DOCS.length}` : ""})`}>
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search docs (e.g. backup, theme, modes)…"
-          className="w-full bg-secondary rounded-full pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-        />
-        {query && (
-          <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 size-7 rounded-full bg-card/80 flex items-center justify-center">
-            <X className="size-3.5" />
+    <div className="space-y-4">
+      <Section title="Interactive Guide">
+        <div className="p-4 rounded-2xl border border-primary/20 bg-primary/5 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold flex items-center gap-1.5">
+              <Sparkles className="size-4 text-primary animate-pulse" /> App Shortcuts Tour
+            </h4>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Show the guide walkthrough highlighting swipe gestures, swipe tabs, and double-tap pickers.
+            </p>
+          </div>
+          <button
+            onClick={handleStartTour}
+            className="shrink-0 px-4 py-2 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition shadow-sm shadow-primary/25 cursor-pointer"
+          >
+            Start Tour
           </button>
+        </div>
+      </Section>
+
+      <Section title={`Documentation (${filtered.length}${q ? ` / ${HELP_DOCS.length}` : ""})`}>
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search docs (e.g. backup, theme, modes)…"
+            className="w-full bg-secondary rounded-full pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 size-7 rounded-full bg-card/80 flex items-center justify-center">
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+        {filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">No matching topics. Try another keyword.</p>
+        ) : (
+          <ul className="space-y-2">
+            {filtered.map((d) => (
+              <li key={d.title} className="rounded-xl bg-secondary/50 p-3">
+                <p className="text-sm font-semibold mb-1">{d.title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{d.body}</p>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
-      {filtered.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic">No matching topics. Try another keyword.</p>
-      ) : (
-        <ul className="space-y-2">
-          {filtered.map((d) => (
-            <li key={d.title} className="rounded-xl bg-secondary/50 p-3">
-              <p className="text-sm font-semibold mb-1">{d.title}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{d.body}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="mt-4 text-[10px] text-muted-foreground/70 text-center">Need more help? Contact your developer.</p>
-    </Section>
+        <p className="mt-4 text-[10px] text-muted-foreground/70 text-center">Need more help? Contact your developer.</p>
+      </Section>
+    </div>
   );
 }
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { CloudSync } from "@/components/CloudSync";
+import { AppTour } from "@/components/AppTour";
 import logoAsset from "@/assets/eyas-logo.png";
 
 let cachedSession: any = null;
@@ -51,6 +52,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: () => (
     <>
       <CloudSync />
+      <AppTour />
       <Outlet />
     </>
   ),
