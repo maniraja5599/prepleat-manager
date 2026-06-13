@@ -78,6 +78,11 @@ function CalendarPage() {
   // Day swipe (left/right on the day-events list) still changes the selected day.
   const dayTouchX = useRef<number | null>(null);
 
+  // Month swipe on calendar grid
+  const monthTouchX = useRef<number | null>(null);
+  const monthTouchY = useRef<number | null>(null);
+
+
 
   // Long-press peek
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
