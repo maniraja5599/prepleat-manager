@@ -453,7 +453,18 @@
   opacity: 0;
   animation: toast-bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
   pointer-events: auto !important;
-  padding: 1rem 1.25rem !important;
+  padding: 0.85rem 1.75rem !important;
+  width: max-content !important;
+  min-width: 300px !important;
+  max-width: 90vw !important;
+}
+
+/* Force the toast text content to stay on a single line (no wrapping) */
+.sonner-toast-center-override [data-sonner-toast] [data-title] {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: auto !important;
 }
 
 /* Accent highlight left-border */
