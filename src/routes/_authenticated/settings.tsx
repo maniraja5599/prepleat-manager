@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag, AlertTriangle } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag, AlertTriangle, Sparkles, HelpCircle, Search, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
@@ -16,15 +16,16 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "pricing" | "brand" | "headers" | "theme" | "data" | "activity" | "account";
+type TabId = "pricing" | "brand" | "headers" | "theme" | "data" | "activity" | "account" | "help";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
   { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
-  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
-  { id: "headers",  label: "Headers",  hint: "Categories & presets", icon: Tag },
+  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Sparkles },
+  { id: "headers",  label: "Headers",  hint: "Categories & modes",   icon: Tag },
   { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
   { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
   { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
   { id: "account",  label: "Account",  hint: "Sign in & sync",       icon: User },
+  { id: "help",     label: "Help",     hint: "Docs & guide",         icon: HelpCircle },
 ];
 
 const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: string; primary: string; accent: string; border: string }[] = [
