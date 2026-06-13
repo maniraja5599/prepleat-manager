@@ -25,6 +25,34 @@ async function fetchAsDataUrl(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
+// Flatten any transparent / off-white pixels onto a warm cream background so
+// the PDF logo never shows a black square when alpha is missing. Returns the
+// re-encoded JPEG data URL on success, or the original on failure.
+async function flattenLogoOnCream(dataUrl: string): Promise<string> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image();
+      im.crossOrigin = "anonymous";
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+    const size = 256;
+    const canvas = document.createElement("canvas");
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.fillStyle = "#fff8e6";
+    ctx.fillRect(0, 0, size, size);
+    // Cover-fit the logo centered
+    const ratio = Math.min(size / img.width, size / img.height);
+    const w = img.width * ratio;
+    const h = img.height * ratio;
+    ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+    return canvas.toDataURL("image/jpeg", 0.92);
+  } catch { return dataUrl; }
+}
+
 export async function generateBillPDF(opts: {
   booking: Booking;
   customer?: Customer;
@@ -60,12 +88,13 @@ export async function generateBillPDF(opts: {
   // Round logo: draw a white circle then clipped square image on top.
   if (logoData) {
     try {
+      const flat = await flattenLogoOnCream(logoData);
       const cx = 38;
       const cy = 39;
       const r = 22;
       doc.setFillColor(255, 248, 230);
       doc.circle(cx, cy, r + 2, "F");
-      doc.addImage(logoData, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
+      doc.addImage(flat, "JPEG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
     } catch { /* ignore bad logo */ }
   }
 
