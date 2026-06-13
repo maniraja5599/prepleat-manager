@@ -905,6 +905,104 @@ function AddExpenseSheet({
   );
 }
 
+function AddIncomeSheet({
+  categories, defaultMode, onClose, onSave,
+}: {
+  categories: string[];
+  defaultMode: PaymentMode;
+  onClose: () => void;
+  onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
+}) {
+  const [amount, setAmount] = useState<string>("");
+  const [category, setCategory] = useState<string>(categories[0] ?? "Other Income");
+  const [note, setNote] = useState("");
+  const [mode, setMode] = useState<PaymentMode>(defaultMode);
+  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+
+  const submit = () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    if (!category) return toast.error("Pick a category");
+    const iso = new Date(`${date}T${new Date().toTimeString().slice(0, 8)}`).toISOString();
+    onSave({ amount: amt, category, note: note.trim() || undefined, date: iso, mode });
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display font-bold text-lg">Add extra income</h3>
+          <button onClick={onClose} className="size-9 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
+        </div>
+
+        {categories.length === 0 ? (
+          <p className="text-xs text-muted-foreground mb-3">
+            Add income categories in Settings → Headers first.
+          </p>
+        ) : null}
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
+        <div className="relative mt-1 mb-3">
+          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            type="number" inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0"
+            className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-3 text-lg font-bold tabular-nums focus:outline-none"
+            autoFocus
+          />
+        </div>
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
+        <div className="flex flex-wrap gap-1.5 mt-1 mb-3">
+          {categories.map((c) => {
+            const active = category === c;
+            return (
+              <button key={c} onClick={() => setCategory(c)}
+                className={cn("px-3 py-1.5 rounded-full text-xs font-semibold", active ? "bg-success text-white" : "bg-secondary")}>{c}</button>
+            );
+          })}
+        </div>
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Date</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-3 text-sm focus:outline-none"
+        />
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
+        <div className="grid grid-cols-3 gap-2 mt-1 mb-3">
+          {(["gpay", "cash", "other"] as const).map((m) => {
+            const active = mode === m;
+            return (
+              <button key={m} onClick={() => setMode(m)}
+                className={cn("py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                {m}
+              </button>
+            );
+          })}
+        </div>
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Note (optional)</label>
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="e.g. Tip from bride"
+          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-4 text-sm focus:outline-none"
+        />
+
+        <button onClick={submit} className="w-full py-3 rounded-full bg-success text-white font-bold">
+          Save income
+        </button>
+      </div>
+    </>
+  );
+}
+
 function MiniChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white/15 backdrop-blur rounded-xl px-2 py-1.5">
