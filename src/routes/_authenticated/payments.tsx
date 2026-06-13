@@ -29,28 +29,38 @@ function PaymentsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const expenses = useStore((s) => s.expenses);
+  const extraIncomes = useStore((s) => s.extraIncomes);
   const settings = useStore((s) => s.settings);
   const businessName = settings.businessName;
   const categories = settings.expenseCategories ?? [];
+  const incomeCats = settings.incomeCategories ?? [];
 
   const addExpense = useStore((s) => s.addExpense);
   const deleteExpense = useStore((s) => s.deleteExpense);
+  const addExtraIncome = useStore((s) => s.addExtraIncome);
+  const deleteExtraIncome = useStore((s) => s.deleteExtraIncome);
 
   const [tab, setTab] = useState<TabId>("income");
   const [exportOpen, setExportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [addIncomeOpen, setAddIncomeOpen] = useState(false);
 
   // === Lifetime ===
-  const lifetime = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  const paymentsTotal = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  const extraTotal = useMemo(() => extraIncomes.reduce((s, e) => s + e.amount, 0), [extraIncomes]);
+  const lifetime = paymentsTotal + extraTotal;
   const totalExpense = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
   const netProfit = lifetime - totalExpense;
   const totalPending = useMemo(() => bookings.reduce((s, b) => s + totalDue(b), 0), [bookings]);
   const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
-  const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((lifetime / totalBilled) * 100)) : 0;
+  const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((paymentsTotal / totalBilled) * 100)) : 0;
 
   const now = new Date();
-  const incomeIn = (s: Date, e: Date) =>
-    payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+  const incomeIn = (s: Date, e: Date) => {
+    const a = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+    const b = extraIncomes.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+    return a + b;
+  };
   const expenseIn = (s: Date, e: Date) =>
     expenses.filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e })).reduce((a, x) => a + x.amount, 0);
 
@@ -67,11 +77,12 @@ function PaymentsPage() {
     return Array.from({ length: 12 }).map((_, i) => {
       const ref = subMonths(new Date(), 11 - i);
       const s = startOfMonth(ref), e = endOfMonth(ref);
-      const inc = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+      const inc = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0)
+        + extraIncomes.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
       const exp = expenses.filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e })).reduce((a, x) => a + x.amount, 0);
       return { month: format(ref, "MMM"), amount: inc, expense: exp, net: inc - exp };
     });
-  }, [payments, expenses]);
+  }, [payments, extraIncomes, expenses]);
 
   const trendDelta = useMemo(() => {
     const last = trend12[trend12.length - 1]?.amount ?? 0;
