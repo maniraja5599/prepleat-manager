@@ -179,10 +179,9 @@ function CalendarPage() {
           </div>
 
           <div
-            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow touch-pan-y no-select"
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
+            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select"
           >
+
             {days.map((d) => {
               const key = format(d, "yyyy-MM-dd");
               const list = byDay.get(key) ?? [];
