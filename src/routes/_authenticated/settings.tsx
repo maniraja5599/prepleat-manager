@@ -52,8 +52,12 @@ function SettingsPage() {
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
   const [incCatDraft, setIncCatDraft] = useState("");
+  const [modeDraft, setModeDraft] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<null | "resetTheme" | "resetPricing" | "clearData" | "factoryReset">(null);
+  const [confirmAction, setConfirmAction] = useState<null | "resetTheme" | "resetPricing" | "clearData">(null);
+  const [factoryOpen, setFactoryOpen] = useState(false);
+  const [factoryTyped, setFactoryTyped] = useState("");
+  const [helpQuery, setHelpQuery] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
@@ -144,17 +148,29 @@ function SettingsPage() {
 
       {tab === "pricing" && (
         <>
-          <Section title="Direct Client Pricing (per saree)">
-            <PriceRow label="PrePleat" value={settings.prepleatPrice} onChange={(v) => update({ prepleatPrice: v })} />
-            <PriceRow label="Drape"    value={settings.drapePrice}    onChange={(v) => update({ drapePrice: v })} />
-            <p className="text-[11px] text-muted-foreground mt-2">Tap +/- to step by ₹50.</p>
+          <Section title="Pricing per saree">
+            <p className="text-[11px] text-muted-foreground mb-3">Direct client and artist rates side-by-side. Tap +/- to step by ₹50.</p>
+            <div className="grid grid-cols-[1fr_auto] gap-y-3 items-center">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground"></span>
+              <div className="grid grid-cols-2 gap-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center">
+                <span>Client</span>
+                <span>Artist</span>
+              </div>
+
+              <span className="text-sm font-medium">PrePleat</span>
+              <div className="grid grid-cols-2 gap-2 justify-items-end">
+                <PriceStepper value={settings.prepleatPrice} onChange={(v) => update({ prepleatPrice: v })} />
+                <PriceStepper value={settings.artistPrepleatPrice ?? settings.prepleatPrice} onChange={(v) => update({ artistPrepleatPrice: v })} />
+              </div>
+
+              <span className="text-sm font-medium">Drape</span>
+              <div className="grid grid-cols-2 gap-2 justify-items-end">
+                <PriceStepper value={settings.drapePrice} onChange={(v) => update({ drapePrice: v })} />
+                <PriceStepper value={settings.artistDrapePrice ?? settings.drapePrice} onChange={(v) => update({ artistDrapePrice: v })} />
+              </div>
+            </div>
           </Section>
 
-          <Section title="Artist Pricing (per saree)">
-            <PriceRow label="PrePleat" value={settings.artistPrepleatPrice ?? settings.prepleatPrice} onChange={(v) => update({ artistPrepleatPrice: v })} />
-            <PriceRow label="Drape" value={settings.artistDrapePrice ?? settings.drapePrice} onChange={(v) => update({ artistDrapePrice: v })} />
-            <p className="text-[11px] text-muted-foreground mt-2">Tap +/- to step by ₹50.</p>
-          </Section>
 
           <Section title="Default Measurements">
             <p className="text-xs text-muted-foreground mb-3">
