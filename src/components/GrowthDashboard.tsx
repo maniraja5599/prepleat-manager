@@ -1,12 +1,10 @@
 import { useMemo } from "react";
 import { useStore, fmtINR } from "@/lib/store";
-import { startOfWeek, endOfWeek, eachDayOfInterval, format, parseISO, isWithinInterval, subDays, startOfMonth, endOfMonth } from "date-fns";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { TrendingUp, IndianRupee, Calendar, AlertCircle } from "lucide-react";
+import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
+import { IndianRupee, Calendar, AlertCircle } from "lucide-react";
 
 export function GrowthDashboard() {
   const bookings = useStore((s) => s.bookings);
-  const payments = useStore((s) => s.payments);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -23,20 +21,6 @@ export function GrowthDashboard() {
     const completion = monthBookings.length ? Math.round((delivered / monthBookings.length) * 100) : 0;
     return { monthRevenue, pendingDue, sarees, completion };
   }, [bookings]);
-
-  const weekly = useMemo(() => {
-    const today = new Date();
-    const start = startOfWeek(subDays(today, 0), { weekStartsOn: 1 });
-    const end = endOfWeek(today, { weekStartsOn: 1 });
-    const days = eachDayOfInterval({ start, end });
-    return days.map((d) => {
-      const key = format(d, "yyyy-MM-dd");
-      const revenue = payments
-        .filter((p) => p.date.slice(0, 10) === key)
-        .reduce((s, p) => s + p.amount, 0);
-      return { day: format(d, "EEE")[0], revenue };
-    });
-  }, [payments]);
 
   if (bookings.length === 0) return null;
 
