@@ -4,7 +4,7 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2, Calendar, ArrowUpDown, Filter, Sparkles, Coins, Layers, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2, Calendar, ArrowUpDown, Filter, Sparkles, Wallet, Layers, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
@@ -260,7 +260,7 @@ function BookingsPage() {
                 <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
                   <div className="flex flex-col text-left">
                     <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                      <Coins className="size-4 text-primary" /> Payment Status
+                      <Wallet className="size-4 text-primary" /> Payment Status
                     </span>
                     <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{paymentSummary}</span>
                   </div>
@@ -271,7 +271,7 @@ function BookingsPage() {
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">Payment Status</span>
                     <div className="grid grid-cols-3 gap-2">
                       {([
-                        { id: "all" as const, label: "All Payments", icon: Coins },
+                        { id: "all" as const, label: "All Payments", icon: Wallet },
                         { id: "due" as const, label: "Balance Due", icon: AlertCircle },
                         { id: "paid" as const, label: "Fully Paid", icon: CheckCircle2 },
                       ]).map((item) => {

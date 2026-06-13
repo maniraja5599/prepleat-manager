@@ -1,10 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Calendar, ListChecks, Coins, Users, Settings as SettingsIcon } from "lucide-react";
+import { Calendar, ListChecks, Wallet, Users, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
 const tabs: Tab[] = [
-  { to: "/payments", label: "Payments", icon: Coins },
+  { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/bookings", label: "Bookings", icon: ListChecks },
   { to: "/", label: "Calendar", icon: Calendar, primary: true },
   { to: "/customers", label: "Customers", icon: Users },
