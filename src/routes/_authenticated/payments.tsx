@@ -402,6 +402,7 @@ function PaymentsPage() {
         <AddExpenseSheet
           categories={categories}
           defaultMode={settings.defaultPaymentMode ?? "gpay"}
+          modes={settings.paymentModes ?? ["gpay","cash","other"]}
           onClose={() => setAddOpen(false)}
           onSave={(payload) => {
             addExpense(payload);
@@ -415,6 +416,7 @@ function PaymentsPage() {
         <AddIncomeSheet
           categories={incomeCats}
           defaultMode={settings.defaultPaymentMode ?? "gpay"}
+          modes={settings.paymentModes ?? ["gpay","cash","other"]}
           onClose={() => setAddIncomeOpen(false)}
           onSave={(payload) => {
             addExtraIncome(payload);
