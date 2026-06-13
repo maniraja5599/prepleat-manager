@@ -75,17 +75,9 @@ function CalendarPage() {
       .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
   }, [bookings, cursor]);
 
-  // Swipe between months
-  const touchX = useRef<number | null>(null);
+  // Day swipe (left/right on the day-events list) still changes the selected day.
   const dayTouchX = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchX.current;
-    touchX.current = null;
-    if (Math.abs(dx) < 50) return;
-    setCursor((c) => (dx < 0 ? addMonths(c, 1) : subMonths(c, 1)));
-  };
+
 
   // Long-press peek
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,10 +179,9 @@ function CalendarPage() {
           </div>
 
           <div
-            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow touch-pan-y no-select"
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
+            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select"
           >
+
             {days.map((d) => {
               const key = format(d, "yyyy-MM-dd");
               const list = byDay.get(key) ?? [];
@@ -242,9 +233,11 @@ function CalendarPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Swipe ←/→ change month · long-press peek · double-tap to book</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · use ← → for months</p>
 
+          {isSameMonth(selected, cursor) && (
           <div className="mt-5">
+
             <div className="flex items-center justify-between mb-2 gap-2">
               <button
                 onClick={() => setSelected((d) => subDays(d, 1))}
@@ -291,6 +284,8 @@ function CalendarPage() {
             )}
             </div>
           </div>
+          )}
+
 
           {monthEvents.length > 0 && (
             <div className="mt-6">
