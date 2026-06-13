@@ -7,7 +7,7 @@ import {
   format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, Users, Wallet, X } from "lucide-react";
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -78,6 +78,27 @@ function CalendarPage() {
   // Day swipe (left/right on the day-events list) still changes the selected day.
   const dayTouchX = useRef<number | null>(null);
 
+  // Month swipe on calendar grid
+  const monthTouchX = useRef<number | null>(null);
+  const monthTouchY = useRef<number | null>(null);
+
+  // Hold-to-fast-change month
+  const monthHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const monthHoldInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopMonthHold = () => {
+    if (monthHoldTimer.current) { clearTimeout(monthHoldTimer.current); monthHoldTimer.current = null; }
+    if (monthHoldInterval.current) { clearInterval(monthHoldInterval.current); monthHoldInterval.current = null; }
+  };
+  const startMonthHold = (dir: -1 | 1) => {
+    stopMonthHold();
+    monthHoldTimer.current = setTimeout(() => {
+      monthHoldInterval.current = setInterval(() => {
+        setCursor((c) => (dir === -1 ? subMonths(c, 1) : addMonths(c, 1)));
+      }, 150);
+    }, 350);
+  };
+
+  useEffect(() => () => stopMonthHold(), []);
 
   // Long-press peek
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,7 +177,15 @@ function CalendarPage() {
       {view === "calendar" ? (
         <>
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setCursor(subMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center" aria-label="Previous month">
+            <button
+              onClick={() => setCursor(subMonths(cursor, 1))}
+              onPointerDown={() => startMonthHold(-1)}
+              onPointerUp={stopMonthHold}
+              onPointerLeave={stopMonthHold}
+              onPointerCancel={stopMonthHold}
+              className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
+              aria-label="Previous month"
+            >
               <ChevronLeft className="size-5" />
             </button>
             <div className="flex-1 text-center">
@@ -168,7 +197,15 @@ function CalendarPage() {
                 onClick={() => { setCursor(new Date()); setSelected(new Date()); }}
                 className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary"
               >Today</button>
-              <button onClick={() => setCursor(addMonths(cursor, 1))} className="size-10 rounded-full hover:bg-secondary flex items-center justify-center" aria-label="Next month">
+              <button
+                onClick={() => setCursor(addMonths(cursor, 1))}
+                onPointerDown={() => startMonthHold(1)}
+                onPointerUp={stopMonthHold}
+                onPointerLeave={stopMonthHold}
+                onPointerCancel={stopMonthHold}
+                className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
+                aria-label="Next month"
+              >
                 <ChevronRight className="size-5" />
               </button>
             </div>
@@ -180,6 +217,20 @@ function CalendarPage() {
 
           <div
             className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select"
+            onTouchStart={(e) => {
+              monthTouchX.current = e.touches[0].clientX;
+              monthTouchY.current = e.touches[0].clientY;
+            }}
+            onTouchEnd={(e) => {
+              if (monthTouchX.current == null || monthTouchY.current == null) return;
+              const dx = e.changedTouches[0].clientX - monthTouchX.current;
+              const dy = e.changedTouches[0].clientY - monthTouchY.current;
+              monthTouchX.current = null;
+              monthTouchY.current = null;
+              // Ignore vertical-dominant swipes and very short horizontal swipes
+              if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return;
+              setCursor((c) => (dx < 0 ? addMonths(c, 1) : subMonths(c, 1)));
+            }}
           >
 
             {days.map((d) => {
@@ -233,7 +284,7 @@ function CalendarPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · use ← → for months</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · swipe ← → or hold arrows for months</p>
 
           {isSameMonth(selected, cursor) && (
           <div className="mt-5">
