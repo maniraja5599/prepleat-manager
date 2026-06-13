@@ -409,7 +409,7 @@ function SettingsPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => { restoreBooking(t.booking.id); toast.success("Booking restored", { duration: 1500 }); }}
+                        onClick={() => setRestoreId(t.booking.id)}
                         className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
                       ><RotateCw className="size-3" /> Restore</button>
                     </li>
@@ -422,31 +422,22 @@ function SettingsPage() {
           <Section title="Reset & Danger Zone">
             <div className="space-y-2">
               <button
-                onClick={() => {
-                  update({ theme: "maroon", customPrimary: undefined });
-                  toast.success("Theme reset", { duration: 1200 });
-                }}
+                onClick={() => setConfirmAction("resetTheme")}
                 className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
               ><RotateCcw className="size-3.5" /> Reset theme</button>
               <button
-                onClick={() => {
-                  update({
-                    prepleatPrice: 350, drapePrice: 800,
-                    defaultMeasurements: [{ label: "P", value: 40 }, { label: "W", value: 32 }, { label: "H", value: 38 }],
-                    defaultPaymentMode: "gpay",
-                  });
-                  toast.success("Defaults restored", { duration: 1500 });
-                }}
+                onClick={() => setConfirmAction("resetPricing")}
                 className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5"
               ><RotateCcw className="size-3.5" /> Reset pricing & measurements</button>
               <button
-                onClick={() => {
-                  if (!confirm("Delete ALL local bookings, customers and payments? This cannot be undone.")) return;
-                  useStore.setState({ bookings: [], customers: [], payments: [], trash: [] });
-                  toast.success("All data cleared", { duration: 1500 });
-                }}
+                onClick={() => setConfirmAction("clearData")}
                 className="w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5"
               ><Trash2 className="size-3.5" /> Clear all data</button>
+              <button
+                onClick={() => setConfirmAction("factoryReset")}
+                className="w-full px-3 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center justify-center gap-1.5"
+              ><AlertTriangle className="size-3.5" /> Factory reset (like new)</button>
+              <p className="text-[11px] text-muted-foreground text-center mt-1">Factory reset wipes everything — data, settings, theme, activity.</p>
             </div>
           </Section>
         </>
