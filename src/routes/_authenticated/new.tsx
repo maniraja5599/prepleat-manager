@@ -127,10 +127,13 @@ function NewBooking() {
 
   const openReview = () => {
     if (bookingSource === "artist" && !artistId) return toast.error("Select or add an artist");
-    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
-    if (customerRequired && !customerId) {
+    // Customer name/mobile only mandatory for direct bookings. For artist-via bookings they are optional.
+    if (bookingSource === "direct" && !customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
       if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
+    }
+    if (bookingSource === "artist" && showCustomerForArtist && !customerId && newPhone.trim() && !isValidIndianMobile(newPhone)) {
+      return toast.error("Enter a valid 10-digit Indian mobile");
     }
     if (!sareeCount || sareeCount < 1) return toast.error("Saree count required");
     if (!deliveryDate || !deliveryTime) return toast.error("Delivery date & time required");
@@ -140,16 +143,17 @@ function NewBooking() {
 
   const confirmSave = () => {
     let cid = customerId;
-    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
+    
     if (!cid) {
-      if (customerRequired && newName.trim()) {
+      const hasNameOrPhone = newName.trim() || newPhone.trim();
+      if (hasNameOrPhone) {
         // Dedupe: if a client already exists with the same 10-digit phone, reuse them.
         const phoneDigits = newPhone.replace(/\D/g, "");
         const existingByPhone = phoneDigits.length === 10
           ? customers.find((c) => c.phone.replace(/\D/g, "").endsWith(phoneDigits))
           : undefined;
         const nameKey = newName.trim().toLowerCase();
-        const existingByName = !existingByPhone
+        const existingByName = !existingByPhone && nameKey
           ? customers.find((c) => c.name.trim().toLowerCase() === nameKey)
           : undefined;
         const existing = existingByPhone ?? existingByName;
@@ -159,7 +163,12 @@ function NewBooking() {
             updateCustomer(existing.id, { address: newAddress.trim() });
           }
         } else {
-          const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
+          const c = addCustomer({
+            kind: "client",
+            name: newName.trim() || "Walk-in",
+            phone: phoneDigits.length === 10 ? "+91" + newPhone : newPhone.trim(),
+            address: newAddress.trim() || undefined,
+          });
           cid = c.id;
         }
       } else if (bookingSource === "artist" && artistId) {
