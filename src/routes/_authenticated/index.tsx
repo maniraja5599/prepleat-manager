@@ -98,6 +98,8 @@ function CalendarPage() {
     }, 350);
   };
 
+  useEffect(() => () => stopMonthHold(), []);
+
   // Long-press peek
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPress = (key: string) => {
