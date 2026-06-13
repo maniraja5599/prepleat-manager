@@ -70,17 +70,6 @@ function CustomersPage() {
     <AppShell
       title={tab === "client" ? "Clients" : "Artists"}
       subtitle={`${tab === "client" ? clientCount : artistCount} ${tab === "client" ? "clients" : "artists"}`}
-      right={
-        <div className="flex items-center gap-1.5">
-          <button 
-            onClick={() => setShowAdd((v) => !v)} 
-            aria-label="Add customer"
-            className="size-10 rounded-full saree-gradient text-primary-foreground flex items-center justify-center cursor-pointer"
-          >
-            <Plus className="size-5" />
-          </button>
-        </div>
-      }
     >
       {/* Slim stats chip bar (mirrors bookings page exactly) */}
       <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar items-center">
@@ -89,9 +78,19 @@ function CustomersPage() {
         <StatChip label="Outstanding" value={fmtINR(visibleSummary.totalDueAll)} tone={visibleSummary.totalDueAll > 0 ? "danger" : "muted"} />
         
         <button
+          onClick={() => setShowAdd((v) => !v)}
+          className={cn(
+            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+            showAdd ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+          )}
+        >
+          <Plus className="size-3.5" /> Add
+        </button>
+
+        <button
           onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
           className={cn(
-            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+            "shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
             selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
           )}
         >

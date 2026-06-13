@@ -234,69 +234,6 @@ function CalendarPage() {
       showBrand
       title="Calendar"
       subtitle={format(cursor, "MMMM yyyy")}
-      right={
-        <div className="flex items-center gap-1.5">
-          <Sheet>
-            <SheetTrigger asChild>
-              <button
-                className="size-10 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
-                aria-label="Upcoming events"
-              >
-                <List className="size-5" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8">
-              <SheetHeader className="mb-3 border-b border-border/40 pb-3 pt-1">
-                <div className="flex flex-col gap-1 pr-10 text-left">
-                  <div className="flex items-center gap-2">
-                    <List className="size-5 text-primary" />
-                    <SheetTitle className="text-base font-semibold">Upcoming Bookings</SheetTitle>
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">Next 60 days</p>
-                </div>
-              </SheetHeader>
-
-              {/* Upcoming filter row */}
-              <div className="flex gap-1.5 mb-4 overflow-x-auto no-scrollbar pb-1">
-                {([
-                  { id: "all" as const, label: "All" },
-                  { id: "prepleat" as const, label: "PrePleat" },
-                  { id: "drape" as const, label: "Direct Drape" },
-                  { id: "artist" as const, label: "Artist" },
-                ]).map((f) => {
-                  const active = upFilter === f.id;
-                  return (
-                    <button
-                      key={f.id}
-                      onClick={() => setUpFilter(f.id)}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer active:scale-95",
-                        active
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                      )}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {filteredUpcoming.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted-foreground bg-secondary/20 rounded-2xl">
-                  No matching bookings in the next 60 days.
-                </div>
-              ) : (
-                <ul className="space-y-2">
-                  {filteredUpcoming.map((b) => (
-                    <BookingRow key={b.id} b={b} customers={customers} showDate />
-                  ))}
-                </ul>
-              )}
-            </SheetContent>
-          </Sheet>
-        </div>
-      }
     >
       <GrowthDashboard />
       <div className="grid grid-cols-3 gap-2 mb-4">

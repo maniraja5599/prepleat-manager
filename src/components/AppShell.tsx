@@ -10,14 +10,13 @@ import { format, parseISO } from "date-fns";
 interface Props {
   title?: string;
   subtitle?: string;
-  right?: ReactNode;
   children: ReactNode;
   /** @deprecated brand strip now renders on every page automatically */
   showBrand?: boolean;
   wide?: boolean;
 }
 
-export function AppShell({ title, subtitle, right, children, wide }: Props) {
+export function AppShell({ title, subtitle, children, wide }: Props) {
   const settings = useStore((s) => s.settings);
   const logo = settings.logoDataUrl || logoAsset;
   const bookings = useStore((s) => s.bookings);
@@ -141,20 +140,22 @@ export function AppShell({ title, subtitle, right, children, wide }: Props) {
     <div className="min-h-[100dvh] bg-background pb-28">
       <div className={wide ? "max-w-3xl mx-auto" : "max-w-md mx-auto"}>
         {/* Uniform brand strip — every page */}
-        <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/10 safe-header-top px-5 pb-2 flex items-center gap-2.5">
-          <img
-            src={logo}
-            alt={settings.businessName}
-            className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25 shrink-0"
-          />
-          <p className="text-[13px] font-display font-semibold tracking-tight truncate shrink-0 max-w-[100px] sm:max-w-none">{settings.businessName}</p>
+        <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/10 safe-header-top px-5 pb-2 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img
+              src={logo}
+              alt={settings.businessName}
+              className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25 shrink-0"
+            />
+            <p className="text-[13px] font-display font-semibold tracking-tight truncate shrink-0">{settings.businessName}</p>
+          </div>
           
-          {/* Live Info Ticker */}
+          {/* Live Info Ticker (rendered in top-right slot) */}
           {tickerItems.length > 0 && (
             <button
               onClick={() => setShowPopup(true)}
               className={cn(
-                "px-2 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 animate-in fade-in slide-in-from-left-2 cursor-pointer max-w-[125px] sm:max-w-none truncate hover:brightness-95 active:scale-95 shrink-0",
+                "px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 animate-in fade-in slide-in-from-right-2 cursor-pointer max-w-[140px] sm:max-w-none truncate hover:brightness-95 active:scale-95 shrink-0 ml-auto",
                 tickerItems[tickerIndex]?.color
               )}
             >
@@ -169,10 +170,12 @@ export function AppShell({ title, subtitle, right, children, wide }: Props) {
             </button>
           )}
 
-          {/* Right Action slot or default gold dot */}
-          <div className="ml-auto flex items-center gap-1.5 shrink-0">
-            {right ? right : <span className="size-1.5 rounded-full bg-gold/60 animate-in fade-in duration-300" aria-hidden />}
-          </div>
+          {/* Fallback gold dot if ticker is empty */}
+          {tickerItems.length === 0 && (
+            <div className="ml-auto shrink-0 flex items-center">
+              <span className="size-1.5 rounded-full bg-gold/60 animate-in fade-in duration-300" aria-hidden />
+            </div>
+          )}
           <style>{`
             @keyframes shake-sm {
               0%, 100% { transform: translateX(0); }
