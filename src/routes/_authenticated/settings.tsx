@@ -230,19 +230,9 @@ function SettingsPage() {
             )}
           </Section>
 
-          <Section title="Payments">
-            <p className="text-xs text-muted-foreground mb-2">Default mode when adding a payment.</p>
-            <div className="grid grid-cols-3 gap-2">
-              {(["gpay","cash","other"] as const).map((m) => {
-                const active = (settings.defaultPaymentMode ?? "gpay") === m;
-                return (
-                  <button key={m} onClick={() => update({ defaultPaymentMode: m })}
-                    className={`py-2 rounded-full text-xs font-semibold uppercase tracking-wider ${active ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{m}</button>
-                );
-              })}
-            </div>
-            <label className="text-[11px] uppercase tracking-wider text-muted-foreground mt-3 block">Website (for WhatsApp bills)</label>
-            <input value={settings.websiteUrl ?? ""} onChange={(e) => update({ websiteUrl: e.target.value })} placeholder="https://eyasdrapist.shop/" className="input mt-1" />
+          <Section title="Website (for WhatsApp bills)">
+            <input value={settings.websiteUrl ?? ""} onChange={(e) => update({ websiteUrl: e.target.value })} placeholder="https://eyasdrapist.shop/" className="input" />
+            <p className="text-[11px] text-muted-foreground mt-2">Manage payment modes in Headers tab.</p>
           </Section>
 
         </>
