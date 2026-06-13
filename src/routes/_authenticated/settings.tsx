@@ -522,6 +522,61 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function ChipListSection({
+  title, hint, placeholder, tone, items, draft, setDraft, onAdd, onRemove,
+}: {
+  title: string;
+  hint: string;
+  placeholder: string;
+  tone: "primary" | "success" | "danger";
+  items: string[];
+  draft: string;
+  setDraft: (v: string) => void;
+  onAdd: (v: string) => void;
+  onRemove: (v: string) => void;
+}) {
+  const chipCls =
+    tone === "success" ? "bg-success/15 text-success"
+    : tone === "danger" ? "bg-destructive/15 text-destructive"
+    : "bg-primary/15 text-primary";
+  const submit = () => {
+    const v = draft.trim();
+    if (!v || items.includes(v)) { setDraft(""); return; }
+    onAdd(v);
+    setDraft("");
+  };
+  return (
+    <Section title={title}>
+      <p className="text-xs text-muted-foreground mb-2">{hint}</p>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {items.map((p) => (
+          <span key={p} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${chipCls}`}>
+            {p}
+            <button
+              onClick={() => onRemove(p)}
+              className="opacity-70 hover:opacity-100"
+              aria-label={`Remove ${p}`}
+            ><X className="size-3" /></button>
+          </span>
+        ))}
+        {items.length === 0 && (
+          <p className="text-xs text-muted-foreground italic">None yet.</p>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder={placeholder}
+          className="input flex-1"
+        />
+        <button onClick={submit} className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold">Add</button>
+      </div>
+    </Section>
+  );
+}
+
 function ActivityBlock() {
   const activity = useStore((s) => s.activity);
   const redoStack = useStore((s) => s.redoStack);
