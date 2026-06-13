@@ -401,6 +401,26 @@ function BookingDetail() {
               );
             })}
           </div>
+
+          {/* Stage aware notification prompt */}
+          {currentStage !== "new" && (
+            <div className="mt-4 pt-3.5 border-t border-border/40 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase font-bold tracking-wider text-primary">Recommend stage update</p>
+                <p className="text-xs font-semibold text-foreground mt-0.5 truncate">
+                  {currentStage === "received" && "Saree Received Update"}
+                  {currentStage === "ready" && (booking.service === "prepleat" ? "PrePleat Done Notice" : "Drape Done Notice")}
+                  {currentStage === "delivered" && "Delivered Invoice Receipt"}
+                </p>
+              </div>
+              <button
+                onClick={() => sendWhatsApp("status")}
+                className="px-4 py-2 saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-primary/20"
+              >
+                <MessageCircle className="size-4" /> Send Update
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -570,26 +590,6 @@ function BookingDetail() {
       {/* Share & Action Center */}
       <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Share & Action Center</h2>
-        
-        {/* Stage aware notification prompt */}
-        {currentStage !== "new" && (
-          <div className="mb-3.5 p-3 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[9px] uppercase font-bold tracking-wider text-primary">Recommend stage update</p>
-              <p className="text-xs font-semibold text-foreground mt-0.5 truncate">
-                {currentStage === "received" && "Saree Received Update"}
-                {currentStage === "ready" && (booking.service === "prepleat" ? "PrePleat Done Notice" : "Drape Done Notice")}
-                {currentStage === "delivered" && "Delivered Invoice Receipt"}
-              </p>
-            </div>
-            <button
-              onClick={() => sendWhatsApp("status")}
-              className="px-4 py-2 saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-primary/20"
-            >
-              <MessageCircle className="size-4" /> Send Update
-            </button>
-          </div>
-        )}
 
         <div className="grid grid-cols-2 gap-2.5">
           <button
