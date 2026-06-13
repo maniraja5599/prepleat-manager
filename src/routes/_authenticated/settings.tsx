@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
 import { formatDistanceToNow } from "date-fns";
 
+const APP_VERSION = "1.0.0";
+
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
   component: SettingsPage,
