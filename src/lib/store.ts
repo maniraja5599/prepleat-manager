@@ -231,6 +231,7 @@ export const useStore = create<State>()(
         occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
         expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
         incomeCategories: ["Tips", "Sale", "Other Income"],
+        paymentModes: ["gpay", "cash", "other"],
       },
 
       addCustomer: (c) => {
@@ -502,6 +503,7 @@ export const useStore = create<State>()(
           occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
           expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
           incomeCategories: ["Tips", "Sale", "Other Income"],
+          paymentModes: ["gpay", "cash", "other"],
         },
       }),
     }),
@@ -532,6 +534,9 @@ export const useStore = create<State>()(
         }
         if (!Array.isArray(s.incomeCategories)) {
           s.incomeCategories = ["Tips", "Sale", "Other Income"];
+        }
+        if (!Array.isArray(s.paymentModes)) {
+          s.paymentModes = ["gpay", "cash", "other"];
         }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
