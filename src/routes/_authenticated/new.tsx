@@ -145,14 +145,15 @@ function NewBooking() {
     let cid = customerId;
     const customerRequired = bookingSource === "direct" || showCustomerForArtist;
     if (!cid) {
-      if (customerRequired && newName.trim()) {
+      const hasNameOrPhone = newName.trim() || newPhone.trim();
+      if (hasNameOrPhone) {
         // Dedupe: if a client already exists with the same 10-digit phone, reuse them.
         const phoneDigits = newPhone.replace(/\D/g, "");
         const existingByPhone = phoneDigits.length === 10
           ? customers.find((c) => c.phone.replace(/\D/g, "").endsWith(phoneDigits))
           : undefined;
         const nameKey = newName.trim().toLowerCase();
-        const existingByName = !existingByPhone
+        const existingByName = !existingByPhone && nameKey
           ? customers.find((c) => c.name.trim().toLowerCase() === nameKey)
           : undefined;
         const existing = existingByPhone ?? existingByName;
@@ -162,7 +163,12 @@ function NewBooking() {
             updateCustomer(existing.id, { address: newAddress.trim() });
           }
         } else {
-          const c = addCustomer({ kind: "client", name: newName.trim(), phone: "+91" + newPhone, address: newAddress.trim() || undefined });
+          const c = addCustomer({
+            kind: "client",
+            name: newName.trim() || "Walk-in",
+            phone: phoneDigits.length === 10 ? "+91" + newPhone : newPhone.trim(),
+            address: newAddress.trim() || undefined,
+          });
           cid = c.id;
         }
       } else if (bookingSource === "artist" && artistId) {
