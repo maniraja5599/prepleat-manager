@@ -132,14 +132,15 @@ export function CloudSync() {
     typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "synced"
   );
   const [showStatus, setShowStatus] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      (window as any).__syncStatus = { syncStatus, showStatus };
-      window.dispatchEvent(new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus } }));
+      (window as any).__syncStatus = { syncStatus, showStatus, errorMessage };
+      window.dispatchEvent(new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus, errorMessage } }));
     }
-  }, [syncStatus, showStatus]);
+  }, [syncStatus, showStatus, errorMessage]);
 
   const clearHideTimer = () => {
     if (hideTimer.current) {
@@ -176,6 +177,7 @@ export function CloudSync() {
       }
       clearHideTimer();
       setSyncStatus("syncing");
+      setErrorMessage("");
       setShowStatus(true);
 
       const { data: auth } = await supabase.auth.getUser();
@@ -190,12 +192,14 @@ export function CloudSync() {
         .maybeSingle();
       if (error) {
         setSyncStatus("error");
+        setErrorMessage(error.message || "Failed to retrieve cloud data");
         triggerErrorFadeOut();
         return; // offline / network error — keep local data, retry later
       }
       if (!row?.data || typeof row.data !== "object") {
         pulledOnce.current = true;
         setSyncStatus("synced");
+        setErrorMessage("");
         triggerSyncedFadeOut();
         return;
       }
@@ -226,11 +230,13 @@ export function CloudSync() {
       pulledOnce.current = true;
 
       setSyncStatus("synced");
+      setErrorMessage("");
       triggerSyncedFadeOut();
-    } catch {
+    } catch (err: any) {
       // Offline — local store keeps working; we retry on reconnect.
       isApplyingRemote.current = false;
       setSyncStatus("error");
+      setErrorMessage(err?.message || String(err));
       triggerErrorFadeOut();
     }
   }).current;
@@ -245,6 +251,7 @@ export function CloudSync() {
       }
       clearHideTimer();
       setSyncStatus("syncing");
+      setErrorMessage("");
       setShowStatus(true);
 
       const { data: auth } = await supabase.auth.getUser();
@@ -279,6 +286,7 @@ export function CloudSync() {
         .maybeSingle();
       if (error) {
         setSyncStatus("error");
+        setErrorMessage(error.message || "Failed to upload local database changes");
         triggerErrorFadeOut();
         return; // stay dirty, retry on reconnect
       }
@@ -286,10 +294,12 @@ export function CloudSync() {
       dirty.current = false;
 
       setSyncStatus("synced");
+      setErrorMessage("");
       triggerSyncedFadeOut();
-    } catch {
+    } catch (err: any) {
       // Offline — stay dirty, retry when back online.
       setSyncStatus("error");
+      setErrorMessage(err?.message || String(err));
       triggerErrorFadeOut();
     }
   }).current;
@@ -323,8 +333,18 @@ export function CloudSync() {
       setSyncStatus("offline");
       setShowStatus(true);
     };
+    const onRetry = () => {
+      setSyncStatus("syncing");
+      setErrorMessage("");
+      setShowStatus(true);
+      void (async () => {
+        await pullAndMerge();
+        if (dirty.current) await pushNow();
+      })();
+    };
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
+    window.addEventListener("sync-retry", onRetry);
 
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") void pullAndMerge();
@@ -361,6 +381,7 @@ export function CloudSync() {
       window.removeEventListener("focus", onVisibility);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
+      window.removeEventListener("sync-retry", onRetry);
       authSub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
       clearHideTimer();
