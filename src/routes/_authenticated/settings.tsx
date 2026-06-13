@@ -52,7 +52,7 @@ function SettingsPage() {
   const [expCatDraft, setExpCatDraft] = useState("");
   const [incCatDraft, setIncCatDraft] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<null | "resetTheme" | "resetPricing" | "clearData" | "factoryReset">(null);
+  const [confirmAction, setConfirmAction] = useState<null | "resetTheme" | "resetPricing" | "clearData" | "factoryReset">(null);
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
