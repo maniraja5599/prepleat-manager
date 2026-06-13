@@ -89,6 +89,33 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
     if (next) onChange(next.key);
   };
 
+  // Press-and-hold on chevrons to fast-scroll continuously.
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopHold = () => {
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+    if (holdInterval.current) { clearInterval(holdInterval.current); holdInterval.current = null; }
+  };
+  const startHold = (dir: -1 | 1) => {
+    stopHold();
+    // After an initial delay, scroll the strip continuously by itemWidth
+    // every ~60ms. This drives handleScroll which updates the value, so the
+    // user sees the picker race through items while they hold the button.
+    holdTimer.current = setTimeout(() => {
+      holdInterval.current = setInterval(() => {
+        const el = ref.current;
+        if (!el) return;
+        const delta = dir * itemWidth;
+        const max = el.scrollWidth - el.clientWidth;
+        const target = Math.max(0, Math.min(max, el.scrollLeft + delta));
+        if (target === el.scrollLeft) { stopHold(); return; }
+        el.scrollTo({ left: target, behavior: "auto" });
+      }, 60);
+    }, 280);
+  };
+  useEffect(() => () => stopHold(), []);
+
+
   // Unified double-tap detection — works on touch (iOS) and mouse.
   const fireDoubleTap = () => {
     if (!onDoubleTap) return;
