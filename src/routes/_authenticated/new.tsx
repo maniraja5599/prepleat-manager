@@ -553,33 +553,37 @@ function NewBooking() {
           <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             <Clock className="size-3.5 text-primary/70" />
             <span>Time · 15-min · tap 🕒</span>
-            <Popover open={timeOpen} onOpenChange={setTimeOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Open time picker"
-                  className="ml-1 size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95"
-                ><Clock className="size-3.5" /></button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="center">
-                <input
-                  type="time"
-                  step={900}
-                  value={deliveryTime}
-                  onChange={(e) => e.target.value && setDeliveryTime(e.target.value)}
-                  className="bg-secondary rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
-                  autoFocus
-                />
-                <div className="mt-2 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setTimeOpen(false)}
-                    className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
-                  >Done</button>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <button
+              type="button"
+              aria-label="Open time picker"
+              onClick={() => {
+                const el = timeInputRef.current;
+                if (!el) return;
+                // Native picker — if user cancels, nothing else is shown.
+                // showPicker() works on modern Chrome/Safari/Firefox.
+                try {
+                  // @ts-expect-error — showPicker is not in older TS lib
+                  if (typeof el.showPicker === "function") el.showPicker();
+                  else { el.focus(); el.click(); }
+                } catch {
+                  el.focus(); el.click();
+                }
+              }}
+              className="ml-1 size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95"
+            ><Clock className="size-3.5" /></button>
+            <input
+              ref={timeInputRef}
+              type="time"
+              step={900}
+              value={deliveryTime}
+              onChange={(e) => { if (e.target.value) setDeliveryTime(e.target.value); }}
+              tabIndex={-1}
+              aria-hidden="true"
+              className="sr-only pointer-events-none"
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+            />
           </div>
+
           <HorizontalPicker
             itemWidth={86}
             value={deliveryTime}
