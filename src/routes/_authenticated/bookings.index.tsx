@@ -250,10 +250,10 @@ function BookingsPage() {
                     ★ Artist
                   </span>
                 )}
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                  {selectMode && (
-                    <input type="checkbox" readOnly checked={isSelected} className="size-5 accent-primary mt-1 row-span-2 col-start-1 row-start-1" style={{ gridRow: "1 / span 2" }} />
-                  )}
+                {selectMode && (
+                  <input type="checkbox" readOnly checked={isSelected} className="absolute top-2 left-2 size-5 accent-primary z-10" />
+                )}
+                <div className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3", selectMode && "pl-7")}>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                       <span className={cn(
