@@ -284,7 +284,7 @@ function CalendarPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · use ← → for months</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · swipe ← → or hold arrows for months</p>
 
           {isSameMonth(selected, cursor) && (
           <div className="mt-5">
