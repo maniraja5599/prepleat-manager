@@ -359,6 +359,8 @@ function PaymentsPage() {
         <IncomeView
           lifetime={lifetime} totalPending={totalPending} totalBilled={totalBilled} collectionRate={collectionRate}
           trend12={trend12} kpis={kpis} topCustomers={topCustomers} modeSplit={modeSplit} recent={recent}
+          extraTotal={extraTotal} extraByCategory={extraByCategory} recentExtra={recentExtra}
+          onDeleteExtra={(id) => { deleteExtraIncome(id); toast.success("Income removed", { duration: 1200 }); }}
         />
       )}
 
@@ -378,12 +380,19 @@ function PaymentsPage() {
         />
       )}
 
-      {/* FAB add expense (only on expenses tab) */}
+      {/* FAB add (expenses → expense, income → extra income) */}
       {tab === "expenses" && (
         <button
           onClick={() => setAddOpen(true)}
           className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center"
           aria-label="Add expense"
+        ><Plus className="size-6" /></button>
+      )}
+      {tab === "income" && (
+        <button
+          onClick={() => setAddIncomeOpen(true)}
+          className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-success text-white shadow-xl flex items-center justify-center"
+          aria-label="Add extra income"
         ><Plus className="size-6" /></button>
       )}
 
@@ -396,6 +405,19 @@ function PaymentsPage() {
             addExpense(payload);
             toast.success("Expense added", { duration: 1500 });
             setAddOpen(false);
+          }}
+        />
+      )}
+
+      {addIncomeOpen && (
+        <AddIncomeSheet
+          categories={incomeCats}
+          defaultMode={settings.defaultPaymentMode ?? "gpay"}
+          onClose={() => setAddIncomeOpen(false)}
+          onSave={(payload) => {
+            addExtraIncome(payload);
+            toast.success("Income added", { duration: 1500 });
+            setAddIncomeOpen(false);
           }}
         />
       )}
