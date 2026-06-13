@@ -82,7 +82,21 @@ function CalendarPage() {
   const monthTouchX = useRef<number | null>(null);
   const monthTouchY = useRef<number | null>(null);
 
-
+  // Hold-to-fast-change month
+  const monthHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const monthHoldInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopMonthHold = () => {
+    if (monthHoldTimer.current) { clearTimeout(monthHoldTimer.current); monthHoldTimer.current = null; }
+    if (monthHoldInterval.current) { clearInterval(monthHoldInterval.current); monthHoldInterval.current = null; }
+  };
+  const startMonthHold = (dir: -1 | 1) => {
+    stopMonthHold();
+    monthHoldTimer.current = setTimeout(() => {
+      monthHoldInterval.current = setInterval(() => {
+        setCursor((c) => (dir === -1 ? subMonths(c, 1) : addMonths(c, 1)));
+      }, 150);
+    }, 350);
+  };
 
   // Long-press peek
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
