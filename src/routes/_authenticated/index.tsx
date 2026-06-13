@@ -195,7 +195,7 @@ function CalendarPage() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => { setCursor(new Date()); setSelected(new Date()); }}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary"
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary mr-2"
               >Today</button>
               <button
                 onClick={() => setCursor(addMonths(cursor, 1))}
