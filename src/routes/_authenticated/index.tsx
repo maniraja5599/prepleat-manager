@@ -135,26 +135,25 @@ function CalendarPage() {
       }
     >
       <GrowthDashboard />
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         <Link
-          to="/new"
-          search={{ date: format(selected, "yyyy-MM-dd") }}
-          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
-        >
-          <span className="size-9 rounded-full saree-gradient text-primary-foreground flex items-center justify-center">
-            <Plus className="size-4" />
-          </span>
-          <span className="text-[11px] font-semibold">New</span>
-        </Link>
-        <button
-          onClick={() => { setCursor(new Date()); setSelected(new Date()); setView("calendar"); }}
+          to="/bookings"
           className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
         >
           <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-            <CalendarDays className="size-4" />
+            <List className="size-4" />
           </span>
-          <span className="text-[11px] font-semibold">Today</span>
-        </button>
+          <span className="text-[11px] font-semibold">Bookings</span>
+        </Link>
+        <Link
+          to="/payments"
+          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
+        >
+          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <Wallet className="size-4" />
+          </span>
+          <span className="text-[11px] font-semibold">Payments</span>
+        </Link>
         <Link
           to="/customers"
           className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
@@ -163,15 +162,6 @@ function CalendarPage() {
             <Users className="size-4" />
           </span>
           <span className="text-[11px] font-semibold">Customers</span>
-        </Link>
-        <Link
-          to="/bookings"
-          className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
-        >
-          <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-            <Wallet className="size-4" />
-          </span>
-          <span className="text-[11px] font-semibold">Payments</span>
         </Link>
       </div>
       {view === "calendar" ? (
