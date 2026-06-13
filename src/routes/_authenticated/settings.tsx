@@ -221,54 +221,49 @@ function SettingsPage() {
             <input value={settings.websiteUrl ?? ""} onChange={(e) => update({ websiteUrl: e.target.value })} placeholder="https://eyasdrapist.shop/" className="input mt-1" />
           </Section>
 
-          <Section title="Expense Categories">
-            <p className="text-xs text-muted-foreground mb-2">Headers used when logging expenses on the Payments page.</p>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {(settings.expenseCategories ?? []).map((p) => (
-                <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-xs">
-                  {p}
-                  <button
-                    onClick={() => update({ expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== p) })}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label={`Remove ${p}`}
-                  ><X className="size-3" /></button>
-                </span>
-              ))}
-              {(settings.expenseCategories ?? []).length === 0 && (
-                <p className="text-xs text-muted-foreground italic">No categories yet.</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <input
-                value={expCatDraft}
-                onChange={(e) => setExpCatDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && expCatDraft.trim()) {
-                    const v = expCatDraft.trim();
-                    if (!(settings.expenseCategories ?? []).includes(v)) {
-                      update({ expenseCategories: [...(settings.expenseCategories ?? []), v] });
-                    }
-                    setExpCatDraft("");
-                  }
-                }}
-                placeholder="Add category (e.g. Material)"
-                className="input flex-1"
-              />
-              <button
-                onClick={() => {
-                  const v = expCatDraft.trim();
-                  if (!v) return;
-                  if (!(settings.expenseCategories ?? []).includes(v)) {
-                    update({ expenseCategories: [...(settings.expenseCategories ?? []), v] });
-                  }
-                  setExpCatDraft("");
-                }}
-                className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
-              >Add</button>
-            </div>
-          </Section>
         </>
       )}
+
+      {tab === "headers" && (
+        <>
+          <ChipListSection
+            title="Income Categories"
+            hint="Headers used when logging extra income (tips, sales, etc.) on the Payments page."
+            placeholder="Add income header (e.g. Tips)"
+            tone="success"
+            items={settings.incomeCategories ?? []}
+            draft={incCatDraft}
+            setDraft={setIncCatDraft}
+            onAdd={(v) => update({ incomeCategories: Array.from(new Set([...(settings.incomeCategories ?? []), v])) })}
+            onRemove={(v) => update({ incomeCategories: (settings.incomeCategories ?? []).filter((x) => x !== v) })}
+          />
+
+          <ChipListSection
+            title="Expense Categories"
+            hint="Headers used when logging expenses on the Payments page."
+            placeholder="Add expense header (e.g. Material)"
+            tone="danger"
+            items={settings.expenseCategories ?? []}
+            draft={expCatDraft}
+            setDraft={setExpCatDraft}
+            onAdd={(v) => update({ expenseCategories: Array.from(new Set([...(settings.expenseCategories ?? []), v])) })}
+            onRemove={(v) => update({ expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== v) })}
+          />
+
+          <ChipListSection
+            title="Quick Note Presets"
+            hint="Tap chips appear under the Notes field when creating a booking."
+            placeholder="Add preset (e.g. Engagement)"
+            tone="primary"
+            items={settings.occasionPresets ?? []}
+            draft={presetDraft}
+            setDraft={setPresetDraft}
+            onAdd={(v) => update({ occasionPresets: Array.from(new Set([...(settings.occasionPresets ?? []), v])) })}
+            onRemove={(v) => update({ occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== v) })}
+          />
+        </>
+      )}
+
 
       {tab === "theme" && (
         <>
