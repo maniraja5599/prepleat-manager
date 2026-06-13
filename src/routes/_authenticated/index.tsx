@@ -233,7 +233,7 @@ function CalendarPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Swipe ←/→ change month · long-press peek · double-tap to book</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · use ← → for months</p>
 
           <div className="mt-5">
             <div className="flex items-center justify-between mb-2 gap-2">
