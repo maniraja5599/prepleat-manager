@@ -7,7 +7,7 @@ import {
   format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, Users, Wallet, X } from "lucide-react";
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/")({
