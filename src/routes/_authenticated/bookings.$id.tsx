@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType, type PaymentMode, type Payment } from "@/lib/store";
+import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType, type PaymentMode, type Payment, type Measurement } from "@/lib/store";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Trash2, MessageCircle, Plus, Check, Pencil, X, Receipt, FileDown, IndianRupee, Ban, MessageSquare, Phone, Calendar, Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
+import { ScrollNumber } from "@/components/ScrollNumber";
 
 export const Route = createFileRoute("/_authenticated/bookings/$id")({
   component: BookingDetail,
@@ -312,6 +313,7 @@ function BookingDetail() {
       {editing && (
         <EditPanel
           booking={booking}
+          onCancel={() => setEditing(false)}
           onSave={(patch) => {
             const total = patch.sareeCount * patch.pricePerSaree;
             updateBooking(booking.id, { ...patch, totalAmount: total });
@@ -705,60 +707,219 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
   );
 }
 
-function EditPanel({ booking, onSave }: {
-  booking: { service: ServiceType; sareeCount: number; pricePerSaree: number; deliveryDate: string; deliveryTime: string; notes?: string };
-  onSave: (patch: { service: ServiceType; sareeCount: number; pricePerSaree: number; deliveryDate: string; deliveryTime: string; notes?: string }) => void;
+function EditPanel({ booking, onCancel, onSave }: {
+  booking: { service: ServiceType; sareeCount: number; pricePerSaree: number; deliveryDate: string; deliveryTime: string; notes?: string; measurements?: Measurement[] };
+  onCancel: () => void;
+  onSave: (patch: { service: ServiceType; sareeCount: number; pricePerSaree: number; deliveryDate: string; deliveryTime: string; notes?: string; measurements?: Measurement[] }) => void;
 }) {
+  const settings = useStore((s) => s.settings);
   const [service, setService] = useState<ServiceType>(booking.service);
   const [sareeCount, setSareeCount] = useState(booking.sareeCount);
   const [pricePerSaree, setPricePerSaree] = useState(booking.pricePerSaree);
   const [deliveryDate, setDeliveryDate] = useState(format(parseISO(booking.deliveryDate), "yyyy-MM-dd"));
   const [deliveryTime, setDeliveryTime] = useState(booking.deliveryTime);
   const [notes, setNotes] = useState(booking.notes ?? "");
+  const [showMeasure, setShowMeasure] = useState(() => !!booking.measurements && booking.measurements.length > 0);
+  const [measurements, setMeasurements] = useState<Measurement[]>(() => {
+    if (booking.measurements && booking.measurements.length > 0) {
+      return booking.measurements;
+    }
+    return settings.defaultMeasurements.map(m => ({ label: m.label, value: m.value ?? 30 }));
+  });
 
   return (
-    <div className="bg-card card-shadow rounded-2xl p-4 mt-4 space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Edit booking</h2>
-      <div className="grid grid-cols-2 gap-2">
-        {(["prepleat", "drape"] as ServiceType[]).map((s) => (
+    <div className="bg-card card-shadow rounded-2xl p-5 mt-4 space-y-4 border border-border/20">
+      <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Edit Booking Details</h2>
+        <span className="text-[10px] text-muted-foreground font-medium">Update info & measurements</span>
+      </div>
+
+      {/* Service Type Selection */}
+      <div className="space-y-1.5">
+        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Service Type</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(["prepleat", "drape"] as ServiceType[]).map((s) => {
+            const active = service === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setService(s)}
+                className={cn(
+                  "py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    : "bg-secondary hover:bg-secondary/80 text-foreground/80"
+                )}
+              >
+                {active && <Check className="size-3.5 stroke-[3]" />}
+                {s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Saree Count and Price/Saree */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Sarees</p>
+          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10">
+            <button
+              type="button"
+              onClick={() => setSareeCount(Math.max(1, sareeCount - 1))}
+              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
+            >
+              −
+            </button>
+            <span className="text-sm font-bold tabular-nums">{sareeCount}</span>
+            <button
+              type="button"
+              onClick={() => setSareeCount(sareeCount + 1)}
+              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Price Per Saree (₹)</p>
+          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10">
+            <button
+              type="button"
+              onClick={() => setPricePerSaree(Math.max(0, pricePerSaree - 50))}
+              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              value={pricePerSaree}
+              onChange={(e) => setPricePerSaree(Number(e.target.value) || 0)}
+              className="w-14 bg-transparent text-center text-sm font-bold tabular-nums focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setPricePerSaree(pricePerSaree + 50)}
+              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Date & Time */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Delivery Date</p>
+          <input
+            type="date"
+            value={deliveryDate}
+            onChange={(e) => setDeliveryDate(e.target.value)}
+            className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Delivery Time</p>
+          <input
+            type="time"
+            step={900}
+            value={deliveryTime}
+            onChange={(e) => setDeliveryTime(e.target.value)}
+            className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+      </div>
+
+      {/* Measurements Section */}
+      <div className="bg-secondary/40 rounded-xl p-3.5 border border-border/20 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Blouse Measurements</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Toggle to record size chart (inch)</p>
+          </div>
           <button
-            key={s}
-            onClick={() => setService(s)}
-            className={cn("py-2 rounded-full text-xs font-semibold uppercase tracking-wider",
-              service === s ? "bg-primary text-primary-foreground" : "bg-secondary")}
-          >{s}</button>
-        ))}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-sm">Sarees</span>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setSareeCount(Math.max(1, sareeCount - 1))} className="size-8 rounded-full bg-secondary font-bold">−</button>
-          <span className="w-6 text-center tabular-nums font-bold">{sareeCount}</span>
-          <button onClick={() => setSareeCount(sareeCount + 1)} className="size-8 rounded-full bg-secondary font-bold">+</button>
+            type="button"
+            role="switch"
+            aria-checked={showMeasure}
+            onClick={() => setShowMeasure(!showMeasure)}
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer",
+              showMeasure ? "saree-gradient" : "bg-secondary-foreground/15"
+            )}
+          >
+            <span
+              className={cn(
+                "inline-block size-4.5 rounded-full bg-card shadow transition-transform",
+                showMeasure ? "translate-x-5.5" : "translate-x-1"
+              )}
+            />
+          </button>
         </div>
+
+        {showMeasure && measurements.length > 0 && (
+          <div className="pt-2 border-t border-border/30">
+            <div className="flex justify-around items-start py-2 gap-2 flex-wrap bg-background/50 rounded-xl border border-border/10">
+              {measurements.map((m, i) => (
+                <ScrollNumber
+                  key={i}
+                  label={m.label}
+                  value={m.value}
+                  onChange={(v) =>
+                    setMeasurements(
+                      measurements.map((x, j) => (i === j ? { ...x, value: v } : x))
+                    )
+                  }
+                />
+              ))}
+            </div>
+            <p className="text-[9px] text-muted-foreground/85 mt-2 text-center">Scroll inside each picker to adjust value</p>
+          </div>
+        )}
       </div>
-      <div className="flex items-center justify-between">
-        <span className="text-sm">Price/saree</span>
-        <div className="flex items-center gap-1 bg-secondary rounded-full px-1">
-          <button onClick={() => setPricePerSaree(Math.max(0, pricePerSaree - 50))} className="size-7 rounded-full font-bold">−</button>
-          <input type="number" value={pricePerSaree} onChange={(e) => setPricePerSaree(Number(e.target.value) || 0)} className="w-16 bg-transparent text-center text-sm tabular-nums focus:outline-none" />
-          <button onClick={() => setPricePerSaree(pricePerSaree + 50)} className="size-7 rounded-full font-bold">+</button>
-        </div>
+
+      {/* Notes */}
+      <div className="space-y-1.5">
+        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Notes & Custom Request</p>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Enter notes / specifications..."
+          className="w-full bg-secondary rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none leading-relaxed"
+        />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-        <input type="time" step={900} value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+
+      {/* Action Buttons */}
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <X className="size-4" /> Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onSave({
+              service,
+              sareeCount,
+              pricePerSaree,
+              deliveryDate: new Date(deliveryDate).toISOString(),
+              deliveryTime,
+              notes: notes.trim() || undefined,
+              measurements: showMeasure ? measurements : undefined,
+            });
+          }}
+          className="py-3 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-sm shadow-primary/20 flex items-center justify-center gap-1.5"
+        >
+          <Check className="size-4" /> Save
+        </button>
       </div>
-      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Notes" className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
-      <button
-        onClick={() => onSave({
-          service, sareeCount, pricePerSaree,
-          deliveryDate: new Date(deliveryDate).toISOString(),
-          deliveryTime,
-          notes: notes.trim() || undefined,
-        })}
-        className="w-full saree-gradient text-primary-foreground py-3 rounded-2xl font-semibold"
-      >Save changes</button>
     </div>
   );
 }

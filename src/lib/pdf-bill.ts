@@ -42,14 +42,13 @@ async function flattenLogoOnCream(dataUrl: string): Promise<string> {
     canvas.width = size; canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return dataUrl;
-    ctx.fillStyle = "#fff8e6";
-    ctx.fillRect(0, 0, size, size);
+    ctx.clearRect(0, 0, size, size);
     // Cover-fit the logo centered
     const ratio = Math.min(size / img.width, size / img.height);
     const w = img.width * ratio;
     const h = img.height * ratio;
     ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-    return canvas.toDataURL("image/jpeg", 0.92);
+    return canvas.toDataURL("image/png");
   } catch { return dataUrl; }
 }
 
@@ -94,7 +93,7 @@ export async function generateBillPDF(opts: {
       const r = 22;
       doc.setFillColor(255, 248, 230);
       doc.circle(cx, cy, r + 2, "F");
-      doc.addImage(flat, "JPEG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
+      doc.addImage(flat, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
     } catch { /* ignore bad logo */ }
   }
 
@@ -245,25 +244,7 @@ export async function generateBillPDF(opts: {
     cy = (doc as any).lastAutoTable.finalY;
   }
 
-  // ===== Notes =====
-  if (booking.notes && booking.notes.trim()) {
-    cy += 16;
-    // Soft tinted card so notes don't disappear among the other rows.
-    const notesLines = doc.splitTextToSize(booking.notes.trim(), W - 56);
-    const boxH = 22 + notesLines.length * 11;
-    doc.setFillColor(252, 245, 232);
-    doc.setDrawColor(...gold);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(20, cy - 4, W - 40, boxH, 6, 6, "FD");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...accent);
-    doc.text("NOTES / REMARKS", 28, cy + 8);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
-    doc.text(notesLines, 28, cy + 20);
-  }
+  // ===== Notes (Omitted from PDF as requested) =====
 
   // ===== Footer =====
   doc.setDrawColor(...gold);
