@@ -54,6 +54,16 @@ export interface Expense {
   updatedAt?: string;
 }
 
+export interface ExtraIncome {
+  id: string;
+  amount: number;
+  category: string;
+  note?: string;
+  date: string;
+  mode?: PaymentMode;
+  updatedAt?: string;
+}
+
 export type CustomerKind = "client" | "artist";
 
 export interface Customer {
@@ -94,6 +104,7 @@ export interface Settings {
   websiteUrl?: string;
   occasionPresets?: string[];
   expenseCategories?: string[];
+  incomeCategories?: string[];
 }
 
 export interface DeletedBooking {
@@ -125,6 +136,7 @@ interface State {
   bookings: Booking[];
   payments: Payment[];
   expenses: Expense[];
+  extraIncomes: ExtraIncome[];
   settings: Settings;
   trash: DeletedBooking[];
   activity: ActivityEntry[];
@@ -152,6 +164,9 @@ interface State {
   addExpense: (e: Omit<Expense, "id" | "updatedAt">) => Expense;
   updateExpense: (id: string, e: Partial<Expense>) => void;
   deleteExpense: (id: string) => void;
+
+  addExtraIncome: (e: Omit<ExtraIncome, "id" | "updatedAt">) => ExtraIncome;
+  deleteExtraIncome: (id: string) => void;
 
   updateSettings: (s: Partial<Settings>) => void;
 }
@@ -190,6 +205,7 @@ export const useStore = create<State>()(
       bookings: [],
       payments: [],
       expenses: [],
+      extraIncomes: [],
       trash: [],
       activity: [],
       redoStack: [],
@@ -211,6 +227,7 @@ export const useStore = create<State>()(
         websiteUrl: "https://eyasdrapist.shop/",
         occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
         expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
+        incomeCategories: ["Tips", "Sale", "Other Income"],
       },
 
       addCustomer: (c) => {
@@ -439,11 +456,20 @@ export const useStore = create<State>()(
       deleteExpense: (id) =>
         set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
 
+      addExtraIncome: (e) => {
+        const now = new Date().toISOString();
+        const item: ExtraIncome = { ...e, id: uid(), updatedAt: now };
+        set((s) => ({ extraIncomes: [item, ...s.extraIncomes] }));
+        return item;
+      },
+      deleteExtraIncome: (id) =>
+        set((s) => ({ extraIncomes: s.extraIncomes.filter((e) => e.id !== id) })),
+
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
     }),
     {
       name: "saree-studio-v1",
-      version: 9,
+      version: 10,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -465,6 +491,9 @@ export const useStore = create<State>()(
         }
         if (!Array.isArray(s.expenseCategories)) {
           s.expenseCategories = ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"];
+        }
+        if (!Array.isArray(s.incomeCategories)) {
+          s.incomeCategories = ["Tips", "Sale", "Other Income"];
         }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
@@ -495,6 +524,7 @@ export const useStore = create<State>()(
         if (!Array.isArray(persisted.redoStack)) persisted.redoStack = [];
         if (!Array.isArray(persisted.tombstones)) persisted.tombstones = [];
         if (!Array.isArray(persisted.expenses)) persisted.expenses = [];
+        if (!Array.isArray(persisted.extraIncomes)) persisted.extraIncomes = [];
         if (Array.isArray(persisted.bookings)) {
           for (const b of persisted.bookings) {
             if (!b.updatedAt) b.updatedAt = b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt;
