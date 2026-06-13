@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
 import { formatDistanceToNow } from "date-fns";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const APP_VERSION = "1.0.0";
 
