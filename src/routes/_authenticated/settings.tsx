@@ -2,11 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
 import { formatDistanceToNow } from "date-fns";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const APP_VERSION = "1.0.0";
 
@@ -44,11 +45,14 @@ function SettingsPage() {
   const bookings = useStore((s) => s.bookings);
   const trash = useStore((s) => s.trash);
   const restoreBooking = useStore((s) => s.restoreBooking);
+  const resetApp = useStore((s) => s.resetApp);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
   const [incCatDraft, setIncCatDraft] = useState("");
+  const [restoreId, setRestoreId] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<null | "resetTheme" | "resetPricing" | "clearData" | "factoryReset">(null);
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
