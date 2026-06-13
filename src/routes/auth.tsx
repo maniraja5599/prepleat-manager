@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
-import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import logoAsset from "@/assets/eyas-logo.png";
 import { Loader2, Mail, Lock, UserRound } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
@@ -50,14 +49,16 @@ function AuthPage() {
 
   async function handleGoogle() {
     setBusy("google");
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) {
-      toast.error(result.error.message || "Google sign-in failed");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      toast.error(error.message || "Google sign-in failed");
       setBusy(null);
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/" });
   }
 
   async function handleGuest() {
@@ -77,7 +78,7 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="size-16 rounded-full overflow-hidden ring-2 ring-primary/30 mb-3">
-            <img src={logoAsset.url} alt="" className="size-full rounded-full object-cover scale-[1.18]" />
+            <img src={logoAsset} alt="" className="size-full rounded-full object-cover scale-[1.18]" />
           </div>
           <h1 className="text-2xl font-display font-semibold tracking-tight">Eyas Saree Drapist</h1>
           <p className="text-sm text-muted-foreground mt-1">PrePleat & Drape manager</p>

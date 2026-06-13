@@ -1,0 +1,22 @@
+# Tasks - Card Highlights & Upcoming Sheet Filters
+
+- [x] Redesign bookings page filters
+- [x] Redesign customer page filters
+- [x] Align customer index layout with bookings layout
+- [x] Change payments navigation icon and scrollable logs
+- [x] Import Sheet components in calendar `index.tsx`
+- [x] Remove `view` state and Eye button from header actions
+- [x] Implement `Sheet` pop-up for upcoming events triggered by the List button
+- [x] Simplify main layout to always show calendar grid
+- [x] Implement service-specific left-border highlighting and gradients in `bookings.index.tsx`
+- [x] Implement `upFilter` state and `filteredUpcoming` logic in calendar `index.tsx`
+- [x] Implement upcoming drawer filter buttons and spacing in calendar `index.tsx`
+- [x] Align calendar `BookingRow` styling with `bookings.index.tsx highlighting`
+- [x] Support dynamic calendar day cell dot colors for PrePleat, Direct Drape, and Artist bookings
+- [x] Create customizable dot color pickers in Settings theme page
+- [x] Design premium toast notifications with Lucide icons (bounce/pulse)
+- [x] Increase toast display duration by 1 second (to 2.5s)
+- [x] Implement global button shake and flash color animations on error/warning clicks
+- [x] Prevent vertical page scrolling during horizontal month gestures on the calendar
+- [x] Prevent vertical page scrolling during horizontal day gestures on the booking list
+- [x] Verify build compiles successfully (`npm run build`)

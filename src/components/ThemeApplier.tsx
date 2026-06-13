@@ -10,6 +10,10 @@ const THEME_CLASSES = [
   "theme-sand",
   "theme-charcoal",
   "theme-gold",
+  "theme-sunset",
+  "theme-ocean",
+  "theme-forest",
+  "theme-vintage",
   "theme-custom",
 ];
 

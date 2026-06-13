@@ -119,7 +119,7 @@ function PaymentsPage() {
   }, [extraIncomes, extraTotal]);
 
   const recentExtra = useMemo(
-    () => [...extraIncomes].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8),
+    () => [...extraIncomes].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20),
     [extraIncomes],
   );
 
@@ -144,7 +144,7 @@ function PaymentsPage() {
   const recent = useMemo(() => {
     return [...payments]
       .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 8)
+      .slice(0, 25)
       .map((p) => ({
         p,
         c: customers.find((x) => x.id === p.customerId),
@@ -153,7 +153,7 @@ function PaymentsPage() {
   }, [payments, customers, bookings]);
 
   const recentExpenses = useMemo(() => {
-    return [...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+    return [...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
   }, [expenses]);
 
   // Exports
@@ -559,32 +559,34 @@ function IncomeView(p: {
         {p.recent.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
         ) : (
-          <ul className="space-y-1.5">
-            {p.recent.map(({ p: pay, c, b }) => (
-              <li key={pay.id} className="flex items-center gap-2 p-1.5 rounded-xl">
-                <div className={cn(
-                  "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
-                  pay.mode === "gpay" ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
-                    : pay.mode === "cash" ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
-                    : "bg-muted text-muted-foreground",
-                )}>{(pay.mode ?? "other").slice(0, 4)}</div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
-                    <p className="font-bold tabular-nums text-sm text-success">{fmtINR(pay.amount)}</p>
+          <div className="max-h-[250px] overflow-y-auto pr-1">
+            <ul className="space-y-1.5">
+              {p.recent.map(({ p: pay, c, b }) => (
+                <li key={pay.id} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition">
+                  <div className={cn(
+                    "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
+                    pay.mode === "gpay" ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
+                      : pay.mode === "cash" ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
+                      : "bg-muted text-muted-foreground",
+                  )}>{(pay.mode ?? "other").slice(0, 4)}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
+                      <p className="font-bold tabular-nums text-sm text-success">{fmtINR(pay.amount)}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {format(parseISO(pay.date), "MMM d · h:mm a")}{b ? ` · ${b.service}` : ""}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {format(parseISO(pay.date), "MMM d · h:mm a")}{b ? ` · ${b.service}` : ""}
-                  </p>
-                </div>
-                {b && (
-                  <Link to="/bookings/$id" params={{ id: b.id }} className="shrink-0 text-primary">
-                    <ArrowRight className="size-4" />
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
+                  {b && (
+                    <Link to="/bookings/$id" params={{ id: b.id }} className="shrink-0 text-primary">
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 
@@ -620,27 +622,29 @@ function IncomeView(p: {
                 </li>
               ))}
             </ul>
-            <ul className="space-y-1.5 pt-2 border-t border-border">
-              {p.recentExtra.map((e) => (
-                <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl">
-                  <div className="shrink-0 size-9 rounded-xl bg-success/15 text-success flex items-center justify-center">
-                    <Plus className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="font-semibold text-sm truncate">{e.category}</p>
-                      <p className="font-bold tabular-nums text-sm text-success">+{fmtINR(e.amount)}</p>
+            <div className="max-h-[250px] overflow-y-auto pr-1 border-t border-border pt-2">
+              <ul className="space-y-1.5">
+                {p.recentExtra.map((e) => (
+                  <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition">
+                    <div className="shrink-0 size-9 rounded-xl bg-success/15 text-success flex items-center justify-center">
+                      <Plus className="size-4" />
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
-                    </p>
-                  </div>
-                  <button onClick={() => p.onDeleteExtra(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center">
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="font-semibold text-sm truncate">{e.category}</p>
+                        <p className="font-bold tabular-nums text-sm text-success">+{fmtINR(e.amount)}</p>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
+                      </p>
+                    </div>
+                    <button onClick={() => p.onDeleteExtra(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer">
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </>
         )}
       </div>
@@ -740,27 +744,29 @@ function ExpensesView(p: {
         {p.recentExpenses.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">No expenses yet</p>
         ) : (
-          <ul className="space-y-1.5">
-            {p.recentExpenses.map((e) => (
-              <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl">
-                <div className="shrink-0 size-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center">
-                  <Receipt className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="font-semibold text-sm truncate">{e.category}</p>
-                    <p className="font-bold tabular-nums text-sm text-destructive">−{fmtINR(e.amount)}</p>
+          <div className="max-h-[250px] overflow-y-auto pr-1">
+            <ul className="space-y-1.5">
+              {p.recentExpenses.map((e) => (
+                <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition">
+                  <div className="shrink-0 size-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center">
+                    <Receipt className="size-4" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
-                  </p>
-                </div>
-                <button onClick={() => p.onDelete(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center">
-                  <Trash2 className="size-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-semibold text-sm truncate">{e.category}</p>
+                      <p className="font-bold tabular-nums text-sm text-destructive">−{fmtINR(e.amount)}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={() => p.onDelete(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </>

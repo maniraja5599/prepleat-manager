@@ -6,9 +6,10 @@ import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
   format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff, IndianRupee, List, Plus, Users, Wallet, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, IndianRupee, List, Plus, Users, Wallet, X } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -20,18 +21,15 @@ export const Route = createFileRoute("/_authenticated/")({
   component: CalendarPage,
 });
 
-type View = "calendar" | "upcoming";
-
 function CalendarPage() {
   const navigate = useNavigate();
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date>(new Date());
-  const [view, setView] = useState<View>("calendar");
   const [peek, setPeek] = useState<string | null>(null);
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
-  const { showPaymentOnCalendar } = useStore((s) => s.settings);
-  const updateSettings = useStore((s) => s.updateSettings);
+  const settings = useStore((s) => s.settings);
+  const { showPaymentOnCalendar } = settings;
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
@@ -64,6 +62,21 @@ function CalendarPage() {
       .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
   }, [bookings]);
 
+  const [upFilter, setUpFilter] = useState<"all" | "prepleat" | "drape" | "artist">("all");
+
+  const filteredUpcoming = useMemo(() => {
+    return upcoming.filter((b) => {
+      const c = customers.find((x) => x.id === b.customerId);
+      const isArtistBooking = !!b.artistId || c?.kind === "artist";
+
+      if (upFilter === "all") return true;
+      if (upFilter === "prepleat") return b.service === "prepleat";
+      if (upFilter === "drape") return b.service === "drape" && !isArtistBooking;
+      if (upFilter === "artist") return isArtistBooking;
+      return true;
+    });
+  }, [upcoming, upFilter, customers]);
+
   const monthEvents = useMemo(() => {
     const s = startOfMonth(cursor);
     const e = endOfMonth(cursor);
@@ -75,12 +88,118 @@ function CalendarPage() {
       .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
   }, [bookings, cursor]);
 
-  // Day swipe (left/right on the day-events list) still changes the selected day.
-  const dayTouchX = useRef<number | null>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const daySwipeRef = useRef<HTMLDivElement>(null);
 
-  // Month swipe on calendar grid
-  const monthTouchX = useRef<number | null>(null);
-  const monthTouchY = useRef<number | null>(null);
+  useEffect(() => {
+    const el = calendarRef.current;
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isHorizontalSwipe = false;
+    let hasDecided = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isHorizontalSwipe = false;
+      hasDecided = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+
+      if (!hasDecided) {
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+          isHorizontalSwipe = Math.abs(dx) > Math.abs(dy);
+          hasDecided = true;
+        }
+      }
+
+      if (hasDecided && isHorizontalSwipe) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!hasDecided || !isHorizontalSwipe) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 50) {
+        setCursor((c) => (dx < 0 ? addMonths(c, 1) : subMonths(c, 1)));
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = daySwipeRef.current;
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isHorizontalSwipe = false;
+    let hasDecided = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isHorizontalSwipe = false;
+      hasDecided = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+
+      if (!hasDecided) {
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+          isHorizontalSwipe = Math.abs(dx) > Math.abs(dy);
+          hasDecided = true;
+        }
+      }
+
+      if (hasDecided && isHorizontalSwipe) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!hasDecided || !isHorizontalSwipe) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 50) {
+        setSelected((d) => (dx < 0 ? addDays(d, 1) : subDays(d, 1)));
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
 
   // Hold-to-fast-change month
   const monthHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,23 +233,68 @@ function CalendarPage() {
     <AppShell
       showBrand
       title="Calendar"
-      subtitle={view === "calendar" ? format(cursor, "MMMM yyyy") : "Next 60 days"}
+      subtitle={format(cursor, "MMMM yyyy")}
       right={
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setView(view === "calendar" ? "upcoming" : "calendar")}
-            className="size-10 rounded-full bg-secondary flex items-center justify-center"
-            aria-label="Toggle view"
-          >
-            {view === "calendar" ? <List className="size-5" /> : <CalendarDays className="size-5" />}
-          </button>
-          <button
-            onClick={() => updateSettings({ showPaymentOnCalendar: !showPaymentOnCalendar })}
-            className="size-10 rounded-full bg-secondary flex items-center justify-center"
-            aria-label="Toggle payment view"
-          >
-            {showPaymentOnCalendar ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
-          </button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                className="size-10 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
+                aria-label="Upcoming events"
+              >
+                <List className="size-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8">
+              <SheetHeader className="mb-3 border-b border-border/40 pb-3 pt-1">
+                <div className="flex flex-col gap-1 pr-10 text-left">
+                  <div className="flex items-center gap-2">
+                    <List className="size-5 text-primary" />
+                    <SheetTitle className="text-base font-semibold">Upcoming Bookings</SheetTitle>
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium">Next 60 days</p>
+                </div>
+              </SheetHeader>
+
+              {/* Upcoming filter row */}
+              <div className="flex gap-1.5 mb-4 overflow-x-auto no-scrollbar pb-1">
+                {([
+                  { id: "all" as const, label: "All" },
+                  { id: "prepleat" as const, label: "PrePleat" },
+                  { id: "drape" as const, label: "Direct Drape" },
+                  { id: "artist" as const, label: "Artist" },
+                ]).map((f) => {
+                  const active = upFilter === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setUpFilter(f.id)}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer active:scale-95",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {filteredUpcoming.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground bg-secondary/20 rounded-2xl">
+                  No matching bookings in the next 60 days.
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {filteredUpcoming.map((b) => (
+                    <BookingRow key={b.id} b={b} customers={customers} showDate />
+                  ))}
+                </ul>
+              )}
+            </SheetContent>
+          </Sheet>
         </div>
       }
     >
@@ -164,9 +328,8 @@ function CalendarPage() {
           <span className="text-[11px] font-semibold">Customers</span>
         </Link>
       </div>
-      {view === "calendar" ? (
-        <>
-          <div className="flex items-center justify-between mb-3">
+      <>
+        <div className="flex items-center justify-between mb-3">
             <button
               onClick={() => setCursor(subMonths(cursor, 1))}
               onPointerDown={() => startMonthHold(-1)}
@@ -206,21 +369,8 @@ function CalendarPage() {
           </div>
 
           <div
-            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select"
-            onTouchStart={(e) => {
-              monthTouchX.current = e.touches[0].clientX;
-              monthTouchY.current = e.touches[0].clientY;
-            }}
-            onTouchEnd={(e) => {
-              if (monthTouchX.current == null || monthTouchY.current == null) return;
-              const dx = e.changedTouches[0].clientX - monthTouchX.current;
-              const dy = e.changedTouches[0].clientY - monthTouchY.current;
-              monthTouchX.current = null;
-              monthTouchY.current = null;
-              // Ignore vertical-dominant swipes and very short horizontal swipes
-              if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return;
-              setCursor((c) => (dx < 0 ? addMonths(c, 1) : subMonths(c, 1)));
-            }}
+            ref={calendarRef}
+            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select touch-pan-y"
           >
 
             {days.map((d) => {
@@ -253,16 +403,25 @@ function CalendarPage() {
                   <span className={cn("tabular-nums", isToday && !isSel && "text-primary font-bold")}>{format(d, "d")}</span>
                   {list.length > 0 && (
                     <div className="flex gap-0.5">
-                      {list.slice(0, 3).map((b) => (
-                        <span
-                          key={b.id}
-                          className={cn(
-                            "size-1.5 rounded-full",
-                            b.service === "prepleat" ? "bg-[oklch(0.78_0.13_75)]" : "bg-[oklch(0.55_0.13_150)]",
-                            isSel && "bg-primary-foreground",
-                          )}
-                        />
-                      ))}
+                      {list.slice(0, 3).map((b) => {
+                        const c = customers.find((x) => x.id === b.customerId);
+                        const isArtist = !!b.artistId || c?.kind === "artist";
+                        const dotColor = isArtist
+                          ? (settings.artistDotColor ?? "#d4af37")
+                          : b.service === "prepleat"
+                            ? (settings.prepleatDotColor ?? "#ffa029")
+                            : (settings.directDrapeDotColor ?? "#10b981");
+                        return (
+                          <span
+                            key={b.id}
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              isSel && "bg-primary-foreground",
+                            )}
+                            style={!isSel ? { backgroundColor: dotColor } : undefined}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                   {showPaymentOnCalendar && hasPending && (
@@ -302,15 +461,8 @@ function CalendarPage() {
               </Link>
             </div>
             <div
+              ref={daySwipeRef}
               className="touch-pan-y"
-              onTouchStart={(e) => { dayTouchX.current = e.touches[0].clientX; }}
-              onTouchEnd={(e) => {
-                if (dayTouchX.current == null) return;
-                const dx = e.changedTouches[0].clientX - dayTouchX.current;
-                dayTouchX.current = null;
-                if (Math.abs(dx) < 50) return;
-                setSelected((d) => (dx < 0 ? addDays(d, 1) : subDays(d, 1)));
-              }}
             >
             {dayBookings.length === 0 ? (
               <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground">
@@ -344,21 +496,6 @@ function CalendarPage() {
             </div>
           )}
         </>
-      ) : (
-        <div>
-          {upcoming.length === 0 ? (
-            <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
-              No upcoming bookings in the next 60 days.
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {upcoming.map((b) => (
-                <BookingRow key={b.id} b={b} customers={customers} showDate />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
 
       {peek && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setPeek(null)}>
@@ -390,16 +527,35 @@ function CalendarPage() {
 const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
   const c = customers.find((x) => x.id === b.customerId);
   const due = totalDue(b);
+  const isArtistBooking = !!b.artistId || c?.kind === "artist";
+
   return (
     <li>
       <Link
         to="/bookings/$id"
         params={{ id: b.id }}
-        className="block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition"
+        className={cn(
+          "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
+          isArtistBooking 
+            ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
+            : b.service === "prepleat"
+              ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
+              : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
+        )}
       >
+        {isArtistBooking && (
+          <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white z-10">
+            ★ Artist
+          </span>
+        )}
+        {!isArtistBooking && b.service === "drape" && (
+          <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
+            Direct Drape
+          </span>
+        )}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={cn(
                 "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
                 b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
@@ -407,16 +563,16 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
               <span className="text-xs text-muted-foreground tabular-nums">{fmtTime12(b.deliveryTime)}</span>
               {showDate && <span className="text-xs text-muted-foreground">· {format(parseISO(b.deliveryDate), "MMM d")}</span>}
             </div>
-            <p className="font-semibold mt-1 truncate">{c?.name ?? "Unknown"}</p>
+            <p className="font-semibold mt-1.5 truncate">{c?.name ?? "Unknown"}</p>
             <p className="text-xs text-muted-foreground">{b.sareeCount} saree{b.sareeCount > 1 && "s"} · {fmtINR(b.totalAmount)}</p>
           </div>
           {due > 0 ? (
-            <div className="text-right">
+            <div className="text-right pt-1 shrink-0">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Due</p>
-              <p className="text-destructive font-bold flex items-center"><IndianRupee className="size-3.5" />{Math.round(due).toLocaleString("en-IN")}</p>
+              <p className="text-destructive font-bold flex items-center justify-end"><IndianRupee className="size-3.5" />{Math.round(due).toLocaleString("en-IN")}</p>
             </div>
           ) : (
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success">Paid</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success shrink-0 self-center">Paid</span>
           )}
         </div>
       </Link>

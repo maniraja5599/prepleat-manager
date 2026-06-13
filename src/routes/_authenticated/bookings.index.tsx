@@ -4,10 +4,12 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2 } from "lucide-react";
+import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2, Calendar, ArrowUpDown, Filter, Sparkles, Coins, Layers, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
@@ -32,17 +34,51 @@ function BookingsPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [svc, setSvc] = useState<SvcFilter>("all");
+  const [mainFilter, setMainFilter] = useState<"active" | "prepleat" | "drape" | "artist" | "history">("active");
   const [pay, setPay] = useState<PayFilter>("all");
   const [sort, setSort] = useState<Sort>("delivery");
   const [q, setQ] = useState("");
-  const [showCompleted, setShowCompleted] = useState(false);
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [showMore, setShowMore] = useState(false);
+  const activeFiltersCount = (pay !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0);
 
-  const moreCount = (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0) + (showCompleted ? 1 : 0);
+  const getPaymentLabel = (p: PayFilter) => p === "all" ? "All Payments" : p === "due" ? "Due" : "Paid";
+  const paymentSummary = getPaymentLabel(pay);
+
+  const getDateSummary = () => {
+    if (range === "all") return "All Time";
+    if (range === "thisMonth") return "This Month";
+    if (range === "lastMonth") return "Last Month";
+    if (range === "custom") {
+      if (from && to) {
+        try {
+          return `${format(parseISO(from), "dd/MM")} - ${format(parseISO(to), "dd/MM")}`;
+        } catch {
+          return "Custom Range";
+        }
+      }
+      if (from) {
+        try {
+          return `From ${format(parseISO(from), "dd/MM")}`;
+        } catch {
+          return "Custom Range";
+        }
+      }
+      if (to) {
+        try {
+          return `Until ${format(parseISO(to), "dd/MM")}`;
+        } catch {
+          return "Custom Range";
+        }
+      }
+      return "Custom Range";
+    }
+    return "All Time";
+  };
+
+  const getSortLabel = (s: Sort) => s === "delivery" ? "Delivery Date" : s === "recent" ? "Recently Booked" : "Balance Due";
+  const sortingSummary = `Sorted by ${getSortLabel(sort)}`;
 
   const dateBounds = useMemo<{ start?: Date; end?: Date }>(() => {
     const now = new Date();
@@ -62,10 +98,30 @@ function BookingsPage() {
 
   const list = useMemo(() => {
     let arr = bookings.slice();
-    if (svc !== "all") arr = arr.filter((b) => b.service === svc);
+
+    // Filter by main tab selection
+    if (mainFilter === "active") {
+      arr = arr.filter((b) => b.status !== "delivered");
+    } else if (mainFilter === "prepleat") {
+      arr = arr.filter((b) => b.service === "prepleat" && b.status !== "delivered");
+    } else if (mainFilter === "drape") {
+      arr = arr.filter((b) => {
+        const c = customers.find((x) => x.id === b.customerId);
+        const isArtistBooking = !!b.artistId || c?.kind === "artist";
+        return b.service === "drape" && !isArtistBooking && b.status !== "delivered";
+      });
+    } else if (mainFilter === "artist") {
+      arr = arr.filter((b) => {
+        const c = customers.find((x) => x.id === b.customerId);
+        const isArtistBooking = !!b.artistId || c?.kind === "artist";
+        return isArtistBooking && b.status !== "delivered";
+      });
+    } else if (mainFilter === "history") {
+      arr = arr.filter((b) => b.status === "delivered");
+    }
+
     if (pay === "paid") arr = arr.filter((b) => totalDue(b) === 0);
     if (pay === "due") arr = arr.filter((b) => totalDue(b) > 0);
-    if (!showCompleted) arr = arr.filter((b) => b.status !== "delivered");
     if (dateBounds.start || dateBounds.end) {
       arr = arr.filter((b) => {
         const d = parseISO(b.deliveryDate);
@@ -87,7 +143,25 @@ function BookingsPage() {
       return totalDue(b) - totalDue(a);
     });
     return arr;
-  }, [bookings, svc, pay, sort, q, showCompleted, customers, dateBounds]);
+  }, [bookings, mainFilter, pay, sort, q, customers, dateBounds]);
+
+  const counts = useMemo(() => {
+    return {
+      active: bookings.filter((b) => b.status !== "delivered").length,
+      prepleat: bookings.filter((b) => b.service === "prepleat" && b.status !== "delivered").length,
+      drape: bookings.filter((b) => {
+        const c = customers.find((x) => x.id === b.customerId);
+        const isArtistBooking = !!b.artistId || c?.kind === "artist";
+        return b.service === "drape" && !isArtistBooking && b.status !== "delivered";
+      }).length,
+      artist: bookings.filter((b) => {
+        const c = customers.find((x) => x.id === b.customerId);
+        const isArtistBooking = !!b.artistId || c?.kind === "artist";
+        return isArtistBooking && b.status !== "delivered";
+      }).length,
+      history: bookings.filter((b) => b.status === "delivered").length,
+    };
+  }, [bookings, customers]);
 
   const collected = list.reduce((s, b) => s + b.advancePaid, 0);
   const pending = list.reduce((s, b) => s + totalDue(b), 0);
@@ -102,20 +176,11 @@ function BookingsPage() {
         <button
           onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
           className={cn(
-            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition",
+            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
             selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
           )}
         >
           <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
-        </button>
-        <button
-          onClick={() => { setShowCompleted((v) => !v); setSort("recent"); }}
-          className={cn(
-            "shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition",
-            showCompleted ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
-          )}
-        >
-          <History className="size-3.5" /> Past
         </button>
       </div>
 
@@ -139,7 +204,7 @@ function BookingsPage() {
 
       <BookingRequestsInbox />
 
-      <div className="flex gap-2 mb-2">
+      <div className="flex gap-2 mb-3">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
@@ -149,87 +214,221 @@ function BookingsPage() {
             className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
           />
         </div>
-        <button
-          onClick={() => setShowMore((v) => !v)}
-          className={cn(
-            "shrink-0 size-11 rounded-full flex items-center justify-center relative transition",
-            showMore || moreCount > 0 ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
-          )}
-          aria-label="More filters"
-        >
-          <SlidersHorizontal className="size-4" />
-          {moreCount > 0 && !showMore && (
-            <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center">{moreCount}</span>
-          )}
-        </button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <button
+              className={cn(
+                "shrink-0 size-11 rounded-full flex items-center justify-center relative transition border cursor-pointer border-border",
+                activeFiltersCount > 0 ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground",
+              )}
+              aria-label="Filter bookings"
+            >
+              <SlidersHorizontal className="size-4" />
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-1 -right-1 size-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center ring-2 ring-background">{activeFiltersCount}</span>
+              )}
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8">
+            <SheetHeader className="mb-3 border-b border-border/40 pb-3 pt-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="size-4.5 text-primary" />
+                  <SheetTitle className="text-base font-semibold">Filter & Sort Bookings</SheetTitle>
+                </div>
+                {activeFiltersCount > 0 && (
+                  <button
+                    onClick={() => {
+                      setPay("all");
+                      setRange("all");
+                      setSort("delivery");
+                      setFrom("");
+                      setTo("");
+                      toast.success("All filters cleared", { duration: 1200 });
+                    }}
+                    className="text-xs font-semibold text-destructive flex items-center gap-1 active:scale-95 transition bg-destructive/10 px-2.5 py-1 rounded-full cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                  >
+                    <XIcon className="size-3" /> Clear all
+                  </button>
+                )}
+              </div>
+            </SheetHeader>
+
+            <Accordion type="multiple" defaultValue={["pay-status"]} className="w-full">
+              {/* Category 1: Payment Status */}
+              <AccordionItem value="pay-status" className="border-b border-border/40 py-1">
+                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                      <Coins className="size-4 text-primary" /> Payment Status
+                    </span>
+                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{paymentSummary}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-4">
+                  {/* Payment Status */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">Payment Status</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { id: "all" as const, label: "All Payments", icon: Coins },
+                        { id: "due" as const, label: "Balance Due", icon: AlertCircle },
+                        { id: "paid" as const, label: "Fully Paid", icon: CheckCircle2 },
+                      ]).map((item) => {
+                        const active = pay === item.id;
+                        const Icon = item.icon;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setPay(item.id)}
+                            className={cn(
+                              "flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl border text-center transition active:scale-95 cursor-pointer",
+                              active
+                                ? item.id === "due"
+                                  ? "bg-destructive/10 border-destructive/80 text-destructive font-bold shadow-sm"
+                                  : item.id === "paid"
+                                    ? "bg-success/15 border-success/80 text-success-foreground font-bold shadow-sm"
+                                    : "bg-primary/10 border-primary text-primary font-bold shadow-sm"
+                                : "bg-card border-border hover:bg-secondary/40 text-muted-foreground"
+                            )}
+                          >
+                            <Icon className={cn("size-4 mb-1", active ? "" : "text-muted-foreground/85")} />
+                            <span className="text-[11px] font-semibold">{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Category 2: Date & Time */}
+              <AccordionItem value="date-range" className="border-b border-border/40 py-1">
+                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                      <Calendar className="size-4 text-primary" /> Delivery Date
+                    </span>
+                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{getDateSummary()}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { id: "all" as Range, label: "All Time" },
+                      { id: "thisMonth" as Range, label: "This Month" },
+                      { id: "lastMonth" as Range, label: "Last Month" },
+                      { id: "custom" as Range, label: "Custom Range" },
+                    ]).map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => setRange(r.id)}
+                        className={cn(
+                          "py-2.5 px-3 rounded-xl text-xs font-semibold text-center transition active:scale-95 cursor-pointer border",
+                          range === r.id
+                            ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                            : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary"
+                        )}
+                      >{r.label}</button>
+                    ))}
+                  </div>
+
+                  {range === "custom" && (
+                    <div className="grid grid-cols-2 gap-3 mt-1 bg-secondary/30 p-3 rounded-2xl border border-border/40 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">From</span>
+                        <input
+                          type="date"
+                          value={from}
+                          onChange={(e) => setFrom(e.target.value)}
+                          className="bg-card rounded-xl border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary w-full cursor-pointer"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">To</span>
+                        <input
+                          type="date"
+                          value={to}
+                          onChange={(e) => setTo(e.target.value)}
+                          className="bg-card rounded-xl border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary w-full cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Category 3: Sorting */}
+              <AccordionItem value="sorting" className="border-b-0 py-1">
+                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                      <ArrowUpDown className="size-4 text-primary" /> Sort Preference
+                    </span>
+                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{sortingSummary}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 pb-3">
+                  <div className="space-y-2">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">Sort By</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { id: "delivery" as Sort, label: "Delivery Date" },
+                        { id: "recent" as Sort, label: "Recently Booked" },
+                        { id: "due" as Sort, label: "Balance Due" },
+                      ]).map((sOpt) => (
+                        <button
+                          key={sOpt.id}
+                          onClick={() => setSort(sOpt.id)}
+                          className={cn(
+                            "py-2 px-1.5 rounded-xl text-[11px] font-semibold text-center transition active:scale-95 cursor-pointer border leading-tight flex items-center justify-center h-10",
+                            sort === sOpt.id
+                              ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                              : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary/80",
+                          )}
+                        >{sOpt.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </SheetContent>
+        </Sheet>
       </div>
 
-      {/* Always-visible primary filters */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <SegRow value={svc} onChange={setSvc} items={[
-          { id: "all", label: "All" },
-          { id: "prepleat", label: "PrePleat" },
-          { id: "drape", label: "Drape" },
-        ] as { id: SvcFilter; label: string }[]} />
-        <SegRow value={pay} onChange={setPay} items={[
-          { id: "all", label: "All" },
-          { id: "due", label: "Due" },
-          { id: "paid", label: "Paid" },
-        ] as { id: PayFilter; label: string }[]} />
+      {/* Horizontal Scrollable Filter Row */}
+      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar items-center pb-1">
+        {([
+          { id: "active" as const, label: "Active", count: counts.active },
+          { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
+          { id: "drape" as const, label: "Direct Drape", count: counts.drape },
+          { id: "artist" as const, label: "Artist", count: counts.artist },
+          { id: "history" as const, label: "History", count: counts.history },
+        ]).map((item) => {
+          const isActive = mainFilter === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setMainFilter(item.id)}
+              className={cn(
+                "shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5",
+                isActive
+                  ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                  : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+              )}
+            >
+              <span>{item.label}</span>
+              <span className={cn(
+                "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+                isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}>
+                {item.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
-
-      {showMore && (
-        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">More filters</p>
-            {moreCount > 0 && (
-              <button
-                onClick={() => { setRange("all"); setSort("delivery"); setShowCompleted(false); setFrom(""); setTo(""); }}
-                className="text-[11px] text-primary font-semibold flex items-center gap-1"
-              ><XIcon className="size-3" /> Clear</button>
-            )}
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-            {([
-              { id: "all" as Range, label: "All time" },
-              { id: "thisMonth" as Range, label: "This month" },
-              { id: "lastMonth" as Range, label: "Last month" },
-              { id: "custom" as Range, label: "Custom" },
-            ]).map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setRange(r.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition",
-                  range === r.id ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground",
-                )}
-              >{r.label}</button>
-            ))}
-          </div>
-          {range === "custom" && (
-            <div className="grid grid-cols-2 gap-2">
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-            </div>
-          )}
-          <div className="flex gap-1.5 items-center overflow-x-auto no-scrollbar">
-            {(["delivery", "recent", "due"] as Sort[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setSort(s)}
-                className={cn(
-                  "px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition",
-                  sort === s ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground",
-                )}
-              >Sort: {s}</button>
-            ))}
-            <label className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground whitespace-nowrap">
-              <input type="checkbox" checked={showCompleted} onChange={(e) => setShowCompleted(e.target.checked)} className="accent-primary" />
-              Delivered
-            </label>
-          </div>
-        </div>
-      )}
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
@@ -248,6 +447,11 @@ function BookingsPage() {
                 {isArtistBooking && (
                   <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
                     ★ Artist
+                  </span>
+                )}
+                {!isArtistBooking && b.service === "drape" && (
+                  <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
+                    Direct Drape
                   </span>
                 )}
                 {selectMode && (
@@ -284,8 +488,12 @@ function BookingsPage() {
               </>
             );
             const cardCls = cn(
-              "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full",
-              isArtistBooking && "ring-1 ring-gold/50 bg-gradient-to-br from-card to-gold/5",
+              "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
+              isArtistBooking 
+                ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
+                : b.service === "prepleat"
+                  ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
+                  : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
               b.status === "cancelled" && "opacity-60",
               isSelected && "ring-2 ring-primary",
             );
@@ -347,21 +555,4 @@ function StatChip({ label, value, tone = "default" }: { label: string; value: st
   );
 }
 
-function SegRow<T extends string>({ value, onChange, items }: {
-  value: T; onChange: (v: T) => void; items: { id: T; label: string }[];
-}) {
-  return (
-    <div className="bg-card border border-border/60 rounded-2xl p-1 flex gap-0.5 shadow-sm">
-      {items.map((it) => (
-        <button
-          key={it.id}
-          onClick={() => onChange(it.id)}
-          className={cn(
-            "flex-1 py-1.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider transition",
-            value === it.id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-secondary/80",
-          )}
-        >{it.label}</button>
-      ))}
-    </div>
-  );
-}
+

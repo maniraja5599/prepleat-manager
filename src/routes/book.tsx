@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
-import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import logoAsset from "@/assets/eyas-logo.png";
 import { z } from "zod";
 
 const recipientSchema = z.string().uuid();
@@ -105,7 +105,7 @@ function PublicBookPage() {
       <div className="max-w-md mx-auto px-5 pt-8">
         <div className="flex items-center gap-3 mb-6">
           <div className="size-12 rounded-full overflow-hidden ring-2 ring-primary/20 shrink-0">
-            <img src={logoAsset.url} alt="Eyas Saree Drapist" className="size-full rounded-full object-cover scale-[1.18]" />
+            <img src={logoAsset} alt="Eyas Saree Drapist" className="size-full rounded-full object-cover scale-[1.18]" />
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Eyas Saree Drapist</p>

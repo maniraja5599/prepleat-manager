@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import type { Booking, Customer, Settings, Payment } from "./store";
 import { fmtTime12, totalDue } from "./store";
-import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import logoAsset from "@/assets/eyas-logo.png";
 
 // Helvetica (jsPDF default) lacks the ₹ glyph — it renders as ? or a box.
 // Use the universally-supported "Rs." prefix inside the PDF only.
@@ -67,8 +67,8 @@ export async function generateBillPDF(opts: {
     settings.logoDataUrl && settings.logoDataUrl.startsWith("data:image")
       ? settings.logoDataUrl
       : undefined;
-  if (!logoData && logoAsset?.url) {
-    const fetched = await fetchAsDataUrl(logoAsset.url);
+  if (!logoData && logoAsset) {
+    const fetched = await fetchAsDataUrl(logoAsset);
     if (fetched) logoData = fetched;
   }
 

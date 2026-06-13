@@ -255,6 +255,106 @@
   --ring: oklch(0.62 0.13 70);
 }
 
+.theme-sunset {
+  --background: oklch(0.97 0.015 65);
+  --foreground: oklch(0.25 0.05 40);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.05 40);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.05 40);
+  --primary: oklch(0.55 0.18 45);
+  --primary-foreground: oklch(0.985 0.01 65);
+  --gold: oklch(0.78 0.13 75);
+  --secondary: oklch(0.93 0.03 65);
+  --secondary-foreground: oklch(0.3 0.06 45);
+  --muted: oklch(0.95 0.02 65);
+  --muted-foreground: oklch(0.5 0.04 40);
+  --accent: oklch(0.88 0.08 70);
+  --accent-foreground: oklch(0.3 0.06 45);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.985 0.01 65);
+  --success: oklch(0.55 0.13 150);
+  --warning: oklch(0.72 0.15 65);
+  --border: oklch(0.89 0.03 65);
+  --input: oklch(0.91 0.02 65);
+  --ring: oklch(0.55 0.18 45);
+}
+
+.theme-ocean {
+  --background: oklch(0.97 0.015 210);
+  --foreground: oklch(0.2 0.04 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.04 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.04 220);
+  --primary: oklch(0.42 0.12 210);
+  --primary-foreground: oklch(0.985 0.01 210);
+  --gold: oklch(0.78 0.13 75);
+  --secondary: oklch(0.93 0.03 210);
+  --secondary-foreground: oklch(0.25 0.04 210);
+  --muted: oklch(0.95 0.02 210);
+  --muted-foreground: oklch(0.5 0.04 220);
+  --accent: oklch(0.88 0.06 200);
+  --accent-foreground: oklch(0.25 0.04 210);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.985 0.01 210);
+  --success: oklch(0.55 0.13 150);
+  --warning: oklch(0.72 0.15 65);
+  --border: oklch(0.89 0.03 210);
+  --input: oklch(0.91 0.02 210);
+  --ring: oklch(0.42 0.12 210);
+}
+
+.theme-forest {
+  --background: oklch(0.97 0.01 120);
+  --foreground: oklch(0.2 0.03 130);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.03 130);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.03 130);
+  --primary: oklch(0.4 0.1 120);
+  --primary-foreground: oklch(0.985 0.01 120);
+  --gold: oklch(0.78 0.13 75);
+  --secondary: oklch(0.93 0.02 120);
+  --secondary-foreground: oklch(0.25 0.03 120);
+  --muted: oklch(0.95 0.015 120);
+  --muted-foreground: oklch(0.5 0.03 130);
+  --accent: oklch(0.88 0.06 130);
+  --accent-foreground: oklch(0.25 0.03 120);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.985 0.01 120);
+  --success: oklch(0.55 0.13 150);
+  --warning: oklch(0.72 0.15 65);
+  --border: oklch(0.89 0.02 120);
+  --input: oklch(0.91 0.02 120);
+  --ring: oklch(0.4 0.1 120);
+}
+
+.theme-vintage {
+  --background: oklch(0.97 0.015 320);
+  --foreground: oklch(0.2 0.04 330);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.04 330);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.04 330);
+  --primary: oklch(0.4 0.13 320);
+  --primary-foreground: oklch(0.985 0.01 320);
+  --gold: oklch(0.78 0.13 75);
+  --secondary: oklch(0.93 0.03 320);
+  --secondary-foreground: oklch(0.25 0.04 320);
+  --muted: oklch(0.95 0.02 320);
+  --muted-foreground: oklch(0.5 0.04 330);
+  --accent: oklch(0.86 0.05 310);
+  --accent-foreground: oklch(0.25 0.04 320);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.985 0.01 320);
+  --success: oklch(0.55 0.13 150);
+  --warning: oklch(0.72 0.15 65);
+  --border: oklch(0.89 0.03 320);
+  --input: oklch(0.91 0.02 320);
+  --ring: oklch(0.4 0.13 320);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; }
@@ -292,4 +392,28 @@
   input, textarea, select {
     scroll-margin-block: 8rem;
   }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.button-error-flash {
+  animation: shake 0.4s ease-in-out !important;
+  background-color: var(--destructive) !important;
+  background-image: none !important;
+  color: var(--destructive-foreground) !important;
+  border-color: var(--destructive) !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.4) !important;
+}
+
+.button-warning-flash {
+  animation: shake 0.4s ease-in-out !important;
+  background-color: oklch(0.72 0.15 65) !important;
+  background-image: none !important;
+  color: white !important;
+  border-color: oklch(0.72 0.15 65) !important;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4) !important;
 }

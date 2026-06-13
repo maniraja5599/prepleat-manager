@@ -10,8 +10,8 @@
   "background_color": "#fbf6ee",
   "theme_color": "#7a1f2a",
   "icons": [
-    { "src": "/__l5e/assets-v1/0590f870-4dd8-4ffc-b0a4-0e294b540442/eyas-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/__l5e/assets-v1/0590f870-4dd8-4ffc-b0a4-0e294b540442/eyas-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/__l5e/assets-v1/0590f870-4dd8-4ffc-b0a4-0e294b540442/eyas-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

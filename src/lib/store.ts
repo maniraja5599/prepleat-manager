@@ -78,7 +78,7 @@ export interface Customer {
   updatedAt?: string;
 }
 
-export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "gold" | "custom";
+export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "gold" | "sunset" | "ocean" | "forest" | "vintage" | "custom";
 
 export interface CustomColors {
   primary?: string;
@@ -106,6 +106,9 @@ export interface Settings {
   expenseCategories?: string[];
   incomeCategories?: string[];
   paymentModes?: string[];
+  prepleatDotColor?: string;
+  directDrapeDotColor?: string;
+  artistDotColor?: string;
 }
 
 export interface DeletedBooking {
@@ -232,6 +235,9 @@ export const useStore = create<State>()(
         expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
         incomeCategories: ["Tips", "Sale", "Other Income"],
         paymentModes: ["gpay", "cash", "other"],
+        prepleatDotColor: "#ffa029",
+        directDrapeDotColor: "#10b981",
+        artistDotColor: "#d4af37",
       },
 
       addCustomer: (c) => {

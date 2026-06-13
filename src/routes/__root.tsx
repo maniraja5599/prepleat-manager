@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
-import logoAsset from "../assets/eyas-logo.png.asset.json";
+import logoAsset from "../assets/eyas-logo.png";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeApplier } from "../components/ThemeApplier";
 
@@ -62,8 +62,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "Eyas Saree — PrePleat & Drape" },
       { property: "og:description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
       { name: "twitter:description", content: "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders." },
-      { property: "og:image", content: logoAsset.url },
-      { name: "twitter:image", content: logoAsset.url },
+      { property: "og:image", content: logoAsset },
+      { name: "twitter:image", content: logoAsset },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/17881f36-1d7f-4820-bbc0-91b4d843e518" },
@@ -72,11 +72,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: logoAsset.url },
-      { rel: "icon", type: "image/png", sizes: "512x512", href: logoAsset.url },
-      { rel: "shortcut icon", type: "image/png", href: logoAsset.url },
-      { rel: "apple-touch-icon", sizes: "180x180", href: logoAsset.url },
-      { rel: "apple-touch-icon", sizes: "192x192", href: logoAsset.url },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
+      { rel: "shortcut icon", type: "image/png", href: "/icon-192.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" },
@@ -103,7 +102,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeApplier />
       <Outlet />
-      <Toaster position="top-center" style={{ top: "8%" }} duration={1500} richColors expand visibleToasts={3} toastOptions={{ style: { background: "var(--color-card)", color: "var(--color-foreground)", border: "1px solid var(--color-border)", borderRadius: "16px", padding: "16px 20px", fontSize: "15px", fontWeight: 500, boxShadow: "0 12px 32px -8px rgba(0,0,0,0.25), 0 4px 12px -2px rgba(0,0,0,0.12)" } }} />
+      <Toaster position="top-center" style={{ top: "8%" }} duration={2500} expand visibleToasts={3} />
     </QueryClientProvider>
   );
 }

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { useStore } from "@/lib/store";
-import logoAsset from "@/assets/eyas-logo.png.asset.json";
+import logoAsset from "@/assets/eyas-logo.png";
 
 interface Props {
   title?: string;
@@ -15,7 +15,7 @@ interface Props {
 
 export function AppShell({ title, subtitle, right, children, wide }: Props) {
   const settings = useStore((s) => s.settings);
-  const logo = settings.logoDataUrl || logoAsset.url;
+  const logo = settings.logoDataUrl || logoAsset;
   return (
     <div className="min-h-[100dvh] bg-background pb-28">
       <div className={wide ? "max-w-3xl mx-auto" : "max-w-md mx-auto"}>
