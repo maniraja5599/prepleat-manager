@@ -53,18 +53,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
           description: "group-[.toast]:text-muted-foreground",
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-          // Distinct colors and borders based on type
-          success: "group-[.toaster]:bg-[oklch(0.95_0.06_150)] dark:group-[.toaster]:bg-[oklch(0.25_0.06_150)] group-[.toaster]:text-[oklch(0.35_0.12_150)] group-[.toaster]:border-[oklch(0.55_0.13_150)]/40",
-          error: "group-[.toaster]:bg-destructive/10 group-[.toaster]:text-destructive group-[.toaster]:border-destructive/30",
-          warning: "group-[.toaster]:bg-[oklch(0.95_0.08_75)] dark:group-[.toaster]:bg-[oklch(0.25_0.08_75)] group-[.toaster]:text-[oklch(0.4_0.12_60)] group-[.toaster]:border-[oklch(0.78_0.13_75)]/40",
-          info: "group-[.toaster]:bg-blue-500/10 group-[.toaster]:text-blue-600 dark:group-[.toaster]:text-blue-400 group-[.toaster]:border-blue-500/30",
+          // Dynamic theme-matching colors, borders and left-accent highlights
+          success: "group-[.toaster]:bg-[color-mix(in_oklch,var(--success)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--success)_80%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--success)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--success)]",
+          error: "group-[.toaster]:bg-[color-mix(in_oklch,var(--destructive)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--destructive)_85%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--destructive)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--destructive)]",
+          warning: "group-[.toaster]:bg-[color-mix(in_oklch,var(--warning)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--warning)_85%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--warning)_35%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--warning)]",
+          info: "group-[.toaster]:bg-[color-mix(in_oklch,var(--primary)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--primary)_80%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--primary)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--primary)]",
         },
       }}
       icons={{
-        success: <CheckCircle2 className="size-5 text-[oklch(0.55_0.13_150)] shrink-0" />,
-        warning: <AlertTriangle className="size-5 text-[oklch(0.78_0.13_75)] shrink-0 animate-bounce" />,
-        error: <AlertCircle className="size-5 text-destructive shrink-0 animate-pulse" />,
-        info: <Info className="size-5 text-blue-500 shrink-0" />,
+        success: <CheckCircle2 className="size-5 text-[var(--success)] shrink-0" />,
+        warning: <AlertTriangle className="size-5 text-[var(--warning)] shrink-0 animate-bounce" />,
+        error: <AlertCircle className="size-5 text-[var(--destructive)] shrink-0 animate-pulse" />,
+        info: <Info className="size-5 text-[var(--primary)] shrink-0" />,
       }}
       {...props}
     />

@@ -102,7 +102,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeApplier />
       <Outlet />
-      <Toaster position="top-center" style={{ top: "8%" }} duration={2500} expand visibleToasts={3} />
+      <Toaster position="bottom-center" style={{ bottom: "85px" }} duration={2500} expand visibleToasts={3} />
     </QueryClientProvider>
   );
 }
