@@ -9,6 +9,7 @@ import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, A
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({
@@ -44,6 +45,7 @@ function PaymentsPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ type: "expense" | "income"; id: string } | null>(null);
 
   // === Lifetime ===
   const paymentsTotal = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
@@ -360,7 +362,7 @@ function PaymentsPage() {
           lifetime={lifetime} totalPending={totalPending} totalBilled={totalBilled} collectionRate={collectionRate}
           trend12={trend12} kpis={kpis} topCustomers={topCustomers} modeSplit={modeSplit} recent={recent}
           extraTotal={extraTotal} extraByCategory={extraByCategory} recentExtra={recentExtra}
-          onDeleteExtra={(id) => { deleteExtraIncome(id); toast.success("Income removed", { duration: 1200 }); }}
+          onDeleteExtra={(id) => setPendingDelete({ type: "income", id })}
         />
       )}
 
@@ -368,7 +370,7 @@ function PaymentsPage() {
         <ExpensesView
           expenses={expenses} totalExpense={totalExpense} categories={categories}
           expenseByCategory={expenseByCategory} trend12={trend12} recentExpenses={recentExpenses}
-          onAdd={() => setAddOpen(true)} onDelete={(id) => { deleteExpense(id); toast.success("Expense removed", { duration: 1200 }); }}
+          onAdd={() => setAddOpen(true)} onDelete={(id) => setPendingDelete({ type: "expense", id })}
         />
       )}
 
@@ -421,6 +423,26 @@ function PaymentsPage() {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title={pendingDelete?.type === "income" ? "Delete this income entry?" : "Delete this expense?"}
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.type === "income") {
+            deleteExtraIncome(pendingDelete.id);
+            toast.success("Income removed");
+          } else {
+            deleteExpense(pendingDelete.id);
+            toast.success("Expense removed");
+          }
+          setPendingDelete(null);
+        }}
+      />
     </AppShell>
   );
 }
