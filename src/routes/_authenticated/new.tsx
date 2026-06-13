@@ -589,7 +589,7 @@ function NewBooking() {
             itemWidth={86}
             value={deliveryTime}
             onChange={setDeliveryTime}
-            onDoubleTap={() => setTimeOpen(true)}
+            onDoubleTap={() => timeInputRef.current?.showPicker?.()}
             items={Array.from({ length: 24 * 4 }, (_, i) => {
               const h = Math.floor(i / 4);
               const m = (i % 4) * 15;
