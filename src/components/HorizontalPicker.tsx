@@ -143,15 +143,24 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
         <button
           type="button"
           onClick={() => step(-1)}
+          onPointerDown={() => startHold(-1)}
+          onPointerUp={stopHold}
+          onPointerLeave={stopHold}
+          onPointerCancel={stopHold}
           aria-label="Previous"
           className="absolute left-0 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-secondary/90 flex items-center justify-center shadow"
         ><ChevronLeft className="size-4" /></button>
         <button
           type="button"
           onClick={() => step(1)}
+          onPointerDown={() => startHold(1)}
+          onPointerUp={stopHold}
+          onPointerLeave={stopHold}
+          onPointerCancel={stopHold}
           aria-label="Next"
           className="absolute right-0 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-secondary/90 flex items-center justify-center shadow"
         ><ChevronRight className="size-4" /></button>
+
         <div
           ref={ref}
           onScroll={handleScroll}
