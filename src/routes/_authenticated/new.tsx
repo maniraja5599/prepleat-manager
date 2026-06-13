@@ -143,7 +143,7 @@ function NewBooking() {
 
   const confirmSave = () => {
     let cid = customerId;
-    const customerRequired = bookingSource === "direct" || showCustomerForArtist;
+    
     if (!cid) {
       const hasNameOrPhone = newName.trim() || newPhone.trim();
       if (hasNameOrPhone) {
