@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2 } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
@@ -13,10 +13,11 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "pricing" | "brand" | "theme" | "data" | "activity" | "account";
+type TabId = "pricing" | "brand" | "headers" | "theme" | "data" | "activity" | "account";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
   { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
-  { id: "brand",    label: "Brand",    hint: "Logo, name, presets",  icon: Upload },
+  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
+  { id: "headers",  label: "Headers",  hint: "Categories & presets", icon: Tag },
   { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
   { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
   { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
@@ -45,6 +46,7 @@ function SettingsPage() {
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
+  const [incCatDraft, setIncCatDraft] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
@@ -132,54 +134,6 @@ function SettingsPage() {
         </Section>
       )}
 
-      {tab === "brand" && (
-        <Section title="Quick note presets">
-          <p className="text-xs text-muted-foreground mb-2">Tap chips appear under the Notes field when creating a booking.</p>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {(settings.occasionPresets ?? []).map((p) => (
-              <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-xs">
-                {p}
-                <button
-                  onClick={() => update({ occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== p) })}
-                  className="text-muted-foreground hover:text-destructive"
-                  aria-label={`Remove ${p}`}
-                ><X className="size-3" /></button>
-              </span>
-            ))}
-            {(settings.occasionPresets ?? []).length === 0 && (
-              <p className="text-xs text-muted-foreground italic">No presets yet.</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={presetDraft}
-              onChange={(e) => setPresetDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && presetDraft.trim()) {
-                  const v = presetDraft.trim();
-                  if (!(settings.occasionPresets ?? []).includes(v)) {
-                    update({ occasionPresets: [...(settings.occasionPresets ?? []), v] });
-                  }
-                  setPresetDraft("");
-                }
-              }}
-              placeholder="Add preset (e.g. Engagement)"
-              className="input flex-1"
-            />
-            <button
-              onClick={() => {
-                const v = presetDraft.trim();
-                if (!v) return;
-                if (!(settings.occasionPresets ?? []).includes(v)) {
-                  update({ occasionPresets: [...(settings.occasionPresets ?? []), v] });
-                }
-                setPresetDraft("");
-              }}
-              className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
-            >Add</button>
-          </div>
-        </Section>
-      )}
 
       {tab === "pricing" && (
         <>
@@ -267,54 +221,49 @@ function SettingsPage() {
             <input value={settings.websiteUrl ?? ""} onChange={(e) => update({ websiteUrl: e.target.value })} placeholder="https://eyasdrapist.shop/" className="input mt-1" />
           </Section>
 
-          <Section title="Expense Categories">
-            <p className="text-xs text-muted-foreground mb-2">Headers used when logging expenses on the Payments page.</p>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {(settings.expenseCategories ?? []).map((p) => (
-                <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-xs">
-                  {p}
-                  <button
-                    onClick={() => update({ expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== p) })}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label={`Remove ${p}`}
-                  ><X className="size-3" /></button>
-                </span>
-              ))}
-              {(settings.expenseCategories ?? []).length === 0 && (
-                <p className="text-xs text-muted-foreground italic">No categories yet.</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <input
-                value={expCatDraft}
-                onChange={(e) => setExpCatDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && expCatDraft.trim()) {
-                    const v = expCatDraft.trim();
-                    if (!(settings.expenseCategories ?? []).includes(v)) {
-                      update({ expenseCategories: [...(settings.expenseCategories ?? []), v] });
-                    }
-                    setExpCatDraft("");
-                  }
-                }}
-                placeholder="Add category (e.g. Material)"
-                className="input flex-1"
-              />
-              <button
-                onClick={() => {
-                  const v = expCatDraft.trim();
-                  if (!v) return;
-                  if (!(settings.expenseCategories ?? []).includes(v)) {
-                    update({ expenseCategories: [...(settings.expenseCategories ?? []), v] });
-                  }
-                  setExpCatDraft("");
-                }}
-                className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
-              >Add</button>
-            </div>
-          </Section>
         </>
       )}
+
+      {tab === "headers" && (
+        <>
+          <ChipListSection
+            title="Income Categories"
+            hint="Headers used when logging extra income (tips, sales, etc.) on the Payments page."
+            placeholder="Add income header (e.g. Tips)"
+            tone="success"
+            items={settings.incomeCategories ?? []}
+            draft={incCatDraft}
+            setDraft={setIncCatDraft}
+            onAdd={(v) => update({ incomeCategories: Array.from(new Set([...(settings.incomeCategories ?? []), v])) })}
+            onRemove={(v) => update({ incomeCategories: (settings.incomeCategories ?? []).filter((x) => x !== v) })}
+          />
+
+          <ChipListSection
+            title="Expense Categories"
+            hint="Headers used when logging expenses on the Payments page."
+            placeholder="Add expense header (e.g. Material)"
+            tone="danger"
+            items={settings.expenseCategories ?? []}
+            draft={expCatDraft}
+            setDraft={setExpCatDraft}
+            onAdd={(v) => update({ expenseCategories: Array.from(new Set([...(settings.expenseCategories ?? []), v])) })}
+            onRemove={(v) => update({ expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== v) })}
+          />
+
+          <ChipListSection
+            title="Quick Note Presets"
+            hint="Tap chips appear under the Notes field when creating a booking."
+            placeholder="Add preset (e.g. Engagement)"
+            tone="primary"
+            items={settings.occasionPresets ?? []}
+            draft={presetDraft}
+            setDraft={setPresetDraft}
+            onAdd={(v) => update({ occasionPresets: Array.from(new Set([...(settings.occasionPresets ?? []), v])) })}
+            onRemove={(v) => update({ occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== v) })}
+          />
+        </>
+      )}
+
 
       {tab === "theme" && (
         <>
@@ -570,6 +519,61 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function ChipListSection({
+  title, hint, placeholder, tone, items, draft, setDraft, onAdd, onRemove,
+}: {
+  title: string;
+  hint: string;
+  placeholder: string;
+  tone: "primary" | "success" | "danger";
+  items: string[];
+  draft: string;
+  setDraft: (v: string) => void;
+  onAdd: (v: string) => void;
+  onRemove: (v: string) => void;
+}) {
+  const chipCls =
+    tone === "success" ? "bg-success/15 text-success"
+    : tone === "danger" ? "bg-destructive/15 text-destructive"
+    : "bg-primary/15 text-primary";
+  const submit = () => {
+    const v = draft.trim();
+    if (!v || items.includes(v)) { setDraft(""); return; }
+    onAdd(v);
+    setDraft("");
+  };
+  return (
+    <Section title={title}>
+      <p className="text-xs text-muted-foreground mb-2">{hint}</p>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {items.map((p) => (
+          <span key={p} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${chipCls}`}>
+            {p}
+            <button
+              onClick={() => onRemove(p)}
+              className="opacity-70 hover:opacity-100"
+              aria-label={`Remove ${p}`}
+            ><X className="size-3" /></button>
+          </span>
+        ))}
+        {items.length === 0 && (
+          <p className="text-xs text-muted-foreground italic">None yet.</p>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder={placeholder}
+          className="input flex-1"
+        />
+        <button onClick={submit} className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold">Add</button>
+      </div>
+    </Section>
   );
 }
 

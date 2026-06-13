@@ -29,28 +29,38 @@ function PaymentsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const expenses = useStore((s) => s.expenses);
+  const extraIncomes = useStore((s) => s.extraIncomes);
   const settings = useStore((s) => s.settings);
   const businessName = settings.businessName;
   const categories = settings.expenseCategories ?? [];
+  const incomeCats = settings.incomeCategories ?? [];
 
   const addExpense = useStore((s) => s.addExpense);
   const deleteExpense = useStore((s) => s.deleteExpense);
+  const addExtraIncome = useStore((s) => s.addExtraIncome);
+  const deleteExtraIncome = useStore((s) => s.deleteExtraIncome);
 
   const [tab, setTab] = useState<TabId>("income");
   const [exportOpen, setExportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [addIncomeOpen, setAddIncomeOpen] = useState(false);
 
   // === Lifetime ===
-  const lifetime = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  const paymentsTotal = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
+  const extraTotal = useMemo(() => extraIncomes.reduce((s, e) => s + e.amount, 0), [extraIncomes]);
+  const lifetime = paymentsTotal + extraTotal;
   const totalExpense = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
   const netProfit = lifetime - totalExpense;
   const totalPending = useMemo(() => bookings.reduce((s, b) => s + totalDue(b), 0), [bookings]);
   const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
-  const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((lifetime / totalBilled) * 100)) : 0;
+  const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((paymentsTotal / totalBilled) * 100)) : 0;
 
   const now = new Date();
-  const incomeIn = (s: Date, e: Date) =>
-    payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+  const incomeIn = (s: Date, e: Date) => {
+    const a = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+    const b = extraIncomes.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+    return a + b;
+  };
   const expenseIn = (s: Date, e: Date) =>
     expenses.filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e })).reduce((a, x) => a + x.amount, 0);
 
@@ -67,11 +77,12 @@ function PaymentsPage() {
     return Array.from({ length: 12 }).map((_, i) => {
       const ref = subMonths(new Date(), 11 - i);
       const s = startOfMonth(ref), e = endOfMonth(ref);
-      const inc = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+      const inc = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0)
+        + extraIncomes.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
       const exp = expenses.filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e })).reduce((a, x) => a + x.amount, 0);
       return { month: format(ref, "MMM"), amount: inc, expense: exp, net: inc - exp };
     });
-  }, [payments, expenses]);
+  }, [payments, extraIncomes, expenses]);
 
   const trendDelta = useMemo(() => {
     const last = trend12[trend12.length - 1]?.amount ?? 0;
@@ -95,6 +106,20 @@ function PaymentsPage() {
       .map(([cat, amount]) => ({ cat, amount, pct: totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0 }))
       .sort((a, b) => b.amount - a.amount);
   }, [expenses, totalExpense]);
+
+  // Extra income by category (lifetime)
+  const extraByCategory = useMemo(() => {
+    const m = new Map<string, number>();
+    extraIncomes.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + e.amount));
+    return Array.from(m.entries())
+      .map(([cat, amount]) => ({ cat, amount, pct: extraTotal > 0 ? Math.round((amount / extraTotal) * 100) : 0 }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [extraIncomes, extraTotal]);
+
+  const recentExtra = useMemo(
+    () => [...extraIncomes].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8),
+    [extraIncomes],
+  );
 
   const kpis = useMemo(() => {
     const count = payments.length;
@@ -334,6 +359,8 @@ function PaymentsPage() {
         <IncomeView
           lifetime={lifetime} totalPending={totalPending} totalBilled={totalBilled} collectionRate={collectionRate}
           trend12={trend12} kpis={kpis} topCustomers={topCustomers} modeSplit={modeSplit} recent={recent}
+          extraTotal={extraTotal} extraByCategory={extraByCategory} recentExtra={recentExtra}
+          onDeleteExtra={(id) => { deleteExtraIncome(id); toast.success("Income removed", { duration: 1200 }); }}
         />
       )}
 
@@ -353,12 +380,19 @@ function PaymentsPage() {
         />
       )}
 
-      {/* FAB add expense (only on expenses tab) */}
+      {/* FAB add (expenses → expense, income → extra income) */}
       {tab === "expenses" && (
         <button
           onClick={() => setAddOpen(true)}
           className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center"
           aria-label="Add expense"
+        ><Plus className="size-6" /></button>
+      )}
+      {tab === "income" && (
+        <button
+          onClick={() => setAddIncomeOpen(true)}
+          className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-success text-white shadow-xl flex items-center justify-center"
+          aria-label="Add extra income"
         ><Plus className="size-6" /></button>
       )}
 
@@ -374,6 +408,19 @@ function PaymentsPage() {
           }}
         />
       )}
+
+      {addIncomeOpen && (
+        <AddIncomeSheet
+          categories={incomeCats}
+          defaultMode={settings.defaultPaymentMode ?? "gpay"}
+          onClose={() => setAddIncomeOpen(false)}
+          onSave={(payload) => {
+            addExtraIncome(payload);
+            toast.success("Income added", { duration: 1500 });
+            setAddIncomeOpen(false);
+          }}
+        />
+      )}
     </AppShell>
   );
 }
@@ -386,6 +433,10 @@ function IncomeView(p: {
   topCustomers: { c: any; amount: number }[];
   modeSplit: Record<string, number>;
   recent: { p: any; c: any; b: any }[];
+  extraTotal: number;
+  extraByCategory: { cat: string; amount: number; pct: number }[];
+  recentExtra: { id: string; amount: number; category: string; note?: string; date: string; mode?: PaymentMode }[];
+  onDeleteExtra: (id: string) => void;
 }) {
   return (
     <>
@@ -510,6 +561,63 @@ function IncomeView(p: {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      {/* Extra income */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mt-3 mb-20">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Extra income</p>
+            <p className="text-[10px] text-muted-foreground">Not tied to bookings · tap + below to add</p>
+          </div>
+          <p className="text-sm font-bold tabular-nums text-success">{fmtINR(p.extraTotal)}</p>
+        </div>
+        {p.extraByCategory.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-3">No extra income yet</p>
+        ) : (
+          <>
+            <ul className="space-y-1.5 mb-3">
+              {p.extraByCategory.map((row, i) => (
+                <li key={row.cat}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <span className={cn(
+                        "size-2 rounded-full",
+                        i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                      )} />
+                      {row.cat}
+                    </span>
+                    <span className="tabular-nums font-bold">{fmtINR(row.amount)} <span className="text-muted-foreground font-normal">· {row.pct}%</span></span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div className={cn("h-full", i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent")} style={{ width: `${row.pct}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <ul className="space-y-1.5 pt-2 border-t border-border">
+              {p.recentExtra.map((e) => (
+                <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl">
+                  <div className="shrink-0 size-9 rounded-xl bg-success/15 text-success flex items-center justify-center">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-semibold text-sm truncate">{e.category}</p>
+                      <p className="font-bold tabular-nums text-sm text-success">+{fmtINR(e.amount)}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={() => p.onDeleteExtra(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </>
@@ -791,6 +899,104 @@ function AddExpenseSheet({
 
         <button onClick={submit} className="w-full py-3 rounded-full bg-primary text-primary-foreground font-bold">
           Save expense
+        </button>
+      </div>
+    </>
+  );
+}
+
+function AddIncomeSheet({
+  categories, defaultMode, onClose, onSave,
+}: {
+  categories: string[];
+  defaultMode: PaymentMode;
+  onClose: () => void;
+  onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
+}) {
+  const [amount, setAmount] = useState<string>("");
+  const [category, setCategory] = useState<string>(categories[0] ?? "Other Income");
+  const [note, setNote] = useState("");
+  const [mode, setMode] = useState<PaymentMode>(defaultMode);
+  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+
+  const submit = () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    if (!category) return toast.error("Pick a category");
+    const iso = new Date(`${date}T${new Date().toTimeString().slice(0, 8)}`).toISOString();
+    onSave({ amount: amt, category, note: note.trim() || undefined, date: iso, mode });
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display font-bold text-lg">Add extra income</h3>
+          <button onClick={onClose} className="size-9 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
+        </div>
+
+        {categories.length === 0 ? (
+          <p className="text-xs text-muted-foreground mb-3">
+            Add income categories in Settings → Headers first.
+          </p>
+        ) : null}
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
+        <div className="relative mt-1 mb-3">
+          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            type="number" inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0"
+            className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-3 text-lg font-bold tabular-nums focus:outline-none"
+            autoFocus
+          />
+        </div>
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
+        <div className="flex flex-wrap gap-1.5 mt-1 mb-3">
+          {categories.map((c) => {
+            const active = category === c;
+            return (
+              <button key={c} onClick={() => setCategory(c)}
+                className={cn("px-3 py-1.5 rounded-full text-xs font-semibold", active ? "bg-success text-white" : "bg-secondary")}>{c}</button>
+            );
+          })}
+        </div>
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Date</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-3 text-sm focus:outline-none"
+        />
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
+        <div className="grid grid-cols-3 gap-2 mt-1 mb-3">
+          {(["gpay", "cash", "other"] as const).map((m) => {
+            const active = mode === m;
+            return (
+              <button key={m} onClick={() => setMode(m)}
+                className={cn("py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                {m}
+              </button>
+            );
+          })}
+        </div>
+
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Note (optional)</label>
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="e.g. Tip from bride"
+          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-4 text-sm focus:outline-none"
+        />
+
+        <button onClick={submit} className="w-full py-3 rounded-full bg-success text-white font-bold">
+          Save income
         </button>
       </div>
     </>
