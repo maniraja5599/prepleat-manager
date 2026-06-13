@@ -384,6 +384,19 @@ export const useStore = create<State>()(
         });
         return true;
       },
+      undoActivityEntry: (entryId) => {
+        const s = get();
+        const idx = s.activity.findIndex((e) => e.id === entryId);
+        if (idx === -1) return false;
+        const entry = s.activity[idx];
+        if (!entry.prev || !entry.bookingId) return false;
+        set({
+          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x)),
+          activity: s.activity.filter((_, i) => i !== idx),
+          redoStack: [entry, ...s.redoStack].slice(0, 50),
+        });
+        return true;
+      },
       clearActivity: () => set({ activity: [], redoStack: [] }),
 
       addPayment: (p) =>
