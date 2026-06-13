@@ -154,6 +154,7 @@ interface State {
   deleteBooking: (id: string) => void;
   restoreBooking: (id: string) => void;
   undoLastEdit: () => boolean;
+  undoActivityEntry: (entryId: string) => boolean;
   redoLastEdit: () => boolean;
   clearActivity: () => void;
 
