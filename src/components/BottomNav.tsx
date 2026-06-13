@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
 const tabs: Tab[] = [
   { to: "/payments", label: "Payments", icon: Wallet },
-  { to: "/bookings", label: "Bookings", icon: ListChecks },
-  { to: "/", label: "Calendar", icon: Calendar, primary: true },
   { to: "/customers", label: "Customers", icon: Users },
+  { to: "/bookings", label: "Bookings", icon: ListChecks, primary: true },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/", label: "Calendar", icon: Calendar },
 ];
 
 export function BottomNav() {
