@@ -417,3 +417,99 @@
   border-color: oklch(0.72 0.15 65) !important;
   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4) !important;
 }
+
+/* Center Toast Notification Override */
+.sonner-toast-center-override {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  bottom: auto !important;
+  right: auto !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  width: max-content !important;
+  max-width: 90vw !important;
+}
+
+/* Base Toast Styles when Centered */
+.sonner-toast-center-override [data-sonner-toast] {
+  --y: 0px !important;
+  --x: 0px !important;
+  position: relative !important;
+  transform: none !important;
+  margin-top: 8px !important;
+  background-color: var(--color-card) !important;
+  color: var(--color-foreground) !important;
+  border: 1.5px solid var(--color-border) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  opacity: 0;
+  animation: toast-bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+  pointer-events: auto !important;
+  padding: 1rem 1.25rem !important;
+}
+
+/* Accent highlight left-border */
+.sonner-toast-center-override [data-sonner-toast][data-type="success"] {
+  border-left: 5px solid var(--color-success) !important;
+  border-color: color-mix(in oklch, var(--color-success) 35%, var(--color-border)) !important;
+  background-color: color-mix(in oklch, var(--color-success) 7%, var(--color-card)) !important;
+}
+
+.sonner-toast-center-override [data-sonner-toast][data-type="error"] {
+  border-left: 5px solid var(--color-destructive) !important;
+  border-color: color-mix(in oklch, var(--color-destructive) 35%, var(--color-border)) !important;
+  background-color: color-mix(in oklch, var(--color-destructive) 7%, var(--color-card)) !important;
+}
+
+.sonner-toast-center-override [data-sonner-toast][data-type="warning"] {
+  border-left: 5px solid var(--color-warning) !important;
+  border-color: color-mix(in oklch, var(--color-warning) 40%, var(--color-border)) !important;
+  background-color: color-mix(in oklch, var(--color-warning) 7%, var(--color-card)) !important;
+}
+
+.sonner-toast-center-override [data-sonner-toast][data-type="info"] {
+  border-left: 5px solid var(--color-primary) !important;
+  border-color: color-mix(in oklch, var(--color-primary) 35%, var(--color-border)) !important;
+  background-color: color-mix(in oklch, var(--color-primary) 7%, var(--color-card)) !important;
+}
+
+/* Entrance Animations */
+@keyframes toast-bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(30px);
+  }
+  70% {
+    transform: scale(1.03) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Subtle non-blocking dark backdrop overlay on active toast */
+body:has(.sonner-toast-center-override [data-sonner-toast])::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  z-index: 9998;
+  pointer-events: none;
+  animation: fade-in-backdrop 0.3s ease forwards;
+}
+
+@keyframes fade-in-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

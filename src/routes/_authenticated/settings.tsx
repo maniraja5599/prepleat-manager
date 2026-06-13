@@ -623,6 +623,40 @@ function SettingsPage() {
               })}
             </div>
           </Section>
+
+          <Section title="Pop-up Notification Preview">
+            <p className="text-xs text-muted-foreground mb-3">Test how notifications look and animate in the center of the screen matching your active theme.</p>
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={() => toast.success("Success! Booking saved successfully.")}
+                className="px-3 py-1.5 rounded-full bg-success/10 hover:bg-success/15 border border-success/20 text-success text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <span className="size-2 rounded-full bg-success" /> Success Preview
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.warning("Warning! Low measurement value detected.")}
+                className="px-3 py-1.5 rounded-full bg-warning/10 hover:bg-warning/15 border border-warning/20 text-warning text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <span className="size-2 rounded-full bg-warning" /> Warning Preview
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.error("Error! Failed to authenticate session.")}
+                className="px-3 py-1.5 rounded-full bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 text-destructive text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <span className="size-2 rounded-full bg-destructive" /> Error Preview
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.info("Info! Backup file generated successfully.")}
+                className="px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/15 border border-primary/20 text-primary text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <span className="size-2 rounded-full bg-primary" /> Info Preview
+              </button>
+            </div>
+          </Section>
         </>
       )}
 
