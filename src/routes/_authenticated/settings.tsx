@@ -625,24 +625,116 @@ function AccountBlock() {
   );
 }
 
-function PriceRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function PriceStepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2">
-      <span className="text-sm">{label}</span>
-      <div className="flex items-center gap-1 bg-secondary rounded-full px-1">
-        <button onClick={() => onChange(Math.max(0, value - 50))} className="size-8 rounded-full flex items-center justify-center"><Minus className="size-3.5" /></button>
-        <div className="relative w-24">
-          <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
-          <input
-            type="number"
-            value={value}
-            onChange={(e) => onChange(Number(e.target.value) || 0)}
-            className="w-full bg-transparent pl-6 pr-1 py-2 text-sm text-right tabular-nums focus:outline-none"
-          />
-        </div>
-        <button onClick={() => onChange(value + 50)} className="size-8 rounded-full flex items-center justify-center"><Plus className="size-3.5" /></button>
+    <div className="flex items-center gap-1 bg-secondary rounded-full px-1 w-full max-w-[150px]">
+      <button onClick={() => onChange(Math.max(0, value - 50))} className="size-7 rounded-full flex items-center justify-center"><Minus className="size-3" /></button>
+      <div className="relative flex-1 min-w-0">
+        <IndianRupee className="absolute left-1.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value) || 0)}
+          className="w-full bg-transparent pl-5 pr-1 py-1.5 text-sm text-right tabular-nums focus:outline-none"
+        />
       </div>
+      <button onClick={() => onChange(value + 50)} className="size-7 rounded-full flex items-center justify-center"><Plus className="size-3" /></button>
     </div>
+  );
+}
+
+function FactoryResetDialog({ open, onOpenChange, typed, setTyped, onConfirm }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  typed: string; setTyped: (v: string) => void; onConfirm: () => void;
+}) {
+  const ok = typed.trim().toUpperCase() === "RESET";
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="rounded-2xl max-w-sm">
+        <AlertDialogHeader>
+          <div className="mx-auto sm:mx-0 size-11 rounded-full flex items-center justify-center bg-destructive/15 text-destructive">
+            <AlertTriangle className="size-5" />
+          </div>
+          <AlertDialogTitle>Factory reset the entire app?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This wipes ALL bookings, customers, payments, expenses, settings, theme, categories, activity log and the recycle bin. The app will be like newly installed. This cannot be undone.
+            <br /><br />
+            Type <span className="font-bold text-destructive">RESET</span> to confirm.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <input
+          autoFocus
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          placeholder="Type RESET"
+          className="w-full bg-secondary rounded-full px-4 py-2.5 text-sm tracking-wider uppercase focus:outline-none focus:ring-2 focus:ring-destructive/40"
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!ok}
+            onClick={() => ok && onConfirm()}
+            className={`rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-40 disabled:pointer-events-none`}
+          >Reset everything</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+const HELP_DOCS: { title: string; body: string }[] = [
+  { title: "Creating a booking", body: "Tap the + button on the bottom nav. Pick service (PrePleat or Drape), saree count, delivery date & time. For direct clients enter name + mobile. For artist-via-booking, client name and number are optional. Advance paid auto-creates a payment entry." },
+  { title: "Bill numbers", body: "Every booking gets an auto bill number like EYAS-YYYYMM-NNNN. Used on the PDF bill and visible in the bookings list." },
+  { title: "PDF bill download", body: "Open any booking → tap Bill / Download PDF. Includes logo, bill no, customer, delivery info, items, totals, payment history and a PAID/DUE stamp." },
+  { title: "Payments — income & expenses", body: "Payments page has three tabs: Income, Expenses, Summary. Add expenses or extra income with the floating + button. Each entry has Category, Mode, Date, Note. Modes and headers come from Settings → Headers." },
+  { title: "Headers / Categories", body: "Settings → Headers lets you add custom Income headers, Expense headers, Quick note presets and Payment Modes. Add by typing + Enter; remove with the × on each chip." },
+  { title: "Payment modes", body: "Add as many modes as you like (gpay, cash, card, upi, cheque…). Pick the default in Settings → Headers → Default Payment Mode. Used on income/expense add sheets." },
+  { title: "Theme & brand", body: "Settings → Theme: pick from 8 palettes or Build-your-own. Settings → Brand: upload your logo (under 1.5MB) and change the business name. The logo shows on bills, app icon when installed, and the home screen." },
+  { title: "Pricing defaults", body: "Settings → Pricing: set default per-saree price for Direct Client and Artist for both PrePleat and Drape. New bookings start with these and can be edited per booking." },
+  { title: "Default measurements", body: "Settings → Pricing → Default Measurements: set P, W, H (or any labels) and starting inches. Used when creating new bookings." },
+  { title: "Bulk select & delete", body: "On Bookings and Customers pages, tap Select in the header. Tick rows or use Select All, then Delete N. Deleted bookings go to the 7-day recycle bin." },
+  { title: "Recycle bin / restore", body: "Settings → Data → Recently Deleted: shows bookings deleted in the last 7 days. Tap Restore to bring back the booking with its payments." },
+  { title: "Activity log & Undo", body: "Settings → Activity: last 50 actions. Use Undo last edit / Redo, or tap the revert icon on any edit/cancel entry to restore that exact change. Search by name or detail." },
+  { title: "Backup — export JSON / CSV", body: "Settings → Data → Export JSON (full backup) or Export CSV (bookings only). Keep monthly backups on your phone." },
+  { title: "Clear all data (with Undo)", body: "Settings → Data → Clear all data: removes bookings, customers, payments, expenses & extra income. Settings and theme are kept. You can Undo from the toast for 8 seconds." },
+  { title: "Factory reset", body: "Settings → Data → Factory reset wipes EVERYTHING — like a fresh install. You must type RESET to confirm. Cannot be undone — export a backup first." },
+  { title: "Cloud sync & sign in", body: "Settings → Account: sign in with Google to sync data across devices. Guest accounts keep data on this device only." },
+  { title: "Install as app", body: "Open the published site in Chrome or Safari → Menu → Install / Add to Home Screen. Uses your business logo as the app icon." },
+];
+
+function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
+  const q = query.trim().toLowerCase();
+  const filtered = q ? HELP_DOCS.filter((d) => d.title.toLowerCase().includes(q) || d.body.toLowerCase().includes(q)) : HELP_DOCS;
+  return (
+    <Section title={`Documentation (${filtered.length}${q ? ` / ${HELP_DOCS.length}` : ""})`}>
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search docs (e.g. backup, theme, modes)…"
+          className="w-full bg-secondary rounded-full pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+        />
+        {query && (
+          <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 size-7 rounded-full bg-card/80 flex items-center justify-center">
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">No matching topics. Try another keyword.</p>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((d) => (
+            <li key={d.title} className="rounded-xl bg-secondary/50 p-3">
+              <p className="text-sm font-semibold mb-1">{d.title}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{d.body}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-4 text-[10px] text-muted-foreground/70 text-center">Need more help? Contact your developer.</p>
+    </Section>
   );
 }
 
