@@ -31,7 +31,7 @@ export interface Booking {
   status: "pending" | "completed" | "delivered" | "cancelled";
 }
 
-export type PaymentMode = "gpay" | "cash" | "other";
+export type PaymentMode = string;
 
 export interface Payment {
   id: string;
@@ -105,6 +105,7 @@ export interface Settings {
   occasionPresets?: string[];
   expenseCategories?: string[];
   incomeCategories?: string[];
+  paymentModes?: string[];
 }
 
 export interface DeletedBooking {
@@ -230,6 +231,7 @@ export const useStore = create<State>()(
         occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
         expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
         incomeCategories: ["Tips", "Sale", "Other Income"],
+        paymentModes: ["gpay", "cash", "other"],
       },
 
       addCustomer: (c) => {
@@ -501,12 +503,13 @@ export const useStore = create<State>()(
           occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
           expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
           incomeCategories: ["Tips", "Sale", "Other Income"],
+          paymentModes: ["gpay", "cash", "other"],
         },
       }),
     }),
     {
       name: "saree-studio-v1",
-      version: 10,
+      version: 11,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -531,6 +534,9 @@ export const useStore = create<State>()(
         }
         if (!Array.isArray(s.incomeCategories)) {
           s.incomeCategories = ["Tips", "Sale", "Other Income"];
+        }
+        if (!Array.isArray(s.paymentModes)) {
+          s.paymentModes = ["gpay", "cash", "other"];
         }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
