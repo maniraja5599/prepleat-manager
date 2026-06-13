@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2 } from "lucide-react";
+import { IndianRupee, Plus, X, Upload, Minus, LogOut, Cloud, Download, RotateCcw, Palette, Database, User, Trash2, RotateCw, Activity, Undo2, Redo2, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/eyas-logo.png.asset.json";
@@ -13,10 +13,11 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "pricing" | "brand" | "theme" | "data" | "activity" | "account";
+type TabId = "pricing" | "brand" | "headers" | "theme" | "data" | "activity" | "account";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
   { id: "pricing",  label: "Pricing",  hint: "Defaults & measures",  icon: IndianRupee },
-  { id: "brand",    label: "Brand",    hint: "Logo, name, presets",  icon: Upload },
+  { id: "brand",    label: "Brand",    hint: "Logo & name",          icon: Upload },
+  { id: "headers",  label: "Headers",  hint: "Categories & presets", icon: Tag },
   { id: "theme",    label: "Theme",    hint: "Colors & display",     icon: Palette },
   { id: "data",     label: "Data",     hint: "Export & recovery",    icon: Database },
   { id: "activity", label: "Activity", hint: "History · Undo / Redo",icon: Activity },
@@ -45,6 +46,7 @@ function SettingsPage() {
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
+  const [incCatDraft, setIncCatDraft] = useState("");
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
