@@ -457,6 +457,7 @@ function SettingsPage() {
       )}
 
         </div>
+        <p className="mt-6 text-center text-[11px] text-muted-foreground/70 tabular-nums">App version v{APP_VERSION}</p>
       </div>
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
