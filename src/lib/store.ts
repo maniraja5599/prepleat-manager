@@ -31,7 +31,7 @@ export interface Booking {
   status: "pending" | "completed" | "delivered" | "cancelled";
 }
 
-export type PaymentMode = "gpay" | "cash" | "other";
+export type PaymentMode = string;
 
 export interface Payment {
   id: string;
@@ -105,6 +105,7 @@ export interface Settings {
   occasionPresets?: string[];
   expenseCategories?: string[];
   incomeCategories?: string[];
+  paymentModes?: string[];
 }
 
 export interface DeletedBooking {
