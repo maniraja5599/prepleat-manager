@@ -107,6 +107,20 @@ function PaymentsPage() {
       .sort((a, b) => b.amount - a.amount);
   }, [expenses, totalExpense]);
 
+  // Extra income by category (lifetime)
+  const extraByCategory = useMemo(() => {
+    const m = new Map<string, number>();
+    extraIncomes.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + e.amount));
+    return Array.from(m.entries())
+      .map(([cat, amount]) => ({ cat, amount, pct: extraTotal > 0 ? Math.round((amount / extraTotal) * 100) : 0 }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [extraIncomes, extraTotal]);
+
+  const recentExtra = useMemo(
+    () => [...extraIncomes].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8),
+    [extraIncomes],
+  );
+
   const kpis = useMemo(() => {
     const count = payments.length;
     const avg = count ? lifetime / count : 0;
