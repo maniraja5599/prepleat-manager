@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, type CustomerKind } from "@/lib/store";
 import { useState, useMemo } from "react";
-import { Search, Phone, Plus, SlidersHorizontal, Users, IndianRupee, AlertCircle } from "lucide-react";
+import { Search, Phone, Plus, SlidersHorizontal, Users, IndianRupee, AlertCircle, CheckSquare, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({ meta: [{ title: "Customers — Saree Studio" }] }),
@@ -14,6 +16,10 @@ function CustomersPage() {
   const customers = useStore((s) => s.customers);
   const bookings = useStore((s) => s.bookings);
   const addCustomer = useStore((s) => s.addCustomer);
+  const deleteCustomer = useStore((s) => s.deleteCustomer);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<CustomerKind>("client");
   const [showAdd, setShowAdd] = useState(false);
@@ -58,6 +64,14 @@ function CustomersPage() {
       subtitle={`${tab === "client" ? clientCount : artistCount} ${tab === "client" ? "clients" : "artists"}`}
       right={
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
+            aria-label="Select"
+            className={cn(
+              "size-10 rounded-full flex items-center justify-center",
+              selectMode ? "bg-primary text-primary-foreground" : "bg-secondary",
+            )}
+          ><CheckSquare className="size-4" /></button>
           <button
             onClick={() => setShowFilter((v) => !v)}
             aria-label="Filters"
