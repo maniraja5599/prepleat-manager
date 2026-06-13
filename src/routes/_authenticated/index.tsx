@@ -212,7 +212,7 @@ function CalendarPage() {
                   onMouseLeave={cancelPress}
                   onContextMenu={(e) => { e.preventDefault(); setPeek(key); }}
                   className={cn(
-                    "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition",
+                    "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition no-select",
                     !isCur && "text-muted-foreground/40",
                     isSel ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-secondary",
                     isToday && !isSel && "ring-1 ring-primary/40",
