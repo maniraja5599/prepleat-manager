@@ -242,52 +242,92 @@ function BookingsPage() {
             const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
             const due = totalDue(b);
             const isArtistBooking = !!b.artistId || c?.kind === "artist";
+            const isSelected = selected.has(b.id);
+            const inner = (
+              <>
+                {isArtistBooking && (
+                  <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
+                    ★ Artist
+                  </span>
+                )}
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  {selectMode && (
+                    <input type="checkbox" readOnly checked={isSelected} className="size-5 accent-primary mt-1 row-span-2 col-start-1 row-start-1" style={{ gridRow: "1 / span 2" }} />
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <span className={cn(
+                        "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                        b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
+                      )}>{b.service}</span>
+                      {b.status === "delivered" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Delivered</span>}
+                      {b.status === "cancelled" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">Cancelled</span>}
+                      {b.billNumber && <span className="text-[9px] font-mono text-muted-foreground/70">#{b.billNumber.split("-").pop()}</span>}
+                    </div>
+                    <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+                    </p>
+                    {a && (
+                      <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0 pt-1">
+                    <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
+                    {due > 0 ? (
+                      <p className="text-xs text-destructive font-semibold flex items-center justify-end"><IndianRupee className="size-3" />{Math.round(due).toLocaleString("en-IN")} due</p>
+                    ) : (
+                      <p className="text-xs text-success font-semibold">Paid</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+            const cardCls = cn(
+              "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full",
+              isArtistBooking && "ring-1 ring-gold/50 bg-gradient-to-br from-card to-gold/5",
+              b.status === "cancelled" && "opacity-60",
+              isSelected && "ring-2 ring-primary",
+            );
             return (
               <li key={b.id}>
-                <Link to="/bookings/$id" params={{ id: b.id }} className={cn(
-                  "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden",
-                  isArtistBooking && "ring-1 ring-gold/50 bg-gradient-to-br from-card to-gold/5",
-                  b.status === "cancelled" && "opacity-60",
-                )}>
-                  {isArtistBooking && (
-                    <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
-                      ★ Artist
-                    </span>
-                  )}
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                        <span className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                          b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
-                        )}>{b.service}</span>
-                        {b.status === "delivered" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Delivered</span>}
-                        {b.status === "cancelled" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">Cancelled</span>}
-                        {b.billNumber && <span className="text-[9px] font-mono text-muted-foreground/70">#{b.billNumber.split("-").pop()}</span>}
-                      </div>
-                      <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
-                      </p>
-                      {a && (
-                        <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0 pt-1">
-                      <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
-                      {due > 0 ? (
-                        <p className="text-xs text-destructive font-semibold flex items-center justify-end"><IndianRupee className="size-3" />{Math.round(due).toLocaleString("en-IN")} due</p>
-                      ) : (
-                        <p className="text-xs text-success font-semibold">Paid</p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                {selectMode ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelected((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(b.id)) next.delete(b.id); else next.add(b.id);
+                        return next;
+                      });
+                    }}
+                    className={cardCls}
+                  >{inner}</button>
+                ) : (
+                  <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>{inner}</Link>
+                )}
               </li>
             );
           })}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete ${selected.size} booking${selected.size > 1 ? "s" : ""}?`}
+        description="Deleted bookings move to Recently Deleted (Settings → Data) for 7 days."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => {
+          const n = selected.size;
+          selected.forEach((id) => deleteBooking(id));
+          setSelected(new Set());
+          setSelectMode(false);
+          setConfirmOpen(false);
+          toast.success(`${n} booking${n > 1 ? "s" : ""} deleted`);
+        }}
+      />
     </AppShell>
   );
 }
