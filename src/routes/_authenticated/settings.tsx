@@ -459,6 +459,76 @@ function SettingsPage() {
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>
+
+      <ConfirmDialog
+        open={!!restoreId}
+        onOpenChange={(v) => !v && setRestoreId(null)}
+        title="Restore this booking?"
+        description="It will be moved back to the active bookings list with its payments."
+        confirmLabel="Restore"
+        onConfirm={() => {
+          if (restoreId) { restoreBooking(restoreId); toast.success("Booking restored"); }
+          setRestoreId(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "resetTheme"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Reset theme to default?"
+        description="Switches back to Maroon Ivory and clears custom colours."
+        confirmLabel="Reset"
+        onConfirm={() => {
+          update({ theme: "maroon", customPrimary: undefined, customColors: undefined });
+          toast.success("Theme reset");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "resetPricing"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Reset pricing & measurements?"
+        description="Restores default prices (₹350 / ₹800) and default P/W/H measurements."
+        confirmLabel="Reset"
+        onConfirm={() => {
+          update({
+            prepleatPrice: 350, drapePrice: 800,
+            defaultMeasurements: [{ label: "P", value: 40 }, { label: "W", value: 32 }, { label: "H", value: 38 }],
+            defaultPaymentMode: "gpay",
+          });
+          toast.success("Defaults restored");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "clearData"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Delete all bookings, customers & payments?"
+        description="Your settings, theme and categories are kept. This cannot be undone."
+        confirmLabel="Delete all"
+        tone="danger"
+        onConfirm={() => {
+          useStore.setState({ bookings: [], customers: [], payments: [], trash: [], expenses: [], extraIncomes: [], activity: [], redoStack: [] });
+          toast.success("All data cleared");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "factoryReset"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Factory reset the entire app?"
+        description="Wipes ALL data, settings, theme, categories, activity log and recycle bin. The app will be like newly installed. This cannot be undone."
+        confirmLabel="Reset everything"
+        tone="danger"
+        onConfirm={() => {
+          resetApp();
+          toast.success("App reset to defaults");
+          setConfirmAction(null);
+        }}
+      />
     </AppShell>
   );
 }
