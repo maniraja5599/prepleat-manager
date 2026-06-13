@@ -433,6 +433,10 @@ function IncomeView(p: {
   topCustomers: { c: any; amount: number }[];
   modeSplit: Record<string, number>;
   recent: { p: any; c: any; b: any }[];
+  extraTotal: number;
+  extraByCategory: { cat: string; amount: number; pct: number }[];
+  recentExtra: { id: string; amount: number; category: string; note?: string; date: string; mode?: PaymentMode }[];
+  onDeleteExtra: (id: string) => void;
 }) {
   return (
     <>
