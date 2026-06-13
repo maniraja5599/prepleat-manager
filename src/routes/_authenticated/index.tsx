@@ -75,17 +75,9 @@ function CalendarPage() {
       .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
   }, [bookings, cursor]);
 
-  // Swipe between months
-  const touchX = useRef<number | null>(null);
+  // Day swipe (left/right on the day-events list) still changes the selected day.
   const dayTouchX = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchX.current;
-    touchX.current = null;
-    if (Math.abs(dx) < 50) return;
-    setCursor((c) => (dx < 0 ? addMonths(c, 1) : subMonths(c, 1)));
-  };
+
 
   // Long-press peek
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
