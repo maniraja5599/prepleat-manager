@@ -212,8 +212,8 @@ function NewBooking() {
 
       {/* Booking source — always decide this first because pricing differs. */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Booking for</p>
-        <div className="grid grid-cols-2 gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Booking for</p>
+        <div className="grid grid-cols-2 gap-2.5">
           {([
             { id: "direct" as const, label: "Direct Client", icon: User },
             { id: "artist" as const, label: "Via Artist", icon: Palette },
@@ -223,10 +223,10 @@ function NewBooking() {
               type="button"
               onClick={() => { setBookingSource(id); setPriceTouched(false); if (id === "direct") setArtistId(""); }}
               className={cn(
-                "rounded-2xl px-3 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition",
-                bookingSource === id ? "saree-gradient text-primary-foreground" : "bg-secondary text-foreground",
+                "rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 border border-border/40",
+                bookingSource === id ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20" : "bg-secondary/40 text-foreground hover:bg-secondary/60",
               )}
-            ><Icon className="size-4" />{label}</button>
+            ><Icon className="size-3.5" />{label}</button>
           ))}
         </div>
         {bookingSource === "artist" && (
@@ -293,24 +293,32 @@ function NewBooking() {
       </section>
 
       {/* Service toggle */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {(["prepleat", "drape"] as ServiceType[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => {
-              setService(s); setPriceTouched(false);
-              setPricePerSaree(bookingSource === "artist"
-                ? (s === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
-                : (s === "prepleat" ? settings.prepleatPrice : settings.drapePrice));
-            }}
-            className={cn(
-              "py-4 rounded-2xl font-semibold uppercase tracking-wider text-sm transition card-shadow",
-              service === s ? "saree-gradient text-primary-foreground" : "bg-card text-foreground",
-            )}
-          >{s === "prepleat"
-            ? `PrePleat · ₹${bookingSource === "artist" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.prepleatPrice}`
-            : `Drape · ₹${bookingSource === "artist" ? settings.artistDrapePrice ?? settings.drapePrice : settings.drapePrice}`}</button>
-        ))}
+      <div className="grid grid-cols-2 gap-2.5 mb-4">
+        {(["prepleat", "drape"] as ServiceType[]).map((s) => {
+          const active = service === s;
+          const price = bookingSource === "artist"
+            ? (s === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
+            : (s === "prepleat" ? settings.prepleatPrice : settings.drapePrice);
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setService(s); setPriceTouched(false);
+                setPricePerSaree(price);
+              }}
+              className={cn(
+                "py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-95 card-shadow border border-border/40",
+                active ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20" : "bg-card text-foreground hover:bg-secondary/20",
+              )}
+            >
+              {active && <Check className="size-3.5 stroke-[3]" />}
+              <span>
+                {s === "prepleat" ? "PrePleat" : "Drape"} · ₹{price}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Customer — hidden by default when booking via artist (often unknown). */}
@@ -462,33 +470,35 @@ function NewBooking() {
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Order</p>
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm">Saree count</span>
+          <span className="text-sm font-medium">Saree count</span>
           <div className="flex items-center gap-3">
-            <button onClick={() => setSareeCount(Math.max(1, sareeCount - 1))} className="size-9 rounded-full bg-secondary text-lg font-bold">−</button>
-            <span className="w-8 text-center text-xl font-bold tabular-nums">{sareeCount}</span>
-            <button onClick={() => setSareeCount(sareeCount + 1)} className="size-9 rounded-full bg-secondary text-lg font-bold">+</button>
+            <button type="button" onClick={() => setSareeCount(Math.max(1, sareeCount - 1))} className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150">−</button>
+            <span className="w-8 text-center text-lg font-bold tabular-nums">{sareeCount}</span>
+            <button type="button" onClick={() => setSareeCount(sareeCount + 1)} className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150">+</button>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-3 mt-3">
-          <span className="text-sm">Price / saree</span>
-          <div className="flex items-center gap-1 bg-secondary rounded-full px-1">
+        <div className="flex items-center justify-between gap-3 mt-3.5">
+          <span className="text-sm font-medium">Price / saree</span>
+          <div className="flex items-center gap-1 bg-secondary rounded-full px-1 py-0.5">
             <button
+              type="button"
               onClick={() => { setPriceTouched(true); setPricePerSaree(Math.max(0, effPrice - 50)); }}
-              className="size-7 rounded-full"
-            ><Minus className="size-3.5 mx-auto" /></button>
+              className="size-7 rounded-full flex items-center justify-center hover:bg-background/40 active:scale-90 transition-all duration-150"
+            ><Minus className="size-3.5" /></button>
             <div className="relative w-20">
               <IndianRupee className="absolute left-1 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
               <input
                 type="number"
                 value={priceTouched ? pricePerSaree : effPrice}
                 onChange={(e) => { setPriceTouched(true); setPricePerSaree(Number(e.target.value) || 0); }}
-                className="w-full bg-transparent pl-5 pr-1 py-1.5 text-sm text-right tabular-nums focus:outline-none"
+                className="w-full bg-transparent pl-5 pr-1 py-1 text-sm text-right font-semibold tabular-nums focus:outline-none"
               />
             </div>
             <button
+              type="button"
               onClick={() => { setPriceTouched(true); setPricePerSaree(effPrice + 50); }}
-              className="size-7 rounded-full"
-            ><Plus className="size-3.5 mx-auto" /></button>
+              className="size-7 rounded-full flex items-center justify-center hover:bg-background/40 active:scale-90 transition-all duration-150"
+            ><Plus className="size-3.5" /></button>
           </div>
         </div>
         {quotedLastPrice && (
@@ -644,7 +654,7 @@ function NewBooking() {
             className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
-        <div className="grid grid-cols-4 gap-2 mt-2">
+        <div className="grid grid-cols-4 gap-2.5 mt-2.5">
           {[
             { label: "Clear", v: 0 },
             { label: "50%", v: Math.round(total / 2) },
@@ -653,8 +663,9 @@ function NewBooking() {
           ].map((b) => (
             <button
               key={b.label}
+              type="button"
               onClick={() => setAdvance(String(b.v))}
-              className="py-1.5 rounded-full bg-secondary text-xs font-semibold"
+              className="py-2 rounded-xl bg-secondary/50 border border-border/20 text-xs font-bold transition-all duration-150 active:scale-95 hover:bg-secondary"
             >{b.label}</button>
           ))}
         </div>
@@ -732,10 +743,11 @@ function NewBooking() {
       </section>
 
       <button
+        type="button"
         onClick={openReview}
-        className="w-full saree-gradient text-primary-foreground py-4 rounded-2xl font-semibold mt-2 flex items-center justify-center gap-2 active:scale-[0.98] transition shadow-lg shadow-primary/20"
+        className="w-full saree-gradient text-primary-foreground py-3 rounded-xl font-bold uppercase tracking-wider text-xs mt-3.5 flex items-center justify-center gap-2 active:scale-98 transition shadow-md shadow-primary/25"
       >
-        <Check className="size-5" /> Review & Save
+        <Check className="size-4 stroke-[3]" /> Review & Save
       </button>
 
       {reviewOpen && (
@@ -762,9 +774,9 @@ function NewBooking() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <button onClick={() => setReviewOpen(false)} className="py-3 rounded-2xl bg-secondary text-sm font-semibold">Edit</button>
-              <button onClick={() => { setReviewOpen(false); confirmSave(); }} className="py-3 rounded-2xl saree-gradient text-primary-foreground text-sm font-semibold">Confirm & Save</button>
+            <div className="grid grid-cols-2 gap-2.5 mt-5">
+              <button type="button" onClick={() => setReviewOpen(false)} className="py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95">Edit</button>
+              <button type="button" onClick={() => { setReviewOpen(false); confirmSave(); }} className="py-2.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-sm shadow-primary/20">Confirm & Save</button>
             </div>
           </div>
         </div>

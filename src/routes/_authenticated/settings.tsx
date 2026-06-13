@@ -71,7 +71,6 @@ function SettingsPage() {
 
   // Swipe tab switching on mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const sidebarTouchStartRef = useRef<{ x: number; y: number } | null>(null);
   const TABS_ORDER: TabId[] = ["pricing", "theme", "headers", "data", "account", "help"];
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -108,40 +107,6 @@ function SettingsPage() {
     }
   };
 
-  const handleSidebarTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      sidebarTouchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-      };
-    }
-  };
-
-  const handleSidebarTouchEnd = (e: React.TouchEvent) => {
-    if (!sidebarTouchStartRef.current) return;
-    const dx = e.changedTouches[0].clientX - sidebarTouchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - sidebarTouchStartRef.current.y;
-    sidebarTouchStartRef.current = null;
-
-    // Switch tabs on vertical swipe on the sidebar
-    if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx)) {
-      const idx = TABS_ORDER.indexOf(tab);
-      if (dy > 0) {
-        // Swipe down -> Select previous tab
-        if (idx > 0) {
-          setTab(TABS_ORDER[idx - 1]);
-          toast.info(`Tab: ${TABS.find((t) => t.id === TABS_ORDER[idx - 1])?.label}`, { duration: 800 });
-        }
-      } else {
-        // Swipe up -> Select next tab
-        if (idx < TABS_ORDER.length - 1) {
-          setTab(TABS_ORDER[idx + 1]);
-          toast.info(`Tab: ${TABS.find((t) => t.id === TABS_ORDER[idx + 1])?.label}`, { duration: 800 });
-        }
-      }
-    }
-  };
-
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
     const reader = new FileReader();
@@ -156,11 +121,7 @@ function SettingsPage() {
     <AppShell wide title="Settings" subtitle="Changes save instantly">
       <div className="grid gap-3 grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
         {/* Left rail — icon-only on mobile, full list on desktop */}
-        <nav 
-          className="sticky top-2 self-start"
-          onTouchStart={handleSidebarTouchStart}
-          onTouchEnd={handleSidebarTouchEnd}
-        >
+        <nav className="sticky top-2 self-start">
           <ul className="bg-card card-shadow rounded-2xl p-1.5 sm:p-2 space-y-1">
             {TABS.map((t) => {
               const active = tab === t.id;
