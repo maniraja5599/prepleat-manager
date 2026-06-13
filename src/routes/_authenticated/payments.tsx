@@ -835,10 +835,11 @@ function SummaryView(p: {
 
 // === Add expense sheet ===
 function AddExpenseSheet({
-  categories, defaultMode, onClose, onSave,
+  categories, defaultMode, modes, onClose, onSave,
 }: {
   categories: string[];
   defaultMode: PaymentMode;
+  modes: string[];
   onClose: () => void;
   onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
 }) {
