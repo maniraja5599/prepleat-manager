@@ -480,10 +480,10 @@ function SettingsPage() {
                 className="w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5"
               ><Trash2 className="size-3.5" /> Clear all data</button>
               <button
-                onClick={() => setConfirmAction("factoryReset")}
+                onClick={() => { setFactoryTyped(""); setFactoryOpen(true); }}
                 className="w-full px-3 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center justify-center gap-1.5"
               ><AlertTriangle className="size-3.5" /> Factory reset (like new)</button>
-              <p className="text-[11px] text-muted-foreground text-center mt-1">Factory reset wipes everything — data, settings, theme, activity.</p>
+              <p className="text-[11px] text-muted-foreground text-center mt-1">Clear-all-data supports Undo for ~8 seconds. Factory reset is permanent.</p>
             </div>
           </Section>
         </>
@@ -556,27 +556,42 @@ function SettingsPage() {
         open={confirmAction === "clearData"}
         onOpenChange={(v) => !v && setConfirmAction(null)}
         title="Delete all bookings, customers & payments?"
-        description="Your settings, theme and categories are kept. This cannot be undone."
+        description="Your settings, theme and categories are kept. You can Undo from the toast for ~8 seconds."
         confirmLabel="Delete all"
         tone="danger"
         onConfirm={() => {
+          const snap = {
+            bookings: useStore.getState().bookings,
+            customers: useStore.getState().customers,
+            payments: useStore.getState().payments,
+            trash: useStore.getState().trash,
+            expenses: useStore.getState().expenses,
+            extraIncomes: useStore.getState().extraIncomes,
+            activity: useStore.getState().activity,
+            redoStack: useStore.getState().redoStack,
+          };
           useStore.setState({ bookings: [], customers: [], payments: [], trash: [], expenses: [], extraIncomes: [], activity: [], redoStack: [] });
-          toast.success("All data cleared");
+          toast.success("All data cleared", {
+            duration: 8000,
+            action: {
+              label: "Undo",
+              onClick: () => { useStore.setState(snap); toast.success("Data restored", { duration: 1500 }); },
+            },
+          });
           setConfirmAction(null);
         }}
       />
 
-      <ConfirmDialog
-        open={confirmAction === "factoryReset"}
-        onOpenChange={(v) => !v && setConfirmAction(null)}
-        title="Factory reset the entire app?"
-        description="Wipes ALL data, settings, theme, categories, activity log and recycle bin. The app will be like newly installed. This cannot be undone."
-        confirmLabel="Reset everything"
-        tone="danger"
+      <FactoryResetDialog
+        open={factoryOpen}
+        typed={factoryTyped}
+        setTyped={setFactoryTyped}
+        onOpenChange={(v) => { setFactoryOpen(v); if (!v) setFactoryTyped(""); }}
         onConfirm={() => {
           resetApp();
           toast.success("App reset to defaults");
-          setConfirmAction(null);
+          setFactoryOpen(false);
+          setFactoryTyped("");
         }}
       />
     </AppShell>
