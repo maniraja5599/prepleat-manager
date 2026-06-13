@@ -4,7 +4,7 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee, SlidersHorizontal, X as XIcon } from "lucide-react";
+import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 
 
@@ -89,10 +89,19 @@ function BookingsPage() {
   return (
     <AppShell title="Bookings">
       {/* Slim stat chips */}
-      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar">
+      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar items-center">
         <StatChip label="Total" value={String(list.length)} />
         <StatChip label="Collected" value={fmtINR(collected)} tone="success" />
         <StatChip label="Pending" value={fmtINR(pending)} tone={pending > 0 ? "danger" : "muted"} />
+        <button
+          onClick={() => { setShowCompleted((v) => !v); setSort("recent"); }}
+          className={cn(
+            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition",
+            showCompleted ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+          )}
+        >
+          <History className="size-3.5" /> Past
+        </button>
       </div>
 
       <BookingRequestsInbox />

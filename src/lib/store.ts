@@ -62,6 +62,7 @@ export interface Customer {
   name: string;
   phone: string;
   address?: string;
+  reference?: string;
   notes?: string;
   createdAt: string;
   updatedAt?: string;

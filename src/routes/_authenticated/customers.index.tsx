@@ -33,7 +33,7 @@ function CustomersPage() {
         const due = cb.reduce((s, b) => s + totalDue(b), 0);
         return { ...c, count: cb.length, due };
       })
-      .filter((c) => !ql || c.name.toLowerCase().includes(ql) || c.phone.includes(ql))
+      .filter((c) => !ql || c.name.toLowerCase().includes(ql) || c.phone.includes(ql) || (c.address ?? "").toLowerCase().includes(ql) || (c.reference ?? "").toLowerCase().includes(ql))
       .filter((c) => !dueOnly || c.due > 0)
       .sort((a, b) => {
         if (sortBy === "name") return a.name.localeCompare(b.name);
@@ -149,6 +149,8 @@ function CustomersPage() {
                   <div className="min-w-0">
                     <p className="font-semibold truncate">{c.name}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="size-3"/>{c.phone}</p>
+                    {c.address && <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">{c.address}</p>}
+                    {c.reference && <p className="text-[10px] text-primary/80 truncate mt-0.5">ref: {c.reference}</p>}
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">{c.count} order{c.count !== 1 && "s"}</p>
