@@ -4,7 +4,7 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee, SlidersHorizontal, X as XIcon } from "lucide-react";
+import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 
 
