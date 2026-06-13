@@ -1052,7 +1052,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function ChipListSection({
-  title, hint, placeholder, tone, items, draft, setDraft, onAdd, onRemove,
+  title, hint, placeholder, tone, items, draft, setDraft, onAdd, onRemove, disabled,
 }: {
   title: string;
   hint: string;
@@ -1063,6 +1063,7 @@ function ChipListSection({
   setDraft: (v: string) => void;
   onAdd: (v: string) => void;
   onRemove: (v: string) => void;
+  disabled?: boolean;
 }) {
   const toneClasses = {
     success: "bg-success/10 border border-success/30 text-success shadow-sm",
@@ -1083,8 +1084,12 @@ function ChipListSection({
           <span key={p} className={cn("inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 hover:scale-[1.02]", toneClasses)}>
             {p}
             <button
-              onClick={() => onRemove(p)}
-              className="opacity-70 hover:opacity-100 p-0.5 rounded-full hover:bg-foreground/10 transition-all shrink-0 cursor-pointer ml-1"
+              disabled={disabled}
+              onClick={() => !disabled && onRemove(p)}
+              className={cn(
+                "opacity-70 hover:opacity-100 p-0.5 rounded-full hover:bg-foreground/10 transition-all shrink-0 cursor-pointer ml-1",
+                disabled && "pointer-events-none opacity-30"
+              )}
               aria-label={`Remove ${p}`}
             ><X className="size-2.5" /></button>
           </span>
@@ -1095,13 +1100,23 @@ function ChipListSection({
       </div>
       <div className="flex gap-2">
         <input
+          disabled={disabled}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          onKeyDown={(e) => { if (e.key === "Enter") !disabled && submit(); }}
           placeholder={placeholder}
           className="input flex-1"
         />
-        <button onClick={submit} className="px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold">Add</button>
+        <button
+          disabled={disabled}
+          onClick={submit}
+          className={cn(
+            "px-4 rounded-full saree-gradient text-primary-foreground text-sm font-semibold",
+            disabled && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          Add
+        </button>
       </div>
     </Section>
   );

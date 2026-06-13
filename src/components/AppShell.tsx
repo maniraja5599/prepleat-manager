@@ -196,12 +196,9 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
         </div>
 
         {title && (
-          <header className="px-5 pt-2 pb-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-            <div className="min-w-0">
-              <h1 className="text-xl font-display font-semibold tracking-tight truncate">{title}</h1>
-              {subtitle && <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
-            </div>
-            {right}
+          <header className="px-5 pt-2 pb-3">
+            <h1 className="text-xl font-display font-semibold tracking-tight truncate">{title}</h1>
+            {subtitle && <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
           </header>
         )}
         <main className="px-5">{children}</main>
@@ -291,7 +288,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                     {bookings.filter(b => b.status !== "cancelled" && isToday(b.deliveryDate)).map(b => (
                       <Link
                         key={b.id}
-                        to={`/bookings/${b.id}`}
+                        to="/bookings/$id"
+                        params={{ id: b.id }}
                         onClick={() => setShowPopup(false)}
                         className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left animate-in slide-in-from-bottom-1"
                       >
@@ -330,7 +328,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                       .map(b => (
                         <Link
                           key={b.id}
-                          to={`/bookings/${b.id}`}
+                          to="/bookings/$id"
+                          params={{ id: b.id }}
                           onClick={() => setShowPopup(false)}
                           className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left animate-in slide-in-from-bottom-1"
                         >
@@ -361,7 +360,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                       .map(b => (
                         <Link
                           key={b.id}
-                          to={`/bookings/${b.id}`}
+                          to="/bookings/$id"
+                          params={{ id: b.id }}
                           onClick={() => setShowPopup(false)}
                           className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left animate-in slide-in-from-bottom-1"
                         >
