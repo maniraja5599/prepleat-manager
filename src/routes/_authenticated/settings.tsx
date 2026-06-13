@@ -582,9 +582,11 @@ function ActivityBlock() {
   const redoStack = useStore((s) => s.redoStack);
   const undoLast = useStore((s) => s.undoLastEdit);
   const redoLast = useStore((s) => s.redoLastEdit);
+  const undoEntry = useStore((s) => s.undoActivityEntry);
   const clearActivity = useStore((s) => s.clearActivity);
   const customers = useStore((s) => s.customers);
   const bookings = useStore((s) => s.bookings);
+  const [query, setQuery] = useState("");
 
   const canUndo = activity.some((e) => e.kind === "update" && e.prev && e.next);
   const canRedo = redoStack.length > 0;
@@ -601,9 +603,22 @@ function ActivityBlock() {
     update: "bg-primary/15 text-primary",
     delete: "bg-destructive/15 text-destructive",
     restore: "bg-secondary text-foreground",
+    cancel: "bg-destructive/15 text-destructive",
     "payment-add": "bg-success/15 text-success",
     "payment-delete": "bg-destructive/15 text-destructive",
   };
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? activity.filter((e) => {
+        const name = nameFor(e.bookingId).toLowerCase();
+        return (
+          e.kind.toLowerCase().includes(q) ||
+          e.summary.toLowerCase().includes(q) ||
+          name.includes(q)
+        );
+      })
+    : activity;
 
   return (
     <>
@@ -612,7 +627,7 @@ function ActivityBlock() {
           <button disabled={!canUndo}
             onClick={() => {
               const ok = undoLast();
-              if (ok) toast.success("Edit undone", { duration: 1500 });
+              if (ok) toast.success("Edit undone");
               else toast.error("Nothing to undo");
             }}
             className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40">
@@ -621,36 +636,58 @@ function ActivityBlock() {
           <button disabled={!canRedo}
             onClick={() => {
               const ok = redoLast();
-              if (ok) toast.success("Edit redone", { duration: 1500 });
+              if (ok) toast.success("Edit redone");
               else toast.error("Nothing to redo");
             }}
             className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40">
             <Redo2 className="size-3.5" /> Redo
           </button>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-2">Undo reverts your most recent booking edit. Deletes are restored from the Data tab.</p>
+        <p className="text-[11px] text-muted-foreground mt-2">Tap the revert icon on any edit/cancel entry below to restore that specific change.</p>
       </Section>
 
-      <Section title={`Activity log (${activity.length})`}>
-        {activity.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No activity yet.</p>
+      <Section title={`Activity log (${filtered.length}${q ? ` / ${activity.length}` : ""})`}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, action or detail…"
+          className="input w-full mb-2"
+        />
+        {filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{q ? "No matching activity." : "No activity yet."}</p>
         ) : (
           <>
-            <ul className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
-              {activity.map((e) => (
-                <li key={e.id} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/40">
-                  <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${kindStyle[e.kind] ?? "bg-secondary"}`}>{e.kind}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium truncate">{nameFor(e.bookingId) || "—"}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{e.summary}</p>
-                  </div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                    {formatDistanceToNow(new Date(e.ts), { addSuffix: false })}
-                  </span>
-                </li>
-              ))}
+            <ul className="space-y-1.5 max-h-[480px] overflow-y-auto pr-1">
+              {filtered.map((e) => {
+                const revertable = !!(e.prev && e.bookingId && (e.kind === "update" || e.kind === "cancel"));
+                return (
+                  <li key={e.id} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/40">
+                    <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${kindStyle[e.kind] ?? "bg-secondary"}`}>{e.kind}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium truncate">{nameFor(e.bookingId) || "—"}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{e.summary}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+                      {formatDistanceToNow(new Date(e.ts), { addSuffix: false })}
+                    </span>
+                    {revertable && (
+                      <button
+                        title="Revert this change"
+                        onClick={() => {
+                          const ok = undoEntry(e.id);
+                          if (ok) toast.success("Change reverted");
+                          else toast.error("Cannot revert");
+                        }}
+                        className="shrink-0 size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20"
+                      >
+                        <Undo2 className="size-3" />
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
-            <button onClick={() => { clearActivity(); toast.success("Activity cleared", { duration: 1200 }); }}
+            <button onClick={() => { clearActivity(); toast.success("Activity cleared"); }}
               className="mt-3 w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5">
               <Trash2 className="size-3.5" /> Clear activity log
             </button>

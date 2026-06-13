@@ -154,6 +154,7 @@ interface State {
   deleteBooking: (id: string) => void;
   restoreBooking: (id: string) => void;
   undoLastEdit: () => boolean;
+  undoActivityEntry: (entryId: string) => boolean;
   redoLastEdit: () => boolean;
   clearActivity: () => void;
 
@@ -269,7 +270,7 @@ export const useStore = create<State>()(
         };
         set((s) => ({
           bookings: [booking, ...s.bookings],
-          activity: [entry, ...s.activity].slice(0, 200),
+          activity: [entry, ...s.activity].slice(0, 500),
           redoStack: [],
         }));
         if (b.advancePaid > 0) {
@@ -294,7 +295,7 @@ export const useStore = create<State>()(
           };
           return {
             bookings: s.bookings.map((x) => (x.id === id ? next : x)),
-            activity: [entry, ...s.activity].slice(0, 200),
+            activity: [entry, ...s.activity].slice(0, 500),
             redoStack: [],
           };
         }),
@@ -309,7 +310,7 @@ export const useStore = create<State>()(
           };
           return {
             bookings: s.bookings.map((x) => (x.id === id ? next : x)),
-            activity: [entry, ...s.activity].slice(0, 200),
+            activity: [entry, ...s.activity].slice(0, 500),
             redoStack: [],
           };
         }),
@@ -336,7 +337,7 @@ export const useStore = create<State>()(
             bookings: s.bookings.filter((x) => x.id !== id),
             payments: s.payments.filter((p) => p.bookingId !== id),
             trash,
-            activity: [entry, ...s.activity].slice(0, 200),
+            activity: [entry, ...s.activity].slice(0, 500),
             redoStack: [],
             tombstones: [...newTombs, ...s.tombstones].slice(0, 1000),
           };
@@ -356,7 +357,7 @@ export const useStore = create<State>()(
             payments: [...t.payments.map((p) => ({ ...p, updatedAt: now })), ...s.payments],
             trash: s.trash.filter((x) => x.booking.id !== id),
             tombstones: s.tombstones.filter((tb) => !restoredIds.has(tb.id)),
-            activity: [entry, ...s.activity].slice(0, 200),
+            activity: [entry, ...s.activity].slice(0, 500),
           };
         }),
       undoLastEdit: () => {
@@ -378,8 +379,21 @@ export const useStore = create<State>()(
         if (!entry.next) return false;
         set({
           bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.next!, updatedAt: new Date().toISOString() } : x)),
-          activity: [{ ...entry, id: uid(), ts: new Date().toISOString() }, ...s.activity].slice(0, 200),
+          activity: [{ ...entry, id: uid(), ts: new Date().toISOString() }, ...s.activity].slice(0, 500),
           redoStack: rest,
+        });
+        return true;
+      },
+      undoActivityEntry: (entryId) => {
+        const s = get();
+        const idx = s.activity.findIndex((e) => e.id === entryId);
+        if (idx === -1) return false;
+        const entry = s.activity[idx];
+        if (!entry.prev || !entry.bookingId) return false;
+        set({
+          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x)),
+          activity: s.activity.filter((_, i) => i !== idx),
+          redoStack: [entry, ...s.redoStack].slice(0, 50),
         });
         return true;
       },
@@ -404,7 +418,7 @@ export const useStore = create<State>()(
             id: uid(), ts: now, kind: "payment-add",
             bookingId: p.bookingId, summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
           };
-          return { payments: [payment, ...s.payments], bookings, activity: [entry, ...s.activity].slice(0, 200) };
+          return { payments: [payment, ...s.payments], bookings, activity: [entry, ...s.activity].slice(0, 500) };
         }),
       updatePayment: (id, patch) =>
         set((s) => ({
@@ -435,7 +449,7 @@ export const useStore = create<State>()(
           return {
             payments: s.payments.filter((p) => p.id !== id),
             bookings,
-            activity: [entry, ...s.activity].slice(0, 200),
+            activity: [entry, ...s.activity].slice(0, 500),
             tombstones: [{ id, type: "payment" as const, ts: now }, ...s.tombstones].slice(0, 1000),
           };
         }),
