@@ -81,10 +81,10 @@ function CustomerDetail() {
           <button
             onClick={() => {
               if (editing) {
-                updateCustomer(customer.id, { name: name.trim() || customer.name, phone: phone.trim() || customer.phone, address: address.trim() || undefined });
+                updateCustomer(customer.id, { name: name.trim() || customer.name, phone: phone.trim() || customer.phone, address: address.trim() || undefined, reference: reference.trim() || undefined });
                 toast.success("Customer updated");
               } else {
-                setName(customer.name); setPhone(customer.phone); setAddress(customer.address ?? "");
+                setName(customer.name); setPhone(customer.phone); setAddress(customer.address ?? ""); setReference(customer.reference ?? "");
               }
               setEditing(!editing);
             }}
