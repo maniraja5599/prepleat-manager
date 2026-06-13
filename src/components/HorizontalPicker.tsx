@@ -144,7 +144,7 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
                 onClick={() => { onChange(it.key); fireDoubleTap(); }}
                 onTouchEnd={() => { /* tap counted via onClick */ }}
                 className={cn(
-                  "snap-center shrink-0 h-14 flex flex-col items-center justify-center rounded-xl transition relative z-10",
+                  "snap-center shrink-0 h-14 flex flex-col items-center justify-center rounded-xl transition relative z-10 no-select",
                   active ? "text-primary" : "text-muted-foreground/70",
                 )}
                 style={{ width: itemWidth }}
