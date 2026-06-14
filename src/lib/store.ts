@@ -108,7 +108,7 @@ export interface Settings {
   artistDrapePrice?: number;
   defaultMeasurements: Measurement[];
   showPaymentOnCalendar: boolean;
-  calendarAmountDisplay?: "none" | "pending" | "both";
+  calendarAmountDisplay?: "none" | "pending" | "total" | "both";
   businessName: string;
   theme: ThemeName;
   customPrimary?: string;
@@ -197,6 +197,7 @@ interface State {
   updateSettings: (s: Partial<Settings>) => void;
   resetApp: () => void;
   importHistoricalCsv: () => void;
+  undoImportHistoricalCsv: () => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -645,6 +646,11 @@ export const useStore = create<State>()(
         }),
 
       importHistoricalCsv: () => {
+        // Idempotency guard — if data was already imported, do nothing on subsequent calls
+        const existingPayments = get().payments ?? [];
+        const alreadyImported = existingPayments.some((p: any) => p.note === "Imported Earning");
+        if (alreadyImported) return;
+
         const rawCsv = `13-01-2026,Saree Prepleat,1500,
 14-01-2026,Jeysu Artist,300,GPay
 16-01-2026,Srinithi,1700,
@@ -940,6 +946,32 @@ export const useStore = create<State>()(
           };
           payments.push(payment);
         }
+
+        set({ customers, bookings, payments });
+      },
+
+      undoImportHistoricalCsv: () => {
+        const importedPayments = (get().payments ?? []).filter(
+          (p: any) => p.note === "Imported Earning"
+        );
+        if (importedPayments.length === 0) return;
+
+        const importedBookingIds = new Set(
+          importedPayments.map((p: any) => p.bookingId).filter(Boolean)
+        );
+
+        const payments = (get().payments ?? []).filter(
+          (p: any) => p.note !== "Imported Earning"
+        );
+        const bookings = (get().bookings ?? []).filter(
+          (b: any) => !importedBookingIds.has(b.id)
+        );
+
+        const remainingCustomerIds = new Set(bookings.map((b: any) => b.customerId));
+        const customers = (get().customers ?? []).filter((c: any) => {
+          if (c.kind === "client") return remainingCustomerIds.has(c.id);
+          return true; // keep artists
+        });
 
         set({ customers, bookings, payments });
       },

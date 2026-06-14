@@ -209,6 +209,8 @@ function SettingsPage() {
   const trash = useStore((s) => s.trash);
   const restoreBooking = useStore((s) => s.restoreBooking);
   const resetApp = useStore((s) => s.resetApp);
+  const payments = useStore((s) => s.payments);
+  const isHistoryImported = (payments ?? []).some((p: any) => p.note === "Imported Earning");
   const fileRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<TabId>("pricing");
@@ -218,7 +220,7 @@ function SettingsPage() {
   const [modeDraft, setModeDraft] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<
-    null | "resetTheme" | "resetPricing" | "clearData"
+    null | "resetTheme" | "resetPricing" | "clearData" | "undoImport"
   >(null);
   const [factoryOpen, setFactoryOpen] = useState(false);
   const [factoryTyped, setFactoryTyped] = useState("");
@@ -544,17 +546,17 @@ function SettingsPage() {
                   <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                     Amount Display Mode
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
                     {(
                       [
                         { id: "none", label: "Hide" },
-                        { id: "pending", label: "Pending Only" },
-                        { id: "both", label: "Total & Pending" },
+                        { id: "pending", label: "Due" },
+                        { id: "total", label: "Total" },
+                        { id: "both", label: "Both" },
                       ] as const
                     ).map((opt) => (
                       <button
                         key={opt.id}
-                        disabled={dataLocked}
                         onClick={() => update({ calendarAmountDisplay: opt.id })}
                         className={cn(
                           "py-2 px-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition cursor-pointer active:scale-95 text-center",
@@ -1257,14 +1259,34 @@ function SettingsPage() {
                   </button>
                   <button
                     onClick={() => {
-                      useStore.getState().importHistoricalCsv();
-                      toast.success("Historical CSV imported successfully", { duration: 2000 });
+                      if (isHistoryImported) {
+                        setConfirmAction("undoImport");
+                      } else {
+                        useStore.getState().importHistoricalCsv();
+                        toast.success("Historical data imported successfully", { duration: 2000 });
+                      }
                     }}
-                    className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+                    className={`px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
+                      isHistoryImported
+                        ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+                        : "bg-secondary hover:bg-secondary/80"
+                    }`}
                   >
-                    <Upload className="size-3.5" /> Import Historical CSV
+                    {isHistoryImported ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        Undo
+                      </>
+                    ) : (
+                      <><Upload className="size-3.5" /> Import History</>
+                    )}
                   </button>
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {isHistoryImported
+                    ? "✓ History already imported. Click \"Undo\" to remove it."
+                    : "Import your previous earnings history into payments."}
+                </p>
                 <input
                   type="file"
                   ref={importFileRef}
@@ -1484,6 +1506,54 @@ function SettingsPage() {
             defaultPaymentMode: "gpay",
           });
           toast.success("Defaults restored");
+          setConfirmAction(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmAction === "undoImport"}
+        onOpenChange={(v) => !v && setConfirmAction(null)}
+        title="Remove imported history?"
+        tone="danger"
+        confirmLabel="Yes, Remove"
+        description={(() => {
+          const importedPmts = (payments ?? []).filter((p: any) => p.note === "Imported Earning");
+          const importedBookingIds = new Set(importedPmts.map((p: any) => p.bookingId).filter(Boolean));
+          const importedBookings = (bookings ?? []).filter((b: any) => importedBookingIds.has(b.id));
+          const importedCustomerIds = new Set(importedBookings.map((b: any) => b.customerId));
+          const remainingBookingCustomerIds = new Set(
+            (bookings ?? []).filter((b: any) => !importedBookingIds.has(b.id)).map((b: any) => b.customerId)
+          );
+          const removedClients = [...importedCustomerIds].filter((id) => !remainingBookingCustomerIds.has(id));
+          const totalAmt = importedPmts.reduce((s: number, p: any) => s + (p.amount || 0), 0);
+          return (
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">The following imported data will be permanently deleted:</p>
+              <div className="bg-destructive/10 rounded-xl p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payments removed</span>
+                  <span className="font-semibold">{importedPmts.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bookings removed</span>
+                  <span className="font-semibold">{importedBookings.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Clients removed</span>
+                  <span className="font-semibold">{removedClients.length}</span>
+                </div>
+                <div className="flex justify-between border-t border-destructive/20 pt-2">
+                  <span className="text-muted-foreground">Total amount</span>
+                  <span className="font-bold text-destructive">{fmtINR(totalAmt)}</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">This cannot be undone. You can re-import anytime.</p>
+            </div>
+          );
+        })()}
+        onConfirm={() => {
+          useStore.getState().undoImportHistoricalCsv();
+          toast.success("Import history removed", { duration: 2000 });
           setConfirmAction(null);
         }}
       />

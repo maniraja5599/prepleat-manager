@@ -458,6 +458,7 @@ function CalendarPage() {
                   )}
                   {calendarAmountDisplay !== "none" && (
                     <>
+                      {/* Pending / Due amount — shown in "pending" and "both" modes */}
                       {dueSum > 0 &&
                         (calendarAmountDisplay === "pending" ||
                           calendarAmountDisplay === "both") && (
@@ -470,16 +471,19 @@ function CalendarPage() {
                             ₹{dueSum > 999 ? Math.round(dueSum / 1000) + "k" : dueSum}
                           </span>
                         )}
-                      {totalSum > 0 && calendarAmountDisplay === "both" && (
-                        <span
-                          className={cn(
-                            "absolute top-0.5 left-1 text-[8px] font-bold leading-none",
-                            isSel ? "text-primary-foreground" : "text-muted-foreground/80",
-                          )}
-                        >
-                          ₹{totalSum > 999 ? Math.round(totalSum / 1000) + "k" : totalSum}
-                        </span>
-                      )}
+                      {/* Total amount — shown in "total" and "both" modes */}
+                      {totalSum > 0 &&
+                        (calendarAmountDisplay === "total" ||
+                          calendarAmountDisplay === "both") && (
+                          <span
+                            className={cn(
+                              "absolute top-0.5 left-1 text-[8px] font-bold leading-none",
+                              isSel ? "text-primary-foreground" : "text-muted-foreground/80",
+                            )}
+                          >
+                            ₹{totalSum > 999 ? Math.round(totalSum / 1000) + "k" : totalSum}
+                          </span>
+                        )}
                     </>
                   )}
                 </button>

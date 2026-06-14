@@ -339,7 +339,7 @@ function PaymentsPage() {
       });
     });
 
-    return list.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+    return list.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 50);
   }, [payments, extraIncomes, expenses, customers, bookings]);
 
   // Chronological monthly groupings of income vs expense since day 1
@@ -1409,40 +1409,27 @@ function SummaryView(p: {
 }) {
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
 
-  // States for toggle-able and auto-cycling chart
-  const [chartMode, setChartMode] = useState<"12months" | "alltime">("alltime");
-  const [isAutoCycling, setIsAutoCycling] = useState(true);
+  const [dateFilter, setDateFilter] = useState<string>("all"); // "all" or "yyyy-MM"
 
-  // Auto-cycling effect (every 6 seconds)
-  useEffect(() => {
-    if (!isAutoCycling) return;
-
-    const interval = setInterval(() => {
-      setChartMode((curr) => (curr === "12months" ? "alltime" : "12months"));
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, [isAutoCycling]);
-
-  // Dynamically switch data based on active chartMode
-  const chartData = p.trend12;
-
-  // Calculate domains for allTimeTrend composed chart to keep bars small at the bottom
-  const allTimeDomains = useMemo(() => {
+  // Build cumulative data and compute domains
+  const { allTimeWithCumulative, allTimeDomains, lifetimeCumulative } = useMemo(() => {
     if (!p.allTimeTrend || p.allTimeTrend.length === 0) {
-      return { minNet: 0, maxNet: 1000, maxBarStacked: 1000 };
+      return {
+        allTimeWithCumulative: [],
+        lifetimeCumulative: 0,
+        allTimeDomains: { minNet: 0, maxNet: 1000, maxBarStacked: 1000, maxCumulative: 1000 },
+      };
     }
 
-    let minNet = Infinity;
-    let maxNet = -Infinity;
-    let maxBarStacked = 0;
+    let minNet = Infinity, maxNet = -Infinity, maxBarStacked = 0, running = 0;
 
-    p.allTimeTrend.forEach((t) => {
+    const allTimeWithCumulative = p.allTimeTrend.map((t) => {
+      running += t.amount;
       if (t.net < minNet) minNet = t.net;
       if (t.net > maxNet) maxNet = t.net;
-
       const stacked = t.amount + t.expense;
       if (stacked > maxBarStacked) maxBarStacked = stacked;
+      return { ...t, cumulative: running };
     });
 
     const netRange = maxNet - minNet;
@@ -1450,70 +1437,55 @@ function SummaryView(p: {
     const safeMaxBarStacked = maxBarStacked || 1000;
 
     return {
-      minNet: minNet < 0 ? minNet - netPadding : 0,
-      maxNet: maxNet + netPadding,
-      maxBarStacked: safeMaxBarStacked * 3.5,
+      allTimeWithCumulative,
+      lifetimeCumulative: running,
+      allTimeDomains: {
+        minNet: minNet < 0 ? minNet - netPadding : 0,
+        maxNet: maxNet + netPadding,
+        maxBarStacked: safeMaxBarStacked * 3.5,
+        maxCumulative: running * 1.08 || 1000,
+      },
     };
   }, [p.allTimeTrend]);
 
+  // Milestone badges for cumulative
+  const milestones = useMemo(
+    () => [25000, 50000, 75000, 100000, 150000, 200000, 300000, 500000].filter((v) => v <= lifetimeCumulative),
+    [lifetimeCumulative]
+  );
+
   // Memos for dynamic helper metrics under the chart
   const metrics = useMemo(() => {
-    if (chartMode === "12months") {
-      const avgIncome = p.trend12.reduce((s, m) => s + m.amount, 0) / 12;
-      const avgExpense = p.trend12.reduce((s, m) => s + m.expense, 0) / 12;
-      return `Monthly Avg: Income ${fmtINR(avgIncome)} · Expense ${fmtINR(avgExpense)}`;
-    } else {
-      return `Lifetime Margin: ${margin}% · Total Net Profit: ${fmtINR(p.netProfit)}`;
-    }
-  }, [chartMode, p.trend12, margin, p.netProfit]);
+    return `Lifetime Margin: ${margin}% · Total Net Profit: ${fmtINR(p.netProfit)}`;
+  }, [margin, p.netProfit]);
 
   return (
     <>
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        {/* Chart Header with Manual Mode Toggles */}
+        {/* Chart Header */}
         <div className="flex items-center justify-between mb-2.5">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            {chartMode === "12months"
-              ? "Income vs Expense (12 months)"
-              : "Lifetime Summary (All Time)"}
+            Lifetime Summary (All Time)
           </p>
-
-          <div className="flex bg-secondary p-0.5 rounded-lg border border-border/80">
-            <button
-              onClick={() => {
-                setChartMode("12months");
-                setIsAutoCycling(false); // Pause auto cycle on manual toggle
-              }}
-              className={cn(
-                "px-2 py-0.5 text-[9px] font-bold rounded transition cursor-pointer",
-                chartMode === "12months"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              12 Months
-            </button>
-            <button
-              onClick={() => {
-                setChartMode("alltime");
-                setIsAutoCycling(false); // Pause auto cycle on manual toggle
-              }}
-              className={cn(
-                "px-2 py-0.5 text-[9px] font-bold rounded transition cursor-pointer",
-                chartMode === "alltime"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              All Time
-            </button>
-          </div>
         </div>
 
-        {chartMode === "12months" ? (
-          <div className="h-44 -mx-2">
+        <div className="h-52 -mx-2">
+          {allTimeWithCumulative.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+              No transaction data yet
+            </div>
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+              <ComposedChart
+                data={allTimeWithCumulative}
+                margin={{ top: 6, right: 10, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="cumulativeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   vertical={false}
                   stroke="var(--color-border)"
@@ -1526,7 +1498,11 @@ function SummaryView(p: {
                   tickLine={false}
                   tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                 />
-                <YAxis hide />
+                {/* Y-axis for cumulative area (top layer) */}
+                <YAxis yAxisId="cumulative" hide domain={[0, allTimeDomains.maxCumulative]} />
+                {/* Y-axis for income/expense bars */}
+                <YAxis yAxisId="bars" hide domain={[0, allTimeDomains.maxBarStacked]} />
+
                 <Tooltip
                   contentStyle={{
                     background: "var(--color-card)",
@@ -1534,110 +1510,50 @@ function SummaryView(p: {
                     borderRadius: 12,
                     fontSize: 12,
                   }}
-                  formatter={(v: number, name: string) => [
-                    fmtINR(v),
-                    name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net",
-                  ]}
+                  formatter={(v: number, name: string) => {
+                    const label =
+                      name === "cumulative" ? "Cumulative Total"
+                      : name === "amount" ? "Income"
+                      : name === "expense" ? "Expense"
+                      : name;
+                    return [fmtINR(v), label];
+                  }}
                 />
-                <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expense" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
-              </BarChart>
+
+                {/* Cumulative area — background layer */}
+                <Area
+                  yAxisId="cumulative"
+                  type="monotone"
+                  dataKey="cumulative"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2.5}
+                  strokeOpacity={1.0}
+                  fill="url(#cumulativeAreaGrad)"
+                  dot={{ r: 2.5, fill: "var(--color-card)", stroke: "var(--color-primary)", strokeWidth: 1.5 }}
+                  activeDot={{ r: 4.5, fill: "var(--color-primary)" }}
+                />
+
+                {/* Stacked Income & Expense bars */}
+                <Bar yAxisId="bars" dataKey="amount" fill="#10b981" stackId="a" barSize={10} opacity={0.85} />
+                <Bar yAxisId="bars" dataKey="expense" fill="#ef4444" stackId="a" barSize={10} radius={[3, 3, 0, 0]} opacity={0.85} />
+              </ComposedChart>
             </ResponsiveContainer>
-          </div>
-        ) : (
-          <div className="h-44 -mx-2">
-            {p.allTimeTrend.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
-                No transaction data yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={p.allTimeTrend}
-                  margin={{ top: 6, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    vertical={false}
-                    stroke="var(--color-border)"
-                    strokeDasharray="3 3"
-                    opacity={0.4}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                  />
-                  {/* Dual hidden Y-axes to control scaling and keep bars small at the bottom */}
-                  <YAxis
-                    yAxisId="net"
-                    hide
-                    domain={[allTimeDomains.minNet, allTimeDomains.maxNet]}
-                  />
-                  <YAxis yAxisId="bars" hide domain={[0, allTimeDomains.maxBarStacked]} />
+          )}
+        </div>
 
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                    }}
-                    formatter={(v: number, name: string) => {
-                      const label =
-                        name === "amount"
-                          ? "Income"
-                          : name === "expense"
-                            ? "Expense"
-                            : name === "net"
-                              ? "Net Profit"
-                              : name;
-                      return [fmtINR(v), label];
-                    }}
-                  />
-                  {/* Stacked Income & Expense bars at the bottom using yAxisId="bars" */}
-                  <Bar
-                    yAxisId="bars"
-                    dataKey="amount"
-                    fill="#10b981"
-                    stackId="a"
-                    barSize={10}
-                    opacity={0.8}
-                  />
-                  <Bar
-                    yAxisId="bars"
-                    dataKey="expense"
-                    fill="#ef4444"
-                    stackId="a"
-                    barSize={10}
-                    radius={[3, 3, 0, 0]}
-                    opacity={0.8}
-                  />
-
-                  {/* Net Profit Line chart overlay using yAxisId="net" */}
-                  <Line
-                    yAxisId="net"
-                    type="monotone"
-                    dataKey="net"
-                    stroke="var(--color-primary)"
-                    strokeWidth={3}
-                    dot={{ r: 2.5 }}
-                    activeDot={{ r: 4.5 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
+        {/* Milestone badges */}
+        {milestones.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
+            {milestones.map((v) => (
+              <span key={v} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                ✓ {v >= 100000 ? `₹${v / 100000}L` : `₹${v / 1000}k`}
+              </span>
+            ))}
           </div>
         )}
-
         {/* Dynamic Helper Insight Banner under the Chart */}
         <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
           <span>{metrics}</span>
-          {!isAutoCycling && (
-            <span className="text-[8px] bg-secondary/80 px-1.5 py-0.5 rounded text-muted-foreground/80 tracking-wider">
-              PAUSED
-            </span>
-          )}
         </div>
       </div>
 
@@ -1734,100 +1650,143 @@ function SummaryView(p: {
         </div>
       </div>
 
-      {p.expenseByCategory.length > 0 && (
-        <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-            Expense breakdown
-          </p>
-          <ul className="space-y-1.5">
-            {p.expenseByCategory.map((row) => (
-              <li key={row.cat} className="flex items-center justify-between text-xs">
-                <span className="font-medium">{row.cat}</span>
-                <span className="tabular-nums font-bold">
-                  {fmtINR(row.amount)}{" "}
-                  <span className="text-muted-foreground font-normal">· {row.pct}%</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Monthly Analytics Card */}
+      {p.allTimeTrend.length > 0 && (() => {
+        const months = p.allTimeTrend.filter(m => m.amount > 0);
+        const totalIncome = months.reduce((s, m) => s + m.amount, 0);
+        const avgPerMonth = months.length > 0 ? totalIncome / months.length : 0;
+        const peak = months.reduce((a, b) => b.amount > a.amount ? b : a, months[0]);
+        const lowest = months.reduce((a, b) => b.amount < a.amount ? b : a, months[0]);
+        return (
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2.5">Monthly Analytics</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-primary/8 rounded-xl p-2.5 text-center">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Avg / Month</p>
+                <p className="font-bold text-sm text-primary tabular-nums">{fmtINR(avgPerMonth)}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{months.length} months</p>
+              </div>
+              <div className="bg-success/8 rounded-xl p-2.5 text-center">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Peak Month</p>
+                <p className="font-bold text-sm text-success tabular-nums">{fmtINR(peak.amount)}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{peak.month}</p>
+              </div>
+              <div className="bg-destructive/8 rounded-xl p-2.5 text-center">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Low Month</p>
+                <p className="font-bold text-sm text-destructive tabular-nums">{fmtINR(lowest.amount)}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{lowest.month}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Unified Recent Cash Flow Timeline */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-20">
+        {/* Date filter header */}
         <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
             Recent Cash Flow
           </p>
-          <span className="text-[10px] text-muted-foreground">last 10 transactions</span>
+          <div className="flex items-center gap-1.5">
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="text-[10px] font-semibold bg-secondary border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer outline-none"
+            >
+              <option value="all">All Time</option>
+              {Array.from(
+                new Set(
+                  p.unifiedRecentTransactions.map((tx) => tx.date.slice(0, 7))
+                )
+              )
+                .sort((a, b) => b.localeCompare(a))
+                .map((ym) => (
+                  <option key={ym} value={ym}>
+                    {format(parseISO(ym + "-01"), "MMM yyyy")}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
 
-        {p.unifiedRecentTransactions.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">
-            No transactions recorded yet
-          </p>
-        ) : (
-          <div className="max-h-[300px] overflow-y-auto pr-1">
-            <ul className="space-y-2.5 relative border-l border-border pl-3 ml-2.5">
-              {p.unifiedRecentTransactions.map((tx) => {
-                const isInc = tx.type === "income";
-                return (
-                  <li key={tx.id} className="relative">
-                    {/* Timeline dot */}
-                    <div
-                      className={cn(
-                        "absolute -left-[17px] top-1.5 size-2 rounded-full border bg-card transition-all duration-300",
-                        isInc ? "border-success bg-success" : "border-destructive bg-destructive",
-                      )}
-                    />
-
-                    <div className="flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={cn(
-                              "px-1 py-0.5 rounded text-[8px] font-bold uppercase shrink-0",
-                              isInc
-                                ? "bg-success/10 text-success"
-                                : "bg-destructive/10 text-destructive",
-                            )}
-                          >
-                            {isInc ? "In" : "Out"}
-                          </span>
-                          <p className="font-semibold text-sm truncate text-foreground">
-                            {tx.category}
+        {/* filtered list */}
+        {(() => {
+          const filtered = dateFilter === "all"
+            ? p.unifiedRecentTransactions
+            : p.unifiedRecentTransactions.filter((tx) => tx.date.startsWith(dateFilter));
+          return filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">
+              No transactions for this period
+            </p>
+          ) : (
+            <div className="max-h-[400px] overflow-y-auto pr-1">
+              {/* filtered summary row */}
+              {dateFilter !== "all" && (
+                <div className="flex justify-between text-[10px] font-semibold mb-2 px-1">
+                  <span className="text-success">In: {fmtINR(filtered.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0))}</span>
+                  <span className="text-destructive">Out: {fmtINR(filtered.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0))}</span>
+                  <span className="text-muted-foreground">{filtered.length} txns</span>
+                </div>
+              )}
+              <ul className="space-y-2.5 relative border-l border-border pl-3 ml-2.5">
+                {filtered.map((tx) => {
+                  const isInc = tx.type === "income";
+                  return (
+                    <li key={tx.id} className="relative">
+                      <div
+                        className={cn(
+                          "absolute -left-[17px] top-1.5 size-2 rounded-full border bg-card transition-all duration-300",
+                          isInc ? "border-success bg-success" : "border-destructive bg-destructive",
+                        )}
+                      />
+                      <div className="flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={cn(
+                                "px-1 py-0.5 rounded text-[8px] font-bold uppercase shrink-0",
+                                isInc
+                                  ? "bg-success/10 text-success"
+                                  : "bg-destructive/10 text-destructive",
+                              )}
+                            >
+                              {isInc ? "In" : "Out"}
+                            </span>
+                            <p className="font-semibold text-sm truncate text-foreground">
+                              {tx.customerName || tx.category}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {tx.customerName ? `${tx.category} · ` : ""}
+                            {format(parseISO(tx.date), "MMM d · h:mm a")}
+                            {tx.note ? ` · ${tx.note}` : ""}
                           </p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {tx.customerName ? `${tx.customerName} · ` : ""}
-                          {format(parseISO(tx.date), "MMM d · h:mm a")}
-                          {tx.note ? ` · ${tx.note}` : ""}
-                        </p>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <p
-                          className={cn(
-                            "font-bold text-sm tabular-nums",
-                            isInc ? "text-success" : "text-destructive",
+                        <div className="text-right shrink-0">
+                          <p
+                            className={cn(
+                              "font-bold text-sm tabular-nums",
+                              isInc ? "text-success" : "text-destructive",
+                            )}
+                          >
+                            {isInc ? "+" : "−"}
+                            {fmtINR(tx.amount)}
+                          </p>
+                          {tx.mode && (
+                            <span className="text-[9px] uppercase font-semibold text-muted-foreground block leading-none mt-0.5">
+                              {tx.mode}
+                            </span>
                           )}
-                        >
-                          {isInc ? "+" : "−"}
-                          {fmtINR(tx.amount)}
-                        </p>
-                        {tx.mode && (
-                          <span className="text-[9px] uppercase font-semibold text-muted-foreground block leading-none mt-0.5">
-                            {tx.mode}
-                          </span>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
       </div>
     </>
   );
