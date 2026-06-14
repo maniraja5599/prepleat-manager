@@ -6,7 +6,7 @@ import {
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
   format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
 } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight, IndianRupee, List, Plus, Users, Wallet, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, IndianRupee, List, Plus, Users, Wallet, X, Phone, MessageCircle } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -535,6 +535,26 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
               <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">{c?.name ?? "Unknown"}</span>
+              {c?.phone && (
+                <span className="inline-flex gap-1 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <a
+                    href={`tel:${c.phone.replace(/\D/g, "")}`}
+                    className="size-5 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                    title="Call Customer"
+                  >
+                    <Phone className="size-2.5 text-muted-foreground" />
+                  </a>
+                  <a
+                    href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="size-5 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                    title="WhatsApp Chat"
+                  >
+                    <MessageCircle className="size-2.5 text-muted-foreground" />
+                  </a>
+                </span>
+              )}
               <span
                 style={{ backgroundColor: tagColor }}
                 className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
