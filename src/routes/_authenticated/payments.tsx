@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, totalDue, type PaymentMode } from "@/lib/store";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { IndianRupee, TrendingUp, AlertCircle, Wallet, Download, FileText, Sparkles, TrendingDown, Users, Crown, CalendarCheck, ArrowRight, Plus, Trash2, Receipt, PieChart, Tag, X } from "lucide-react";
@@ -917,6 +917,45 @@ function SummaryView(p: {
   }>;
 }) {
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
+
+  // States for toggle-able and auto-cycling chart
+  const [chartMode, setChartMode] = useState<"12months" | "alltime">("12months");
+  const [isAutoCycling, setIsAutoCycling] = useState(true);
+
+  // Auto-cycling effect (every 6 seconds)
+  useEffect(() => {
+    if (!isAutoCycling) return;
+
+    const interval = setInterval(() => {
+      setChartMode((curr) => (curr === "12months" ? "alltime" : "12months"));
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [isAutoCycling]);
+
+  // Dynamically switch data based on active chartMode
+  const chartData = useMemo(() => {
+    if (chartMode === "12months") {
+      return p.trend12;
+    }
+    // All-time compares Total Income vs Total Expense
+    return [
+      { name: "Total Income", amount: p.lifetime, expense: 0, isAllTime: true },
+      { name: "Total Expense", amount: 0, expense: p.totalExpense, isAllTime: true },
+    ];
+  }, [chartMode, p.trend12, p.lifetime, p.totalExpense]);
+
+  // Memos for dynamic helper metrics under the chart
+  const metrics = useMemo(() => {
+    if (chartMode === "12months") {
+      const avgIncome = p.trend12.reduce((s, m) => s + m.amount, 0) / 12;
+      const avgExpense = p.trend12.reduce((s, m) => s + m.expense, 0) / 12;
+      return `Monthly Avg: Income ${fmtINR(avgIncome)} · Expense ${fmtINR(avgExpense)}`;
+    } else {
+      return `Lifetime Margin: ${margin}% · Total Net Profit: ${fmtINR(p.netProfit)}`;
+    }
+  }, [chartMode, p.trend12, margin, p.netProfit]);
+
   return (
     <>
       <div className="grid grid-cols-2 gap-2 mb-3">
@@ -958,19 +997,80 @@ function SummaryView(p: {
       </div>
 
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Income vs Expense (12 months)</p>
+        {/* Chart Header with Manual Mode Toggles */}
+        <div className="flex items-center justify-between mb-2.5">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            {chartMode === "12months" ? "Income vs Expense (12 months)" : "Lifetime Summary (All Time)"}
+          </p>
+
+          <div className="flex bg-secondary p-0.5 rounded-lg border border-border/80">
+            <button
+              onClick={() => {
+                setChartMode("12months");
+                setIsAutoCycling(false); // Pause auto cycle on manual toggle
+              }}
+              className={cn(
+                "px-2 py-0.5 text-[9px] font-bold rounded transition cursor-pointer",
+                chartMode === "12months"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              12 Months
+            </button>
+            <button
+              onClick={() => {
+                setChartMode("alltime");
+                setIsAutoCycling(false); // Pause auto cycle on manual toggle
+              }}
+              className={cn(
+                "px-2 py-0.5 text-[9px] font-bold rounded transition cursor-pointer",
+                chartMode === "alltime"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              All Time
+            </button>
+          </div>
+        </div>
+
         <div className="h-44 -mx-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={p.trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
+              <XAxis
+                dataKey={chartMode === "12months" ? "month" : "name"}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+              />
               <YAxis hide />
-              <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                formatter={(v: number, name: string) => [fmtINR(v), name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net"]} />
+              <Tooltip
+                contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                formatter={(v: number, name: string, entry: any) => {
+                  if (entry.payload.isAllTime) {
+                    const label = name === "amount" ? "Total Income" : "Total Expense";
+                    if (v === 0) return null;
+                    return [fmtINR(v), label];
+                  }
+                  return [fmtINR(v), name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net"];
+                }}
+              />
               <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expense" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Dynamic Helper Insight Banner under the Chart */}
+        <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
+          <span>{metrics}</span>
+          {!isAutoCycling && (
+            <span className="text-[8px] bg-secondary/80 px-1.5 py-0.5 rounded text-muted-foreground/80 tracking-wider">
+              PAUSED
+            </span>
+          )}
         </div>
       </div>
 
