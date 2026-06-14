@@ -163,7 +163,7 @@ function SettingsPage() {
     <AppShell wide title="Settings" subtitle="Changes save instantly">
       <div className="grid gap-3 grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
         {/* Left rail — icon-only on mobile, full list on desktop */}
-        <nav className="sticky top-2 self-start">
+        <nav className="sticky top-16 self-start z-30">
           <ul className="bg-card card-shadow rounded-2xl p-1.5 sm:p-2 space-y-1">
             {TABS.map((t) => {
               const active = tab === t.id;
