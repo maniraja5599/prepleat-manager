@@ -56,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (s: Record<string, unknown>) => ({
     date: typeof s.date === "string" ? s.date : undefined,
     customerId: typeof s.customerId === "string" ? s.customerId : undefined,
+    artistId: typeof s.artistId === "string" ? s.artistId : undefined,
   }),
   head: () => ({ meta: [{ title: "New Booking — Eyas Saree Drapist" }] }),
   component: NewBooking,
@@ -63,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/new")({
 
 function NewBooking() {
   const navigate = useNavigate();
-  const { date: presetDate, customerId: presetCustomerId } = Route.useSearch();
+  const { date: presetDate, customerId: presetCustomerId, artistId: presetArtistId } = Route.useSearch();
   const settings = useStore((s) => s.settings);
   const allCustomers = useStore((s) => s.customers);
   const customers = useMemo(
@@ -209,6 +210,17 @@ function NewBooking() {
       }
     }
   }, [presetCustomerId, customers]);
+
+  // Pre-load artist if search param artistId is provided
+  useEffect(() => {
+    if (presetArtistId && artists.length > 0) {
+      const art = artists.find((a) => a.id === presetArtistId);
+      if (art) {
+        setBookingSource("artist");
+        setArtistId(art.id);
+      }
+    }
+  }, [presetArtistId, artists]);
 
   const handlePasteClick = async () => {
     try {
