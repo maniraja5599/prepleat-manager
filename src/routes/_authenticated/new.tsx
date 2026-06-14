@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Palette, CalendarDays, Clock, Users, Search, X } from "lucide-react";
+import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Palette, CalendarDays, Clock, Users, Search, X, Phone, Clipboard } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -61,6 +61,7 @@ function NewBooking() {
   const [nameFocus, setNameFocus] = useState(false);
   const [showExisting, setShowExisting] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
 
   const [sareeCount, setSareeCount] = useState(1);
   const defaultPrice = bookingSource === "artist"
@@ -123,6 +124,16 @@ function NewBooking() {
     setNameFocus(false);
   };
 
+  const handlePasteClick = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setNewPhone(sanitizeIndianPhone(text));
+      toast.success("Pasted from clipboard");
+    } catch {
+      toast.error("Could not read clipboard. Please paste manually.");
+    }
+  };
+
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const openReview = () => {
@@ -130,7 +141,7 @@ function NewBooking() {
     // Customer name/mobile only mandatory for direct bookings. For artist-via bookings they are optional.
     if (bookingSource === "direct" && !customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
-      if (!isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
+      if (newPhone.trim() && !isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
     }
     if (bookingSource === "artist" && showCustomerForArtist && !customerId && newPhone.trim() && !isValidIndianMobile(newPhone)) {
       return toast.error("Enter a valid 10-digit Indian mobile");
@@ -330,7 +341,14 @@ function NewBooking() {
       ) : (
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer{bookingSource === "artist" && <span className="ml-1 text-[10px] normal-case font-normal text-muted-foreground">(optional)</span>}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Customer
+            {bookingSource === "artist" ? (
+              <span className="ml-1 text-[10px] normal-case font-normal text-muted-foreground">(optional)</span>
+            ) : (
+              !selectedCust && <span className="ml-2 text-[10px] normal-case font-normal text-muted-foreground/80">(Mobile & Address are optional)</span>
+            )}
+          </p>
           <div className="flex items-center gap-1.5">
             {!selectedCust && (
               <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
@@ -361,7 +379,7 @@ function NewBooking() {
                   value={newAddress}
                   onChange={(e) => setNewAddress(e.target.value)}
                   rows={2}
-                  placeholder="Add address (optional)"
+                  placeholder="Add address"
                   className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
@@ -412,53 +430,92 @@ function NewBooking() {
                 </ul>
               )}
             </div>
-            <div>
-              <div className="relative flex items-stretch bg-secondary rounded-full overflow-hidden focus-within:ring-2 focus-within:ring-primary">
-                <span className="px-3 flex items-center text-sm font-semibold text-muted-foreground border-r border-border bg-background/40">+91</span>
-                <input
-                  value={newPhone}
-                  onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const txt = e.clipboardData.getData("text");
-                    setNewPhone(sanitizeIndianPhone(txt));
-                  }}
-                  placeholder="10-digit mobile"
-                  inputMode="numeric"
-                  maxLength={10}
-                  className="flex-1 min-w-0 bg-transparent pl-3 pr-3 py-2.5 text-sm tabular-nums focus:outline-none"
-                />
+            {showPhone && (
+              <div>
+                <div className="relative flex items-stretch bg-secondary rounded-full overflow-hidden focus-within:ring-2 focus-within:ring-primary">
+                  <span className="px-3 flex items-center text-sm font-semibold text-muted-foreground border-r border-border bg-background/40">+91</span>
+                  <input
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const txt = e.clipboardData.getData("text");
+                      setNewPhone(sanitizeIndianPhone(txt));
+                    }}
+                    placeholder="10-digit mobile"
+                    inputMode="numeric"
+                    maxLength={10}
+                    className="flex-1 min-w-0 bg-transparent pl-3 pr-16 py-2.5 text-sm tabular-nums focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePasteClick}
+                    className="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
+                    title="Paste from clipboard"
+                  >
+                    <Clipboard className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPhone(false);
+                      setNewPhone("");
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+                    aria-label="Remove mobile number"
+                  >
+                    ×
+                  </button>
+                </div>
+                {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
+                  <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
+                )}
+                {phoneSuggestions.length > 0 && !customerId && (
+                  <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                    {phoneSuggestions.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); }}
+                          className="w-full text-left px-3 py-2 hover:bg-secondary"
+                        >
+                          <p className="text-sm font-medium">{c.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
-                <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
-              )}
-              {phoneSuggestions.length > 0 && !customerId && (
-                <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
-                  {phoneSuggestions.map((c) => (
-                    <li key={c.id}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); }}
-                        className="w-full text-left px-3 py-2 hover:bg-secondary"
-                      >
-                        <p className="text-sm font-medium">{c.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            {!showAddress ? (
-              <button type="button" onClick={() => setShowAddress(true)} className="inline-flex items-center gap-1.5 px-1 py-1 text-xs font-semibold text-muted-foreground">
-                <Plus className="size-3.5" /> Add address <span className="font-normal">(optional)</span>
-              </button>
-            ) : (
+            )}
+            {showAddress && (
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                <textarea value={newAddress} onChange={(e) => setNewAddress(e.target.value)} rows={2} autoFocus placeholder="Address (optional)"
+                <textarea value={newAddress} onChange={(e) => setNewAddress(e.target.value)} rows={2} autoFocus placeholder="Address"
                   className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
                 <button type="button" onClick={() => { setShowAddress(false); setNewAddress(""); }} className="absolute right-3 top-2.5 text-muted-foreground">×</button>
+              </div>
+            )}
+            {(!showPhone || !showAddress) && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {!showPhone && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPhone(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-all duration-150"
+                  >
+                    <Phone className="size-3.5" /> Add Mobile
+                  </button>
+                )}
+                {!showAddress && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddress(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-all duration-150"
+                  >
+                    <MapPin className="size-3.5" /> Add Address
+                  </button>
+                )}
               </div>
             )}
           </div>

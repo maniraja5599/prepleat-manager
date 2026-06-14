@@ -185,6 +185,13 @@ export function CloudSync() {
         setShowStatus(false);
         return;
       }
+      if (auth.user.is_anonymous) {
+        setSyncStatus("synced");
+        setErrorMessage("");
+        setShowStatus(false);
+        pulledOnce.current = true;
+        return;
+      }
       const { data: row, error } = await supabase
         .from("app_settings")
         .select("data, updated_at")
@@ -257,6 +264,13 @@ export function CloudSync() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) {
         setShowStatus(false);
+        return;
+      }
+      if (auth.user.is_anonymous) {
+        setSyncStatus("synced");
+        setErrorMessage("");
+        setShowStatus(false);
+        dirty.current = false;
         return;
       }
       // Re-check cloud for newer writes before overwriting.
@@ -355,7 +369,7 @@ export function CloudSync() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user || cancelled) return;
+      if (!auth.user || auth.user.is_anonymous || cancelled) return;
       const topic = `app_settings:${auth.user.id}`;
       // Remove any stale channel with the same topic before re-creating —
       // re-using a subscribed channel throws when adding callbacks.

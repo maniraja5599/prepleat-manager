@@ -31,6 +31,7 @@ function BookingsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const deleteBooking = useStore((s) => s.deleteBooking);
+  const settings = useStore((s) => s.settings);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -173,15 +174,26 @@ function BookingsPage() {
         <StatChip label="Total" value={String(list.length)} />
         <StatChip label="Collected" value={fmtINR(collected)} tone="success" />
         <StatChip label="Pending" value={fmtINR(pending)} tone={pending > 0 ? "danger" : "muted"} />
-        <button
-          onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
-          className={cn(
-            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-            selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+        <div className="flex gap-1.5 items-center shrink-0 ml-auto">
+          <button
+            onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
+            className={cn(
+              "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+              selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+            )}
+          >
+            <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
+          </button>
+          {!selectMode && (
+            <Link
+              to="/"
+              search={{ guide: "book" }}
+              className="rounded-full px-3 py-1.5 bg-primary text-primary-foreground flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:brightness-95"
+            >
+              <Calendar className="size-3.5" /> Book
+            </Link>
           )}
-        >
-          <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
-        </button>
+        </div>
       </div>
 
       {selectMode && (
@@ -441,6 +453,9 @@ function BookingsPage() {
             const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
             const due = totalDue(b);
             const isArtistBooking = !!b.artistId || c?.kind === "artist";
+            const tagColor = b.service === "prepleat"
+              ? (settings.prepleatDotColor ?? "#ffa029")
+              : (settings.directDrapeDotColor ?? "#10b981");
             const isSelected = selected.has(b.id);
             const inner = (
               <>
@@ -459,16 +474,30 @@ function BookingsPage() {
                 )}
                 <div className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3", selectMode && "pl-7")}>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                      <span className={cn(
-                        "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                        b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
-                      )}>{b.service}</span>
-                      {b.status === "delivered" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Delivered</span>}
-                      {b.status === "cancelled" && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">Cancelled</span>}
-                      {b.billNumber && <span className="text-[9px] font-mono text-muted-foreground/70">#{b.billNumber.split("-").pop()}</span>}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">{c?.name ?? "Unknown"}</span>
+                      <span
+                        style={{ backgroundColor: tagColor }}
+                        className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
+                      >
+                        {b.service}
+                      </span>
+                      {b.billNumber && (
+                        <span className="text-[8px] font-mono text-muted-foreground/70 shrink-0 bg-secondary/80 px-1 py-0.5 rounded">
+                          #{b.billNumber.split("-").pop()}
+                        </span>
+                      )}
+                      {b.status === "delivered" && (
+                        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                          Delivered
+                        </span>
+                      )}
+                      {b.status === "cancelled" && (
+                        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
+                          Cancelled
+                        </span>
+                      )}
                     </div>
-                    <p className="font-semibold truncate">{c?.name ?? "Unknown"}</p>
                     <p className="text-xs text-muted-foreground truncate">
                       {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
                     </p>

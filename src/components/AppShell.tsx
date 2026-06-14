@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, fmtINR } from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
@@ -32,6 +33,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const [showPopup, setShowPopup] = useState(false);
   const [tickerIndex, setTickerIndex] = useState(0);
   const [tickerItems, setTickerItems] = useState<Array<{ type: string; text: string; icon: string; color: string }>>([]);
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.is_anonymous) {
+        setIsGuest(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const handleUpdate = (e: Event) => {
@@ -86,7 +96,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     } else if (sync.syncStatus === "error") {
       items.push({ type: "sync", text: "Sync Error", icon: "error", color: "text-red-500 bg-red-500/15 border-red-500/30" });
     } else {
-      items.push({ type: "sync", text: "Cloud Synced", icon: "synced", color: "text-success bg-success/10 border-success/20" });
+      items.push({ type: "sync", text: isGuest ? "Local Synced" : "Cloud Synced", icon: "synced", color: "text-success bg-success/10 border-success/20" });
     }
 
     // 2. Today's Bookings
@@ -122,7 +132,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     }
 
     setTickerItems(items);
-  }, [bookings, sync, customers]);
+  }, [bookings, sync, customers, isGuest]);
 
   // Rotate ticker index
   useEffect(() => {
@@ -248,18 +258,18 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                   {sync.syncStatus === "error" && <AlertTriangle className="size-4 animate-shake-sm" />}
                   {sync.syncStatus === "synced" && <Check className="size-4 stroke-[3]" />}
                   <span className="text-xs font-bold uppercase tracking-wider">
-                    {sync.syncStatus === "synced" && "Database Synced"}
-                    {sync.syncStatus === "syncing" && "Syncing Data..."}
+                    {sync.syncStatus === "synced" && (isGuest ? "Saved Locally" : "Database Synced")}
+                    {sync.syncStatus === "syncing" && (isGuest ? "Saving Locally..." : "Syncing Data...")}
                     {sync.syncStatus === "offline" && "Offline Mode Active"}
-                    {sync.syncStatus === "error" && "Database Sync Error"}
+                    {sync.syncStatus === "error" && (isGuest ? "Local Save Error" : "Database Sync Error")}
                   </span>
                 </div>
                 
                 <p className="text-[10px] text-muted-foreground/90 leading-normal">
-                  {sync.syncStatus === "synced" && "All records are fully updated and saved securely to the cloud."}
-                  {sync.syncStatus === "syncing" && "We are uploading your changes and pulling the latest updates."}
+                  {sync.syncStatus === "synced" && (isGuest ? "All records are fully updated and saved securely on your device." : "All records are fully updated and saved securely to the cloud.")}
+                  {sync.syncStatus === "syncing" && (isGuest ? "We are saving your changes locally." : "We are uploading your changes and pulling the latest updates.")}
                   {sync.syncStatus === "offline" && "No connection. You can keep editing; changes will auto-sync when online."}
-                  {sync.syncStatus === "error" && "Failed to connect to the cloud database. Tap retry to reconnect."}
+                  {sync.syncStatus === "error" && (isGuest ? "Failed to save data locally. Check your device storage." : "Failed to connect to the cloud database. Tap retry to reconnect.")}
                 </p>
 
                 {sync.syncStatus === "error" && (

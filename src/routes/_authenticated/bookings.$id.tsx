@@ -39,6 +39,7 @@ function BookingDetail() {
   const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [editing, setEditing] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
+  const [showAddPayment, setShowAddPayment] = useState(false);
 
   if (!booking) {
     return (
@@ -182,6 +183,7 @@ function BookingDetail() {
       : new Date(payDate + "T12:00:00").toISOString();
     addPayment({ bookingId: booking.id, customerId: booking.customerId, amount: n, date: dateIso, mode: payMode, note: payNote.trim() || undefined });
     setPayAmt(""); setPayNote(""); setPayDate(today);
+    setShowAddPayment(false);
     toast.success(`Payment of ${fmtINR(n)} added`);
   };
 
@@ -496,9 +498,27 @@ function BookingDetail() {
         </div>
 
         {/* Add Payment Form (Hidden if Fully Paid) */}
-        {due > 0 && (
+        {due > 0 && !showAddPayment && (
+          <button
+            onClick={() => setShowAddPayment(true)}
+            className="w-full mt-4 py-2.5 bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer border border-border/40"
+          >
+            <Plus className="size-4 text-primary" /> Collect Payment
+          </button>
+        )}
+
+        {due > 0 && showAddPayment && (
           <div className="mt-4 pt-4 border-t border-border/40">
-            <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-2">Collect Payment</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Collect Payment</p>
+              <button
+                type="button"
+                onClick={() => setShowAddPayment(false)}
+                className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 transition"
+              >
+                Hide
+              </button>
+            </div>
             
             <div className="flex gap-2">
               <input

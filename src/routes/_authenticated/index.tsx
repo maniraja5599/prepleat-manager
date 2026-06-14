@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    guide: typeof s.guide === "string" ? s.guide : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Calendar — Eyas Saree Drapist" },
@@ -23,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function CalendarPage() {
   const navigate = useNavigate();
+  const { guide } = Route.useSearch();
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date>(new Date());
   const [peek, setPeek] = useState<string | null>(null);
@@ -265,6 +269,27 @@ function CalendarPage() {
           <span className="text-[11px] font-semibold">Customers</span>
         </Link>
       </div>
+
+      {guide === "book" && (
+        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-2xl text-xs text-primary font-medium flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
+          <span className="text-base select-none shrink-0">👉</span>
+          <div className="flex-1">
+            <p className="font-semibold mb-0.5">Select a Date to Book</p>
+            <p className="text-muted-foreground font-normal text-[11px] leading-normal">
+              Double-tap any date on the calendar, or tap a date once and click the <strong className="text-primary font-bold">+ Book</strong> button below to start a booking.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/", search: { guide: undefined } })}
+            className="text-muted-foreground hover:text-foreground text-sm font-bold px-1.5 py-0.5 cursor-pointer"
+            aria-label="Dismiss guide"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <>
         <div className="flex items-center justify-between mb-3">
             <button
