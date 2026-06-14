@@ -27,6 +27,7 @@ function CustomersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [dueOnly, setDueOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"due" | "name" | "orders">("due");
+  const [showTopOnly, setShowTopOnly] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -41,14 +42,14 @@ function CustomersPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeFiltersCount = (dueOnly ? 1 : 0) + (sortBy !== "due" ? 1 : 0);
+  const activeFiltersCount = (dueOnly ? 1 : 0) + (sortBy !== "due" ? 1 : 0) + (showTopOnly ? 1 : 0);
   const balanceSummary = dueOnly ? "Only Outstanding Balance" : "All Accounts";
   const getSortLabel = (s: typeof sortBy) => s === "due" ? "Balance Due" : s === "orders" ? "Orders Count" : "Alphabetical";
   const sortSummary = `Sorted by ${getSortLabel(sortBy)}`;
 
   const list = useMemo(() => {
     const ql = q.toLowerCase().trim();
-    return customers
+    let res = customers
       .filter((c) => (c.kind ?? "client") === tab)
       .map((c) => {
         const cb = bookings.filter((b) => (tab === "artist" ? b.artistId === c.id : b.customerId === c.id));
@@ -57,13 +58,22 @@ function CustomersPage() {
         return { ...c, count: cb.length, due, collected };
       })
       .filter((c) => !ql || c.name.toLowerCase().includes(ql) || c.phone.includes(ql) || (c.address ?? "").toLowerCase().includes(ql) || (c.reference ?? "").toLowerCase().includes(ql))
-      .filter((c) => !dueOnly || c.due > 0)
-      .sort((a, b) => {
+      .filter((c) => !dueOnly || c.due > 0);
+
+    if (showTopOnly) {
+      res = res
+        .filter((c) => c.collected > 0)
+        .sort((a, b) => b.collected - a.collected);
+    } else {
+      res = res.sort((a, b) => {
         if (sortBy === "name") return a.name.localeCompare(b.name);
         if (sortBy === "orders") return b.count - a.count || a.name.localeCompare(b.name);
         return b.due - a.due || a.name.localeCompare(b.name);
       });
-  }, [customers, bookings, q, tab, dueOnly, sortBy]);
+    }
+
+    return res;
+  }, [customers, bookings, q, tab, dueOnly, sortBy, showTopOnly]);
 
   const clientCount = customers.filter((c) => (c.kind ?? "client") === "client").length;
   const artistCount = customers.filter((c) => c.kind === "artist").length;
@@ -116,6 +126,7 @@ function CustomersPage() {
               setTab("client");
               setSelected(new Set());
               setSelectMode(false);
+              setShowTopOnly(false);
             }}
             className={cn(
               "py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 active:scale-95",
@@ -137,6 +148,7 @@ function CustomersPage() {
               setTab("artist");
               setSelected(new Set());
               setSelectMode(false);
+              setShowTopOnly(false);
             }}
             className={cn(
               "py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 active:scale-95",
@@ -158,9 +170,23 @@ function CustomersPage() {
 
       {/* Action Buttons Bar */}
       <div className="flex gap-1.5 mb-3 items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {list.length} {tab === "client" ? "clients" : "artists"} matched
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {list.length} {tab === "client" ? "clients" : "artists"} matched
+          </span>
+          <button
+            onClick={() => setShowTopOnly((v) => !v)}
+            className={cn(
+              "px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider transition cursor-pointer flex items-center gap-1 border",
+              showTopOnly 
+                ? "bg-success/20 text-success border-success/30" 
+                : "bg-secondary/40 text-muted-foreground border-transparent hover:bg-secondary/60"
+            )}
+          >
+            <TrendingUp className="size-2.5" />
+            Top Customer
+          </button>
+        </div>
         
         <div className="flex gap-1.5">
           <button
@@ -237,6 +263,7 @@ function CustomersPage() {
                     onClick={() => {
                       setDueOnly(false);
                       setSortBy("due");
+                      setShowTopOnly(false);
                       toast.success("Filters cleared", { duration: 1200 });
                     }}
                     className="text-xs font-semibold text-destructive flex items-center gap-1 active:scale-95 transition bg-destructive/10 px-2.5 py-1 rounded-full cursor-pointer"
@@ -358,8 +385,9 @@ function CustomersPage() {
                   {c.address && <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">{c.address}</p>}
                   {c.reference && <p className="text-[10px] text-primary/80 truncate mt-0.5">ref: {c.reference}</p>}
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-xs text-muted-foreground">{c.count} order{c.count !== 1 && "s"}</p>
+                  {c.collected > 0 && <p className="text-xs text-success font-semibold">{fmtINR(c.collected)} collected</p>}
                   {c.due > 0 && <p className="text-xs text-destructive font-semibold">{fmtINR(c.due)} due</p>}
                 </div>
               </div>
