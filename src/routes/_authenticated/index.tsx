@@ -500,23 +500,27 @@ function CalendarPage() {
 
 const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
   const c = customers.find((x) => x.id === b.customerId);
+  const a = b.artistId ? customers.find((x) => x.id === b.artistId) : null;
   const due = totalDue(b);
+  const settings = useStore((s) => s.settings);
   const isArtistBooking = !!b.artistId || c?.kind === "artist";
+  const tagColor = b.service === "prepleat"
+    ? (settings.prepleatDotColor ?? "#ffa029")
+    : (settings.directDrapeDotColor ?? "#10b981");
+
+  const cardCls = cn(
+    "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
+    isArtistBooking 
+      ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
+      : b.service === "prepleat"
+        ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
+        : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
+    b.status === "cancelled" && "opacity-60",
+  );
 
   return (
     <li>
-      <Link
-        to="/bookings/$id"
-        params={{ id: b.id }}
-        className={cn(
-          "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
-          isArtistBooking 
-            ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
-            : b.service === "prepleat"
-              ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
-              : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
-        )}
-      >
+      <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
         {isArtistBooking && (
           <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white z-10">
             ★ Artist
@@ -527,27 +531,47 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
             Direct Drape
           </span>
         )}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn(
-                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                b.service === "prepleat" ? "bg-[oklch(0.92_0.08_75)] text-[oklch(0.4_0.12_60)]" : "bg-[oklch(0.9_0.06_150)] text-[oklch(0.35_0.12_150)]",
-              )}>{b.service}</span>
-              <span className="text-xs text-muted-foreground tabular-nums">{fmtTime12(b.deliveryTime)}</span>
-              {showDate && <span className="text-xs text-muted-foreground">· {format(parseISO(b.deliveryDate), "MMM d")}</span>}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">{c?.name ?? "Unknown"}</span>
+              <span
+                style={{ backgroundColor: tagColor }}
+                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
+              >
+                {b.service}
+              </span>
+              {b.billNumber && (
+                <span className="text-[8px] font-mono text-muted-foreground/70 shrink-0 bg-secondary/80 px-1 py-0.5 rounded">
+                  #{b.billNumber.split("-").pop()}
+                </span>
+              )}
+              {b.status === "delivered" && (
+                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                  Delivered
+                </span>
+              )}
+              {b.status === "cancelled" && (
+                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
+                  Cancelled
+                </span>
+              )}
             </div>
-            <p className="font-semibold mt-1.5 truncate">{c?.name ?? "Unknown"}</p>
-            <p className="text-xs text-muted-foreground">{b.sareeCount} saree{b.sareeCount > 1 && "s"} · {fmtINR(b.totalAmount)}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {showDate ? `${format(parseISO(b.deliveryDate), "EEE, MMM d")} · ` : ""}{fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+            </p>
+            {a && (
+              <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
+            )}
           </div>
-          {due > 0 ? (
-            <div className="text-right pt-1 shrink-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Due</p>
-              <p className="text-destructive font-bold flex items-center justify-end"><IndianRupee className="size-3.5" />{Math.round(due).toLocaleString("en-IN")}</p>
-            </div>
-          ) : (
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success shrink-0 self-center">Paid</span>
-          )}
+          <div className="text-right shrink-0 pt-1">
+            <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
+            {due > 0 ? (
+              <p className="text-xs text-destructive font-semibold flex items-center justify-end"><IndianRupee className="size-3" />{Math.round(due).toLocaleString("en-IN")} due</p>
+            ) : (
+              <p className="text-xs text-success font-semibold">Paid</p>
+            )}
+          </div>
         </div>
       </Link>
     </li>
