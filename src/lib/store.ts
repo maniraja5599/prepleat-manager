@@ -74,6 +74,7 @@ export interface Customer {
   address?: string;
   reference?: string;
   notes?: string;
+  measurements?: Measurement[];
   createdAt: string;
   updatedAt?: string;
 }

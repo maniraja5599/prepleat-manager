@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR, type CustomerKind } from "@/lib/store";
+import { useStore, totalDue, fmtINR, type CustomerKind, type Measurement } from "@/lib/store";
 import { useState, useMemo, useEffect } from "react";
 import {
   Search,
@@ -13,6 +13,7 @@ import {
   CheckSquare,
   Trash2,
   X as XIcon,
+  X,
   Filter,
   ArrowUpDown,
   TrendingUp,
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollNumber } from "@/components/ScrollNumber";
 import {
   Accordion,
   AccordionItem,
@@ -50,6 +52,30 @@ function CustomersPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+
+  const settings = useStore((s) => s.settings);
+  const [showMeasure, setShowMeasure] = useState(false);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [showAddField, setShowAddField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState("");
+
+  useEffect(() => {
+    if (settings?.defaultMeasurements) {
+      setMeasurements(settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
+    }
+  }, [settings?.defaultMeasurements]);
+
+  const handleAddField = () => {
+    const name = newFieldName.trim();
+    if (!name) return;
+    if (measurements.some((m) => m.label.toLowerCase() === name.toLowerCase())) {
+      toast.error("Field already exists");
+      return;
+    }
+    setMeasurements([...measurements, { label: name, value: 30 }]);
+    setNewFieldName("");
+    setShowAddField(false);
+  };
 
   // States and interval for vertical scrolling stats ticker in header
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -292,6 +318,110 @@ function CustomersPage() {
             placeholder="Address (optional)"
             className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none resize-none"
           />
+          {tab === "client" && (
+            <div className="bg-secondary/40 rounded-xl p-3.5 border border-border/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Body Measurements
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                    Toggle to record size chart (inch)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showMeasure}
+                  onClick={() => setShowMeasure(!showMeasure)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer",
+                    showMeasure ? "saree-gradient" : "bg-secondary-foreground/15",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block size-4.5 rounded-full bg-card shadow transition-transform",
+                      showMeasure ? "translate-x-5.5" : "translate-x-1",
+                    )}
+                  />
+                </button>
+              </div>
+
+              {showMeasure && measurements.length > 0 && (
+                <div className="pt-2 border-t border-border/30">
+                  <div className="flex justify-around items-start py-2 gap-2 flex-wrap bg-background/50 rounded-xl border border-border/10">
+                    {measurements.map((m, i) => (
+                      <div key={i} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMeasurements(measurements.filter((_, idx) => idx !== i));
+                          }}
+                          className="absolute -top-1.5 -right-1.5 z-30 size-4 rounded-full bg-destructive/95 text-white flex items-center justify-center cursor-pointer shadow active:scale-95 transition"
+                        >
+                          <X className="size-2.5" strokeWidth={3} />
+                        </button>
+                        <ScrollNumber
+                          label={m.label}
+                          value={m.value}
+                          onChange={(v) =>
+                            setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {showAddField ? (
+                    <div className="flex items-center gap-1.5 justify-center mt-2 border-t border-border/20 pt-2 max-w-[280px] mx-auto">
+                      <input
+                        type="text"
+                        placeholder="Field name (e.g. Armhole)"
+                        value={newFieldName}
+                        onChange={(e) => setNewFieldName(e.target.value)}
+                        className="flex-1 text-[11px] h-7 px-3 border border-border rounded-full bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddField();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddField}
+                        className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddField(false);
+                          setNewFieldName("");
+                        }}
+                        className="h-7 px-3 rounded-full bg-secondary text-muted-foreground text-[10px] font-bold cursor-pointer hover:bg-secondary/80 active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center mt-2 border-t border-border/20 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddField(true)}
+                        className="text-[11px] font-semibold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
+                      >
+                        + Add Custom Field
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <button
             onClick={() => {
               if (!name.trim() || !phone.trim()) return;
@@ -300,10 +430,17 @@ function CustomersPage() {
                 name: name.trim(),
                 phone: phone.trim(),
                 address: address.trim() || undefined,
+                measurements: (tab === "client" && showMeasure) ? measurements : undefined,
               });
               setName("");
               setPhone("");
               setAddress("");
+              setShowMeasure(false);
+              if (settings?.defaultMeasurements) {
+                setMeasurements(settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
+              }
+              setShowAddField(false);
+              setNewFieldName("");
               setShowAdd(false);
             }}
             className="w-full px-3 py-2 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
@@ -516,6 +653,15 @@ function CustomersPage() {
                     <p className="text-[10px] text-primary/80 truncate mt-0.5">
                       ref: {c.reference}
                     </p>
+                  )}
+                  {c.measurements && c.measurements.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
+                      {c.measurements.map((m, idx) => (
+                        <span key={idx} className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold">
+                          {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
                 <div className="text-right shrink-0">
