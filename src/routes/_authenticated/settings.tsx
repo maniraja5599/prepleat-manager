@@ -530,7 +530,6 @@ function SettingsPage() {
 
               <Section title="Website (for WhatsApp bills)">
                 <input
-                  disabled={dataLocked}
                   value={settings.websiteUrl ?? ""}
                   onChange={(e) => update({ websiteUrl: e.target.value })}
                   placeholder="https://eyasdrapist.shop/"
@@ -580,7 +579,6 @@ function SettingsPage() {
                 title="Quick Note Presets"
                 hint="Tap chips appear under the Notes field when creating a booking."
                 placeholder="Add preset (e.g. Engagement)"
-                disabled={dataLocked}
                 tone="primary"
                 items={settings.occasionPresets ?? []}
                 draft={presetDraft}
@@ -601,7 +599,6 @@ function SettingsPage() {
                 title="Income Categories"
                 hint="Headers used when logging extra income (tips, sales, etc.) on the Payments page."
                 placeholder="Add income header (e.g. Tips)"
-                disabled={dataLocked}
                 tone="success"
                 items={settings.incomeCategories ?? []}
                 draft={incCatDraft}
@@ -624,7 +621,6 @@ function SettingsPage() {
                 title="Expense Categories"
                 hint="Headers used when logging expenses on the Payments page."
                 placeholder="Add expense header (e.g. Material)"
-                disabled={dataLocked}
                 tone="danger"
                 items={settings.expenseCategories ?? []}
                 draft={expCatDraft}
@@ -647,7 +643,6 @@ function SettingsPage() {
                 title="Payment Modes"
                 hint="Add your own payment modes (gpay, cash, card, upi, cheque, etc). Appears when logging income & expenses."
                 placeholder="Add payment mode (e.g. UPI)"
-                disabled={dataLocked}
                 tone="primary"
                 items={settings.paymentModes ?? []}
                 draft={modeDraft}
