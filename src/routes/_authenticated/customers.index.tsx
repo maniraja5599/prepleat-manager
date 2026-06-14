@@ -152,8 +152,8 @@ function CustomersPage() {
 
   return (
     <AppShell>
-      {/* Sticky Header block (Title + Ticker + Tab Bar) */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
+      {/* Sticky Header block (Title + Ticker + Tab Bar + Action Buttons + Search Box) */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-3 border-b border-border/40 mb-3 space-y-3">
         <div className="flex items-center justify-between gap-4 h-9">
           <div>
             <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
@@ -190,7 +190,7 @@ function CustomersPage() {
         </div>
 
         {/* Tab Buttons (Clients / Artists) */}
-        <div className="grid grid-cols-2 gap-1 bg-secondary/60 p-1 rounded-full mt-2.5">
+        <div className="grid grid-cols-2 gap-1 bg-secondary/60 p-1 rounded-full">
           <button
             onClick={() => {
               setTab("client");
@@ -244,356 +244,201 @@ function CustomersPage() {
             </span>
           </button>
         </div>
-      </div>
 
-      {/* Action Buttons Bar */}
-      <div className="flex gap-1.5 mb-3 items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {list.length} {tab === "client" ? "clients" : "artists"} matched
-        </span>
+        {/* Action Buttons Bar */}
+        <div className="flex gap-1.5 items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {list.length} {tab === "client" ? "clients" : "artists"} matched
+          </span>
 
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => setShowTopOnly((v) => !v)}
-            className={cn(
-              "rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-              showTopOnly
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border text-muted-foreground",
-            )}
-          >
-            <TrendingUp className="size-3.5" /> Top
-          </button>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setShowTopOnly((v) => !v)}
+              className={cn(
+                "rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+                showTopOnly
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card border border-border text-muted-foreground",
+              )}
+            >
+              <TrendingUp className="size-3.5" /> Top
+            </button>
 
-          <button
-            onClick={() => setShowAdd((v) => !v)}
-            className={cn(
-              "rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-              showAdd
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border text-muted-foreground",
-            )}
-          >
-            <Plus className="size-3.5" /> Add
-          </button>
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className={cn(
+                "rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+                showAdd
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card border border-border text-muted-foreground",
+              )}
+            >
+              <Plus className="size-3.5" /> Add
+            </button>
 
-          <button
-            onClick={() => {
-              setSelectMode((v) => !v);
-              setSelected(new Set());
-            }}
-            className={cn(
-              "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-              selectMode
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border text-muted-foreground",
-            )}
-          >
-            <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
-          </button>
+            <button
+              onClick={() => {
+                setSelectMode((v) => !v);
+                setSelected(new Set());
+              }}
+              className={cn(
+                "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+                selectMode
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card border border-border text-muted-foreground",
+              )}
+            >
+              <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {showAdd && (
-        <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
+        {/* Search & Filter Bar */}
+        <div className="flex gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={`${tab === "client" ? "Client" : "Artist"} name`}
-              className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none"
-            />
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone"
-              inputMode="tel"
-              className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={`Search ${tab === "client" ? "clients" : "artists"}...`}
+              className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
             />
           </div>
-          <textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            rows={2}
-            placeholder="Address (optional)"
-            className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none resize-none"
-          />
-          {tab === "client" && (
-            <div className="bg-secondary/40 rounded-xl p-3.5 border border-border/20 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Body Measurements
-                  </p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">
-                    Toggle to record size chart (inch)
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={showMeasure}
-                  onClick={() => setShowMeasure(!showMeasure)}
-                  className={cn(
-                    "relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer",
-                    showMeasure ? "saree-gradient" : "bg-secondary-foreground/15",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "inline-block size-4.5 rounded-full bg-card shadow transition-transform",
-                      showMeasure ? "translate-x-5.5" : "translate-x-1",
-                    )}
-                  />
-                </button>
-              </div>
-
-              {showMeasure && measurements.length > 0 && (
-                <div className="pt-2 border-t border-border/30">
-                  <div className="flex justify-around items-start py-2 gap-2 flex-wrap bg-background/50 rounded-xl border border-border/10">
-                    {measurements.map((m, i) => (
-                      <div key={i} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMeasurements(measurements.filter((_, idx) => idx !== i));
-                          }}
-                          className="absolute -top-1.5 -right-1.5 z-30 size-4 rounded-full bg-destructive/95 text-white flex items-center justify-center cursor-pointer shadow active:scale-95 transition"
-                        >
-                          <X className="size-2.5" strokeWidth={3} />
-                        </button>
-                        <ScrollNumber
-                          label={m.label}
-                          value={m.value}
-                          onChange={(v) =>
-                            setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {showAddField ? (
-                    <div className="flex items-center gap-1.5 justify-center mt-2 border-t border-border/20 pt-2 max-w-[280px] mx-auto">
-                      <input
-                        type="text"
-                        placeholder="Field name (e.g. Armhole)"
-                        value={newFieldName}
-                        onChange={(e) => setNewFieldName(e.target.value)}
-                        className="flex-1 text-[11px] h-7 px-3 border border-border rounded-full bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddField();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddField}
-                        className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddField(false);
-                          setNewFieldName("");
-                        }}
-                        className="h-7 px-3 rounded-full bg-secondary text-muted-foreground text-[10px] font-bold cursor-pointer hover:bg-secondary/80 active:scale-95"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center mt-2 border-t border-border/20 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowAddField(true)}
-                        className="text-[11px] font-semibold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
-                      >
-                        + Add Custom Field
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          <button
-            onClick={() => {
-              if (!name.trim() || !phone.trim()) return;
-              addCustomer({
-                kind: tab,
-                name: name.trim(),
-                phone: phone.trim(),
-                address: address.trim() || undefined,
-                measurements: (tab === "client" && showMeasure) ? measurements : undefined,
-              });
-              setName("");
-              setPhone("");
-              setAddress("");
-              setShowMeasure(false);
-              if (settings?.defaultMeasurements) {
-                setMeasurements(settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
-              }
-              setShowAddField(false);
-              setNewFieldName("");
-              setShowAdd(false);
-            }}
-            className="w-full px-3 py-2 rounded-full saree-gradient text-primary-foreground text-sm font-semibold"
-          >
-            Add {tab}
-          </button>
-        </div>
-      )}
-
-      <div className="flex gap-2 mb-3">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={`Search ${tab === "client" ? "clients" : "artists"}...`}
-            className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-          />
-        </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <button
-              className={cn(
-                "shrink-0 size-11 rounded-full flex items-center justify-center relative transition border cursor-pointer border-border",
-                activeFiltersCount > 0
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground",
-              )}
-              aria-label="Filter customers"
-            >
-              <SlidersHorizontal className="size-4" />
-              {activeFiltersCount > 0 && (
-                <span className="absolute -top-1 -right-1 size-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center ring-2 ring-background">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </button>
-          </SheetTrigger>
-          <SheetContent
-            side="bottom"
-            className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pb-8"
-          >
-            <SheetHeader className="mb-3 border-b border-border/40 pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Filter className="size-4.5 text-primary" />
-                  <SheetTitle className="text-base font-semibold font-display">
-                    Filter & Sort {tab === "client" ? "Clients" : "Artists"}
-                  </SheetTitle>
-                </div>
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={() => {
-                      setDueOnly(false);
-                      setSortBy("due");
-                      setShowTopOnly(false);
-                      toast.success("Filters cleared", { duration: 1200 });
-                    }}
-                    className="text-xs font-semibold text-destructive flex items-center gap-1 active:scale-95 transition bg-destructive/10 px-2.5 py-1 rounded-full cursor-pointer"
-                  >
-                    <XIcon className="size-3" /> Clear all
-                  </button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                className={cn(
+                  "shrink-0 size-11 rounded-full flex items-center justify-center relative transition border cursor-pointer border-border",
+                  activeFiltersCount > 0
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground",
                 )}
-              </div>
-            </SheetHeader>
+                aria-label="Filter customers"
+              >
+                <SlidersHorizontal className="size-4" />
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 size-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center ring-2 ring-background">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pb-8"
+            >
+              <SheetHeader className="mb-3 border-b border-border/40 pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Filter className="size-4.5 text-primary" />
+                    <SheetTitle className="text-base font-semibold font-display">
+                      Filter & Sort {tab === "client" ? "Clients" : "Artists"}
+                    </SheetTitle>
+                  </div>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={() => {
+                        setDueOnly(false);
+                        setSortBy("due");
+                        setShowTopOnly(false);
+                        toast.success("Filters cleared", { duration: 1200 });
+                      }}
+                      className="text-xs font-semibold text-destructive flex items-center gap-1 active:scale-95 transition bg-destructive/10 px-2.5 py-1 rounded-full cursor-pointer"
+                    >
+                      <XIcon className="size-3" /> Clear all
+                    </button>
+                  )}
+                </div>
+              </SheetHeader>
 
-            <Accordion type="multiple" defaultValue={["due-status"]} className="w-full">
-              {/* Category 1: Outstanding Balance */}
-              <AccordionItem value="due-status" className="border-b border-border/40 py-1">
-                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                      <AlertCircle className="size-4 text-primary" /> Accounts & Balance
-                    </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                      {balanceSummary}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-3 flex items-center justify-between">
-                  <div className="pr-4">
-                    <label className="text-xs font-semibold text-foreground">
-                      Only Show Outstanding Balances
-                    </label>
-                    <p className="text-[10px] text-muted-foreground">
-                      Show only {tab === "client" ? "clients" : "artists"} with payments due.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setDueOnly((v) => !v)}
-                    className={cn(
-                      "h-7 w-12 rounded-full transition relative shrink-0 cursor-pointer",
-                      dueOnly ? "bg-primary" : "bg-muted",
-                    )}
-                  >
-                    <span
+              <Accordion type="multiple" defaultValue={["due-status"]} className="w-full">
+                {/* Category 1: Outstanding Balance */}
+                <AccordionItem value="due-status" className="border-b border-border/40 py-1">
+                  <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <AlertCircle className="size-4 text-primary" /> Accounts & Balance
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                        {balanceSummary}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-3 flex items-center justify-between">
+                    <div className="pr-4">
+                      <label className="text-xs font-semibold text-foreground">
+                        Only Show Outstanding Balances
+                      </label>
+                      <p className="text-[10px] text-muted-foreground">
+                        Show only {tab === "client" ? "clients" : "artists"} with payments due.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setDueOnly((v) => !v)}
                       className={cn(
-                        "absolute top-0.5 size-6 bg-white rounded-full shadow transition",
-                        dueOnly ? "left-5.5" : "left-0.5",
+                        "h-7 w-12 rounded-full transition relative shrink-0 cursor-pointer",
+                        dueOnly ? "bg-primary" : "bg-muted",
                       )}
-                    />
-                  </button>
-                </AccordionContent>
-              </AccordionItem>
+                    >
+                      <span
+                        className={cn(
+                          "absolute top-0.5 size-6 bg-white rounded-full shadow transition",
+                          dueOnly ? "left-5.5" : "left-0.5",
+                        )}
+                      />
+                    </button>
+                  </AccordionContent>
+                </AccordionItem>
 
-              {/* Category 2: Sorting */}
-              <AccordionItem value="sorting" className="border-b-0 py-1">
-                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                      <ArrowUpDown className="size-4 text-primary" /> Sort Preference
-                    </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                      {sortSummary}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-2">
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: "due" as const, label: "Balance Due", icon: AlertCircle },
-                      { id: "orders" as const, label: "Orders Count", icon: TrendingUp },
-                      { id: "name" as const, label: "Alphabetical", icon: Users },
-                    ].map((sOpt) => {
-                      const active = sortBy === sOpt.id;
-                      const Icon = sOpt.icon;
-                      return (
-                        <button
-                          key={sOpt.id}
-                          onClick={() => setSortBy(sOpt.id)}
-                          className={cn(
-                            "flex flex-col items-center justify-center py-2.5 px-1 rounded-xl text-[11px] font-semibold text-center transition active:scale-95 cursor-pointer border leading-tight h-16",
-                            active
-                              ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                              : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary/80",
-                          )}
-                        >
-                          <Icon
+                {/* Category 2: Sorting */}
+                <AccordionItem value="sorting" className="border-b-0 py-1">
+                  <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <ArrowUpDown className="size-4 text-primary" /> Sort Preference
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                        {sortSummary}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: "due" as const, label: "Balance Due", icon: AlertCircle },
+                        { id: "orders" as const, label: "Orders Count", icon: TrendingUp },
+                        { id: "name" as const, label: "Alphabetical", icon: Users },
+                      ].map((sOpt) => {
+                        const active = sortBy === sOpt.id;
+                        const Icon = sOpt.icon;
+                        return (
+                          <button
+                            key={sOpt.id}
+                            onClick={() => setSortBy(sOpt.id)}
                             className={cn(
-                              "size-4 mb-1",
-                              active ? "text-primary-foreground" : "text-muted-foreground/80",
+                              "flex flex-col items-center justify-center py-2.5 px-1 rounded-xl text-[11px] font-semibold text-center transition active:scale-95 cursor-pointer border leading-tight h-16",
+                              active
+                                ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                                : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary/80",
                             )}
-                          />
-                          <span>{sOpt.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </SheetContent>
-        </Sheet>
+                          >
+                            <Icon
+                              className={cn(
+                                "size-4 mb-1",
+                                active ? "text-primary-foreground" : "text-muted-foreground/80",
+                              )}
+                            />
+                            <span>{sOpt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {/* Removed duplicate tabs */}
