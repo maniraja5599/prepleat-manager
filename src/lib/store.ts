@@ -655,20 +655,20 @@ export const useStore = create<State>()(
 26-01-2026,Anu Artist,650,GPay
 26-01-2026,Agashya Artist,400,GPay
 26-01-2026,Thermozhi,400,GPay
-27-01-2026,Asvini Mom,700,GPay
-27-01-2026,Asvini Chithi,1050,GPay
+27-01-2026,Asvini,700,GPay
+27-01-2026,Asvini,1050,GPay
 27-01-2026,Maheswari,500,Cash
-27-01-2026,Maheswari Relative,500,Cash
+27-01-2026,Maheswari,500,Cash
 27-01-2026,Thermozhi,350,GPay
-27-01-2026,Sangeetha Gokulakrishnan,250,Cash
+27-01-2026,Sangeetha,250,Cash
 27-01-2026,Bhoomika,800,GPay
 28-01-2026,Praneetha Artist,1500,Cash
-28-01-2026,Maha Prepleat,250,GPay
+28-01-2026,Maha,250,GPay
 29-01-2026,Dhanam,250,Cash
 29-01-2026,Ragheni,400,Cash
 06-02-2026,Agashya Artist,1400,GPay
 06-02-2026,Agashya Artist,800,GPay
-06-02-2026,Dr Priyanka,1700,GPay
+06-02-2026,Priyanka,1700,GPay
 07-02-2026,Gokulapriya,500,GPay
 09-02-2026,Yasodha,1250,Cash
 09-02-2026,Karthi,500,GPay
@@ -684,7 +684,7 @@ export const useStore = create<State>()(
 18-02-2026,Maheswari,500,Cash
 18-02-2026,Sowmiya,600,GPay
 18-02-2026,Sangeetha,200,GPay
-18-02-2026,Priya Vijayapathi,450,GPay
+18-02-2026,Priya,450,GPay
 18-02-2026,Gokulapriya,1000,GPay
 18-02-2026,Srinithi,2450,GPay
 20-02-2026,Anu Artist,9500,GPay
@@ -694,10 +694,10 @@ export const useStore = create<State>()(
 21-02-2026,Gokulapriya,500,GPay
 21-02-2026,Srinithi,350,Cash
 21-02-2026,Poorvisha,1800,GPay
-22-02-2026,Praneetha Abirami Drape,2500,GPay
+22-02-2026,Praneetha Artist,2500,GPay
 23-02-2026,Anu Artist,4050,GPay
-26-02-2026,Priyanka Athai Drape,850,GPay
-27-02-2026,Praneetha One Drape,850,GPay
+26-02-2026,Priyanka,850,GPay
+27-02-2026,Praneetha Artist,850,GPay
 01-03-2026,Anu Artist,700,GPay
 01-03-2026,Gokulapriya,650,GPay
 04-03-2026,Anu Artist,1650,GPay
@@ -733,7 +733,7 @@ export const useStore = create<State>()(
 06-05-2026,Jeysu Artist,1600,Cash
 08-05-2026,Oviya,300,Cash
 12-05-2026,Priyadarshini,300,Cash
-12-05-2026,Yamini Maya,800,Cash
+12-05-2026,Yamini,800,Cash
 16-05-2026,Maheswari,500,Cash
 16-05-2026,Sowmiya,1400,Cash
 16-05-2026,Praneetha Artist,950,GPay
@@ -753,7 +753,7 @@ export const useStore = create<State>()(
 26-05-2026,Suganya,900,GPay
 27-05-2026,Vijayalakshmi,350,Cash
 27-05-2026,Narmatha,350,GPay
-27-05-2026,Megha Mithra,3600,GPay
+27-05-2026,Mithra,3600,GPay
 27-05-2026,Sangeetha,300,Cash
 27-05-2026,Shalini,600,Cash
 27-05-2026,Jeysu Artist,350,GPay
@@ -772,14 +772,14 @@ export const useStore = create<State>()(
 31-05-2026,Selvanika,450,GPay
 01-06-2026,Praneetha Artist,5750,Cash
 03-06-2026,Sanjana,900,Cash
-03-06-2026,Priya Suresh,1300,GPay
+03-06-2026,Priya,1300,GPay
 03-06-2026,Anu Artist,1400,Cash
 04-06-2026,Anu Artist,950,GPay
 05-06-2026,Ramya,250,Cash
-06-06-2026,Priya Suresh,450,Cash
+06-06-2026,Priya,450,Cash
 06-06-2026,Selvanika,450,Cash
 07-06-2026,Navena Shree,350,Cash
-07-06-2026,Kavya Parthiban,600,Cash
+07-06-2026,Kavya Artist,600,Cash
 07-06-2026,Anu Artist,2450,GPay
 08-06-2026,Madhuwarshini,200,Cash
 08-06-2026,Sangeetha,1250,GPay
@@ -916,7 +916,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 17,
+      version: 18,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -1053,7 +1053,7 @@ export const useStore = create<State>()(
           for (const p of persisted.payments) if (!p.updatedAt) p.updatedAt = p.date;
         }
 
-        if (_version < 17) {
+        if (_version < 18) {
           // Clean up any previously imported historical entries from v14/v15 (note: "Imported Earning")
           // to prevent double entries or duplicate client/artist entries.
           const payments = persisted.payments ?? [];
@@ -1076,20 +1076,20 @@ export const useStore = create<State>()(
 26-01-2026,Anu Artist,650,GPay
 26-01-2026,Agashya Artist,400,GPay
 26-01-2026,Thermozhi,400,GPay
-27-01-2026,Asvini Mom,700,GPay
-27-01-2026,Asvini Chithi,1050,GPay
+27-01-2026,Asvini,700,GPay
+27-01-2026,Asvini,1050,GPay
 27-01-2026,Maheswari,500,Cash
-27-01-2026,Maheswari Relative,500,Cash
+27-01-2026,Maheswari,500,Cash
 27-01-2026,Thermozhi,350,GPay
-27-01-2026,Sangeetha Gokulakrishnan,250,Cash
+27-01-2026,Sangeetha,250,Cash
 27-01-2026,Bhoomika,800,GPay
 28-01-2026,Praneetha Artist,1500,Cash
-28-01-2026,Maha Prepleat,250,GPay
+28-01-2026,Maha,250,GPay
 29-01-2026,Dhanam,250,Cash
 29-01-2026,Ragheni,400,Cash
 06-02-2026,Agashya Artist,1400,GPay
 06-02-2026,Agashya Artist,800,GPay
-06-02-2026,Dr Priyanka,1700,GPay
+06-02-2026,Priyanka,1700,GPay
 07-02-2026,Gokulapriya,500,GPay
 09-02-2026,Yasodha,1250,Cash
 09-02-2026,Karthi,500,GPay
@@ -1105,7 +1105,7 @@ export const useStore = create<State>()(
 18-02-2026,Maheswari,500,Cash
 18-02-2026,Sowmiya,600,GPay
 18-02-2026,Sangeetha,200,GPay
-18-02-2026,Priya Vijayapathi,450,GPay
+18-02-2026,Priya,450,GPay
 18-02-2026,Gokulapriya,1000,GPay
 18-02-2026,Srinithi,2450,GPay
 20-02-2026,Anu Artist,9500,GPay
@@ -1115,10 +1115,10 @@ export const useStore = create<State>()(
 21-02-2026,Gokulapriya,500,GPay
 21-02-2026,Srinithi,350,Cash
 21-02-2026,Poorvisha,1800,GPay
-22-02-2026,Praneetha Abirami Drape,2500,GPay
+22-02-2026,Praneetha Artist,2500,GPay
 23-02-2026,Anu Artist,4050,GPay
-26-02-2026,Priyanka Athai Drape,850,GPay
-27-02-2026,Praneetha One Drape,850,GPay
+26-02-2026,Priyanka,850,GPay
+27-02-2026,Praneetha Artist,850,GPay
 01-03-2026,Anu Artist,700,GPay
 01-03-2026,Gokulapriya,650,GPay
 04-03-2026,Anu Artist,1650,GPay
@@ -1154,7 +1154,7 @@ export const useStore = create<State>()(
 06-05-2026,Jeysu Artist,1600,Cash
 08-05-2026,Oviya,300,Cash
 12-05-2026,Priyadarshini,300,Cash
-12-05-2026,Yamini Maya,800,Cash
+12-05-2026,Yamini,800,Cash
 16-05-2026,Maheswari,500,Cash
 16-05-2026,Sowmiya,1400,Cash
 16-05-2026,Praneetha Artist,950,GPay
@@ -1174,7 +1174,7 @@ export const useStore = create<State>()(
 26-05-2026,Suganya,900,GPay
 27-05-2026,Vijayalakshmi,350,Cash
 27-05-2026,Narmatha,350,GPay
-27-05-2026,Megha Mithra,3600,GPay
+27-05-2026,Mithra,3600,GPay
 27-05-2026,Sangeetha,300,Cash
 27-05-2026,Shalini,600,Cash
 27-05-2026,Jeysu Artist,350,GPay
@@ -1193,14 +1193,14 @@ export const useStore = create<State>()(
 31-05-2026,Selvanika,450,GPay
 01-06-2026,Praneetha Artist,5750,Cash
 03-06-2026,Sanjana,900,Cash
-03-06-2026,Priya Suresh,1300,GPay
+03-06-2026,Priya,1300,GPay
 03-06-2026,Anu Artist,1400,Cash
 04-06-2026,Anu Artist,950,GPay
 05-06-2026,Ramya,250,Cash
-06-06-2026,Priya Suresh,450,Cash
+06-06-2026,Priya,450,Cash
 06-06-2026,Selvanika,450,Cash
 07-06-2026,Navena Shree,350,Cash
-07-06-2026,Kavya Parthiban,600,Cash
+07-06-2026,Kavya Artist,600,Cash
 07-06-2026,Anu Artist,2450,GPay
 08-06-2026,Madhuwarshini,200,Cash
 08-06-2026,Sangeetha,1250,GPay
