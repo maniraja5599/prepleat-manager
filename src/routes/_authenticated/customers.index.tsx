@@ -177,13 +177,13 @@ function CustomersPage() {
           <button
             onClick={() => setShowTopOnly((v) => !v)}
             className={cn(
-              "px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider transition cursor-pointer flex items-center gap-1 border",
+              "rounded-full px-2.5 py-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer border",
               showTopOnly 
-                ? "bg-success/20 text-success border-success/30" 
-                : "bg-secondary/40 text-muted-foreground border-transparent hover:bg-secondary/60"
+                ? "bg-primary text-primary-foreground border-primary" 
+                : "bg-card border-border text-muted-foreground hover:bg-secondary"
             )}
           >
-            <TrendingUp className="size-2.5" />
+            <TrendingUp className="size-3" />
             Top
           </button>
         </div>
