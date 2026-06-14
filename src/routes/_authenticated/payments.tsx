@@ -671,13 +671,6 @@ function IncomeView(p: {
 }) {
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Collected" value={fmtINR(p.lifetime)} />
-        <Stat tint="danger" icon={<AlertCircle className="size-3.5" />} label="Pending" value={fmtINR(p.totalPending)} />
-        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Billed" value={fmtINR(p.totalBilled)} />
-        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Collection %" value={`${p.collectionRate}%`} />
-      </div>
-
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -705,6 +698,13 @@ function IncomeView(p: {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Collected" value={fmtINR(p.lifetime)} />
+        <Stat tint="danger" icon={<AlertCircle className="size-3.5" />} label="Pending" value={fmtINR(p.totalPending)} />
+        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Billed" value={fmtINR(p.totalBilled)} />
+        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Collection %" value={`${p.collectionRate}%`} />
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3">
@@ -883,6 +883,31 @@ function ExpensesView(p: {
 
   return (
     <>
+      {/* 12-month expense trend */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Monthly expenses</p>
+            <p className="text-[10px] text-muted-foreground">Last 12 months</p>
+          </div>
+        </div>
+        <div className="h-36">
+          {p.trend12.every((m) => m.expense === 0) ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={p.trend12} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
+                <Tooltip cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
+                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                  formatter={(v: number) => [fmtINR(v), "Spent"]} />
+                <Bar dataKey="expense" fill="var(--color-destructive)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
       {/* Category breakdown */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
@@ -915,31 +940,6 @@ function ExpensesView(p: {
             ))}
           </ul>
         )}
-      </div>
-
-      {/* 12-month expense trend */}
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Monthly expenses</p>
-            <p className="text-[10px] text-muted-foreground">Last 12 months</p>
-          </div>
-        </div>
-        <div className="h-36">
-          {p.trend12.every((m) => m.expense === 0) ? (
-            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No data</div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={p.trend12} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <Tooltip cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
-                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                  formatter={(v: number) => [fmtINR(v), "Spent"]} />
-                <Bar dataKey="expense" fill="var(--color-destructive)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
       </div>
 
       {/* Recent expenses */}
@@ -1066,44 +1066,6 @@ function SummaryView(p: {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Income" value={fmtINR(p.lifetime)} />
-        <Stat tint="danger" icon={<Receipt className="size-3.5" />} label="Expense" value={fmtINR(p.totalExpense)} />
-        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Net profit" value={fmtINR(p.netProfit)} />
-        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Margin" value={`${margin}%`} />
-      </div>
-
-      {/* Side-by-side Top Sources */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Earning Source</p>
-          {p.incomeByCategory.length > 0 ? (
-            <div className="mt-1">
-              <p className="font-semibold text-sm truncate text-success">{p.incomeByCategory[0].cat}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                {fmtINR(p.incomeByCategory[0].amount)} ({p.incomeByCategory[0].pct}%)
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-1">No earnings yet</p>
-          )}
-        </div>
-
-        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Spending Category</p>
-          {p.expenseByCategory.length > 0 ? (
-            <div className="mt-1">
-              <p className="font-semibold text-sm truncate text-destructive">{p.expenseByCategory[0].cat}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                {fmtINR(p.expenseByCategory[0].amount)} ({p.expenseByCategory[0].pct}%)
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-1">No expenses yet</p>
-          )}
-        </div>
-      </div>
-
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         {/* Chart Header with Manual Mode Toggles */}
         <div className="flex items-center justify-between mb-2.5">
@@ -1211,6 +1173,44 @@ function SummaryView(p: {
             <span className="text-[8px] bg-secondary/80 px-1.5 py-0.5 rounded text-muted-foreground/80 tracking-wider">
               PAUSED
             </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Income" value={fmtINR(p.lifetime)} />
+        <Stat tint="danger" icon={<Receipt className="size-3.5" />} label="Expense" value={fmtINR(p.totalExpense)} />
+        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Net profit" value={fmtINR(p.netProfit)} />
+        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Margin" value={`${margin}%`} />
+      </div>
+
+      {/* Side-by-side Top Sources */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Earning Source</p>
+          {p.incomeByCategory.length > 0 ? (
+            <div className="mt-1">
+              <p className="font-semibold text-sm truncate text-success">{p.incomeByCategory[0].cat}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                {fmtINR(p.incomeByCategory[0].amount)} ({p.incomeByCategory[0].pct}%)
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">No earnings yet</p>
+          )}
+        </div>
+
+        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Spending Category</p>
+          {p.expenseByCategory.length > 0 ? (
+            <div className="mt-1">
+              <p className="font-semibold text-sm truncate text-destructive">{p.expenseByCategory[0].cat}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                {fmtINR(p.expenseByCategory[0].amount)} ({p.expenseByCategory[0].pct}%)
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">No expenses yet</p>
           )}
         </div>
       </div>
