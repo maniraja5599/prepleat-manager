@@ -45,6 +45,7 @@ function PaymentsPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
+  const [askTypeOpen, setAskTypeOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ type: "expense" | "income"; id: string } | null>(null);
 
   // === Lifetime ===
@@ -388,21 +389,57 @@ function PaymentsPage() {
         />
       )}
 
-      {/* Floating Action Buttons for Income (Left) & Expense (Right) */}
+      {/* Floating Action Button */}
       <button
-        onClick={() => setAddIncomeOpen(true)}
-        className="fixed bottom-24 left-4 z-30 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1 active:scale-95 transition cursor-pointer"
-        aria-label="Add extra income"
+        onClick={() => setAskTypeOpen(true)}
+        className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center active:scale-95 transition cursor-pointer"
+        aria-label="Add transaction"
       >
-        <Plus className="size-3" /> Income
+        <Plus className="size-6" />
       </button>
-      <button
-        onClick={() => setAddOpen(true)}
-        className="fixed bottom-24 right-4 z-30 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1 active:scale-95 transition cursor-pointer"
-        aria-label="Add expense"
-      >
-        <Plus className="size-3" /> Expense
-      </button>
+
+      {/* Transaction Type Selection Dialog */}
+      {askTypeOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAskTypeOpen(false)} />
+          <div className="bg-card w-full max-w-sm rounded-t-3xl sm:rounded-2xl p-5 card-shadow z-10 animate-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-bold text-base text-foreground">Add Transaction</h3>
+              <button
+                onClick={() => setAskTypeOpen(false)}
+                className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            
+            <p className="text-xs text-muted-foreground mb-4">Choose the type of transaction you want to record:</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  setAskTypeOpen(false);
+                  setAddIncomeOpen(true);
+                }}
+                className="py-3 px-4 bg-success hover:bg-success/90 text-white font-bold text-sm rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+              >
+                <Plus className="size-5" />
+                <span>Income</span>
+              </button>
+              <button
+                onClick={() => {
+                  setAskTypeOpen(false);
+                  setAddOpen(true);
+                }}
+                className="py-3 px-4 bg-destructive hover:bg-destructive/90 text-white font-bold text-sm rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+              >
+                <Plus className="size-5" />
+                <span>Expense</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {addOpen && (
         <AddExpenseSheet
