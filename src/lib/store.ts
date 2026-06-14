@@ -826,9 +826,12 @@ export const useStore = create<State>()(
         const bookings = (get().bookings ?? []).filter((b: any) => !importedBookingIds.has(b.id));
 
         const remainingBookingCustomerIds = new Set(bookings.map((b: any) => b.customerId));
-        const customers = (get().customers ?? []).filter((c: any) => 
-          remainingBookingCustomerIds.has(c.id) || !allCsvNames.has(c.name.toLowerCase())
-        );
+        const customers = (get().customers ?? []).filter((c: any) => {
+          if (c.kind === "client") {
+            return remainingBookingCustomerIds.has(c.id);
+          }
+          return true; // Keep all artists
+        });
 
         const manualPayments = [...payments];
         const monthCounters = new Map<string, number>();
@@ -943,7 +946,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 19,
+      version: 20,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -1080,7 +1083,7 @@ export const useStore = create<State>()(
           for (const p of persisted.payments) if (!p.updatedAt) p.updatedAt = p.date;
         }
 
-        if (_version < 19) {
+        if (_version < 20) {
           // Clean up any previously imported historical entries from v14/v15 (note: "Imported Earning")
           // to prevent double entries or duplicate client/artist entries.
           const payments = persisted.payments ?? [];
@@ -1237,40 +1240,14 @@ export const useStore = create<State>()(
             .split("\n")
             .map((l) => l.trim())
             .filter(Boolean);
-          const allCsvNames = new Set([
-            "saree prepleat", "jeysu prepleat", "srinithi drape", "nandhini", 
-            "sathya artist", "keerthana", "agashya advance", "anu sri", 
-            "thermozhi", "asvini mom", "asvini chithi", "maheswari", 
-            "maheswari relative", "sangeetha gokulakrishnan", "bhoomika engagement drape", 
-            "pradeetha artist", "maha prepleat", "dhanam saree", "ragheni", 
-            "agashya feb event", "agashya march advance", "dr priyanka", 
-            "gokulapriya advance", "yasodha", "karthi", "arathi", 
-            "sujitha", "agashya artist advance", "agashya artist april advance", 
-            "sindhuja", "praneetha artist", "abirami", "soundarya sathish", 
-            "anu jeysu ref", "sowmiya", "sangeetha half saree", "priya vijayapathi", 
-            "gokulapriya", "srinithi", "anu renisha drape", "deepika prepleat", 
-            "agashya", "praneetha", "poorvisha", "praneetha abirami drape", 
-            "anu sri ref", "anusi saree prepleat", "anusi", "vikasini artist", 
-            "praneetha one drape", "preena", "arathi drape", "sindhuja drape", 
-            "anu gumathi drape", "priyadarshini", "priyanka athai drape", 
-            "anu makeup artist", "sangeetha", "malarvizhi", "dhivya", 
-            "yamini", "sripriya", "yamini maya", "yamini advance", 
-            "elakkiya", "saritha", "megha mithra", "mithra", 
-            "sanjana", "sanjana prepleat", "nandhika", "senthamil", 
-            "sathya", "kavya artist", "kavya", "manochitra", 
-            "vijayalakshmi", "selvanika", "navena shree", "kavya parthiban", 
-            "madhuwarshini", "poonisha", "oviya prepleat", "shalini", 
-            "shalini", "suganya", "varthi", "jeysu", "jeysu advance", 
-            "priya", "priya drape", "priya suresh", "yalini",
-            "agashya artist", "anu artist", "jeysu artist", "bhoomika",
-            "asvini", "priyanka", "maha", "nivetha", "oviya"
-          ]);
-
-          const remainingBookingCustomerIds = new Set((persisted.bookings ?? []).map((b: any) => b.customerId));
+const remainingBookingCustomerIds = new Set((persisted.bookings ?? []).map((b: any) => b.customerId));
           const customers = persisted.customers ?? [];
-          persisted.customers = customers.filter((c: any) => 
-            remainingBookingCustomerIds.has(c.id) || !allCsvNames.has(c.name.toLowerCase())
-          );
+          persisted.customers = customers.filter((c: any) => {
+            if (c.kind === "client") {
+              return remainingBookingCustomerIds.has(c.id);
+            }
+            return true; // Keep all artists
+          });
 
           const manualPayments = [...persisted.payments];
           const monthCounters = new Map<string, number>();
