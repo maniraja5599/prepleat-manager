@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { IndianRupee, TrendingUp, AlertCircle, Wallet, Download, FileText, Sparkles, TrendingDown, Users, Crown, CalendarCheck, ArrowRight, Plus, Trash2, Receipt, PieChart, Tag, X } from "lucide-react";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell } from "recharts";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -919,7 +919,7 @@ function SummaryView(p: {
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
 
   // States for toggle-able and auto-cycling chart
-  const [chartMode, setChartMode] = useState<"12months" | "alltime">("12months");
+  const [chartMode, setChartMode] = useState<"12months" | "alltime">("alltime");
   const [isAutoCycling, setIsAutoCycling] = useState(true);
 
   // Auto-cycling effect (every 6 seconds)
@@ -934,16 +934,18 @@ function SummaryView(p: {
   }, [isAutoCycling]);
 
   // Dynamically switch data based on active chartMode
-  const chartData = useMemo(() => {
-    if (chartMode === "12months") {
-      return p.trend12;
+  const chartData = p.trend12;
+
+  // Pie chart data for All-Time Donut Chart
+  const pieData = useMemo(() => {
+    if (p.lifetime === 0 && p.totalExpense === 0) {
+      return [{ name: "No transactions", value: 1, fill: "var(--color-muted)" }];
     }
-    // All-time compares Total Income vs Total Expense
     return [
-      { name: "Total Income", amount: p.lifetime, expense: 0, isAllTime: true },
-      { name: "Total Expense", amount: 0, expense: p.totalExpense, isAllTime: true },
+      { name: "Total Income", value: p.lifetime, fill: "#10b981" },
+      { name: "Total Expense", value: p.totalExpense, fill: "#ef4444" },
     ];
-  }, [chartMode, p.trend12, p.lifetime, p.totalExpense]);
+  }, [p.lifetime, p.totalExpense]);
 
   // Memos for dynamic helper metrics under the chart
   const metrics = useMemo(() => {
@@ -1035,33 +1037,58 @@ function SummaryView(p: {
           </div>
         </div>
 
-        <div className="h-44 -mx-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
-              <XAxis
-                dataKey={chartMode === "12months" ? "month" : "name"}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-              />
-              <YAxis hide />
-              <Tooltip
-                contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                formatter={(v: number, name: string, entry: any) => {
-                  if (entry.payload.isAllTime) {
-                    const label = name === "amount" ? "Total Income" : "Total Expense";
-                    if (v === 0) return null;
-                    return [fmtINR(v), label];
-                  }
-                  return [fmtINR(v), name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net"];
-                }}
-              />
-              <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {chartMode === "12months" ? (
+          <div className="h-44 -mx-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                  formatter={(v: number, name: string) => [fmtINR(v), name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net"]}
+                />
+                <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="relative h-44 -mx-2 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={46}
+                  outerRadius={68}
+                  paddingAngle={4}
+                  dataKey="value"
+                  animationDuration={600}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} stroke="transparent" />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                  formatter={(v: number, name: string) => [fmtINR(v), name]}
+                />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+            {/* Absolute Centered Label inside Donut */}
+            <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+              <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider leading-none">Net Profit</span>
+              <span className="text-sm font-bold text-foreground mt-0.5 tabular-nums">{fmtINR(p.netProfit)}</span>
+            </div>
+          </div>
+        )}
 
         {/* Dynamic Helper Insight Banner under the Chart */}
         <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
