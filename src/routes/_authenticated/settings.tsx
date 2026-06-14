@@ -1251,9 +1251,18 @@ function SettingsPage() {
                       URL.revokeObjectURL(url);
                       toast.success("CSV exported", { duration: 1500 });
                     }}
-                    className="col-span-2 px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+                    className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
                   >
                     <Download className="size-3.5" /> Export CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      useStore.getState().importHistoricalCsv();
+                      toast.success("Historical CSV imported successfully", { duration: 2000 });
+                    }}
+                    className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+                  >
+                    <Upload className="size-3.5" /> Import Historical CSV
                   </button>
                 </div>
                 <input
