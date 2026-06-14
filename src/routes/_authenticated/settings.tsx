@@ -53,6 +53,7 @@ function SettingsPage() {
   const restoreBooking = useStore((s) => s.restoreBooking);
   const resetApp = useStore((s) => s.resetApp);
   const fileRef = useRef<HTMLInputElement>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<TabId>("pricing");
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
@@ -115,6 +116,47 @@ function SettingsPage() {
       toast.success("Logo updated", { duration: 1500 });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (
+          !parsed ||
+          (parsed.customers && !Array.isArray(parsed.customers)) ||
+          (parsed.bookings && !Array.isArray(parsed.bookings)) ||
+          (parsed.payments && !Array.isArray(parsed.payments))
+        ) {
+          toast.error("Invalid backup file format");
+          return;
+        }
+
+        const ok = window.confirm("Are you sure you want to import? This will overwrite your current local database data.");
+        if (!ok) return;
+
+        // Perform import
+        useStore.setState({
+          customers: parsed.customers || [],
+          bookings: parsed.bookings || [],
+          payments: parsed.payments || [],
+          settings: { ...useStore.getState().settings, ...(parsed.settings || {}) },
+          trash: parsed.trash || [],
+          activity: parsed.activity || [],
+          tombstones: parsed.tombstones || [],
+        });
+
+        toast.success("Database imported successfully!");
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to parse backup file");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // clear input
   };
 
   return (
@@ -256,6 +298,38 @@ function SettingsPage() {
 
           <Section title="Website (for WhatsApp bills)">
             <input disabled={dataLocked} value={settings.websiteUrl ?? ""} onChange={(e) => update({ websiteUrl: e.target.value })} placeholder="https://eyasdrapist.shop/" className="input" />
+          </Section>
+
+          <Section title="Calendar Amount Display">
+            <p className="text-xs text-muted-foreground mb-3">
+              Configure how bookings amounts are displayed on the main dashboard calendar cells.
+            </p>
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Amount Display Mode</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { id: "none", label: "Hide" },
+                    { id: "pending", label: "Pending Only" },
+                    { id: "both", label: "Total & Pending" },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.id}
+                    disabled={dataLocked}
+                    onClick={() => update({ calendarAmountDisplay: opt.id })}
+                    className={cn(
+                      "py-2 px-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition cursor-pointer active:scale-95 text-center",
+                      (settings.calendarAmountDisplay ?? "none") === opt.id
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-secondary hover:bg-secondary/80 text-foreground"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </Section>
         </>
       )}
@@ -642,6 +716,10 @@ function SettingsPage() {
                 className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
               ><Download className="size-3.5" /> Export JSON</button>
               <button
+                onClick={() => importFileRef.current?.click()}
+                className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+              ><Upload className="size-3.5" /> Import JSON</button>
+              <button
                 onClick={() => {
                   const rows = [["Date","Time","Customer","Phone","Service","Sarees","Total","Paid","Due","Status"]];
                   for (const b of bookings) {
@@ -656,9 +734,16 @@ function SettingsPage() {
                   a.click(); URL.revokeObjectURL(url);
                   toast.success("CSV exported", { duration: 1500 });
                 }}
-                className="px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+                className="col-span-2 px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
               ><Download className="size-3.5" /> Export CSV</button>
             </div>
+            <input
+              type="file"
+              ref={importFileRef}
+              onChange={handleImportJSON}
+              accept=".json"
+              className="hidden"
+            />
           </Section>
 
           {/* Recovery Accordion */}

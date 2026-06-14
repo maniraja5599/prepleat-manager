@@ -33,7 +33,7 @@ function CalendarPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const settings = useStore((s) => s.settings);
-  const { showPaymentOnCalendar } = settings;
+  const calendarAmountDisplay = settings.calendarAmountDisplay ?? (settings.showPaymentOnCalendar ? "pending" : "none");
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
@@ -343,6 +343,7 @@ function CalendarPage() {
               const isToday = isSameDay(d, new Date());
               const hasPending = list.some((b) => totalDue(b) > 0);
               const dueSum = list.reduce((s, b) => s + totalDue(b), 0);
+              const totalSum = list.reduce((s, b) => s + b.totalAmount, 0);
               return (
                 <button
                   key={key}
@@ -386,10 +387,19 @@ function CalendarPage() {
                       })}
                     </div>
                   )}
-                  {showPaymentOnCalendar && hasPending && (
-                    <span className={cn("absolute top-0.5 right-1 text-[8px] font-bold", isSel ? "text-primary-foreground" : "text-destructive")}>
-                      ₹{dueSum > 999 ? Math.round(dueSum/1000) + "k" : dueSum}
-                    </span>
+                  {calendarAmountDisplay !== "none" && (
+                    <>
+                      {dueSum > 0 && (calendarAmountDisplay === "pending" || calendarAmountDisplay === "both") && (
+                        <span className={cn("absolute top-0.5 right-1 text-[8px] font-bold leading-none", isSel ? "text-primary-foreground" : "text-destructive")}>
+                          ₹{dueSum > 999 ? Math.round(dueSum/1000) + "k" : dueSum}
+                        </span>
+                      )}
+                      {totalSum > 0 && calendarAmountDisplay === "both" && (
+                        <span className={cn("absolute top-0.5 left-1 text-[8px] font-bold leading-none", isSel ? "text-primary-foreground" : "text-muted-foreground/80")}>
+                          ₹{totalSum > 999 ? Math.round(totalSum/1000) + "k" : totalSum}
+                        </span>
+                      )}
+                    </>
                   )}
                 </button>
               );

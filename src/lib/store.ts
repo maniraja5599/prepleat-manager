@@ -95,6 +95,7 @@ export interface Settings {
   artistDrapePrice?: number;
   defaultMeasurements: Measurement[];
   showPaymentOnCalendar: boolean;
+  calendarAmountDisplay?: "none" | "pending" | "both";
   businessName: string;
   theme: ThemeName;
   customPrimary?: string;
@@ -227,6 +228,7 @@ export const useStore = create<State>()(
           { label: "H", value: 38 },
         ],
         showPaymentOnCalendar: false,
+        calendarAmountDisplay: "none",
         businessName: "Eyas Saree Drapist",
         theme: "maroon",
         defaultPaymentMode: "gpay",
@@ -502,6 +504,7 @@ export const useStore = create<State>()(
             { label: "H", value: 38 },
           ],
           showPaymentOnCalendar: false,
+          calendarAmountDisplay: "none",
           businessName: "Eyas Saree Drapist",
           theme: "maroon",
           defaultPaymentMode: "gpay",
@@ -519,6 +522,9 @@ export const useStore = create<State>()(
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
+        if (s.calendarAmountDisplay === undefined) {
+          s.calendarAmountDisplay = s.showPaymentOnCalendar ? "pending" : "none";
+        }
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
         if (s.prepleatPrice === 150) s.prepleatPrice = 350;
         if (s.drapePrice === 300) s.drapePrice = 800;
