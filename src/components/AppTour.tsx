@@ -105,6 +105,36 @@ export function AppTour() {
           </div>
         </div>
       )
+    },
+    {
+      title: "Long-Press Peek",
+      subtitle: "Calendar Date hold peek",
+      desc: "Press and hold (long-press) any date on the calendar grid to quickly preview that day's bookings in a floating details sheet without leaving the page.",
+      icon: Calendar,
+      color: "text-amber-500 bg-amber-500/10",
+      illustration: (
+        <div className="relative size-28 bg-card rounded-3xl border border-border flex flex-col items-center justify-center p-3 shadow-sm overflow-hidden">
+          <Calendar className="size-8 text-amber-500" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="size-10 rounded-full border border-dashed border-amber-500/40 bg-amber-500/5 animate-pulse" />
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Bottom Nav Shortcut",
+      subtitle: "Calendar Double-Click",
+      desc: "Double-click or double-tap the Calendar tab icon in the bottom navigation bar to instantly jump straight to your Bookings list page.",
+      icon: Calendar,
+      color: "text-emerald-500 bg-emerald-500/10",
+      illustration: (
+        <div className="relative size-28 bg-card rounded-3xl border border-border flex flex-col items-center justify-center p-3 shadow-sm overflow-hidden">
+          <Calendar className="size-8 text-emerald-500" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="size-12 rounded-full border border-emerald-500/60 bg-emerald-500/10 animate-double-tap" />
+          </div>
+        </div>
+      )
     }
   ];
 

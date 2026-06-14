@@ -1100,6 +1100,53 @@ function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) =
         </div>
       </Section>
 
+      <Section title="Quick Shortcuts & Gestures">
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 text-xs leading-relaxed">
+            <span className="text-base select-none shrink-0">📅</span>
+            <div>
+              <p className="font-semibold text-foreground">Calendar Double-Tap / Double-Click</p>
+              <p className="text-muted-foreground">Double-tap any date on the calendar grid to quickly open the booking page for that date.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 text-xs leading-relaxed border-t border-border/40 pt-2.5">
+            <span className="text-base select-none shrink-0">👁️</span>
+            <div>
+              <p className="font-semibold text-foreground">Calendar Long-Press (Peek)</p>
+              <p className="text-muted-foreground">Long-press (hold) any date on the calendar grid to peek at bookings for that day without leaving the page.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 text-xs leading-relaxed border-t border-border/40 pt-2.5">
+            <span className="text-base select-none shrink-0">↔️</span>
+            <div>
+              <p className="font-semibold text-foreground">Calendar Swipe Gestures</p>
+              <p className="text-muted-foreground">Swipe left or right on the calendar grid to change months, or swipe left/right on the day's booking list to switch days.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 text-xs leading-relaxed border-t border-border/40 pt-2.5">
+            <span className="text-base select-none shrink-0">⚡</span>
+            <div>
+              <p className="font-semibold text-foreground">Bottom Nav Calendar Double-Click</p>
+              <p className="text-muted-foreground">Double-click or double-tap the **Calendar** icon in the bottom navbar to navigate straight to the **Bookings** list.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 text-xs leading-relaxed border-t border-border/40 pt-2.5">
+            <span className="text-base select-none shrink-0">🖐️</span>
+            <div>
+              <p className="font-semibold text-foreground">Settings Tab Swiping</p>
+              <p className="text-muted-foreground">Swipe left or right on any Settings tab view to easily cycle between different configuration tabs on mobile.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 text-xs leading-relaxed border-t border-border/40 pt-2.5">
+            <span className="text-base select-none shrink-0">↩️</span>
+            <div>
+              <p className="font-semibold text-foreground">Activity Log Quick Revert</p>
+              <p className="text-muted-foreground">Click the revert button on any activity log entry (under Settings → Data) to instantly undo/restore that edit or cancellation.</p>
+            </div>
+          </div>
+        </div>
+      </Section>
+
       <Section title={`Documentation (${filtered.length}${q ? ` / ${HELP_DOCS.length}` : ""})`}>
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
