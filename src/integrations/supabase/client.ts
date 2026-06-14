@@ -30,11 +30,141 @@ function createSupabaseClient() {
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
+// Guest Mode helper state & functions
+const authListeners = new Set<(event: string, session: any) => void>();
+
+function triggerAuthListeners(event: string, session: any) {
+  authListeners.forEach((listener) => {
+    try {
+      listener(event, session);
+    } catch (e) {
+      console.error("[Guest Mode] Error in auth listener:", e);
+    }
+  });
+}
+
+function getLocalGuestSession() {
+  return {
+    access_token: "local-guest-token",
+    token_type: "bearer",
+    expires_in: 3600 * 24 * 365, // 1 year
+    refresh_token: "local-guest-refresh-token",
+    user: {
+      id: "00000000-0000-0000-0000-000000000000",
+      aud: "authenticated",
+      role: "authenticated",
+      email: "guest@local.device",
+      email_confirmed_at: new Date().toISOString(),
+      phone: "",
+      confirmed_at: new Date().toISOString(),
+      last_sign_in_at: new Date().toISOString(),
+      app_metadata: { provider: "anonymous", providers: ["anonymous"] },
+      user_metadata: { is_anonymous: true },
+      identities: [],
+      is_anonymous: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 365,
+  };
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
     if (!_supabase) _supabase = createSupabaseClient();
+    
+    // Intercept auth module for seamless local guest session fallback
+    if (prop === "auth") {
+      const originalAuth = _supabase.auth;
+      return new Proxy(originalAuth, {
+        get(authTarget, authProp, authReceiver) {
+          // Intercept anonymous sign-in
+          if (authProp === "signInAnonymously") {
+            return async () => {
+              try {
+                const res = await originalAuth.signInAnonymously();
+                if (!res.error) return res;
+                console.warn("[Guest Mode] Supabase anonymous sign-in failed, falling back to local guest session:", res.error.message);
+              } catch (e) {
+                console.warn("[Guest Mode] Supabase anonymous sign-in failed, falling back to local guest session:", e);
+              }
+              if (typeof window !== "undefined") {
+                localStorage.setItem("local_guest_session", "true");
+                const session = getLocalGuestSession();
+                triggerAuthListeners("SIGNED_IN", session);
+                return { data: { session, user: session.user }, error: null };
+              }
+              return { data: { session: null, user: null }, error: new Error("LocalStorage not available") };
+            };
+          }
+
+          // Intercept getSession
+          if (authProp === "getSession") {
+            return async () => {
+              if (typeof window !== "undefined" && localStorage.getItem("local_guest_session") === "true") {
+                const session = getLocalGuestSession();
+                return { data: { session }, error: null };
+              }
+              return originalAuth.getSession();
+            };
+          }
+
+          // Intercept getUser
+          if (authProp === "getUser") {
+            return async (token?: string) => {
+              if (typeof window !== "undefined" && localStorage.getItem("local_guest_session") === "true") {
+                const session = getLocalGuestSession();
+                return { data: { user: session.user }, error: null };
+              }
+              return originalAuth.getUser(token);
+            };
+          }
+
+          // Intercept signOut
+          if (authProp === "signOut") {
+            return async (options?: any) => {
+              if (typeof window !== "undefined" && localStorage.getItem("local_guest_session") === "true") {
+                localStorage.removeItem("local_guest_session");
+                triggerAuthListeners("SIGNED_OUT", null);
+                return { error: null };
+              }
+              return originalAuth.signOut(options);
+            };
+          }
+
+          // Intercept onAuthStateChange
+          if (authProp === "onAuthStateChange") {
+            return (callback: any) => {
+              if (typeof window !== "undefined") {
+                authListeners.add(callback);
+                if (localStorage.getItem("local_guest_session") === "true") {
+                  const session = getLocalGuestSession();
+                  setTimeout(() => callback("SIGNED_IN", session), 0);
+                }
+              }
+              const originalResult = originalAuth.onAuthStateChange(callback);
+              return {
+                data: {
+                  subscription: {
+                    unsubscribe() {
+                      if (typeof window !== "undefined") {
+                        authListeners.delete(callback);
+                      }
+                      originalResult.data.subscription.unsubscribe();
+                    }
+                  }
+                }
+              };
+            };
+          }
+
+          return Reflect.get(authTarget, authProp, authReceiver);
+        }
+      });
+    }
+
     return Reflect.get(_supabase, prop, receiver);
   },
 });
