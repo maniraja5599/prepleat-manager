@@ -303,34 +303,18 @@ function BookingsPage() {
       {/* Action Buttons Bar */}
       <div className="flex gap-1.5 mb-3 items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {list.length} bookings matched
+          {list.length} matched
         </span>
 
         <div className="flex gap-1.5 items-center">
           {!selectMode && (
-            <button
-              onClick={() => {
-                setMainFilter((curr) => (curr === "history" ? "active" : "history"));
-              }}
-              className={cn(
-                "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
-                mainFilter === "history"
-                  ? "bg-primary text-primary-foreground border border-primary shadow-sm"
-                  : "bg-card border border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
-              )}
+            <Link
+              to="/"
+              search={{ guide: "book" }}
+              className="rounded-full px-3 py-1.5 bg-primary text-primary-foreground flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:brightness-95"
             >
-              <History className="size-3.5" /> History
-              <span
-                className={cn(
-                  "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-                  mainFilter === "history"
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {counts.history}
-              </span>
-            </button>
+              <Calendar className="size-3.5" /> Book
+            </Link>
           )}
 
           <button
@@ -349,13 +333,29 @@ function BookingsPage() {
           </button>
 
           {!selectMode && (
-            <Link
-              to="/"
-              search={{ guide: "book" }}
-              className="rounded-full px-3 py-1.5 bg-primary text-primary-foreground flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:brightness-95"
+            <button
+              onClick={() => {
+                setMainFilter((curr) => (curr === "history" ? "active" : "history"));
+              }}
+              className={cn(
+                "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
+                mainFilter === "history"
+                  ? "bg-primary text-primary-foreground border border-primary shadow-sm"
+                  : "bg-card border border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
+              )}
             >
-              <Calendar className="size-3.5" /> Book
-            </Link>
+              <History className="size-3.5" /> Past
+              <span
+                className={cn(
+                  "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+                  mainFilter === "history"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {counts.history}
+              </span>
+            </button>
           )}
         </div>
       </div>
