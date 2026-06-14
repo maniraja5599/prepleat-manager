@@ -170,25 +170,21 @@ function CustomersPage() {
 
       {/* Action Buttons Bar */}
       <div className="flex gap-1.5 mb-3 items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {list.length} {tab === "client" ? "clients" : "artists"} matched
-          </span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {list.length} {tab === "client" ? "clients" : "artists"} matched
+        </span>
+        
+        <div className="flex gap-1.5">
           <button
             onClick={() => setShowTopOnly((v) => !v)}
             className={cn(
-              "rounded-full px-2.5 py-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer border",
-              showTopOnly 
-                ? "bg-primary text-primary-foreground border-primary" 
-                : "bg-card border-border text-muted-foreground hover:bg-secondary"
+              "rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+              showTopOnly ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
             )}
           >
-            <TrendingUp className="size-3" />
-            Top
+            <TrendingUp className="size-3.5" /> Top
           </button>
-        </div>
-        
-        <div className="flex gap-1.5">
+
           <button
             onClick={() => setShowAdd((v) => !v)}
             className={cn(
