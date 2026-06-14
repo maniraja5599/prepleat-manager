@@ -176,6 +176,22 @@ function NewBooking() {
     setNewPhone("");
     setNewAddress("");
     setNameFocus(false);
+
+    // Auto-load measurements from their last booking if available
+    const custBookings = bookings.filter((b) => b.customerId === c.id);
+    if (custBookings.length > 0) {
+      const lastBooking = [...custBookings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      if (lastBooking.measurements && lastBooking.measurements.length > 0) {
+        setMeasurements(lastBooking.measurements);
+        setShowMeasure(true);
+      } else {
+        setMeasurements(settings.defaultMeasurements);
+        setShowMeasure(false);
+      }
+    } else {
+      setMeasurements(settings.defaultMeasurements);
+      setShowMeasure(false);
+    }
   };
 
   const handlePasteClick = async () => {
@@ -507,6 +523,8 @@ function NewBooking() {
                     setNewName("");
                     setNewPhone("");
                     setNewAddress("");
+                    setMeasurements(settings.defaultMeasurements);
+                    setShowMeasure(false);
                   }}
                   className="text-[10px] text-muted-foreground px-2 py-1"
                 >
@@ -533,7 +551,11 @@ function NewBooking() {
                   )}
                 </div>
                 <button
-                  onClick={() => setCustomerId("")}
+                  onClick={() => {
+                    setCustomerId("");
+                    setMeasurements(settings.defaultMeasurements);
+                    setShowMeasure(false);
+                  }}
                   className="text-xs text-primary font-semibold shrink-0"
                 >
                   Change
