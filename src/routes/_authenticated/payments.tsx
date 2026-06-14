@@ -74,6 +74,31 @@ function PaymentsPage() {
   const expWeek = expenseIn(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
   const expMonth = expenseIn(startOfMonth(now), endOfMonth(now));
 
+  // States for scrolling earnings/spend ticker
+  const [earningIndex, setEarningIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setEarningIndex((prev) => (prev + 1) % 3);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const tickerItems = useMemo(() => {
+    if (tab === "expenses") {
+      return [
+        { label: "Today Spend", value: expToday, color: "text-destructive" },
+        { label: "This Week", value: expWeek, color: "text-destructive" },
+        { label: "This Month", value: expMonth, color: "text-destructive" },
+      ];
+    }
+    return [
+      { label: "Today Earning", value: today, color: "text-success" },
+      { label: "This Week", value: thisWeek, color: "text-success" },
+      { label: "This Month", value: thisMonth, color: "text-success" },
+    ];
+  }, [tab, today, thisWeek, thisMonth, expToday, expWeek, expMonth]);
+
   // 12-month trends
   const trend12 = useMemo(() => {
     return Array.from({ length: 12 }).map((_, i) => {
@@ -373,7 +398,62 @@ function PaymentsPage() {
   };
 
   return (
-    <AppShell title="Payments">
+    <AppShell>
+      {/* Sticky Header block (Title + Ticker + Tab Bar) */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
+        <div className="flex items-center justify-between gap-4 h-9">
+          <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">Payments</h1>
+          
+          {/* Cute Vertical Scrolling Earning/Spend Ticker */}
+          <div className="h-7 overflow-hidden relative min-w-[110px]">
+            <div 
+              className="transition-transform duration-500 ease-in-out" 
+              style={{ transform: `translateY(-${earningIndex * 28}px)` }}
+            >
+              {tickerItems.map((item, idx) => (
+                <div key={idx} className="h-7 flex flex-col items-end justify-center">
+                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">{item.label}</span>
+                  <span className={cn("text-xs font-extrabold tabular-nums mt-0.5 leading-none", item.color)}>{fmtINR(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* TAB BAR */}
+        <div className="bg-card card-shadow rounded-full p-1 mt-2.5 grid grid-cols-3 gap-1">
+          {([
+            { id: "summary", label: "Summary", icon: PieChart },
+            { id: "income", label: "Income", icon: Wallet },
+            { id: "expenses", label: "Expenses", icon: Receipt },
+          ] as const).map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            const animationClass =
+              t.id === "income" ? "animate-pump-income" :
+              t.id === "expenses" ? "animate-pump-expense" : "";
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  "py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95",
+                  active
+                    ? t.id === "income"
+                      ? "bg-success text-white shadow"
+                      : t.id === "expenses"
+                        ? "bg-destructive text-white shadow"
+                        : "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:bg-secondary/40",
+                )}
+              >
+                <Icon className={cn("size-3.5", animationClass)} /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* HERO */}
       <div className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground bg-gradient-to-br from-primary via-primary to-accent card-shadow mb-3">
         <div className="absolute -right-8 -top-8 size-40 rounded-full bg-white/10 blur-2xl" />
@@ -433,22 +513,6 @@ function PaymentsPage() {
               </>
             )}
           </div>
-
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            {tab === "expenses" ? (
-              <>
-                <MiniChip label="Today" value={fmtINR(expToday)} />
-                <MiniChip label="This week" value={fmtINR(expWeek)} />
-                <MiniChip label="This month" value={fmtINR(expMonth)} />
-              </>
-            ) : (
-              <>
-                <MiniChip label="Today" value={fmtINR(today)} />
-                <MiniChip label="This week" value={fmtINR(thisWeek)} />
-                <MiniChip label="This month" value={fmtINR(thisMonth)} />
-              </>
-            )}
-          </div>
         </div>
       </div>
 
@@ -469,38 +533,7 @@ function PaymentsPage() {
         }
       `}</style>
 
-      {/* TAB BAR */}
-      <div className="bg-card card-shadow rounded-full p-1 mb-3 grid grid-cols-3 gap-1 sticky top-2 z-20">
-        {([
-          { id: "summary", label: "Summary", icon: PieChart },
-          { id: "income", label: "Income", icon: Wallet },
-          { id: "expenses", label: "Expenses", icon: Receipt },
-        ] as const).map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.id;
-          const animationClass =
-            t.id === "income" ? "animate-pump-income" :
-            t.id === "expenses" ? "animate-pump-expense" : "";
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer",
-                active
-                  ? t.id === "income"
-                    ? "bg-success text-white shadow"
-                    : t.id === "expenses"
-                      ? "bg-destructive text-white shadow"
-                      : "bg-primary text-primary-foreground shadow"
-                  : "text-muted-foreground hover:bg-secondary/40",
-              )}
-            >
-              <Icon className={cn("size-3.5", animationClass)} /> {t.label}
-            </button>
-          );
-        })}
-      </div>
+
 
       {tab === "income" && (
         <IncomeView
