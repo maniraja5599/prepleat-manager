@@ -64,6 +64,7 @@ function BookingsPage() {
   const [mainFilter, setMainFilter] = useState<
     "active" | "prepleat" | "drape" | "artist" | "history"
   >("active");
+  const [showPast, setShowPast] = useState(false);
   const [pay, setPay] = useState<PayFilter>("all");
   const [sort, setSort] = useState<Sort>("delivery");
   const [q, setQ] = useState("");
@@ -142,25 +143,28 @@ function BookingsPage() {
   const list = useMemo(() => {
     let arr = bookings.slice();
 
-    // Filter by main tab selection
-    if (mainFilter === "active") {
+    // Filter by status (active vs past) based on showPast
+    if (showPast) {
+      arr = arr.filter((b) => b.status === "delivered");
+    } else {
       arr = arr.filter((b) => b.status !== "delivered");
-    } else if (mainFilter === "prepleat") {
-      arr = arr.filter((b) => b.service === "prepleat" && b.status !== "delivered");
+    }
+
+    // Filter by service type (mainFilter)
+    if (mainFilter === "prepleat") {
+      arr = arr.filter((b) => b.service === "prepleat");
     } else if (mainFilter === "drape") {
       arr = arr.filter((b) => {
         const c = customers.find((x) => x.id === b.customerId);
         const isArtistBooking = !!b.artistId || c?.kind === "artist";
-        return b.service === "drape" && !isArtistBooking && b.status !== "delivered";
+        return b.service === "drape" && !isArtistBooking;
       });
     } else if (mainFilter === "artist") {
       arr = arr.filter((b) => {
         const c = customers.find((x) => x.id === b.customerId);
         const isArtistBooking = !!b.artistId || c?.kind === "artist";
-        return isArtistBooking && b.status !== "delivered";
+        return isArtistBooking;
       });
-    } else if (mainFilter === "history") {
-      arr = arr.filter((b) => b.status === "delivered");
     }
 
     if (pay === "paid") arr = arr.filter((b) => totalDue(b) === 0);
@@ -190,25 +194,26 @@ function BookingsPage() {
       return totalDue(b) - totalDue(a);
     });
     return arr;
-  }, [bookings, mainFilter, pay, sort, q, customers, dateBounds]);
+  }, [bookings, mainFilter, showPast, pay, sort, q, customers, dateBounds]);
 
   const counts = useMemo(() => {
+    const statusFilter = (b: any) => showPast ? b.status === "delivered" : b.status !== "delivered";
     return {
-      active: bookings.filter((b) => b.status !== "delivered").length,
-      prepleat: bookings.filter((b) => b.service === "prepleat" && b.status !== "delivered").length,
+      active: bookings.filter((b) => statusFilter(b)).length,
+      prepleat: bookings.filter((b) => b.service === "prepleat" && statusFilter(b)).length,
       drape: bookings.filter((b) => {
         const c = customers.find((x) => x.id === b.customerId);
         const isArtistBooking = !!b.artistId || c?.kind === "artist";
-        return b.service === "drape" && !isArtistBooking && b.status !== "delivered";
+        return b.service === "drape" && !isArtistBooking && statusFilter(b);
       }).length,
       artist: bookings.filter((b) => {
         const c = customers.find((x) => x.id === b.customerId);
         const isArtistBooking = !!b.artistId || c?.kind === "artist";
-        return isArtistBooking && b.status !== "delivered";
+        return isArtistBooking && statusFilter(b);
       }).length,
       history: bookings.filter((b) => b.status === "delivered").length,
     };
-  }, [bookings, customers]);
+  }, [bookings, customers, showPast]);
 
   const collected = list.reduce((s, b) => s + b.advancePaid, 0);
   const pending = list.reduce((s, b) => s + totalDue(b), 0);
@@ -266,7 +271,7 @@ function BookingsPage() {
         {/* Horizontal Scrollable Filter Row */}
         <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar items-center pb-0.5">
           {[
-            { id: "active" as const, label: "Active", count: counts.active },
+            { id: "active" as const, label: showPast ? "All" : "Active", count: counts.active },
             { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
             { id: "drape" as const, label: "Direct Drape", count: counts.drape },
             { id: "artist" as const, label: "Artist", count: counts.artist },
@@ -311,7 +316,7 @@ function BookingsPage() {
             <Link
               to="/"
               search={{ guide: "book" }}
-              className="rounded-full px-3 py-1.5 bg-primary text-primary-foreground flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:brightness-95"
+              className="rounded-full px-3 py-1.5 bg-card border border-border text-muted-foreground flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:bg-secondary/40 hover:text-foreground"
             >
               <Calendar className="size-3.5" /> Book
             </Link>
@@ -335,11 +340,12 @@ function BookingsPage() {
           {!selectMode && (
             <button
               onClick={() => {
-                setMainFilter((curr) => (curr === "history" ? "active" : "history"));
+                setShowPast((prev) => !prev);
+                setMainFilter("active");
               }}
               className={cn(
                 "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
-                mainFilter === "history"
+                showPast
                   ? "bg-primary text-primary-foreground border border-primary shadow-sm"
                   : "bg-card border border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
               )}
@@ -348,7 +354,7 @@ function BookingsPage() {
               <span
                 className={cn(
                   "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-                  mainFilter === "history"
+                  showPast
                     ? "bg-primary-foreground/20 text-primary-foreground"
                     : "bg-muted text-muted-foreground",
                 )}
