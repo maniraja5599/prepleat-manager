@@ -6,8 +6,8 @@ type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean
 const tabs: Tab[] = [
   { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/customers", label: "Customers", icon: Users },
-  { to: "/bookings", label: "Bookings", icon: ListChecks, primary: true },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, primary: true },
+  { to: "/bookings", label: "Bookings", icon: ListChecks },
   { to: "/", label: "Calendar", icon: Calendar },
 ];
 
