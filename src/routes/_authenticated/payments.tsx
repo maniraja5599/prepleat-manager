@@ -3,9 +3,55 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, totalDue, type PaymentMode } from "@/lib/store";
 import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
-import { IndianRupee, TrendingUp, AlertCircle, Wallet, Download, FileText, Sparkles, TrendingDown, Users, Crown, CalendarCheck, ArrowRight, Plus, Trash2, Receipt, PieChart, Tag, X } from "lucide-react";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, ComposedChart } from "recharts";
+import {
+  format,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  isWithinInterval,
+  subMonths,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+} from "date-fns";
+import {
+  IndianRupee,
+  TrendingUp,
+  AlertCircle,
+  Wallet,
+  Download,
+  FileText,
+  Sparkles,
+  TrendingDown,
+  Users,
+  Crown,
+  CalendarCheck,
+  ArrowRight,
+  Plus,
+  Trash2,
+  Receipt,
+  PieChart,
+  Tag,
+  X,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ComposedChart,
+} from "recharts";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -15,7 +61,10 @@ export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({
     meta: [
       { title: "Payments — Eyas Saree Drapist" },
-      { name: "description", content: "Lifetime income, expenses by category, net profit analytics." },
+      {
+        name: "description",
+        content: "Lifetime income, expenses by category, net profit analytics.",
+      },
     ],
   }),
   component: PaymentsPage,
@@ -45,7 +94,10 @@ function PaymentsPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
   const [addTransactionType, setAddTransactionType] = useState<"income" | "expense">("income");
-  const [pendingDelete, setPendingDelete] = useState<{ type: "expense" | "income"; id: string } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    type: "expense" | "income";
+    id: string;
+  } | null>(null);
 
   // === Lifetime ===
   const paymentsTotal = useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
@@ -55,23 +107,36 @@ function PaymentsPage() {
   const netProfit = lifetime - totalExpense;
   const totalPending = useMemo(() => bookings.reduce((s, b) => s + totalDue(b), 0), [bookings]);
   const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
-  const collectionRate = totalBilled > 0 ? Math.min(100, Math.round((paymentsTotal / totalBilled) * 100)) : 0;
+  const collectionRate =
+    totalBilled > 0 ? Math.min(100, Math.round((paymentsTotal / totalBilled) * 100)) : 0;
 
   const now = new Date();
   const incomeIn = (s: Date, e: Date) => {
-    const a = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
-    const b = extraIncomes.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
+    const a = payments
+      .filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e }))
+      .reduce((a, p) => a + p.amount, 0);
+    const b = extraIncomes
+      .filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e }))
+      .reduce((a, p) => a + p.amount, 0);
     return a + b;
   };
   const expenseIn = (s: Date, e: Date) =>
-    expenses.filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e })).reduce((a, x) => a + x.amount, 0);
+    expenses
+      .filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e }))
+      .reduce((a, x) => a + x.amount, 0);
 
   const today = incomeIn(startOfDay(now), endOfDay(now));
-  const thisWeek = incomeIn(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
+  const thisWeek = incomeIn(
+    startOfWeek(now, { weekStartsOn: 1 }),
+    endOfWeek(now, { weekStartsOn: 1 }),
+  );
   const thisMonth = incomeIn(startOfMonth(now), endOfMonth(now));
 
   const expToday = expenseIn(startOfDay(now), endOfDay(now));
-  const expWeek = expenseIn(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
+  const expWeek = expenseIn(
+    startOfWeek(now, { weekStartsOn: 1 }),
+    endOfWeek(now, { weekStartsOn: 1 }),
+  );
   const expMonth = expenseIn(startOfMonth(now), endOfMonth(now));
 
   // States for scrolling earnings/spend ticker
@@ -103,10 +168,18 @@ function PaymentsPage() {
   const trend12 = useMemo(() => {
     return Array.from({ length: 12 }).map((_, i) => {
       const ref = subMonths(new Date(), 11 - i);
-      const s = startOfMonth(ref), e = endOfMonth(ref);
-      const inc = payments.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0)
-        + extraIncomes.filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e })).reduce((a, p) => a + p.amount, 0);
-      const exp = expenses.filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e })).reduce((a, x) => a + x.amount, 0);
+      const s = startOfMonth(ref),
+        e = endOfMonth(ref);
+      const inc =
+        payments
+          .filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e }))
+          .reduce((a, p) => a + p.amount, 0) +
+        extraIncomes
+          .filter((p) => isWithinInterval(parseISO(p.date), { start: s, end: e }))
+          .reduce((a, p) => a + p.amount, 0);
+      const exp = expenses
+        .filter((x) => isWithinInterval(parseISO(x.date), { start: s, end: e }))
+        .reduce((a, x) => a + x.amount, 0);
       return { month: format(ref, "MMM"), amount: inc, expense: exp, net: inc - exp };
     });
   }, [payments, extraIncomes, expenses]);
@@ -121,7 +194,9 @@ function PaymentsPage() {
 
   const modeSplit = useMemo(() => {
     const m: Record<string, number> = { gpay: 0, cash: 0, other: 0 };
-    payments.forEach((p) => { m[p.mode ?? "other"] = (m[p.mode ?? "other"] ?? 0) + p.amount; });
+    payments.forEach((p) => {
+      m[p.mode ?? "other"] = (m[p.mode ?? "other"] ?? 0) + p.amount;
+    });
     return m;
   }, [payments]);
 
@@ -130,7 +205,11 @@ function PaymentsPage() {
     const m = new Map<string, number>();
     expenses.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + e.amount));
     return Array.from(m.entries())
-      .map(([cat, amount]) => ({ cat, amount, pct: totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0 }))
+      .map(([cat, amount]) => ({
+        cat,
+        amount,
+        pct: totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0,
+      }))
       .sort((a, b) => b.amount - a.amount);
   }, [expenses, totalExpense]);
 
@@ -139,7 +218,11 @@ function PaymentsPage() {
     const m = new Map<string, number>();
     extraIncomes.forEach((e) => m.set(e.category, (m.get(e.category) ?? 0) + e.amount));
     return Array.from(m.entries())
-      .map(([cat, amount]) => ({ cat, amount, pct: extraTotal > 0 ? Math.round((amount / extraTotal) * 100) : 0 }))
+      .map(([cat, amount]) => ({
+        cat,
+        amount,
+        pct: extraTotal > 0 ? Math.round((amount / extraTotal) * 100) : 0,
+      }))
       .sort((a, b) => b.amount - a.amount);
   }, [extraIncomes, extraTotal]);
 
@@ -152,7 +235,10 @@ function PaymentsPage() {
     const count = payments.length;
     const avg = count ? lifetime / count : 0;
     const uniqueCustomers = new Set(payments.map((p) => p.customerId)).size;
-    const best = trend12.reduce((a, b) => (b.amount > (a?.amount ?? 0) ? b : a), null as null | { month: string; amount: number });
+    const best = trend12.reduce(
+      (a, b) => (b.amount > (a?.amount ?? 0) ? b : a),
+      null as null | { month: string; amount: number },
+    );
     return { count, avg, uniqueCustomers, bestMonth: best };
   }, [payments, lifetime, trend12]);
 
@@ -193,7 +279,11 @@ function PaymentsPage() {
       m.set(e.category, (m.get(e.category) ?? 0) + e.amount);
     });
     return Array.from(m.entries())
-      .map(([cat, amount]) => ({ cat, amount, pct: lifetime > 0 ? Math.round((amount / lifetime) * 100) : 0 }))
+      .map(([cat, amount]) => ({
+        cat,
+        amount,
+        pct: lifetime > 0 ? Math.round((amount / lifetime) * 100) : 0,
+      }))
       .sort((a, b) => b.amount - a.amount);
   }, [payments, extraIncomes, bookings, lifetime]);
 
@@ -269,7 +359,11 @@ function PaymentsPage() {
     payments.forEach((p) => {
       const d = parseISO(p.date);
       const key = format(d, "yyyy-MM");
-      const current = monthlyMap.get(key) || { monthStr: format(d, "MMM yy"), amount: 0, expense: 0 };
+      const current = monthlyMap.get(key) || {
+        monthStr: format(d, "MMM yy"),
+        amount: 0,
+        expense: 0,
+      };
       current.amount += p.amount;
       monthlyMap.set(key, current);
     });
@@ -277,7 +371,11 @@ function PaymentsPage() {
     extraIncomes.forEach((e) => {
       const d = parseISO(e.date);
       const key = format(d, "yyyy-MM");
-      const current = monthlyMap.get(key) || { monthStr: format(d, "MMM yy"), amount: 0, expense: 0 };
+      const current = monthlyMap.get(key) || {
+        monthStr: format(d, "MMM yy"),
+        amount: 0,
+        expense: 0,
+      };
       current.amount += e.amount;
       monthlyMap.set(key, current);
     });
@@ -285,7 +383,11 @@ function PaymentsPage() {
     expenses.forEach((x) => {
       const d = parseISO(x.date);
       const key = format(d, "yyyy-MM");
-      const current = monthlyMap.get(key) || { monthStr: format(d, "MMM yy"), amount: 0, expense: 0 };
+      const current = monthlyMap.get(key) || {
+        monthStr: format(d, "MMM yy"),
+        amount: 0,
+        expense: 0,
+      };
       current.expense += x.amount;
       monthlyMap.set(key, current);
     });
@@ -296,7 +398,7 @@ function PaymentsPage() {
         month: v.monthStr,
         amount: v.amount,
         expense: v.expense,
-        net: v.amount - v.expense
+        net: v.amount - v.expense,
       }));
   }, [payments, extraIncomes, expenses]);
 
@@ -305,7 +407,9 @@ function PaymentsPage() {
     const blob = new Blob([data], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = filename; a.click();
+    a.href = url;
+    a.download = filename;
+    a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const csvEscape = (v: string | number) => {
@@ -317,18 +421,37 @@ function PaymentsPage() {
     const rows: (string | number)[][] = [];
     rows.push(["INCOME"]);
     rows.push(["Date", "Customer", "Phone", "Booking", "Service", "Mode", "Amount", "Note"]);
-    [...payments].sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
-      const c = customers.find((x) => x.id === p.customerId);
-      const b = bookings.find((x) => x.id === p.bookingId);
-      rows.push([format(parseISO(p.date), "yyyy-MM-dd HH:mm"), c?.name ?? "Unknown", c?.phone ?? "", b?.billNumber ?? "", b?.service ?? "", p.mode ?? "other", p.amount, p.note ?? ""]);
-    });
+    [...payments]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .forEach((p) => {
+        const c = customers.find((x) => x.id === p.customerId);
+        const b = bookings.find((x) => x.id === p.bookingId);
+        rows.push([
+          format(parseISO(p.date), "yyyy-MM-dd HH:mm"),
+          c?.name ?? "Unknown",
+          c?.phone ?? "",
+          b?.billNumber ?? "",
+          b?.service ?? "",
+          p.mode ?? "other",
+          p.amount,
+          p.note ?? "",
+        ]);
+      });
     rows.push(["TOTAL INCOME", "", "", "", "", "", lifetime, ""]);
     rows.push([]);
     rows.push(["EXPENSES"]);
     rows.push(["Date", "Category", "Mode", "Amount", "Note"]);
-    [...expenses].sort((a, b) => b.date.localeCompare(a.date)).forEach((e) => {
-      rows.push([format(parseISO(e.date), "yyyy-MM-dd HH:mm"), e.category, e.mode ?? "", e.amount, e.note ?? ""]);
-    });
+    [...expenses]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .forEach((e) => {
+        rows.push([
+          format(parseISO(e.date), "yyyy-MM-dd HH:mm"),
+          e.category,
+          e.mode ?? "",
+          e.amount,
+          e.note ?? "",
+        ]);
+      });
     rows.push(["TOTAL EXPENSE", "", "", totalExpense, ""]);
     rows.push([]);
     rows.push(["NET PROFIT", "", "", netProfit, ""]);
@@ -340,17 +463,25 @@ function PaymentsPage() {
   const exportPDF = () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
-    doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
     doc.text(businessName || "Payments Report", 40, 50);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
     doc.text(`Lifetime Report`, 40, 68);
     doc.text(`Generated: ${format(new Date(), "PPp")}`, 40, 82);
 
-    doc.setDrawColor(220); doc.roundedRect(40, 96, w - 80, 70, 6, 6);
-    doc.setFontSize(9); doc.setTextColor(120);
-    doc.text("INCOME", 56, 116); doc.text("EXPENSE", 200, 116);
-    doc.text("NET PROFIT", 344, 116); doc.text("COLLECTION %", 470, 116);
-    doc.setFontSize(13); doc.setTextColor(0); doc.setFont("helvetica", "bold");
+    doc.setDrawColor(220);
+    doc.roundedRect(40, 96, w - 80, 70, 6, 6);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text("INCOME", 56, 116);
+    doc.text("EXPENSE", 200, 116);
+    doc.text("NET PROFIT", 344, 116);
+    doc.text("COLLECTION %", 470, 116);
+    doc.setFontSize(13);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
     doc.text(rs(lifetime), 56, 138);
     doc.text(rs(totalExpense), 200, 138);
     doc.text(rs(netProfit), 344, 138);
@@ -359,17 +490,19 @@ function PaymentsPage() {
     autoTable(doc, {
       startY: 184,
       head: [["Date", "Customer", "Booking", "Mode", "Amount"]],
-      body: [...payments].sort((a, b) => b.date.localeCompare(a.date)).map((p) => {
-        const c = customers.find((x) => x.id === p.customerId);
-        const b = bookings.find((x) => x.id === p.bookingId);
-        return [
-          format(parseISO(p.date), "dd MMM yy, HH:mm"),
-          c?.name ?? "Unknown",
-          (b?.billNumber ?? "").split("-").pop() || "—",
-          (p.mode ?? "other").toUpperCase(),
-          rs(p.amount),
-        ];
-      }),
+      body: [...payments]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map((p) => {
+          const c = customers.find((x) => x.id === p.customerId);
+          const b = bookings.find((x) => x.id === p.bookingId);
+          return [
+            format(parseISO(p.date), "dd MMM yy, HH:mm"),
+            c?.name ?? "Unknown",
+            (b?.billNumber ?? "").split("-").pop() || "—",
+            (p.mode ?? "other").toUpperCase(),
+            rs(p.amount),
+          ];
+        }),
       foot: [["", "", "", "INCOME", rs(lifetime)]],
       styles: { fontSize: 9 },
       headStyles: { fillColor: [80, 30, 50], textColor: 255 },
@@ -379,14 +512,19 @@ function PaymentsPage() {
     if (expenses.length > 0) {
       autoTable(doc, {
         head: [["Date", "Category", "Mode", "Note", "Amount"]],
-        body: [...expenses].sort((a, b) => b.date.localeCompare(a.date)).map((e) => [
-          format(parseISO(e.date), "dd MMM yy"),
-          e.category,
-          (e.mode ?? "—").toUpperCase(),
-          e.note ?? "",
-          rs(e.amount),
-        ]),
-        foot: [["", "", "", "EXPENSE", rs(totalExpense)], ["", "", "", "NET", rs(netProfit)]],
+        body: [...expenses]
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .map((e) => [
+            format(parseISO(e.date), "dd MMM yy"),
+            e.category,
+            (e.mode ?? "—").toUpperCase(),
+            e.note ?? "",
+            rs(e.amount),
+          ]),
+        foot: [
+          ["", "", "", "EXPENSE", rs(totalExpense)],
+          ["", "", "", "NET", rs(netProfit)],
+        ],
         styles: { fontSize: 9 },
         headStyles: { fillColor: [120, 50, 40], textColor: 255 },
         footStyles: { fillColor: [240, 230, 230], textColor: 0, fontStyle: "bold" },
@@ -402,18 +540,29 @@ function PaymentsPage() {
       {/* Sticky Header block (Title + Ticker + Tab Bar) */}
       <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
         <div className="flex items-center justify-between gap-4 h-9">
-          <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">Payments</h1>
-          
+          <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
+            Payments
+          </h1>
+
           {/* Cute Vertical Scrolling Earning/Spend Ticker */}
           <div className="h-7 overflow-hidden relative min-w-[110px]">
-            <div 
-              className="transition-transform duration-500 ease-in-out" 
+            <div
+              className="transition-transform duration-500 ease-in-out"
               style={{ transform: `translateY(-${earningIndex * 28}px)` }}
             >
               {tickerItems.map((item, idx) => (
                 <div key={idx} className="h-7 flex flex-col items-end justify-center">
-                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">{item.label}</span>
-                  <span className={cn("text-xs font-extrabold tabular-nums mt-0.5 leading-none", item.color)}>{fmtINR(item.value)}</span>
+                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">
+                    {item.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-xs font-extrabold tabular-nums mt-0.5 leading-none",
+                      item.color,
+                    )}
+                  >
+                    {fmtINR(item.value)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -422,16 +571,21 @@ function PaymentsPage() {
 
         {/* TAB BAR */}
         <div className="bg-card card-shadow rounded-full p-1 mt-2.5 grid grid-cols-3 gap-1">
-          {([
-            { id: "summary", label: "Summary", icon: PieChart },
-            { id: "income", label: "Income", icon: Wallet },
-            { id: "expenses", label: "Expenses", icon: Receipt },
-          ] as const).map((t) => {
+          {(
+            [
+              { id: "summary", label: "Summary", icon: PieChart },
+              { id: "income", label: "Income", icon: Wallet },
+              { id: "expenses", label: "Expenses", icon: Receipt },
+            ] as const
+          ).map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
             const animationClass =
-              t.id === "income" ? "animate-pump-income" :
-              t.id === "expenses" ? "animate-pump-expense" : "";
+              t.id === "income"
+                ? "animate-pump-income"
+                : t.id === "expenses"
+                  ? "animate-pump-expense"
+                  : "";
             return (
               <button
                 key={t.id}
@@ -461,22 +615,35 @@ function PaymentsPage() {
         <div className="relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold opacity-90">
-              <Sparkles className="size-3.5" /> {tab === "expenses" ? "Total expenses" : tab === "summary" ? "Net profit" : "Total collection"}
+              <Sparkles className="size-3.5" />{" "}
+              {tab === "expenses"
+                ? "Total expenses"
+                : tab === "summary"
+                  ? "Net profit"
+                  : "Total collection"}
             </div>
             <div className="relative">
               <button
                 onClick={() => setExportOpen((v) => !v)}
                 className="size-9 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition"
                 aria-label="Export"
-              ><Download className="size-4" /></button>
+              >
+                <Download className="size-4" />
+              </button>
               {exportOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setExportOpen(false)} />
                   <div className="absolute right-0 top-11 z-40 bg-card card-shadow rounded-2xl p-1.5 min-w-[160px] border border-border text-foreground">
-                    <button onClick={exportCSV} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left">
+                    <button
+                      onClick={exportCSV}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left"
+                    >
                       <FileText className="size-4 text-success" /> Export CSV
                     </button>
-                    <button onClick={exportPDF} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left">
+                    <button
+                      onClick={exportPDF}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium hover:bg-secondary text-left"
+                    >
                       <FileText className="size-4 text-destructive" /> Export PDF
                     </button>
                   </div>
@@ -485,13 +652,21 @@ function PaymentsPage() {
             </div>
           </div>
           <p className="font-display font-bold text-4xl mt-1.5 tabular-nums">
-            {tab === "expenses" ? fmtINR(totalExpense) : tab === "summary" ? fmtINR(netProfit) : fmtINR(lifetime)}
+            {tab === "expenses"
+              ? fmtINR(totalExpense)
+              : tab === "summary"
+                ? fmtINR(netProfit)
+                : fmtINR(lifetime)}
           </p>
           <div className="flex items-center gap-3 mt-2 text-[11px] opacity-95">
             {tab === "income" && (
               <>
                 <span className="flex items-center gap-1">
-                  {trendDelta.up ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                  {trendDelta.up ? (
+                    <TrendingUp className="size-3.5" />
+                  ) : (
+                    <TrendingDown className="size-3.5" />
+                  )}
                   {trendDelta.pct}% vs last month
                 </span>
                 <span>·</span>
@@ -533,21 +708,32 @@ function PaymentsPage() {
         }
       `}</style>
 
-
-
       {tab === "income" && (
         <IncomeView
-          lifetime={lifetime} totalPending={totalPending} totalBilled={totalBilled} collectionRate={collectionRate}
-          trend12={trend12} kpis={kpis} topCustomers={topCustomers} modeSplit={modeSplit} recent={recent}
-          extraTotal={extraTotal} extraByCategory={extraByCategory} recentExtra={recentExtra}
+          lifetime={lifetime}
+          totalPending={totalPending}
+          totalBilled={totalBilled}
+          collectionRate={collectionRate}
+          trend12={trend12}
+          kpis={kpis}
+          topCustomers={topCustomers}
+          modeSplit={modeSplit}
+          recent={recent}
+          extraTotal={extraTotal}
+          extraByCategory={extraByCategory}
+          recentExtra={recentExtra}
           onDeleteExtra={(id) => setPendingDelete({ type: "income", id })}
         />
       )}
 
       {tab === "expenses" && (
         <ExpensesView
-          expenses={expenses} totalExpense={totalExpense} categories={categories}
-          expenseByCategory={expenseByCategory} trend12={trend12} recentExpenses={recentExpenses}
+          expenses={expenses}
+          totalExpense={totalExpense}
+          categories={categories}
+          expenseByCategory={expenseByCategory}
+          trend12={trend12}
+          recentExpenses={recentExpenses}
           onAdd={() => {
             setAddTransactionType("expense");
             setAddTransactionOpen(true);
@@ -558,9 +744,14 @@ function PaymentsPage() {
 
       {tab === "summary" && (
         <SummaryView
-          lifetime={lifetime} totalExpense={totalExpense} netProfit={netProfit}
-          totalPending={totalPending} totalBilled={totalBilled} collectionRate={collectionRate}
-          trend12={trend12} expenseByCategory={expenseByCategory}
+          lifetime={lifetime}
+          totalExpense={totalExpense}
+          netProfit={netProfit}
+          totalPending={totalPending}
+          totalBilled={totalBilled}
+          collectionRate={collectionRate}
+          trend12={trend12}
+          expenseByCategory={expenseByCategory}
           incomeByCategory={incomeByCategory}
           unifiedRecentTransactions={unifiedRecentTransactions}
           allTimeTrend={allTimeTrend}
@@ -616,7 +807,7 @@ function PaymentsPage() {
           incomeCategories={incomeCats}
           expenseCategories={categories}
           defaultMode={settings.defaultPaymentMode ?? "gpay"}
-          modes={settings.paymentModes ?? ["gpay","cash","other"]}
+          modes={settings.paymentModes ?? ["gpay", "cash", "other"]}
           onClose={() => setAddTransactionOpen(false)}
           onSave={(type, payload) => {
             if (type === "income") {
@@ -636,7 +827,9 @@ function PaymentsPage() {
       <ConfirmDialog
         open={!!pendingDelete}
         onOpenChange={(v) => !v && setPendingDelete(null)}
-        title={pendingDelete?.type === "income" ? "Delete this income entry?" : "Delete this expense?"}
+        title={
+          pendingDelete?.type === "income" ? "Delete this income entry?" : "Delete this expense?"
+        }
         description="This cannot be undone."
         confirmLabel="Delete"
         tone="danger"
@@ -658,15 +851,30 @@ function PaymentsPage() {
 
 // === Income tab ===
 function IncomeView(p: {
-  lifetime: number; totalPending: number; totalBilled: number; collectionRate: number;
+  lifetime: number;
+  totalPending: number;
+  totalBilled: number;
+  collectionRate: number;
   trend12: { month: string; amount: number }[];
-  kpis: { count: number; avg: number; uniqueCustomers: number; bestMonth: { month: string; amount: number } | null };
+  kpis: {
+    count: number;
+    avg: number;
+    uniqueCustomers: number;
+    bestMonth: { month: string; amount: number } | null;
+  };
   topCustomers: { c: any; amount: number }[];
   modeSplit: Record<string, number>;
   recent: { p: any; c: any; b: any }[];
   extraTotal: number;
   extraByCategory: { cat: string; amount: number; pct: number }[];
-  recentExtra: { id: string; amount: number; category: string; note?: string; date: string; mode?: PaymentMode }[];
+  recentExtra: {
+    id: string;
+    amount: number;
+    category: string;
+    note?: string;
+    date: string;
+    mode?: PaymentMode;
+  }[];
   onDeleteExtra: (id: string) => void;
 }) {
   return (
@@ -674,10 +882,14 @@ function IncomeView(p: {
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Earnings trend</p>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Earnings trend
+            </p>
             <p className="text-[10px] text-muted-foreground">Last 12 months</p>
           </div>
-          <p className="text-sm font-bold tabular-nums">{fmtINR(p.trend12.reduce((s, m) => s + m.amount, 0))}</p>
+          <p className="text-sm font-bold tabular-nums">
+            {fmtINR(p.trend12.reduce((s, m) => s + m.amount, 0))}
+          </p>
         </div>
         <div className="h-44 -mx-2">
           <ResponsiveContainer width="100%" height="100%">
@@ -688,40 +900,111 @@ function IncomeView(p: {
                   <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
+              <CartesianGrid
+                vertical={false}
+                stroke="var(--color-border)"
+                strokeDasharray="3 3"
+                opacity={0.4}
+              />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+              />
               <YAxis hide />
-              <Tooltip cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
-                contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                formatter={(v: number) => [fmtINR(v), "Earned"]} />
-              <Area type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#earnGrad)" />
+              <Tooltip
+                cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
+                contentStyle={{
+                  background: "var(--color-card)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
+                formatter={(v: number) => [fmtINR(v), "Earned"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="amount"
+                stroke="var(--color-primary)"
+                strokeWidth={2.5}
+                fill="url(#earnGrad)"
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Collected" value={fmtINR(p.lifetime)} />
-        <Stat tint="danger" icon={<AlertCircle className="size-3.5" />} label="Pending" value={fmtINR(p.totalPending)} />
-        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Billed" value={fmtINR(p.totalBilled)} />
-        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Collection %" value={`${p.collectionRate}%`} />
+        <Stat
+          tint="success"
+          icon={<Wallet className="size-3.5" />}
+          label="Collected"
+          value={fmtINR(p.lifetime)}
+        />
+        <Stat
+          tint="danger"
+          icon={<AlertCircle className="size-3.5" />}
+          label="Pending"
+          value={fmtINR(p.totalPending)}
+        />
+        <Stat
+          tint="primary"
+          icon={<TrendingUp className="size-3.5" />}
+          label="Billed"
+          value={fmtINR(p.totalBilled)}
+        />
+        <Stat
+          tint="muted"
+          icon={<IndianRupee className="size-3.5" />}
+          label="Collection %"
+          value={`${p.collectionRate}%`}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <KpiCard icon={<CalendarCheck className="size-3.5" />} label="Payments" value={String(p.kpis.count)} sub={`avg ${fmtINR(p.kpis.avg)}`} tint="primary" />
-        <KpiCard icon={<Users className="size-3.5" />} label="Unique customers" value={String(p.kpis.uniqueCustomers)} sub="all time" tint="accent" />
-        <KpiCard icon={<TrendingUp className="size-3.5" />} label="Best month" value={p.kpis.bestMonth ? fmtINR(p.kpis.bestMonth.amount) : "—"} sub={p.kpis.bestMonth?.month ?? "—"} tint="success" />
-        <KpiCard icon={<Crown className="size-3.5" />} label="Top customer" value={p.topCustomers[0] ? fmtINR(p.topCustomers[0].amount) : "—"} sub={p.topCustomers[0]?.c?.name ?? "—"} tint="gold" />
+        <KpiCard
+          icon={<CalendarCheck className="size-3.5" />}
+          label="Payments"
+          value={String(p.kpis.count)}
+          sub={`avg ${fmtINR(p.kpis.avg)}`}
+          tint="primary"
+        />
+        <KpiCard
+          icon={<Users className="size-3.5" />}
+          label="Unique customers"
+          value={String(p.kpis.uniqueCustomers)}
+          sub="all time"
+          tint="accent"
+        />
+        <KpiCard
+          icon={<TrendingUp className="size-3.5" />}
+          label="Best month"
+          value={p.kpis.bestMonth ? fmtINR(p.kpis.bestMonth.amount) : "—"}
+          sub={p.kpis.bestMonth?.month ?? "—"}
+          tint="success"
+        />
+        <KpiCard
+          icon={<Crown className="size-3.5" />}
+          label="Top customer"
+          value={p.topCustomers[0] ? fmtINR(p.topCustomers[0].amount) : "—"}
+          sub={p.topCustomers[0]?.c?.name ?? "—"}
+          tint="gold"
+        />
       </div>
 
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Payment mode split</p>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+          Payment mode split
+        </p>
         <div className="grid grid-cols-3 gap-2">
           {(["gpay", "cash", "other"] as const).map((m) => {
             const pct = p.lifetime > 0 ? Math.round((p.modeSplit[m] / p.lifetime) * 100) : 0;
             return (
               <div key={m} className="bg-secondary rounded-xl p-2 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{m}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  {m}
+                </p>
                 <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(p.modeSplit[m])}</p>
                 <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
               </div>
@@ -732,7 +1015,9 @@ function IncomeView(p: {
 
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Top customers</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Top customers
+          </p>
           <Crown className="size-3.5 text-gold" />
         </div>
         {p.topCustomers.length === 0 ? (
@@ -741,11 +1026,23 @@ function IncomeView(p: {
           <ul className="space-y-1.5">
             {p.topCustomers.map((r, i) => (
               <li key={r.c!.id}>
-                <Link to="/customers/$id" params={{ id: r.c!.id }} className="flex items-center gap-2 p-2 -mx-1 rounded-xl active:bg-secondary">
-                  <div className={cn(
-                    "size-7 rounded-full flex items-center justify-center text-[11px] font-bold",
-                    i === 0 ? "bg-gold/20 text-gold" : i === 1 ? "bg-secondary text-foreground" : "bg-muted text-muted-foreground"
-                  )}>{i + 1}</div>
+                <Link
+                  to="/customers/$id"
+                  params={{ id: r.c!.id }}
+                  className="flex items-center gap-2 p-2 -mx-1 rounded-xl active:bg-secondary"
+                >
+                  <div
+                    className={cn(
+                      "size-7 rounded-full flex items-center justify-center text-[11px] font-bold",
+                      i === 0
+                        ? "bg-gold/20 text-gold"
+                        : i === 1
+                          ? "bg-secondary text-foreground"
+                          : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {i + 1}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm truncate">{r.c!.name}</p>
                     <p className="text-[10px] text-muted-foreground">{r.c!.phone}</p>
@@ -760,7 +1057,9 @@ function IncomeView(p: {
 
       <div className="bg-card card-shadow rounded-2xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Recent payments</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Recent payments
+          </p>
           <span className="text-[10px] text-muted-foreground">last {p.recent.length}</span>
         </div>
         {p.recent.length === 0 ? (
@@ -769,24 +1068,40 @@ function IncomeView(p: {
           <div className="max-h-[250px] overflow-y-auto pr-1">
             <ul className="space-y-1.5">
               {p.recent.map(({ p: pay, c, b }) => (
-                <li key={pay.id} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition">
-                  <div className={cn(
-                    "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
-                    pay.mode === "gpay" ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
-                      : pay.mode === "cash" ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
-                      : "bg-muted text-muted-foreground",
-                  )}>{(pay.mode ?? "other").slice(0, 4)}</div>
+                <li
+                  key={pay.id}
+                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
+                >
+                  <div
+                    className={cn(
+                      "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
+                      pay.mode === "gpay"
+                        ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
+                        : pay.mode === "cash"
+                          ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
+                          : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {(pay.mode ?? "other").slice(0, 4)}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
-                      <p className="font-bold tabular-nums text-sm text-success">{fmtINR(pay.amount)}</p>
+                      <p className="font-bold tabular-nums text-sm text-success">
+                        {fmtINR(pay.amount)}
+                      </p>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      {format(parseISO(pay.date), "MMM d · h:mm a")}{b ? ` · ${b.service}` : ""}
+                      {format(parseISO(pay.date), "MMM d · h:mm a")}
+                      {b ? ` · ${b.service}` : ""}
                     </p>
                   </div>
                   {b && (
-                    <Link to="/bookings/$id" params={{ id: b.id }} className="shrink-0 text-primary">
+                    <Link
+                      to="/bookings/$id"
+                      params={{ id: b.id }}
+                      className="shrink-0 text-primary"
+                    >
                       <ArrowRight className="size-4" />
                     </Link>
                   )}
@@ -801,8 +1116,12 @@ function IncomeView(p: {
       <div className="bg-card card-shadow rounded-2xl p-3 mt-3 mb-20">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Extra income</p>
-            <p className="text-[10px] text-muted-foreground">Not tied to bookings · tap + below to add</p>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Extra income
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              Not tied to bookings · tap + below to add
+            </p>
           </div>
           <p className="text-sm font-bold tabular-nums text-success">{fmtINR(p.extraTotal)}</p>
         </div>
@@ -815,16 +1134,27 @@ function IncomeView(p: {
                 <li key={row.cat}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="font-semibold flex items-center gap-1.5">
-                      <span className={cn(
-                        "size-2 rounded-full",
-                        i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
-                      )} />
+                      <span
+                        className={cn(
+                          "size-2 rounded-full",
+                          i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                        )}
+                      />
                       {row.cat}
                     </span>
-                    <span className="tabular-nums font-bold">{fmtINR(row.amount)} <span className="text-muted-foreground font-normal">· {row.pct}%</span></span>
+                    <span className="tabular-nums font-bold">
+                      {fmtINR(row.amount)}{" "}
+                      <span className="text-muted-foreground font-normal">· {row.pct}%</span>
+                    </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                    <div className={cn("h-full", i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent")} style={{ width: `${row.pct}%` }} />
+                    <div
+                      className={cn(
+                        "h-full",
+                        i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                      )}
+                      style={{ width: `${row.pct}%` }}
+                    />
                   </div>
                 </li>
               ))}
@@ -832,20 +1162,29 @@ function IncomeView(p: {
             <div className="max-h-[250px] overflow-y-auto pr-1 border-t border-border pt-2">
               <ul className="space-y-1.5">
                 {p.recentExtra.map((e) => (
-                  <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition">
+                  <li
+                    key={e.id}
+                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
+                  >
                     <div className="shrink-0 size-9 rounded-xl bg-success/15 text-success flex items-center justify-center">
                       <Plus className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <p className="font-semibold text-sm truncate">{e.category}</p>
-                        <p className="font-bold tabular-nums text-sm text-success">+{fmtINR(e.amount)}</p>
+                        <p className="font-bold tabular-nums text-sm text-success">
+                          +{fmtINR(e.amount)}
+                        </p>
                       </div>
                       <p className="text-[10px] text-muted-foreground truncate">
-                        {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
+                        {format(parseISO(e.date), "MMM d · h:mm a")}
+                        {e.note ? ` · ${e.note}` : ""}
                       </p>
                     </div>
-                    <button onClick={() => p.onDeleteExtra(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer">
+                    <button
+                      onClick={() => p.onDeleteExtra(e.id)}
+                      className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer"
+                    >
                       <Trash2 className="size-3.5" />
                     </button>
                   </li>
@@ -861,7 +1200,9 @@ function IncomeView(p: {
 
 // === Expenses tab ===
 function ExpensesView(p: {
-  expenses: any[]; totalExpense: number; categories: string[];
+  expenses: any[];
+  totalExpense: number;
+  categories: string[];
   expenseByCategory: { cat: string; amount: number; pct: number }[];
   trend12: { month: string; expense: number }[];
   recentExpenses: any[];
@@ -873,8 +1214,13 @@ function ExpensesView(p: {
       <div className="bg-card card-shadow rounded-2xl p-6 text-center">
         <Tag className="size-8 mx-auto text-muted-foreground mb-2" />
         <p className="text-sm font-semibold mb-1">No expense categories yet</p>
-        <p className="text-xs text-muted-foreground mb-3">Add categories in Settings → Pricing first.</p>
-        <Link to="/settings" className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+        <p className="text-xs text-muted-foreground mb-3">
+          Add categories in Settings → Pricing first.
+        </p>
+        <Link
+          to="/settings"
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
+        >
           Open Settings
         </Link>
       </div>
@@ -887,20 +1233,36 @@ function ExpensesView(p: {
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Monthly expenses</p>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Monthly expenses
+            </p>
             <p className="text-[10px] text-muted-foreground">Last 12 months</p>
           </div>
         </div>
         <div className="h-36">
           {p.trend12.every((m) => m.expense === 0) ? (
-            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No data</div>
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+              No data
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={p.trend12} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <Tooltip cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
-                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                  formatter={(v: number) => [fmtINR(v), "Spent"]} />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--color-muted)", opacity: 0.4 }}
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
+                  formatter={(v: number) => [fmtINR(v), "Spent"]}
+                />
                 <Bar dataKey="expense" fill="var(--color-destructive)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -911,30 +1273,56 @@ function ExpensesView(p: {
       {/* Category breakdown */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">By category</p>
-          <p className="text-sm font-bold tabular-nums text-destructive">{fmtINR(p.totalExpense)}</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            By category
+          </p>
+          <p className="text-sm font-bold tabular-nums text-destructive">
+            {fmtINR(p.totalExpense)}
+          </p>
         </div>
         {p.expenseByCategory.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">No expenses logged yet. Tap + to add.</p>
+          <p className="text-xs text-muted-foreground text-center py-4">
+            No expenses logged yet. Tap + to add.
+          </p>
         ) : (
           <ul className="space-y-2">
             {p.expenseByCategory.map((row, i) => (
               <li key={row.cat}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-semibold flex items-center gap-1.5">
-                    <span className={cn(
-                      "size-2 rounded-full",
-                      i === 0 ? "bg-destructive" : i === 1 ? "bg-primary" : i === 2 ? "bg-accent" : "bg-muted-foreground"
-                    )} />
+                    <span
+                      className={cn(
+                        "size-2 rounded-full",
+                        i === 0
+                          ? "bg-destructive"
+                          : i === 1
+                            ? "bg-primary"
+                            : i === 2
+                              ? "bg-accent"
+                              : "bg-muted-foreground",
+                      )}
+                    />
                     {row.cat}
                   </span>
-                  <span className="tabular-nums font-bold">{fmtINR(row.amount)} <span className="text-muted-foreground font-normal">· {row.pct}%</span></span>
+                  <span className="tabular-nums font-bold">
+                    {fmtINR(row.amount)}{" "}
+                    <span className="text-muted-foreground font-normal">· {row.pct}%</span>
+                  </span>
                 </div>
                 <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                  <div className={cn(
-                    "h-full",
-                    i === 0 ? "bg-destructive" : i === 1 ? "bg-primary" : i === 2 ? "bg-accent" : "bg-muted-foreground"
-                  )} style={{ width: `${row.pct}%` }} />
+                  <div
+                    className={cn(
+                      "h-full",
+                      i === 0
+                        ? "bg-destructive"
+                        : i === 1
+                          ? "bg-primary"
+                          : i === 2
+                            ? "bg-accent"
+                            : "bg-muted-foreground",
+                    )}
+                    style={{ width: `${row.pct}%` }}
+                  />
                 </div>
               </li>
             ))}
@@ -945,7 +1333,9 @@ function ExpensesView(p: {
       {/* Recent expenses */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-20">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Recent expenses</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Recent expenses
+          </p>
           <span className="text-[10px] text-muted-foreground">last {p.recentExpenses.length}</span>
         </div>
         {p.recentExpenses.length === 0 ? (
@@ -954,20 +1344,29 @@ function ExpensesView(p: {
           <div className="max-h-[250px] overflow-y-auto pr-1">
             <ul className="space-y-1.5">
               {p.recentExpenses.map((e) => (
-                <li key={e.id} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition">
+                <li
+                  key={e.id}
+                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
+                >
                   <div className="shrink-0 size-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center">
                     <Receipt className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="font-semibold text-sm truncate">{e.category}</p>
-                      <p className="font-bold tabular-nums text-sm text-destructive">−{fmtINR(e.amount)}</p>
+                      <p className="font-bold tabular-nums text-sm text-destructive">
+                        −{fmtINR(e.amount)}
+                      </p>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      {format(parseISO(e.date), "MMM d · h:mm a")}{e.note ? ` · ${e.note}` : ""}
+                      {format(parseISO(e.date), "MMM d · h:mm a")}
+                      {e.note ? ` · ${e.note}` : ""}
                     </p>
                   </div>
-                  <button onClick={() => p.onDelete(e.id)} className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer">
+                  <button
+                    onClick={() => p.onDelete(e.id)}
+                    className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer"
+                  >
                     <Trash2 className="size-3.5" />
                   </button>
                 </li>
@@ -982,8 +1381,12 @@ function ExpensesView(p: {
 
 // === Summary tab ===
 function SummaryView(p: {
-  lifetime: number; totalExpense: number; netProfit: number;
-  totalPending: number; totalBilled: number; collectionRate: number;
+  lifetime: number;
+  totalExpense: number;
+  netProfit: number;
+  totalPending: number;
+  totalBilled: number;
+  collectionRate: number;
   trend12: { month: string; amount: number; expense: number; net: number }[];
   expenseByCategory: { cat: string; amount: number; pct: number }[];
   incomeByCategory: { cat: string; amount: number; pct: number }[];
@@ -1029,23 +1432,23 @@ function SummaryView(p: {
     if (!p.allTimeTrend || p.allTimeTrend.length === 0) {
       return { minNet: 0, maxNet: 1000, maxBarStacked: 1000 };
     }
-    
+
     let minNet = Infinity;
     let maxNet = -Infinity;
     let maxBarStacked = 0;
-    
+
     p.allTimeTrend.forEach((t) => {
       if (t.net < minNet) minNet = t.net;
       if (t.net > maxNet) maxNet = t.net;
-      
+
       const stacked = t.amount + t.expense;
       if (stacked > maxBarStacked) maxBarStacked = stacked;
     });
-    
+
     const netRange = maxNet - minNet;
     const netPadding = netRange === 0 ? 1000 : netRange * 0.15;
     const safeMaxBarStacked = maxBarStacked || 1000;
-    
+
     return {
       minNet: minNet < 0 ? minNet - netPadding : 0,
       maxNet: maxNet + netPadding,
@@ -1070,7 +1473,9 @@ function SummaryView(p: {
         {/* Chart Header with Manual Mode Toggles */}
         <div className="flex items-center justify-between mb-2.5">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            {chartMode === "12months" ? "Income vs Expense (12 months)" : "Lifetime Summary (All Time)"}
+            {chartMode === "12months"
+              ? "Income vs Expense (12 months)"
+              : "Lifetime Summary (All Time)"}
           </p>
 
           <div className="flex bg-secondary p-0.5 rounded-lg border border-border/80">
@@ -1083,7 +1488,7 @@ function SummaryView(p: {
                 "px-2 py-0.5 text-[9px] font-bold rounded transition cursor-pointer",
                 chartMode === "12months"
                   ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               12 Months
@@ -1097,7 +1502,7 @@ function SummaryView(p: {
                 "px-2 py-0.5 text-[9px] font-bold rounded transition cursor-pointer",
                 chartMode === "alltime"
                   ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               All Time
@@ -1109,7 +1514,12 @@ function SummaryView(p: {
           <div className="h-44 -mx-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
+                <CartesianGrid
+                  vertical={false}
+                  stroke="var(--color-border)"
+                  strokeDasharray="3 3"
+                  opacity={0.4}
+                />
                 <XAxis
                   dataKey="month"
                   axisLine={false}
@@ -1118,8 +1528,16 @@ function SummaryView(p: {
                 />
                 <YAxis hide />
                 <Tooltip
-                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                  formatter={(v: number, name: string) => [fmtINR(v), name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net"]}
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
+                  formatter={(v: number, name: string) => [
+                    fmtINR(v),
+                    name === "amount" ? "Income" : name === "expense" ? "Expense" : "Net",
+                  ]}
                 />
                 <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="expense" fill="var(--color-destructive)" radius={[4, 4, 0, 0]} />
@@ -1129,11 +1547,21 @@ function SummaryView(p: {
         ) : (
           <div className="h-44 -mx-2">
             {p.allTimeTrend.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No transaction data yet</div>
+              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+                No transaction data yet
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={p.allTimeTrend} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
+                <ComposedChart
+                  data={p.allTimeTrend}
+                  margin={{ top: 6, right: 10, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="var(--color-border)"
+                    strokeDasharray="3 3"
+                    opacity={0.4}
+                  />
                   <XAxis
                     dataKey="month"
                     axisLine={false}
@@ -1141,25 +1569,61 @@ function SummaryView(p: {
                     tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                   />
                   {/* Dual hidden Y-axes to control scaling and keep bars small at the bottom */}
-                  <YAxis yAxisId="net" hide domain={[allTimeDomains.minNet, allTimeDomains.maxNet]} />
+                  <YAxis
+                    yAxisId="net"
+                    hide
+                    domain={[allTimeDomains.minNet, allTimeDomains.maxNet]}
+                  />
                   <YAxis yAxisId="bars" hide domain={[0, allTimeDomains.maxBarStacked]} />
-                  
+
                   <Tooltip
-                    contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                    contentStyle={{
+                      background: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                    }}
                     formatter={(v: number, name: string) => {
-                      const label = 
-                        name === "amount" ? "Income" : 
-                        name === "expense" ? "Expense" : 
-                        name === "net" ? "Net Profit" : name;
+                      const label =
+                        name === "amount"
+                          ? "Income"
+                          : name === "expense"
+                            ? "Expense"
+                            : name === "net"
+                              ? "Net Profit"
+                              : name;
                       return [fmtINR(v), label];
                     }}
                   />
                   {/* Stacked Income & Expense bars at the bottom using yAxisId="bars" */}
-                  <Bar yAxisId="bars" dataKey="amount" fill="#10b981" stackId="a" barSize={10} opacity={0.8} />
-                  <Bar yAxisId="bars" dataKey="expense" fill="#ef4444" stackId="a" barSize={10} radius={[3, 3, 0, 0]} opacity={0.8} />
-                  
+                  <Bar
+                    yAxisId="bars"
+                    dataKey="amount"
+                    fill="#10b981"
+                    stackId="a"
+                    barSize={10}
+                    opacity={0.8}
+                  />
+                  <Bar
+                    yAxisId="bars"
+                    dataKey="expense"
+                    fill="#ef4444"
+                    stackId="a"
+                    barSize={10}
+                    radius={[3, 3, 0, 0]}
+                    opacity={0.8}
+                  />
+
                   {/* Net Profit Line chart overlay using yAxisId="net" */}
-                  <Line yAxisId="net" type="monotone" dataKey="net" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 2.5 }} activeDot={{ r: 4.5 }} />
+                  <Line
+                    yAxisId="net"
+                    type="monotone"
+                    dataKey="net"
+                    stroke="var(--color-primary)"
+                    strokeWidth={3}
+                    dot={{ r: 2.5 }}
+                    activeDot={{ r: 4.5 }}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
@@ -1178,19 +1642,43 @@ function SummaryView(p: {
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat tint="success" icon={<Wallet className="size-3.5" />} label="Income" value={fmtINR(p.lifetime)} />
-        <Stat tint="danger" icon={<Receipt className="size-3.5" />} label="Expense" value={fmtINR(p.totalExpense)} />
-        <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Net profit" value={fmtINR(p.netProfit)} />
-        <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Margin" value={`${margin}%`} />
+        <Stat
+          tint="success"
+          icon={<Wallet className="size-3.5" />}
+          label="Income"
+          value={fmtINR(p.lifetime)}
+        />
+        <Stat
+          tint="danger"
+          icon={<Receipt className="size-3.5" />}
+          label="Expense"
+          value={fmtINR(p.totalExpense)}
+        />
+        <Stat
+          tint="primary"
+          icon={<TrendingUp className="size-3.5" />}
+          label="Net profit"
+          value={fmtINR(p.netProfit)}
+        />
+        <Stat
+          tint="muted"
+          icon={<IndianRupee className="size-3.5" />}
+          label="Margin"
+          value={`${margin}%`}
+        />
       </div>
 
       {/* Side-by-side Top Sources */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Earning Source</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Top Earning Source
+          </p>
           {p.incomeByCategory.length > 0 ? (
             <div className="mt-1">
-              <p className="font-semibold text-sm truncate text-success">{p.incomeByCategory[0].cat}</p>
+              <p className="font-semibold text-sm truncate text-success">
+                {p.incomeByCategory[0].cat}
+              </p>
               <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
                 {fmtINR(p.incomeByCategory[0].amount)} ({p.incomeByCategory[0].pct}%)
               </p>
@@ -1201,10 +1689,14 @@ function SummaryView(p: {
         </div>
 
         <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Spending Category</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Top Spending Category
+          </p>
           {p.expenseByCategory.length > 0 ? (
             <div className="mt-1">
-              <p className="font-semibold text-sm truncate text-destructive">{p.expenseByCategory[0].cat}</p>
+              <p className="font-semibold text-sm truncate text-destructive">
+                {p.expenseByCategory[0].cat}
+              </p>
               <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
                 {fmtINR(p.expenseByCategory[0].amount)} ({p.expenseByCategory[0].pct}%)
               </p>
@@ -1217,27 +1709,44 @@ function SummaryView(p: {
 
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Collection</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Collection
+          </p>
           <p className="text-[11px] font-bold tabular-nums">{p.collectionRate}%</p>
         </div>
         <div className="h-3 rounded-full overflow-hidden bg-secondary flex">
           <div className="bg-success h-full" style={{ width: `${p.collectionRate}%` }} />
-          <div className="bg-destructive/60 h-full" style={{ width: `${100 - p.collectionRate}%` }} />
+          <div
+            className="bg-destructive/60 h-full"
+            style={{ width: `${100 - p.collectionRate}%` }}
+          />
         </div>
         <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
-          <span>Paid <span className="font-bold text-success tabular-nums">{fmtINR(p.lifetime)}</span></span>
-          <span>Pending <span className="font-bold text-destructive tabular-nums">{fmtINR(p.totalPending)}</span></span>
+          <span>
+            Paid <span className="font-bold text-success tabular-nums">{fmtINR(p.lifetime)}</span>
+          </span>
+          <span>
+            Pending{" "}
+            <span className="font-bold text-destructive tabular-nums">
+              {fmtINR(p.totalPending)}
+            </span>
+          </span>
         </div>
       </div>
 
       {p.expenseByCategory.length > 0 && (
         <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Expense breakdown</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+            Expense breakdown
+          </p>
           <ul className="space-y-1.5">
             {p.expenseByCategory.map((row) => (
               <li key={row.cat} className="flex items-center justify-between text-xs">
                 <span className="font-medium">{row.cat}</span>
-                <span className="tabular-nums font-bold">{fmtINR(row.amount)} <span className="text-muted-foreground font-normal">· {row.pct}%</span></span>
+                <span className="tabular-nums font-bold">
+                  {fmtINR(row.amount)}{" "}
+                  <span className="text-muted-foreground font-normal">· {row.pct}%</span>
+                </span>
               </li>
             ))}
           </ul>
@@ -1247,12 +1756,16 @@ function SummaryView(p: {
       {/* Unified Recent Cash Flow Timeline */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-20">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Recent Cash Flow</p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Recent Cash Flow
+          </p>
           <span className="text-[10px] text-muted-foreground">last 10 transactions</span>
         </div>
 
         {p.unifiedRecentTransactions.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">No transactions recorded yet</p>
+          <p className="text-xs text-muted-foreground text-center py-6">
+            No transactions recorded yet
+          </p>
         ) : (
           <div className="max-h-[300px] overflow-y-auto pr-1">
             <ul className="space-y-2.5 relative border-l border-border pl-3 ml-2.5">
@@ -1261,18 +1774,24 @@ function SummaryView(p: {
                 return (
                   <li key={tx.id} className="relative">
                     {/* Timeline dot */}
-                    <div className={cn(
-                      "absolute -left-[17px] top-1.5 size-2 rounded-full border bg-card transition-all duration-300",
-                      isInc ? "border-success bg-success" : "border-destructive bg-destructive"
-                    )} />
+                    <div
+                      className={cn(
+                        "absolute -left-[17px] top-1.5 size-2 rounded-full border bg-card transition-all duration-300",
+                        isInc ? "border-success bg-success" : "border-destructive bg-destructive",
+                      )}
+                    />
 
                     <div className="flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className={cn(
-                            "px-1 py-0.5 rounded text-[8px] font-bold uppercase shrink-0",
-                            isInc ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                          )}>
+                          <span
+                            className={cn(
+                              "px-1 py-0.5 rounded text-[8px] font-bold uppercase shrink-0",
+                              isInc
+                                ? "bg-success/10 text-success"
+                                : "bg-destructive/10 text-destructive",
+                            )}
+                          >
                             {isInc ? "In" : "Out"}
                           </span>
                           <p className="font-semibold text-sm truncate text-foreground">
@@ -1287,11 +1806,14 @@ function SummaryView(p: {
                       </div>
 
                       <div className="text-right shrink-0">
-                        <p className={cn(
-                          "font-bold text-sm tabular-nums",
-                          isInc ? "text-success" : "text-destructive"
-                        )}>
-                          {isInc ? "+" : "−"}{fmtINR(tx.amount)}
+                        <p
+                          className={cn(
+                            "font-bold text-sm tabular-nums",
+                            isInc ? "text-success" : "text-destructive",
+                          )}
+                        >
+                          {isInc ? "+" : "−"}
+                          {fmtINR(tx.amount)}
                         </p>
                         {tx.mode && (
                           <span className="text-[9px] uppercase font-semibold text-muted-foreground block leading-none mt-0.5">
@@ -1327,7 +1849,10 @@ function AddTransactionSheet({
   defaultMode: PaymentMode;
   modes: string[];
   onClose: () => void;
-  onSave: (type: "income" | "expense", p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
+  onSave: (
+    type: "income" | "expense",
+    p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode },
+  ) => void;
 }) {
   const [type, setType] = useState<"income" | "expense">(initialType);
   const [amount, setAmount] = useState<string>("");
@@ -1336,7 +1861,7 @@ function AddTransactionSheet({
   const [category, setCategory] = useState<string>(
     initialType === "income"
       ? (incomeCategories[0] ?? "Other Income")
-      : (expenseCategories[0] ?? "Other")
+      : (expenseCategories[0] ?? "Other"),
   );
 
   const [note, setNote] = useState("");
@@ -1365,10 +1890,12 @@ function AddTransactionSheet({
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className={cn(
-            "font-display font-bold text-lg transition-colors duration-300",
-            isIncome ? "text-success" : "text-destructive"
-          )}>
+          <h3
+            className={cn(
+              "font-display font-bold text-lg transition-colors duration-300",
+              isIncome ? "text-success" : "text-destructive",
+            )}
+          >
             New {isIncome ? "Income" : "Expense"}
           </h3>
           <button
@@ -1387,7 +1914,7 @@ function AddTransactionSheet({
               "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-all duration-300 ease-out shadow-sm",
               isIncome
                 ? "left-1 bg-success/15 border border-success/30"
-                : "left-[calc(50%+2px)] bg-destructive/15 border border-destructive/30"
+                : "left-[calc(50%+2px)] bg-destructive/15 border border-destructive/30",
             )}
           />
 
@@ -1396,7 +1923,7 @@ function AddTransactionSheet({
             onClick={() => handleTypeChange("income")}
             className={cn(
               "relative z-10 flex-1 py-2.5 text-xs font-bold text-center transition-colors duration-300 cursor-pointer flex items-center justify-center gap-1.5",
-              isIncome ? "text-success" : "text-muted-foreground"
+              isIncome ? "text-success" : "text-muted-foreground",
             )}
           >
             <Plus className="size-3.5" /> Income
@@ -1407,7 +1934,7 @@ function AddTransactionSheet({
             onClick={() => handleTypeChange("expense")}
             className={cn(
               "relative z-10 flex-1 py-2.5 text-xs font-bold text-center transition-colors duration-300 cursor-pointer flex items-center justify-center gap-1.5",
-              !isIncome ? "text-destructive" : "text-muted-foreground"
+              !isIncome ? "text-destructive" : "text-muted-foreground",
             )}
           >
             <Plus className="size-3.5" /> Expense
@@ -1415,11 +1942,17 @@ function AddTransactionSheet({
         </div>
 
         {/* Amount Input */}
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
-        <div className={cn(
-          "relative mt-1 mb-3 transition-colors duration-300 border-2 rounded-2xl flex items-center px-3 py-2 bg-secondary",
-          isIncome ? "focus-within:border-success/50 border-transparent" : "focus-within:border-destructive/50 border-transparent"
-        )}>
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Amount
+        </label>
+        <div
+          className={cn(
+            "relative mt-1 mb-3 transition-colors duration-300 border-2 rounded-2xl flex items-center px-3 py-2 bg-secondary",
+            isIncome
+              ? "focus-within:border-success/50 border-transparent"
+              : "focus-within:border-destructive/50 border-transparent",
+          )}
+        >
           <IndianRupee className="size-5 text-muted-foreground" />
           <input
             type="number"
@@ -1434,7 +1967,9 @@ function AddTransactionSheet({
 
         {/* Category Selector */}
         <div className="flex items-baseline justify-between mb-1">
-          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Category
+          </label>
           {categories.length === 0 && (
             <span className="text-[9px] text-destructive font-medium">
               No custom categories set
@@ -1463,7 +1998,7 @@ function AddTransactionSheet({
                       ? isIncome
                         ? "bg-success text-white shadow-sm"
                         : "bg-destructive text-white shadow-sm"
-                      : "bg-secondary text-foreground hover:bg-secondary/80"
+                      : "bg-secondary text-foreground hover:bg-secondary/80",
                   )}
                 >
                   {c}
@@ -1474,19 +2009,23 @@ function AddTransactionSheet({
         )}
 
         {/* Date Input */}
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Date</label>
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Date
+        </label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           className={cn(
             "w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-3 text-sm focus:outline-none border-2 border-transparent transition-colors duration-300",
-            isIncome ? "focus:border-success/50" : "focus:border-destructive/50"
+            isIncome ? "focus:border-success/50" : "focus:border-destructive/50",
           )}
         />
 
         {/* Mode Selector */}
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Mode
+        </label>
         <div className="flex flex-wrap gap-2 mt-1 mb-3">
           {modes.map((m) => {
             const active = mode === m;
@@ -1501,7 +2040,7 @@ function AddTransactionSheet({
                     ? isIncome
                       ? "bg-success text-white shadow-sm"
                       : "bg-destructive text-white shadow-sm"
-                    : "bg-secondary text-foreground hover:bg-secondary/80"
+                    : "bg-secondary text-foreground hover:bg-secondary/80",
                 )}
               >
                 {m}
@@ -1511,14 +2050,16 @@ function AddTransactionSheet({
         </div>
 
         {/* Note Input */}
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Note (optional)</label>
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Note (optional)
+        </label>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={isIncome ? "e.g. Tip from bride" : "e.g. Cloth purchase"}
           className={cn(
             "w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-5 text-sm focus:outline-none border-2 border-transparent transition-colors duration-300",
-            isIncome ? "focus:border-success/50" : "focus:border-destructive/50"
+            isIncome ? "focus:border-success/50" : "focus:border-destructive/50",
           )}
         />
 
@@ -1529,7 +2070,7 @@ function AddTransactionSheet({
             "w-full py-3 rounded-full font-bold text-white shadow-md active:scale-98 transition-all duration-300 cursor-pointer text-sm uppercase tracking-wider",
             isIncome
               ? "bg-success hover:bg-success/90 hover:shadow-success/20"
-              : "bg-destructive hover:bg-destructive/90 hover:shadow-destructive/20"
+              : "bg-destructive hover:bg-destructive/90 hover:shadow-destructive/20",
           )}
         >
           Save {isIncome ? "income" : "expense"}
@@ -1548,31 +2089,66 @@ function MiniChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Stat({ icon, label, value, tint }: { icon: React.ReactNode; label: string; value: string; tint: "primary" | "success" | "danger" | "muted" }) {
+function Stat({
+  icon,
+  label,
+  value,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tint: "primary" | "success" | "danger" | "muted";
+}) {
   const tintCls =
-    tint === "primary" ? "text-primary" :
-    tint === "success" ? "text-success" :
-    tint === "danger" ? "text-destructive" : "text-muted-foreground";
+    tint === "primary"
+      ? "text-primary"
+      : tint === "success"
+        ? "text-success"
+        : tint === "danger"
+          ? "text-destructive"
+          : "text-muted-foreground";
   return (
     <div className="bg-card card-shadow rounded-2xl p-3">
-      <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}>
-        {icon}<span>{label}</span>
+      <div
+        className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}
+      >
+        {icon}
+        <span>{label}</span>
       </div>
       <p className="text-lg font-display font-semibold mt-1 tabular-nums">{value}</p>
     </div>
   );
 }
 
-function KpiCard({ icon, label, value, sub, tint }: { icon: React.ReactNode; label: string; value: string; sub: string; tint: "primary" | "success" | "accent" | "gold" }) {
+function KpiCard({
+  icon,
+  label,
+  value,
+  sub,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+  tint: "primary" | "success" | "accent" | "gold";
+}) {
   const tintCls =
-    tint === "primary" ? "text-primary"
-    : tint === "success" ? "text-success"
-    : tint === "gold" ? "text-gold"
-    : "text-accent-foreground";
+    tint === "primary"
+      ? "text-primary"
+      : tint === "success"
+        ? "text-success"
+        : tint === "gold"
+          ? "text-gold"
+          : "text-accent-foreground";
   return (
     <div className="bg-card card-shadow rounded-2xl p-3">
-      <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}>
-        {icon}<span className="truncate">{label}</span>
+      <div
+        className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}
+      >
+        {icon}
+        <span className="truncate">{label}</span>
       </div>
       <p className="text-base font-display font-bold mt-1 tabular-nums truncate">{value}</p>
       <p className="text-[10px] text-muted-foreground truncate">{sub}</p>

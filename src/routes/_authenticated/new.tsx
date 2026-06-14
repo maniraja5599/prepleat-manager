@@ -1,9 +1,34 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, lastPriceFor, fmtINR, fmtTime12, bookingsOnDate, type ServiceType, type Measurement } from "@/lib/store";
+import {
+  useStore,
+  lastPriceFor,
+  fmtINR,
+  fmtTime12,
+  bookingsOnDate,
+  type ServiceType,
+  type Measurement,
+} from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, IndianRupee, User, MapPin, Plus, Minus, AlertTriangle, Palette, CalendarDays, Clock, Users, Search, X, Phone, Clipboard } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  IndianRupee,
+  User,
+  MapPin,
+  Plus,
+  Minus,
+  AlertTriangle,
+  Palette,
+  CalendarDays,
+  Clock,
+  Users,
+  Search,
+  X,
+  Phone,
+  Clipboard,
+} from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
@@ -40,7 +65,10 @@ function NewBooking() {
   const { date: presetDate } = Route.useSearch();
   const settings = useStore((s) => s.settings);
   const allCustomers = useStore((s) => s.customers);
-  const customers = useMemo(() => allCustomers.filter((c) => (c.kind ?? "client") === "client"), [allCustomers]);
+  const customers = useMemo(
+    () => allCustomers.filter((c) => (c.kind ?? "client") === "client"),
+    [allCustomers],
+  );
   const artists = useMemo(() => allCustomers.filter((c) => c.kind === "artist"), [allCustomers]);
   const bookings = useStore((s) => s.bookings);
   const addCustomer = useStore((s) => s.addCustomer);
@@ -64,9 +92,14 @@ function NewBooking() {
   const [showPhone, setShowPhone] = useState(false);
 
   const [sareeCount, setSareeCount] = useState(1);
-  const defaultPrice = bookingSource === "artist"
-    ? (service === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
-    : (service === "prepleat" ? settings.prepleatPrice : settings.drapePrice);
+  const defaultPrice =
+    bookingSource === "artist"
+      ? service === "prepleat"
+        ? (settings.artistPrepleatPrice ?? settings.prepleatPrice)
+        : (settings.artistDrapePrice ?? settings.drapePrice)
+      : service === "prepleat"
+        ? settings.prepleatPrice
+        : settings.drapePrice;
   const lastPrice = customerId ? lastPriceFor(customerId, service, bookings) : undefined;
   const lastArtistPrice = artistId
     ? bookings.find((b) => b.artistId === artistId && b.service === service)?.pricePerSaree
@@ -84,8 +117,9 @@ function NewBooking() {
   const [dateOpen, setDateOpen] = useState(false);
   const timeInputRef = useRef<HTMLInputElement>(null);
 
-
-  useEffect(() => { if (presetDate) setDeliveryDate(presetDate); }, [presetDate]);
+  useEffect(() => {
+    if (presetDate) setDeliveryDate(presetDate);
+  }, [presetDate]);
 
   const [advance, setAdvance] = useState("");
   const advNum = Number(advance) || 0;
@@ -96,7 +130,9 @@ function NewBooking() {
   const [measurements, setMeasurements] = useState<Measurement[]>(settings.defaultMeasurements);
 
   // Keep measurements in sync if settings change (e.g. user updates default labels live)
-  useEffect(() => { setMeasurements(settings.defaultMeasurements); }, [settings.defaultMeasurements]);
+  useEffect(() => {
+    setMeasurements(settings.defaultMeasurements);
+  }, [settings.defaultMeasurements]);
 
   const nameSuggestions = useMemo(() => {
     const q = newName.toLowerCase().trim();
@@ -118,9 +154,11 @@ function NewBooking() {
 
   const selectedCust = customers.find((c) => c.id === customerId);
 
-  const pickCustomer = (c: typeof customers[number]) => {
+  const pickCustomer = (c: (typeof customers)[number]) => {
     setCustomerId(c.id);
-    setNewName(""); setNewPhone(""); setNewAddress("");
+    setNewName("");
+    setNewPhone("");
+    setNewAddress("");
     setNameFocus(false);
   };
 
@@ -141,9 +179,16 @@ function NewBooking() {
     // Customer name/mobile only mandatory for direct bookings. For artist-via bookings they are optional.
     if (bookingSource === "direct" && !customerId) {
       if (!newName.trim()) return toast.error("Customer name required");
-      if (newPhone.trim() && !isValidIndianMobile(newPhone)) return toast.error("Enter a valid 10-digit Indian mobile");
+      if (newPhone.trim() && !isValidIndianMobile(newPhone))
+        return toast.error("Enter a valid 10-digit Indian mobile");
     }
-    if (bookingSource === "artist" && showCustomerForArtist && !customerId && newPhone.trim() && !isValidIndianMobile(newPhone)) {
+    if (
+      bookingSource === "artist" &&
+      showCustomerForArtist &&
+      !customerId &&
+      newPhone.trim() &&
+      !isValidIndianMobile(newPhone)
+    ) {
       return toast.error("Enter a valid 10-digit Indian mobile");
     }
     if (!sareeCount || sareeCount < 1) return toast.error("Saree count required");
@@ -154,19 +199,21 @@ function NewBooking() {
 
   const confirmSave = () => {
     let cid = customerId;
-    
+
     if (!cid) {
       const hasNameOrPhone = newName.trim() || newPhone.trim();
       if (hasNameOrPhone) {
         // Dedupe: if a client already exists with the same 10-digit phone, reuse them.
         const phoneDigits = newPhone.replace(/\D/g, "");
-        const existingByPhone = phoneDigits.length === 10
-          ? customers.find((c) => c.phone.replace(/\D/g, "").endsWith(phoneDigits))
-          : undefined;
+        const existingByPhone =
+          phoneDigits.length === 10
+            ? customers.find((c) => c.phone.replace(/\D/g, "").endsWith(phoneDigits))
+            : undefined;
         const nameKey = newName.trim().toLowerCase();
-        const existingByName = !existingByPhone && nameKey
-          ? customers.find((c) => c.name.trim().toLowerCase() === nameKey)
-          : undefined;
+        const existingByName =
+          !existingByPhone && nameKey
+            ? customers.find((c) => c.name.trim().toLowerCase() === nameKey)
+            : undefined;
         const existing = existingByPhone ?? existingByName;
         if (existing) {
           cid = existing.id;
@@ -205,7 +252,13 @@ function NewBooking() {
       measurements: showMeasure ? measurements : undefined,
     });
     if (advNum > 0) {
-      useStore.getState().addPayment({ bookingId: b.id, customerId: cid, amount: advNum, date: new Date().toISOString(), note: "Advance" });
+      useStore.getState().addPayment({
+        bookingId: b.id,
+        customerId: cid,
+        amount: advNum,
+        date: new Date().toISOString(),
+        note: "Advance",
+      });
     }
     toast.success("Booking created");
     navigate({ to: "/bookings/$id", params: { id: b.id } });
@@ -214,7 +267,10 @@ function NewBooking() {
   return (
     <AppShell>
       <div className="flex items-center justify-between pt-4 pb-3">
-        <button onClick={() => navigate({ to: "/" })} className="size-10 rounded-full bg-secondary flex items-center justify-center">
+        <button
+          onClick={() => navigate({ to: "/" })}
+          className="size-10 rounded-full bg-secondary flex items-center justify-center"
+        >
           <ArrowLeft className="size-5" />
         </button>
         <h1 className="text-lg font-display font-semibold">New Booking</h1>
@@ -223,82 +279,131 @@ function NewBooking() {
 
       {/* Booking source — always decide this first because pricing differs. */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Booking for</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+          Booking for
+        </p>
         <div className="grid grid-cols-2 gap-2.5">
-          {([
+          {[
             { id: "direct" as const, label: "Direct Client", icon: User },
             { id: "artist" as const, label: "Via Artist", icon: Palette },
-          ]).map(({ id, label, icon: Icon }) => (
+          ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               type="button"
-              onClick={() => { setBookingSource(id); setPriceTouched(false); if (id === "direct") setArtistId(""); }}
+              onClick={() => {
+                setBookingSource(id);
+                setPriceTouched(false);
+                if (id === "direct") setArtistId("");
+              }}
               className={cn(
                 "rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 border border-border/40",
-                bookingSource === id ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20" : "bg-secondary/40 text-foreground hover:bg-secondary/60",
+                bookingSource === id
+                  ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20"
+                  : "bg-secondary/40 text-foreground hover:bg-secondary/60",
               )}
-            ><Icon className="size-3.5" />{label}</button>
+            >
+              <Icon className="size-3.5" />
+              {label}
+            </button>
           ))}
         </div>
         {bookingSource === "artist" && (
           <div className="mt-3 pt-3 border-t border-border">
-            {artists.length > 0 && (() => {
-              const compact = artists.length > 5;
-              const ql = artistSearch.toLowerCase().trim();
-              const visible = compact
-                ? (showArtistSearch
+            {artists.length > 0 &&
+              (() => {
+                const compact = artists.length > 5;
+                const ql = artistSearch.toLowerCase().trim();
+                const visible = compact
+                  ? showArtistSearch
                     ? artists.filter((a) => !ql || a.name.toLowerCase().includes(ql)).slice(0, 12)
-                    : artists.slice(0, 4))
-                : artists;
-              const selected = artists.find((a) => a.id === artistId);
-              const selectedHidden = selected && !visible.some((a) => a.id === selected.id);
-              return (
-                <div className="mb-2">
-                  <div className="flex gap-2 items-center overflow-x-auto no-scrollbar -mx-1 px-1">
-                    {selectedHidden && (
-                      <button type="button" onClick={() => { setArtistId(selected!.id); setPriceTouched(false); }}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 bg-primary text-primary-foreground">
-                        {selected!.name}
-                      </button>
-                    )}
-                    {visible.map((a) => (
-                      <button key={a.id} type="button" onClick={() => { setArtistId(a.id); setPriceTouched(false); }}
-                        className={cn("px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0", artistId === a.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                        {a.name}
-                      </button>
-                    ))}
-                    {compact && (
-                      <button type="button" onClick={() => { setShowArtistSearch((v) => !v); if (showArtistSearch) setArtistSearch(""); }}
-                        aria-label="Search artists"
-                        className={cn("size-7 shrink-0 rounded-full flex items-center justify-center", showArtistSearch ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground")}>
-                        <Search className="size-3.5" />
-                      </button>
-                    )}
-                  </div>
-                  {compact && showArtistSearch && (
-                    <div className="relative mt-2">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                      <input
-                        autoFocus
-                        value={artistSearch}
-                        onChange={(e) => setArtistSearch(e.target.value)}
-                        placeholder={`Search ${artists.length} artists`}
-                        className="w-full bg-secondary rounded-full pl-8 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                      {artistSearch && (
-                        <button type="button" onClick={() => setArtistSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 size-5 rounded-full bg-background/60 flex items-center justify-center">
-                          <X className="size-3" />
+                    : artists.slice(0, 4)
+                  : artists;
+                const selected = artists.find((a) => a.id === artistId);
+                const selectedHidden = selected && !visible.some((a) => a.id === selected.id);
+                return (
+                  <div className="mb-2">
+                    <div className="flex gap-2 items-center overflow-x-auto no-scrollbar -mx-1 px-1">
+                      {selectedHidden && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setArtistId(selected!.id);
+                            setPriceTouched(false);
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 bg-primary text-primary-foreground"
+                        >
+                          {selected!.name}
+                        </button>
+                      )}
+                      {visible.map((a) => (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => {
+                            setArtistId(a.id);
+                            setPriceTouched(false);
+                          }}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0",
+                            artistId === a.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary",
+                          )}
+                        >
+                          {a.name}
+                        </button>
+                      ))}
+                      {compact && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowArtistSearch((v) => !v);
+                            if (showArtistSearch) setArtistSearch("");
+                          }}
+                          aria-label="Search artists"
+                          className={cn(
+                            "size-7 shrink-0 rounded-full flex items-center justify-center",
+                            showArtistSearch
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-muted-foreground",
+                          )}
+                        >
+                          <Search className="size-3.5" />
                         </button>
                       )}
                     </div>
-                  )}
-                </div>
-              );
-            })()}
-            <AddArtistInline onAdd={(name) => {
-              const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
-              setArtistId(c.id); setPriceTouched(false); toast.success(`Artist “${c.name}” added`);
-            }} />
+                    {compact && showArtistSearch && (
+                      <div className="relative mt-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                        <input
+                          autoFocus
+                          value={artistSearch}
+                          onChange={(e) => setArtistSearch(e.target.value)}
+                          placeholder={`Search ${artists.length} artists`}
+                          className="w-full bg-secondary rounded-full pl-8 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        {artistSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setArtistSearch("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 size-5 rounded-full bg-background/60 flex items-center justify-center"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            <AddArtistInline
+              onAdd={(name) => {
+                const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
+                setArtistId(c.id);
+                setPriceTouched(false);
+                toast.success(`Artist “${c.name}” added`);
+              }}
+            />
           </div>
         )}
       </section>
@@ -307,20 +412,28 @@ function NewBooking() {
       <div className="grid grid-cols-2 gap-2.5 mb-4">
         {(["prepleat", "drape"] as ServiceType[]).map((s) => {
           const active = service === s;
-          const price = bookingSource === "artist"
-            ? (s === "prepleat" ? settings.artistPrepleatPrice ?? settings.prepleatPrice : settings.artistDrapePrice ?? settings.drapePrice)
-            : (s === "prepleat" ? settings.prepleatPrice : settings.drapePrice);
+          const price =
+            bookingSource === "artist"
+              ? s === "prepleat"
+                ? (settings.artistPrepleatPrice ?? settings.prepleatPrice)
+                : (settings.artistDrapePrice ?? settings.drapePrice)
+              : s === "prepleat"
+                ? settings.prepleatPrice
+                : settings.drapePrice;
           return (
             <button
               key={s}
               type="button"
               onClick={() => {
-                setService(s); setPriceTouched(false);
+                setService(s);
+                setPriceTouched(false);
                 setPricePerSaree(price);
               }}
               className={cn(
                 "py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-95 card-shadow border border-border/40",
-                active ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20" : "bg-card text-foreground hover:bg-secondary/20",
+                active
+                  ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20"
+                  : "bg-card text-foreground hover:bg-secondary/20",
               )}
             >
               {active && <Check className="size-3.5 stroke-[3]" />}
@@ -334,149 +447,140 @@ function NewBooking() {
 
       {/* Customer — hidden by default when booking via artist (often unknown). */}
       {bookingSource === "artist" && !showCustomerForArtist && !selectedCust ? (
-        <button type="button" onClick={() => setShowCustomerForArtist(true)}
-          className="w-full mb-3 py-2.5 rounded-2xl bg-card card-shadow text-xs font-semibold text-muted-foreground hover:text-primary flex items-center justify-center gap-1.5">
-          <Plus className="size-3.5" /> Add customer details <span className="font-normal">(optional)</span>
+        <button
+          type="button"
+          onClick={() => setShowCustomerForArtist(true)}
+          className="w-full mb-3 py-2.5 rounded-2xl bg-card card-shadow text-xs font-semibold text-muted-foreground hover:text-primary flex items-center justify-center gap-1.5"
+        >
+          <Plus className="size-3.5" /> Add customer details{" "}
+          <span className="font-normal">(optional)</span>
         </button>
       ) : (
-      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Customer
-            {bookingSource === "artist" ? (
-              <span className="ml-1 text-[10px] normal-case font-normal text-muted-foreground">(optional)</span>
-            ) : (
-              !selectedCust && <span className="ml-2 text-[10px] normal-case font-normal text-muted-foreground/80">(Mobile & Address are optional)</span>
-            )}
-          </p>
-          <div className="flex items-center gap-1.5">
-            {!selectedCust && (
-              <button type="button" onClick={() => setShowExisting((v) => !v)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary">
-                <Users className="size-3" /> Existing
-              </button>
-            )}
-            {bookingSource === "artist" && (
-              <button type="button" onClick={() => { setShowCustomerForArtist(false); setCustomerId(""); setNewName(""); setNewPhone(""); setNewAddress(""); }}
-                className="text-[10px] text-muted-foreground px-2 py-1">Hide</button>
-            )}
-          </div>
-        </div>
-        {selectedCust ? (
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="font-semibold truncate">{selectedCust.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{selectedCust.phone}</p>
-                {selectedCust.address && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedCust.address}</p>}
-                {quotedLastPrice && <p className="text-xs text-gold mt-1">Last {service}: {fmtINR(quotedLastPrice)}</p>}
-              </div>
-              <button onClick={() => setCustomerId("")} className="text-xs text-primary font-semibold shrink-0">Change</button>
-            </div>
-            {!selectedCust.address && (
-              <div className="relative mt-3">
-                <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                <textarea
-                  value={newAddress}
-                  onChange={(e) => setNewAddress(e.target.value)}
-                  rows={2}
-                  placeholder="Add address"
-                  className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onFocus={() => { setNameFocus(true); if (showExisting) setShowExisting(true); }}
-                onBlur={() => setTimeout(() => setNameFocus(false), 150)}
-                placeholder="Customer name"
-                className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {nameFocus && nameSuggestions.length > 0 && (
-                <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
-                  {nameSuggestions.map((c) => (
-                    <li key={c.id}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); }}
-                        className="w-full text-left px-3 py-2 hover:bg-secondary"
-                      >
-                        <p className="text-sm font-medium">{c.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+        <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Customer
+              {bookingSource === "artist" ? (
+                <span className="ml-1 text-[10px] normal-case font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              ) : (
+                !selectedCust && (
+                  <span className="ml-2 text-[10px] normal-case font-normal text-muted-foreground/80">
+                    (Mobile & Address are optional)
+                  </span>
+                )
               )}
-              {showExisting && !newName.trim() && existingList.length > 0 && (
-                <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
-                  {existingList.map((c) => (
-                    <li key={c.id}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); setShowExisting(false); }}
-                        className="w-full text-left px-3 py-2 hover:bg-secondary"
-                      >
-                        <p className="text-sm font-medium">{c.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+            </p>
+            <div className="flex items-center gap-1.5">
+              {!selectedCust && (
+                <button
+                  type="button"
+                  onClick={() => setShowExisting((v) => !v)}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold text-primary"
+                >
+                  <Users className="size-3" /> Existing
+                </button>
+              )}
+              {bookingSource === "artist" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustomerForArtist(false);
+                    setCustomerId("");
+                    setNewName("");
+                    setNewPhone("");
+                    setNewAddress("");
+                  }}
+                  className="text-[10px] text-muted-foreground px-2 py-1"
+                >
+                  Hide
+                </button>
               )}
             </div>
-            {showPhone && (
-              <div>
-                <div className="relative flex items-stretch bg-secondary rounded-full overflow-hidden focus-within:ring-2 focus-within:ring-primary">
-                  <span className="px-3 flex items-center text-sm font-semibold text-muted-foreground border-r border-border bg-background/40">+91</span>
-                  <input
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
-                    onPaste={(e) => {
-                      e.preventDefault();
-                      const txt = e.clipboardData.getData("text");
-                      setNewPhone(sanitizeIndianPhone(txt));
-                    }}
-                    placeholder="10-digit mobile"
-                    inputMode="numeric"
-                    maxLength={10}
-                    className="flex-1 min-w-0 bg-transparent pl-3 pr-16 py-2.5 text-sm tabular-nums focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handlePasteClick}
-                    className="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
-                    title="Paste from clipboard"
-                  >
-                    <Clipboard className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPhone(false);
-                      setNewPhone("");
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm font-bold p-1"
-                    aria-label="Remove mobile number"
-                  >
-                    ×
-                  </button>
+          </div>
+          {selectedCust ? (
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{selectedCust.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{selectedCust.phone}</p>
+                  {selectedCust.address && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      {selectedCust.address}
+                    </p>
+                  )}
+                  {quotedLastPrice && (
+                    <p className="text-xs text-gold mt-1">
+                      Last {service}: {fmtINR(quotedLastPrice)}
+                    </p>
+                  )}
                 </div>
-                {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
-                  <p className="text-[11px] text-destructive mt-1 ml-3">Enter a valid 10-digit number (starting 6–9)</p>
-                )}
-                {phoneSuggestions.length > 0 && !customerId && (
-                  <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
-                    {phoneSuggestions.map((c) => (
+                <button
+                  onClick={() => setCustomerId("")}
+                  className="text-xs text-primary font-semibold shrink-0"
+                >
+                  Change
+                </button>
+              </div>
+              {!selectedCust.address && (
+                <div className="relative mt-3">
+                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <textarea
+                    value={newAddress}
+                    onChange={(e) => setNewAddress(e.target.value)}
+                    rows={2}
+                    placeholder="Add address"
+                    className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onFocus={() => {
+                    setNameFocus(true);
+                    if (showExisting) setShowExisting(true);
+                  }}
+                  onBlur={() => setTimeout(() => setNameFocus(false), 150)}
+                  placeholder="Customer name"
+                  className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {nameFocus && nameSuggestions.length > 0 && (
+                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                    {nameSuggestions.map((c) => (
                       <li key={c.id}>
                         <button
                           type="button"
-                          onMouseDown={(e) => { e.preventDefault(); pickCustomer(c); }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            pickCustomer(c);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-secondary"
+                        >
+                          <p className="text-sm font-medium">{c.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {showExisting && !newName.trim() && existingList.length > 0 && (
+                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                    {existingList.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            pickCustomer(c);
+                            setShowExisting(false);
+                          }}
                           className="w-full text-left px-3 py-2 hover:bg-secondary"
                         >
                           <p className="text-sm font-medium">{c.name}</p>
@@ -487,51 +591,144 @@ function NewBooking() {
                   </ul>
                 )}
               </div>
-            )}
-            {showAddress && (
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                <textarea value={newAddress} onChange={(e) => setNewAddress(e.target.value)} rows={2} autoFocus placeholder="Address"
-                  className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
-                <button type="button" onClick={() => { setShowAddress(false); setNewAddress(""); }} className="absolute right-3 top-2.5 text-muted-foreground">×</button>
-              </div>
-            )}
-            {(!showPhone || !showAddress) && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                {!showPhone && (
+              {showPhone && (
+                <div>
+                  <div className="relative flex items-stretch bg-secondary rounded-full overflow-hidden focus-within:ring-2 focus-within:ring-primary">
+                    <span className="px-3 flex items-center text-sm font-semibold text-muted-foreground border-r border-border bg-background/40">
+                      +91
+                    </span>
+                    <input
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const txt = e.clipboardData.getData("text");
+                        setNewPhone(sanitizeIndianPhone(txt));
+                      }}
+                      placeholder="10-digit mobile"
+                      inputMode="numeric"
+                      maxLength={10}
+                      className="flex-1 min-w-0 bg-transparent pl-3 pr-16 py-2.5 text-sm tabular-nums focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePasteClick}
+                      className="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
+                      title="Paste from clipboard"
+                    >
+                      <Clipboard className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPhone(false);
+                        setNewPhone("");
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+                      aria-label="Remove mobile number"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {newPhone.length > 0 && !isValidIndianMobile(newPhone) && (
+                    <p className="text-[11px] text-destructive mt-1 ml-3">
+                      Enter a valid 10-digit number (starting 6–9)
+                    </p>
+                  )}
+                  {phoneSuggestions.length > 0 && !customerId && (
+                    <ul className="relative z-30 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                      {phoneSuggestions.map((c) => (
+                        <li key={c.id}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              pickCustomer(c);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-secondary"
+                          >
+                            <p className="text-sm font-medium">{c.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              {showAddress && (
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <textarea
+                    value={newAddress}
+                    onChange={(e) => setNewAddress(e.target.value)}
+                    rows={2}
+                    autoFocus
+                    placeholder="Address"
+                    className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
                   <button
                     type="button"
-                    onClick={() => setShowPhone(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-all duration-150"
+                    onClick={() => {
+                      setShowAddress(false);
+                      setNewAddress("");
+                    }}
+                    className="absolute right-3 top-2.5 text-muted-foreground"
                   >
-                    <Phone className="size-3.5" /> Add Mobile
+                    ×
                   </button>
-                )}
-                {!showAddress && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAddress(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-all duration-150"
-                  >
-                    <MapPin className="size-3.5" /> Add Address
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+                </div>
+              )}
+              {(!showPhone || !showAddress) && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {!showPhone && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPhone(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-all duration-150"
+                    >
+                      <Phone className="size-3.5" /> Add Mobile
+                    </button>
+                  )}
+                  {!showAddress && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddress(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-all duration-150"
+                    >
+                      <MapPin className="size-3.5" /> Add Address
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Order */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Order</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          Order
+        </p>
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium">Saree count</span>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setSareeCount(Math.max(1, sareeCount - 1))} className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150">−</button>
+            <button
+              type="button"
+              onClick={() => setSareeCount(Math.max(1, sareeCount - 1))}
+              className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150"
+            >
+              −
+            </button>
             <span className="w-8 text-center text-lg font-bold tabular-nums">{sareeCount}</span>
-            <button type="button" onClick={() => setSareeCount(sareeCount + 1)} className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150">+</button>
+            <button
+              type="button"
+              onClick={() => setSareeCount(sareeCount + 1)}
+              className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150"
+            >
+              +
+            </button>
           </div>
         </div>
         <div className="flex items-center justify-between gap-3 mt-3.5">
@@ -539,28 +736,42 @@ function NewBooking() {
           <div className="flex items-center gap-1 bg-secondary rounded-full px-1 py-0.5">
             <button
               type="button"
-              onClick={() => { setPriceTouched(true); setPricePerSaree(Math.max(0, effPrice - 50)); }}
+              onClick={() => {
+                setPriceTouched(true);
+                setPricePerSaree(Math.max(0, effPrice - 50));
+              }}
               className="size-7 rounded-full flex items-center justify-center hover:bg-background/40 active:scale-90 transition-all duration-150"
-            ><Minus className="size-3.5" /></button>
+            >
+              <Minus className="size-3.5" />
+            </button>
             <div className="relative w-20">
               <IndianRupee className="absolute left-1 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
               <input
                 type="number"
                 value={priceTouched ? pricePerSaree : effPrice}
-                onChange={(e) => { setPriceTouched(true); setPricePerSaree(Number(e.target.value) || 0); }}
+                onChange={(e) => {
+                  setPriceTouched(true);
+                  setPricePerSaree(Number(e.target.value) || 0);
+                }}
                 className="w-full bg-transparent pl-5 pr-1 py-1 text-sm text-right font-semibold tabular-nums focus:outline-none"
               />
             </div>
             <button
               type="button"
-              onClick={() => { setPriceTouched(true); setPricePerSaree(effPrice + 50); }}
+              onClick={() => {
+                setPriceTouched(true);
+                setPricePerSaree(effPrice + 50);
+              }}
               className="size-7 rounded-full flex items-center justify-center hover:bg-background/40 active:scale-90 transition-all duration-150"
-            ><Plus className="size-3.5" /></button>
+            >
+              <Plus className="size-3.5" />
+            </button>
           </div>
         </div>
         {quotedLastPrice && (
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Last charged</span><span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
+            <span>Last charged</span>
+            <span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
           </div>
         )}
         <div className="mt-3 pt-3 border-t border-border flex justify-between items-baseline">
@@ -571,7 +782,9 @@ function NewBooking() {
 
       {/* Delivery */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Delivery</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          Delivery
+        </p>
         <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
           <CalendarDays className="size-3.5 text-primary/70" />
           <span>Date · swipe ← → or tap 📅</span>
@@ -581,7 +794,9 @@ function NewBooking() {
                 type="button"
                 aria-label="Open calendar"
                 className="ml-1 size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95"
-              ><CalendarDays className="size-3.5" /></button>
+              >
+                <CalendarDays className="size-3.5" />
+              </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="center">
               <Calendar
@@ -605,7 +820,8 @@ function NewBooking() {
           onChange={setDeliveryDate}
           onDoubleTap={() => setDateOpen(true)}
           items={(() => {
-            const base = new Date(); base.setHours(0, 0, 0, 0);
+            const base = new Date();
+            base.setHours(0, 0, 0, 0);
             // Default window: 7 days before today → 82 days after.
             let start = addDays(base, -7);
             let end = addDays(base, 82);
@@ -639,21 +855,28 @@ function NewBooking() {
                 // Native picker — if user cancels, nothing else is shown.
                 // showPicker() works on modern Chrome/Safari/Firefox.
                 try {
-                  
                   if (typeof el.showPicker === "function") el.showPicker();
-                  else { el.focus(); el.click(); }
+                  else {
+                    el.focus();
+                    el.click();
+                  }
                 } catch {
-                  el.focus(); el.click();
+                  el.focus();
+                  el.click();
                 }
               }}
               className="ml-1 size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95"
-            ><Clock className="size-3.5" /></button>
+            >
+              <Clock className="size-3.5" />
+            </button>
             <input
               ref={timeInputRef}
               type="time"
               step={900}
               value={deliveryTime}
-              onChange={(e) => { if (e.target.value) setDeliveryTime(e.target.value); }}
+              onChange={(e) => {
+                if (e.target.value) setDeliveryTime(e.target.value);
+              }}
               tabIndex={-1}
               aria-hidden="true"
               className="sr-only pointer-events-none"
@@ -679,7 +902,9 @@ function NewBooking() {
         <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
           {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
         </p>
-        <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">Tip · tap the 📅 / 🕒 icon for a full picker</p>
+        <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">
+          Tip · tap the 📅 / 🕒 icon for a full picker
+        </p>
         {(() => {
           const same = bookingsOnDate(new Date(deliveryDate + "T12:00:00").toISOString(), bookings);
           if (same.length === 0) return null;
@@ -688,7 +913,10 @@ function NewBooking() {
             <div className="mt-2 flex items-start gap-2 rounded-xl bg-gold/10 px-3 py-2 text-[11px]">
               <AlertTriangle className="size-3.5 text-gold shrink-0 mt-0.5" />
               <span className="text-foreground/80">
-                <span className="font-semibold text-gold">{same.length} booking{same.length > 1 ? "s" : ""}</span> already on this date · {totalSarees} saree{totalSarees > 1 ? "s" : ""}. Sure?
+                <span className="font-semibold text-gold">
+                  {same.length} booking{same.length > 1 ? "s" : ""}
+                </span>{" "}
+                already on this date · {totalSarees} saree{totalSarees > 1 ? "s" : ""}. Sure?
               </span>
             </div>
           );
@@ -698,8 +926,12 @@ function NewBooking() {
       {/* Advance */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <div className="flex items-baseline justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Advance</p>
-          <p className="text-xs text-muted-foreground">Remaining <span className="font-semibold text-foreground">{fmtINR(remaining)}</span></p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Advance
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Remaining <span className="font-semibold text-foreground">{fmtINR(remaining)}</span>
+          </p>
         </div>
         <div className="relative">
           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -723,10 +955,14 @@ function NewBooking() {
               type="button"
               onClick={() => setAdvance(String(b.v))}
               className="py-2 rounded-xl bg-secondary/50 border border-border/20 text-xs font-bold transition-all duration-150 active:scale-95 hover:bg-secondary"
-            >{b.label}</button>
+            >
+              {b.label}
+            </button>
           ))}
         </div>
-        {advNum > total && <p className="text-xs text-destructive mt-2">Cannot exceed total {fmtINR(total)}</p>}
+        {advNum > total && (
+          <p className="text-xs text-destructive mt-2">Cannot exceed total {fmtINR(total)}</p>
+        )}
       </section>
 
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
@@ -761,19 +997,27 @@ function NewBooking() {
                   key={i}
                   label={m.label}
                   value={m.value}
-                  onChange={(v) => setMeasurements(measurements.map((x, j) => i === j ? { ...x, value: v } : x))}
+                  onChange={(v) =>
+                    setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                  }
                 />
               ))}
             </div>
-            <p className="text-xs text-muted-foreground text-center">Scroll inside each picker · all in inches</p>
+            <p className="text-xs text-muted-foreground text-center">
+              Scroll inside each picker · all in inches
+            </p>
           </>
         ) : (
-          <p className="text-xs text-muted-foreground mt-2">Turn on to record blouse measurements for this customer.</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Turn on to record blouse measurements for this customer.
+          </p>
         )}
       </section>
 
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Notes</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          Notes
+        </p>
         {(settings.occasionPresets ?? []).length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {(settings.occasionPresets ?? []).map((preset) => (
@@ -786,7 +1030,9 @@ function NewBooking() {
                   setNotes(current ? `${current} · ${preset}` : preset);
                 }}
                 className="px-2.5 py-1 rounded-full bg-secondary text-[11px] font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition"
-              >+ {preset}</button>
+              >
+                + {preset}
+              </button>
             ))}
           </div>
         )}
@@ -808,32 +1054,66 @@ function NewBooking() {
       </button>
 
       {reviewOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setReviewOpen(false)}>
-          <div className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center"
+          onClick={() => setReviewOpen(false)}
+        >
+          <div
+            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-display font-semibold mb-1">Quick review</h3>
             <p className="text-xs text-muted-foreground mb-4">Confirm details before saving.</p>
             <ReviewRow label="Service" value={service === "prepleat" ? "PrePleat" : "Drape"} />
             <ReviewRow label="Customer" value={selectedCust?.name || newName} />
             <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
-            <ReviewRow label="Delivery" value={`${format(parseISO(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`} />
-            {artistId && <ReviewRow label="Artist" value={artists.find((a) => a.id === artistId)?.name ?? ""} />}
+            <ReviewRow
+              label="Delivery"
+              value={`${format(parseISO(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`}
+            />
+            {artistId && (
+              <ReviewRow
+                label="Artist"
+                value={artists.find((a) => a.id === artistId)?.name ?? ""}
+              />
+            )}
             <ReviewRow label="Total" value={fmtINR(total)} bold />
             <ReviewRow label="Advance" value={fmtINR(advNum)} />
             <ReviewRow label="Remaining" value={fmtINR(remaining)} />
             {showMeasure && measurements.length > 0 && (
               <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Measurements (inch)</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                  Measurements (inch)
+                </p>
                 <div className="flex gap-3 flex-wrap">
                   {measurements.map((m) => (
-                    <span key={m.label} className="text-xs"><span className="text-muted-foreground">{m.label}</span> <span className="font-bold tabular-nums">{m.value}″</span></span>
+                    <span key={m.label} className="text-xs">
+                      <span className="text-muted-foreground">{m.label}</span>{" "}
+                      <span className="font-bold tabular-nums">{m.value}″</span>
+                    </span>
                   ))}
                 </div>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-2.5 mt-5">
-              <button type="button" onClick={() => setReviewOpen(false)} className="py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95">Edit</button>
-              <button type="button" onClick={() => { setReviewOpen(false); confirmSave(); }} className="py-2.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-sm shadow-primary/20">Confirm & Save</button>
+              <button
+                type="button"
+                onClick={() => setReviewOpen(false)}
+                className="py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReviewOpen(false);
+                  confirmSave();
+                }}
+                className="py-2.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-sm shadow-primary/20"
+              >
+                Confirm & Save
+              </button>
             </div>
           </div>
         </div>
@@ -846,7 +1126,9 @@ function ReviewRow({ label, value, bold }: { label: string; value: string; bold?
   return (
     <div className="flex items-baseline justify-between py-1.5 border-b border-border last:border-0">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-sm tabular-nums", bold && "font-bold text-primary text-base")}>{value}</span>
+      <span className={cn("text-sm tabular-nums", bold && "font-bold text-primary text-base")}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -868,7 +1150,8 @@ function AddArtistInline({ onAdd }: { onAdd: (name: string) => void }) {
   const submit = () => {
     if (!name.trim()) return toast.error("Artist name required");
     onAdd(name);
-    setName(""); setOpen(false);
+    setName("");
+    setOpen(false);
   };
   return (
     <div className="flex gap-2">
@@ -876,12 +1159,32 @@ function AddArtistInline({ onAdd }: { onAdd: (name: string) => void }) {
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            submit();
+          }
+        }}
         placeholder="Artist name"
         className="flex-1 min-w-0 bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
       />
-      <button type="button" onClick={submit} className="px-4 rounded-full saree-gradient text-primary-foreground text-xs font-semibold">Add</button>
-      <button type="button" onClick={() => { setOpen(false); setName(""); }} className="px-3 rounded-full bg-secondary text-xs font-semibold">×</button>
+      <button
+        type="button"
+        onClick={submit}
+        className="px-4 rounded-full saree-gradient text-primary-foreground text-xs font-semibold"
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(false);
+          setName("");
+        }}
+        className="px-3 rounded-full bg-secondary text-xs font-semibold"
+      >
+        ×
+      </button>
     </div>
   );
 }

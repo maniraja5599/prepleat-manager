@@ -24,7 +24,14 @@ interface Props {
  * supported. Double-tap the picker to trigger {@link Props.onDoubleTap} —
  * works for both mouse and touch (iOS Safari).
  */
-export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label, onDoubleTap }: Props) {
+export function HorizontalPicker({
+  items,
+  value,
+  onChange,
+  itemWidth = 76,
+  label,
+  onDoubleTap,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const settling = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,7 +60,10 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
     let tries = 0;
     const release = () => {
       tries++;
-      if (!ref.current) { settling.current = false; return; }
+      if (!ref.current) {
+        settling.current = false;
+        return;
+      }
       if (Math.abs(ref.current.scrollLeft - target) <= 1 || tries > 40) {
         settling.current = false;
         return;
@@ -93,8 +103,14 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopHold = () => {
-    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
-    if (holdInterval.current) { clearInterval(holdInterval.current); holdInterval.current = null; }
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+    if (holdInterval.current) {
+      clearInterval(holdInterval.current);
+      holdInterval.current = null;
+    }
   };
   const startHold = (dir: -1 | 1) => {
     stopHold();
@@ -108,13 +124,15 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
         const delta = dir * itemWidth;
         const max = el.scrollWidth - el.clientWidth;
         const target = Math.max(0, Math.min(max, el.scrollLeft + delta));
-        if (target === el.scrollLeft) { stopHold(); return; }
+        if (target === el.scrollLeft) {
+          stopHold();
+          return;
+        }
         el.scrollTo({ left: target, behavior: "auto" });
       }, 60);
     }, 280);
   };
   useEffect(() => () => stopHold(), []);
-
 
   // Unified double-tap detection — works on touch (iOS) and mouse.
   const fireDoubleTap = () => {
@@ -131,7 +149,9 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
   return (
     <div className="select-none">
       {label && (
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 text-center">{label}</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 text-center">
+          {label}
+        </p>
       )}
       <div className="relative">
         <div
@@ -149,7 +169,9 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
           onPointerCancel={stopHold}
           aria-label="Previous"
           className="absolute left-0 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-secondary/90 flex items-center justify-center shadow"
-        ><ChevronLeft className="size-4" /></button>
+        >
+          <ChevronLeft className="size-4" />
+        </button>
         <button
           type="button"
           onClick={() => step(1)}
@@ -159,7 +181,9 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
           onPointerCancel={stopHold}
           aria-label="Next"
           className="absolute right-0 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-secondary/90 flex items-center justify-center shadow"
-        ><ChevronRight className="size-4" /></button>
+        >
+          <ChevronRight className="size-4" />
+        </button>
 
         <div
           ref={ref}
@@ -177,19 +201,34 @@ export function HorizontalPicker({ items, value, onChange, itemWidth = 76, label
               <button
                 type="button"
                 key={it.key}
-                onClick={() => { onChange(it.key); fireDoubleTap(); }}
-                onTouchEnd={() => { /* tap counted via onClick */ }}
+                onClick={() => {
+                  onChange(it.key);
+                  fireDoubleTap();
+                }}
+                onTouchEnd={() => {
+                  /* tap counted via onClick */
+                }}
                 className={cn(
                   "snap-center shrink-0 h-14 flex flex-col items-center justify-center rounded-xl transition relative z-10 no-select",
                   active ? "text-primary" : "text-muted-foreground/70",
                 )}
                 style={{ width: itemWidth }}
               >
-                <span className={cn("text-base leading-tight tabular-nums", active && "font-bold text-lg")}>
+                <span
+                  className={cn(
+                    "text-base leading-tight tabular-nums",
+                    active && "font-bold text-lg",
+                  )}
+                >
                   {it.primary}
                 </span>
                 {it.secondary && (
-                  <span className={cn("text-[10px] uppercase tracking-wider leading-tight", active && "font-semibold")}>
+                  <span
+                    className={cn(
+                      "text-[10px] uppercase tracking-wider leading-tight",
+                      active && "font-semibold",
+                    )}
+                  >
                     {it.secondary}
                   </span>
                 )}

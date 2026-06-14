@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { X, Sparkles, Calendar, Settings, Clock, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  X,
+  Sparkles,
+  Calendar,
+  Settings,
+  Clock,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function AppTour() {
@@ -42,7 +51,7 @@ export function AppTour() {
           <Sparkles className="size-12 text-primary animate-pulse" />
           <span className="absolute top-2 right-2 size-3 bg-gold rounded-full animate-ping" />
         </div>
-      )
+      ),
     },
     {
       title: "Calendar Swipe",
@@ -67,7 +76,7 @@ export function AppTour() {
             <ChevronRight className="size-4 text-muted-foreground/50" />
           </div>
         </div>
-      )
+      ),
     },
     {
       title: "Settings Swipe",
@@ -88,7 +97,7 @@ export function AppTour() {
             <span className="w-3 h-1 rounded bg-blue-500/30" />
           </div>
         </div>
-      )
+      ),
     },
     {
       title: "Double-Tap Pickers",
@@ -104,7 +113,7 @@ export function AppTour() {
             <div className="size-12 rounded-full border border-purple-500/60 bg-purple-500/10 animate-double-tap" />
           </div>
         </div>
-      )
+      ),
     },
     {
       title: "Long-Press Peek",
@@ -119,7 +128,7 @@ export function AppTour() {
             <div className="size-10 rounded-full border border-dashed border-amber-500/40 bg-amber-500/5 animate-pulse" />
           </div>
         </div>
-      )
+      ),
     },
     {
       title: "Bottom Nav Shortcut",
@@ -134,8 +143,8 @@ export function AppTour() {
             <div className="size-12 rounded-full border border-emerald-500/60 bg-emerald-500/10 animate-double-tap" />
           </div>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   const current = steps[step];
@@ -206,7 +215,7 @@ export function AppTour() {
               key={i}
               className={cn(
                 "h-1 rounded-full transition-all duration-300",
-                i === step ? "w-6 bg-primary" : "w-1.5 bg-border"
+                i === step ? "w-6 bg-primary" : "w-1.5 bg-border",
               )}
             />
           ))}
@@ -218,11 +227,18 @@ export function AppTour() {
         </div>
 
         {/* Step Header */}
-        <div className={cn("size-10 rounded-full flex items-center justify-center mb-3.5", current.color)}>
+        <div
+          className={cn(
+            "size-10 rounded-full flex items-center justify-center mb-3.5",
+            current.color,
+          )}
+        >
           <Icon className="size-5" />
         </div>
         <h2 className="text-base font-display font-bold leading-tight">{current.title}</h2>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{current.subtitle}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+          {current.subtitle}
+        </p>
 
         {/* Description */}
         <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mt-3 min-h-[72px]">

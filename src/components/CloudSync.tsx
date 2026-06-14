@@ -47,7 +47,13 @@ function mergeById<T extends { id: string }>(
 }
 
 const bookingTs = (b: Booking) =>
-  b.updatedAt || b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt || "";
+  b.updatedAt ||
+  b.deliveredAt ||
+  b.workDoneAt ||
+  b.completedAt ||
+  b.receivedAt ||
+  b.createdAt ||
+  "";
 const customerTs = (c: Customer) => c.updatedAt || c.createdAt || "";
 const paymentTs = (p: Payment) => p.updatedAt || p.date || "";
 
@@ -129,7 +135,7 @@ export function CloudSync() {
 
   // Sync state variables
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">(
-    typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "synced"
+    typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "synced",
   );
   const [showStatus, setShowStatus] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -138,7 +144,9 @@ export function CloudSync() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       (window as any).__syncStatus = { syncStatus, showStatus, errorMessage };
-      window.dispatchEvent(new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus, errorMessage } }));
+      window.dispatchEvent(
+        new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus, errorMessage } }),
+      );
     }
   }, [syncStatus, showStatus, errorMessage]);
 
@@ -279,20 +287,26 @@ export function CloudSync() {
         .select("updated_at")
         .eq("user_id", auth.user.id)
         .maybeSingle();
-      if (row?.updated_at && lastServerUpdatedAt.current && row.updated_at > lastServerUpdatedAt.current) {
+      if (
+        row?.updated_at &&
+        lastServerUpdatedAt.current &&
+        row.updated_at > lastServerUpdatedAt.current
+      ) {
         // Another device wrote since we last pulled — pull & merge first.
         await pullAndMerge();
       }
       const state = useStore.getState();
-      const payload = JSON.parse(JSON.stringify({
-        customers: state.customers,
-        bookings: state.bookings,
-        payments: state.payments,
-        trash: state.trash,
-        activity: state.activity,
-        settings: state.settings,
-        tombstones: state.tombstones,
-      }));
+      const payload = JSON.parse(
+        JSON.stringify({
+          customers: state.customers,
+          bookings: state.bookings,
+          payments: state.payments,
+          trash: state.trash,
+          activity: state.activity,
+          settings: state.settings,
+          tombstones: state.tombstones,
+        }),
+      );
       const { data: upserted, error } = await supabase
         .from("app_settings")
         .upsert({ user_id: auth.user.id, data: payload })
@@ -383,8 +397,15 @@ export function CloudSync() {
         .channel(topic)
         .on(
           "postgres_changes",
-          { event: "*", schema: "public", table: "app_settings", filter: `user_id=eq.${auth.user.id}` },
-          () => { void pullAndMerge(); },
+          {
+            event: "*",
+            schema: "public",
+            table: "app_settings",
+            filter: `user_id=eq.${auth.user.id}`,
+          },
+          () => {
+            void pullAndMerge();
+          },
         )
         .subscribe();
     })();
@@ -408,7 +429,9 @@ export function CloudSync() {
       dirty.current = true; // remember there's unsynced local work (offline-safe)
       if (!pulledOnce.current) return;
       if (pushTimer.current) clearTimeout(pushTimer.current);
-      pushTimer.current = setTimeout(() => { void pushNow(); }, 800);
+      pushTimer.current = setTimeout(() => {
+        void pushNow();
+      }, 800);
     });
     return () => {
       unsub();

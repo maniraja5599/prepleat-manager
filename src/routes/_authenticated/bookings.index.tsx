@@ -4,19 +4,45 @@ import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/s
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2, Calendar, ArrowUpDown, Filter, Sparkles, Wallet, Layers, Clock, CheckCircle2, AlertCircle, Phone, MessageCircle } from "lucide-react";
+import {
+  Search,
+  IndianRupee,
+  SlidersHorizontal,
+  X as XIcon,
+  History,
+  CheckSquare,
+  Trash2,
+  Calendar,
+  ArrowUpDown,
+  Filter,
+  Sparkles,
+  Wallet,
+  Layers,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Phone,
+  MessageCircle,
+} from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   head: () => ({
     meta: [
       { title: "Bookings — Eyas Saree Drapist" },
-      { name: "description", content: "All your PrePleat and Drape bookings, sortable and filterable." },
+      {
+        name: "description",
+        content: "All your PrePleat and Drape bookings, sortable and filterable.",
+      },
     ],
   }),
   component: BookingsPage,
@@ -35,17 +61,19 @@ function BookingsPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [mainFilter, setMainFilter] = useState<"active" | "prepleat" | "drape" | "artist" | "history">("active");
+  const [mainFilter, setMainFilter] = useState<
+    "active" | "prepleat" | "drape" | "artist" | "history"
+  >("active");
   const [pay, setPay] = useState<PayFilter>("all");
   const [sort, setSort] = useState<Sort>("delivery");
   const [q, setQ] = useState("");
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  
+
   // Ticker Index and interval for scrolling stats ticker in header
   const [tickerIndex, setTickerIndex] = useState(0);
-  
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % 2);
@@ -53,9 +81,11 @@ function BookingsPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeFiltersCount = (pay !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0);
+  const activeFiltersCount =
+    (pay !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0);
 
-  const getPaymentLabel = (p: PayFilter) => p === "all" ? "All Payments" : p === "due" ? "Due" : "Paid";
+  const getPaymentLabel = (p: PayFilter) =>
+    p === "all" ? "All Payments" : p === "due" ? "Due" : "Paid";
   const paymentSummary = getPaymentLabel(pay);
 
   const getDateSummary = () => {
@@ -89,7 +119,8 @@ function BookingsPage() {
     return "All Time";
   };
 
-  const getSortLabel = (s: Sort) => s === "delivery" ? "Delivery Date" : s === "recent" ? "Recently Booked" : "Balance Due";
+  const getSortLabel = (s: Sort) =>
+    s === "delivery" ? "Delivery Date" : s === "recent" ? "Recently Booked" : "Balance Due";
   const sortingSummary = `Sorted by ${getSortLabel(sort)}`;
 
   const dateBounds = useMemo<{ start?: Date; end?: Date }>(() => {
@@ -150,7 +181,11 @@ function BookingsPage() {
       });
     }
     arr.sort((a, b) => {
-      if (sort === "delivery") return a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime);
+      if (sort === "delivery")
+        return (
+          a.deliveryDate.localeCompare(b.deliveryDate) ||
+          a.deliveryTime.localeCompare(b.deliveryTime)
+        );
       if (sort === "recent") return b.createdAt.localeCompare(a.createdAt);
       return totalDue(b) - totalDue(a);
     });
@@ -181,7 +216,11 @@ function BookingsPage() {
   const tickerItems = useMemo(() => {
     return [
       { label: "Collected", value: collected, color: "text-success" },
-      { label: "Pending", value: pending, color: pending > 0 ? "text-destructive" : "text-muted-foreground" },
+      {
+        label: "Pending",
+        value: pending,
+        color: pending > 0 ? "text-destructive" : "text-muted-foreground",
+      },
     ];
   }, [collected, pending]);
 
@@ -191,22 +230,33 @@ function BookingsPage() {
       <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
         <div className="flex items-center justify-between gap-4 h-9">
           <div>
-            <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">Bookings</h1>
+            <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
+              Bookings
+            </h1>
             <p className="text-[10px] text-muted-foreground mt-0.5">
               {counts.active} active · {counts.history} completed
             </p>
           </div>
-          
+
           {/* Scrolling Stats Ticker */}
           <div className="h-7 overflow-hidden relative min-w-[110px]">
-            <div 
-              className="transition-transform duration-500 ease-in-out" 
+            <div
+              className="transition-transform duration-500 ease-in-out"
               style={{ transform: `translateY(-${tickerIndex * 28}px)` }}
             >
               {tickerItems.map((item, idx) => (
                 <div key={idx} className="h-7 flex flex-col items-end justify-center">
-                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">{item.label}</span>
-                  <span className={cn("text-xs font-extrabold tabular-nums mt-0.5 leading-none", item.color)}>{fmtINR(item.value)}</span>
+                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">
+                    {item.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-xs font-extrabold tabular-nums mt-0.5 leading-none",
+                      item.color,
+                    )}
+                  >
+                    {fmtINR(item.value)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -215,13 +265,13 @@ function BookingsPage() {
 
         {/* Horizontal Scrollable Filter Row */}
         <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar items-center pb-0.5">
-          {([
+          {[
             { id: "active" as const, label: "Active", count: counts.active },
             { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
             { id: "drape" as const, label: "Direct Drape", count: counts.drape },
             { id: "artist" as const, label: "Artist", count: counts.artist },
             { id: "history" as const, label: "History", count: counts.history },
-          ]).map((item) => {
+          ].map((item) => {
             const isActive = mainFilter === item.id;
             return (
               <button
@@ -231,14 +281,18 @@ function BookingsPage() {
                   "shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95",
                   isActive
                     ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                    : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                    : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
                 )}
               >
                 <span>{item.label}</span>
-                <span className={cn(
-                  "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}>
+                <span
+                  className={cn(
+                    "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+                    isActive
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
                   {item.count}
                 </span>
               </button>
@@ -252,13 +306,18 @@ function BookingsPage() {
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           {list.length} bookings matched
         </span>
-        
+
         <div className="flex gap-1.5 items-center">
           <button
-            onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
+            onClick={() => {
+              setSelectMode((v) => !v);
+              setSelected(new Set());
+            }}
             className={cn(
               "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-              selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+              selectMode
+                ? "bg-primary text-primary-foreground"
+                : "bg-card border border-border text-muted-foreground",
             )}
           >
             <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
@@ -283,13 +342,17 @@ function BookingsPage() {
               else setSelected(new Set(list.map((b) => b.id)));
             }}
             className="px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold"
-          >{selected.size === list.length && list.length > 0 ? "Clear all" : "Select all"}</button>
+          >
+            {selected.size === list.length && list.length > 0 ? "Clear all" : "Select all"}
+          </button>
           <span className="text-xs text-muted-foreground flex-1">{selected.size} selected</span>
           <button
             disabled={selected.size === 0}
             onClick={() => setConfirmOpen(true)}
             className="px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
-          ><Trash2 className="size-3.5" /> Delete {selected.size || ""}</button>
+          >
+            <Trash2 className="size-3.5" /> Delete {selected.size || ""}
+          </button>
         </div>
       )}
 
@@ -310,22 +373,31 @@ function BookingsPage() {
             <button
               className={cn(
                 "shrink-0 size-11 rounded-full flex items-center justify-center relative transition border cursor-pointer border-border",
-                activeFiltersCount > 0 ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground",
+                activeFiltersCount > 0
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground",
               )}
               aria-label="Filter bookings"
             >
               <SlidersHorizontal className="size-4" />
               {activeFiltersCount > 0 && (
-                <span className="absolute -top-1 -right-1 size-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center ring-2 ring-background">{activeFiltersCount}</span>
+                <span className="absolute -top-1 -right-1 size-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center ring-2 ring-background">
+                  {activeFiltersCount}
+                </span>
               )}
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8">
+          <SheetContent
+            side="bottom"
+            className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8"
+          >
             <SheetHeader className="mb-3 border-b border-border/40 pb-3 pt-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Filter className="size-4.5 text-primary" />
-                  <SheetTitle className="text-base font-semibold">Filter & Sort Bookings</SheetTitle>
+                  <SheetTitle className="text-base font-semibold">
+                    Filter & Sort Bookings
+                  </SheetTitle>
                 </div>
                 {activeFiltersCount > 0 && (
                   <button
@@ -353,19 +425,23 @@ function BookingsPage() {
                     <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
                       <Wallet className="size-4 text-primary" /> Payment Status
                     </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{paymentSummary}</span>
+                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                      {paymentSummary}
+                    </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-4">
                   {/* Payment Status */}
                   <div className="space-y-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">Payment Status</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                      Payment Status
+                    </span>
                     <div className="grid grid-cols-3 gap-2">
-                      {([
+                      {[
                         { id: "all" as const, label: "All Payments", icon: Wallet },
                         { id: "due" as const, label: "Balance Due", icon: AlertCircle },
                         { id: "paid" as const, label: "Fully Paid", icon: CheckCircle2 },
-                      ]).map((item) => {
+                      ].map((item) => {
                         const active = pay === item.id;
                         const Icon = item.icon;
                         return (
@@ -380,10 +456,15 @@ function BookingsPage() {
                                   : item.id === "paid"
                                     ? "bg-success/15 border-success/80 text-success-foreground font-bold shadow-sm"
                                     : "bg-primary/10 border-primary text-primary font-bold shadow-sm"
-                                : "bg-card border-border hover:bg-secondary/40 text-muted-foreground"
+                                : "bg-card border-border hover:bg-secondary/40 text-muted-foreground",
                             )}
                           >
-                            <Icon className={cn("size-4 mb-1", active ? "" : "text-muted-foreground/85")} />
+                            <Icon
+                              className={cn(
+                                "size-4 mb-1",
+                                active ? "" : "text-muted-foreground/85",
+                              )}
+                            />
                             <span className="text-[11px] font-semibold">{item.label}</span>
                           </button>
                         );
@@ -400,17 +481,19 @@ function BookingsPage() {
                     <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
                       <Calendar className="size-4 text-primary" /> Delivery Date
                     </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{getDateSummary()}</span>
+                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                      {getDateSummary()}
+                    </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-4 space-y-3">
                   <div className="grid grid-cols-2 gap-2">
-                    {([
+                    {[
                       { id: "all" as Range, label: "All Time" },
                       { id: "thisMonth" as Range, label: "This Month" },
                       { id: "lastMonth" as Range, label: "Last Month" },
                       { id: "custom" as Range, label: "Custom Range" },
-                    ]).map((r) => (
+                    ].map((r) => (
                       <button
                         key={r.id}
                         onClick={() => setRange(r.id)}
@@ -418,16 +501,20 @@ function BookingsPage() {
                           "py-2.5 px-3 rounded-xl text-xs font-semibold text-center transition active:scale-95 cursor-pointer border",
                           range === r.id
                             ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                            : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary"
+                            : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary",
                         )}
-                      >{r.label}</button>
+                      >
+                        {r.label}
+                      </button>
                     ))}
                   </div>
 
                   {range === "custom" && (
                     <div className="grid grid-cols-2 gap-3 mt-1 bg-secondary/30 p-3 rounded-2xl border border-border/40 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">From</span>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                          From
+                        </span>
                         <input
                           type="date"
                           value={from}
@@ -436,7 +523,9 @@ function BookingsPage() {
                         />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">To</span>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                          To
+                        </span>
                         <input
                           type="date"
                           value={to}
@@ -456,18 +545,22 @@ function BookingsPage() {
                     <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
                       <ArrowUpDown className="size-4 text-primary" /> Sort Preference
                     </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">{sortingSummary}</span>
+                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                      {sortingSummary}
+                    </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 pb-3">
                   <div className="space-y-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">Sort By</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                      Sort By
+                    </span>
                     <div className="grid grid-cols-3 gap-2">
-                      {([
+                      {[
                         { id: "delivery" as Sort, label: "Delivery Date" },
                         { id: "recent" as Sort, label: "Recently Booked" },
                         { id: "due" as Sort, label: "Balance Due" },
-                      ]).map((sOpt) => (
+                      ].map((sOpt) => (
                         <button
                           key={sOpt.id}
                           onClick={() => setSort(sOpt.id)}
@@ -477,7 +570,9 @@ function BookingsPage() {
                               ? "bg-primary border-primary text-primary-foreground shadow-sm"
                               : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary/80",
                           )}
-                        >{sOpt.label}</button>
+                        >
+                          {sOpt.label}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -492,7 +587,8 @@ function BookingsPage() {
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
-          No bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
+          No bookings match. Tap <span className="font-semibold text-primary">+</span> to create
+          one.
         </div>
       ) : (
         <ul className="space-y-2">
@@ -501,9 +597,10 @@ function BookingsPage() {
             const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
             const due = totalDue(b);
             const isArtistBooking = !!b.artistId || c?.kind === "artist";
-            const tagColor = b.service === "prepleat"
-              ? (settings.prepleatDotColor ?? "#ffa029")
-              : (settings.directDrapeDotColor ?? "#10b981");
+            const tagColor =
+              b.service === "prepleat"
+                ? (settings.prepleatDotColor ?? "#ffa029")
+                : (settings.directDrapeDotColor ?? "#10b981");
             const isSelected = selected.has(b.id);
             const inner = (
               <>
@@ -518,14 +615,29 @@ function BookingsPage() {
                   </span>
                 )}
                 {selectMode && (
-                  <input type="checkbox" readOnly checked={isSelected} className="absolute top-2 left-2 size-5 accent-primary z-10" />
+                  <input
+                    type="checkbox"
+                    readOnly
+                    checked={isSelected}
+                    className="absolute top-2 left-2 size-5 accent-primary z-10"
+                  />
                 )}
-                <div className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3", selectMode && "pl-7")}>
+                <div
+                  className={cn(
+                    "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3",
+                    selectMode && "pl-7",
+                  )}
+                >
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                      <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">{c?.name ?? "Unknown"}</span>
+                      <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
+                        {c?.name ?? "Unknown"}
+                      </span>
                       {c?.phone && (
-                        <span className="inline-flex gap-1.5 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <span
+                          className="inline-flex gap-1.5 items-center shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <a
                             href={`tel:${c.phone.replace(/\D/g, "")}`}
                             className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
@@ -567,16 +679,22 @@ function BookingsPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+                      {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)}{" "}
+                      · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
                     </p>
                     {a && (
-                      <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
+                      <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
+                        via {a.name}
+                      </p>
                     )}
                   </div>
                   <div className="text-right shrink-0 pt-1">
                     <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
                     {due > 0 ? (
-                      <p className="text-xs text-destructive font-semibold flex items-center justify-end"><IndianRupee className="size-3" />{Math.round(due).toLocaleString("en-IN")} due</p>
+                      <p className="text-xs text-destructive font-semibold flex items-center justify-end">
+                        <IndianRupee className="size-3" />
+                        {Math.round(due).toLocaleString("en-IN")} due
+                      </p>
                     ) : (
                       <p className="text-xs text-success font-semibold">Paid</p>
                     )}
@@ -586,7 +704,7 @@ function BookingsPage() {
             );
             const cardCls = cn(
               "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
-              isArtistBooking 
+              isArtistBooking
                 ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
                 : b.service === "prepleat"
                   ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
@@ -602,14 +720,19 @@ function BookingsPage() {
                     onClick={() => {
                       setSelected((prev) => {
                         const next = new Set(prev);
-                        if (next.has(b.id)) next.delete(b.id); else next.add(b.id);
+                        if (next.has(b.id)) next.delete(b.id);
+                        else next.add(b.id);
                         return next;
                       });
                     }}
                     className={cardCls}
-                  >{inner}</button>
+                  >
+                    {inner}
+                  </button>
                 ) : (
-                  <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>{inner}</Link>
+                  <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
+                    {inner}
+                  </Link>
                 )}
               </li>
             );
@@ -637,7 +760,15 @@ function BookingsPage() {
   );
 }
 
-function StatChip({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "success" | "danger" | "muted" }) {
+function StatChip({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "success" | "danger" | "muted";
+}) {
   const toneClass = {
     default: "bg-card text-foreground",
     success: "bg-success/10 text-success",
@@ -645,11 +776,14 @@ function StatChip({ label, value, tone = "default" }: { label: string; value: st
     muted: "bg-muted text-muted-foreground",
   }[tone];
   return (
-    <div className={cn("shrink-0 rounded-full px-3 py-1.5 flex items-baseline gap-1.5 card-shadow", toneClass)}>
+    <div
+      className={cn(
+        "shrink-0 rounded-full px-3 py-1.5 flex items-baseline gap-1.5 card-shadow",
+        toneClass,
+      )}
+    >
       <span className="text-[10px] uppercase tracking-wider opacity-80">{label}</span>
       <span className="text-xs font-bold tabular-nums">{value}</span>
     </div>
   );
 }
-
-

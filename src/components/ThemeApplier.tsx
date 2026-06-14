@@ -17,7 +17,9 @@ const THEME_CLASSES = [
   "theme-custom",
 ];
 
-const CUSTOM_VARS: Array<[keyof NonNullable<ReturnType<typeof useStore.getState>["settings"]["customColors"]>, string]> = [
+const CUSTOM_VARS: Array<
+  [keyof NonNullable<ReturnType<typeof useStore.getState>["settings"]["customColors"]>, string]
+> = [
   ["primary", "--primary"],
   ["accent", "--accent"],
   ["background", "--background"],

@@ -26,7 +26,9 @@ export const Route = createFileRoute("/_authenticated")({
     // First try the cached session (synchronous from localStorage) — this avoids
     // a network round-trip on first launch that can cause a flash of blank page
     // when the app is opened from the Home-screen bookmark.
-    let { data: { session } } = await supabase.auth.getSession();
+    let {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       // On a cold standalone (PWA) launch the Supabase client may still be
       // re-hydrating its persisted session. Wait briefly for the INITIAL_SESSION
@@ -62,12 +64,25 @@ function AuthSplash() {
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center gap-4">
       <div className="size-20 rounded-full overflow-hidden ring-4 ring-primary/20 animate-pulse">
-        <img src={logoAsset} alt="Eyas Saree Drapist" className="size-full rounded-full object-cover scale-[1.18]" />
+        <img
+          src={logoAsset}
+          alt="Eyas Saree Drapist"
+          className="size-full rounded-full object-cover scale-[1.18]"
+        />
       </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="size-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-        <span className="size-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "120ms" }} />
-        <span className="size-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "240ms" }} />
+        <span
+          className="size-2 rounded-full bg-primary animate-bounce"
+          style={{ animationDelay: "0ms" }}
+        />
+        <span
+          className="size-2 rounded-full bg-primary animate-bounce"
+          style={{ animationDelay: "120ms" }}
+        />
+        <span
+          className="size-2 rounded-full bg-primary animate-bounce"
+          style={{ animationDelay: "240ms" }}
+        />
       </div>
     </div>
   );

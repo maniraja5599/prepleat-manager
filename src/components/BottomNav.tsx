@@ -69,12 +69,18 @@ export function BottomNav() {
                 }}
                 className={cn(
                   "relative flex flex-col items-center gap-0.5 py-2 px-3 my-1 rounded-2xl text-[10px] font-semibold transition",
-                  active ? "text-primary bg-primary/10" : "text-muted-foreground active:bg-secondary",
+                  active
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground active:bg-secondary",
                 )}
               >
                 <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
-                <span className={cn("transition-all", active ? "opacity-100" : "opacity-70")}>{t.label}</span>
-                {active && <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 h-1 w-6 rounded-full bg-primary" />}
+                <span className={cn("transition-all", active ? "opacity-100" : "opacity-70")}>
+                  {t.label}
+                </span>
+                {active && (
+                  <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 h-1 w-6 rounded-full bg-primary" />
+                )}
               </Link>
             </li>
           );

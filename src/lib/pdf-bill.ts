@@ -22,7 +22,9 @@ async function fetchAsDataUrl(url: string): Promise<string | null> {
       r.onerror = () => resolve(null);
       r.readAsDataURL(blob);
     });
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 // Flatten any transparent / off-white pixels onto a warm cream background so
@@ -39,7 +41,8 @@ async function flattenLogoOnCream(dataUrl: string): Promise<string> {
     });
     const size = 256;
     const canvas = document.createElement("canvas");
-    canvas.width = size; canvas.height = size;
+    canvas.width = size;
+    canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return dataUrl;
     ctx.clearRect(0, 0, size, size);
@@ -49,7 +52,9 @@ async function flattenLogoOnCream(dataUrl: string): Promise<string> {
     const h = img.height * ratio;
     ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
     return canvas.toDataURL("image/png");
-  } catch { return dataUrl; }
+  } catch {
+    return dataUrl;
+  }
 }
 
 export async function generateBillPDF(opts: {
@@ -94,7 +99,9 @@ export async function generateBillPDF(opts: {
       doc.setFillColor(255, 248, 230);
       doc.circle(cx, cy, r + 2, "F");
       doc.addImage(flat, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
-    } catch { /* ignore bad logo */ }
+    } catch {
+      /* ignore bad logo */
+    }
   }
 
   doc.setTextColor(255, 248, 230);
@@ -110,9 +117,13 @@ export async function generateBillPDF(opts: {
   doc.setTextColor(255, 248, 230);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 30, { align: "right" });
+  doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 30, {
+    align: "right",
+  });
   doc.text(format(new Date(), "MMM d, yyyy"), W - 18, 42, { align: "right" });
-  doc.text(`Booked ${format(parseISO(booking.createdAt), "MMM d, yyyy")}`, W - 18, 54, { align: "right" });
+  doc.text(`Booked ${format(parseISO(booking.createdAt), "MMM d, yyyy")}`, W - 18, 54, {
+    align: "right",
+  });
 
   let y = 100;
 
@@ -139,7 +150,9 @@ export async function generateBillPDF(opts: {
   doc.text("DELIVERY", W - 20, y, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text(format(parseISO(booking.deliveryDate), "EEE, MMM d, yyyy"), W - 20, y + 15, { align: "right" });
+  doc.text(format(parseISO(booking.deliveryDate), "EEE, MMM d, yyyy"), W - 20, y + 15, {
+    align: "right",
+  });
   doc.setTextColor(...muted);
   doc.setFontSize(9);
   doc.text(fmtTime12(booking.deliveryTime), W - 20, y + 28, { align: "right" });
@@ -269,7 +282,9 @@ export async function generateBillPDF(opts: {
   doc.setTextColor(...muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text(`Generated ${format(new Date(), "MMM d, yyyy · h:mm a")}`, W - 20, H - 30, { align: "right" });
+  doc.text(`Generated ${format(new Date(), "MMM d, yyyy · h:mm a")}`, W - 20, H - 30, {
+    align: "right",
+  });
 
   doc.setFontSize(6.5);
   doc.setTextColor(180, 180, 180);

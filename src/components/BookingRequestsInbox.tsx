@@ -40,7 +40,9 @@ export function BookingRequestsInbox() {
     setLoading(false);
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => {
+    fetch();
+  }, []);
 
   if (loading && requests.length === 0) return null;
   if (requests.length === 0) return null;
@@ -59,7 +61,9 @@ export function BookingRequestsInbox() {
       pricePerSaree: price,
       totalAmount: total,
       advancePaid: 0,
-      deliveryDate: r.delivery_date ? new Date(r.delivery_date).toISOString() : new Date().toISOString(),
+      deliveryDate: r.delivery_date
+        ? new Date(r.delivery_date).toISOString()
+        : new Date().toISOString(),
       deliveryTime: r.delivery_time || "10:00",
       notes: r.notes ? `[Request] ${r.notes}` : "[From public request form]",
     });
@@ -77,17 +81,29 @@ export function BookingRequestsInbox() {
 
   return (
     <section className="mb-3 bg-gradient-to-br from-gold/15 to-primary/10 border border-primary/20 rounded-2xl p-3">
-      <button onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between"
+      >
         <div className="flex items-center gap-2 min-w-0">
           <span className="size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
             <Inbox className="size-4" />
           </span>
           <div className="min-w-0 text-left">
-            <p className="text-sm font-semibold truncate">{requests.length} new booking request{requests.length > 1 ? "s" : ""}</p>
+            <p className="text-sm font-semibold truncate">
+              {requests.length} new booking request{requests.length > 1 ? "s" : ""}
+            </p>
             <p className="text-[11px] text-muted-foreground">Tap to review</p>
           </div>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); fetch(); }} className="size-8 rounded-full bg-card flex items-center justify-center shrink-0" aria-label="Refresh">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            fetch();
+          }}
+          className="size-8 rounded-full bg-card flex items-center justify-center shrink-0"
+          aria-label="Refresh"
+        >
           <RefreshCw className="size-3.5" />
         </button>
       </button>
@@ -98,17 +114,29 @@ export function BookingRequestsInbox() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">{r.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{r.phone} · {r.service} · {r.saree_count} saree{r.saree_count > 1 ? "s" : ""}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {r.phone} · {r.service} · {r.saree_count} saree{r.saree_count > 1 ? "s" : ""}
+                  </p>
                   {r.delivery_date && (
-                    <p className="text-[11px] text-muted-foreground">Wants: {r.delivery_date} {r.delivery_time ?? ""}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Wants: {r.delivery_date} {r.delivery_time ?? ""}
+                    </p>
                   )}
                   {r.notes && <p className="text-[11px] mt-1 line-clamp-2">{r.notes}</p>}
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => accept(r)} className="size-8 rounded-full bg-success/15 text-success flex items-center justify-center" aria-label="Accept">
+                  <button
+                    onClick={() => accept(r)}
+                    className="size-8 rounded-full bg-success/15 text-success flex items-center justify-center"
+                    aria-label="Accept"
+                  >
                     <Check className="size-4" />
                   </button>
-                  <button onClick={() => dismiss(r.id)} className="size-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center" aria-label="Dismiss">
+                  <button
+                    onClick={() => dismiss(r.id)}
+                    className="size-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center"
+                    aria-label="Dismiss"
+                  >
                     <X className="size-4" />
                   </button>
                 </div>

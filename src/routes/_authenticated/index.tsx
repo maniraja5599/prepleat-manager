@@ -3,10 +3,34 @@ import { AppShell } from "@/components/AppShell";
 import { GrowthDashboard } from "@/components/GrowthDashboard";
 import { useStore, totalDue, fmtINR, fmtTime12 } from "@/lib/store";
 import {
-  startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
-  format, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter, addDays, subDays,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfWeek,
+  endOfWeek,
+  format,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+  parseISO,
+  isAfter,
+  addDays,
+  subDays,
 } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight, IndianRupee, List, Plus, Users, Wallet, X, Phone, MessageCircle } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  IndianRupee,
+  List,
+  Plus,
+  Users,
+  Wallet,
+  X,
+  Phone,
+  MessageCircle,
+} from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -33,7 +57,8 @@ function CalendarPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const settings = useStore((s) => s.settings);
-  const calendarAmountDisplay = settings.calendarAmountDisplay ?? (settings.showPaymentOnCalendar ? "pending" : "none");
+  const calendarAmountDisplay =
+    settings.calendarAmountDisplay ?? (settings.showPaymentOnCalendar ? "pending" : "none");
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
@@ -53,17 +78,26 @@ function CalendarPage() {
   }, [bookings]);
 
   const selectedKey = format(selected, "yyyy-MM-dd");
-  const dayBookings = (byDay.get(selectedKey) ?? []).slice().sort((a, b) => a.deliveryTime.localeCompare(b.deliveryTime));
+  const dayBookings = (byDay.get(selectedKey) ?? [])
+    .slice()
+    .sort((a, b) => a.deliveryTime.localeCompare(b.deliveryTime));
 
   const upcoming = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const horizon = addDays(today, 60);
     return bookings
       .filter((b) => {
         const d = parseISO(b.deliveryDate);
-        return (isSameDay(d, today) || isAfter(d, today)) && d <= horizon && b.status !== "delivered";
+        return (
+          (isSameDay(d, today) || isAfter(d, today)) && d <= horizon && b.status !== "delivered"
+        );
       })
-      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
+      .sort(
+        (a, b) =>
+          a.deliveryDate.localeCompare(b.deliveryDate) ||
+          a.deliveryTime.localeCompare(b.deliveryTime),
+      );
   }, [bookings]);
 
   const [upFilter, setUpFilter] = useState<"all" | "prepleat" | "drape" | "artist">("all");
@@ -89,7 +123,11 @@ function CalendarPage() {
         const d = parseISO(b.deliveryDate);
         return d >= s && d <= e;
       })
-      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.deliveryTime.localeCompare(b.deliveryTime));
+      .sort(
+        (a, b) =>
+          a.deliveryDate.localeCompare(b.deliveryDate) ||
+          a.deliveryTime.localeCompare(b.deliveryTime),
+      );
   }, [bookings, cursor]);
 
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -209,8 +247,14 @@ function CalendarPage() {
   const monthHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const monthHoldInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopMonthHold = () => {
-    if (monthHoldTimer.current) { clearTimeout(monthHoldTimer.current); monthHoldTimer.current = null; }
-    if (monthHoldInterval.current) { clearInterval(monthHoldInterval.current); monthHoldInterval.current = null; }
+    if (monthHoldTimer.current) {
+      clearTimeout(monthHoldTimer.current);
+      monthHoldTimer.current = null;
+    }
+    if (monthHoldInterval.current) {
+      clearInterval(monthHoldInterval.current);
+      monthHoldInterval.current = null;
+    }
   };
   const startMonthHold = (dir: -1 | 1) => {
     stopMonthHold();
@@ -229,16 +273,17 @@ function CalendarPage() {
     if (pressTimer.current) clearTimeout(pressTimer.current);
     pressTimer.current = setTimeout(() => setPeek(key), 380);
   };
-  const cancelPress = () => { if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; } };
+  const cancelPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
 
   const peekBookings = peek ? (byDay.get(peek) ?? []) : [];
 
   return (
-    <AppShell
-      showBrand
-      title="Calendar"
-      subtitle={format(cursor, "MMMM yyyy")}
-    >
+    <AppShell showBrand title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
         <GrowthDashboard />
         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -277,7 +322,9 @@ function CalendarPage() {
             <div className="flex-1">
               <p className="font-semibold mb-0.5">Select a Date to Book</p>
               <p className="text-muted-foreground font-normal text-[11px] leading-normal">
-                Double-tap any date on the calendar, or tap a date once and click the <strong className="text-primary font-bold">+ Book</strong> button below to start a booking.
+                Double-tap any date on the calendar, or tap a date once and click the{" "}
+                <strong className="text-primary font-bold">+ Book</strong> button below to start a
+                booking.
               </p>
             </div>
             <button
@@ -293,130 +340,166 @@ function CalendarPage() {
 
         <>
           <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setCursor(subMonths(cursor, 1))}
+              onPointerDown={() => startMonthHold(-1)}
+              onPointerUp={stopMonthHold}
+              onPointerLeave={stopMonthHold}
+              onPointerCancel={stopMonthHold}
+              className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+            <div className="flex-1 text-center">
+              <p className="text-base font-display font-semibold leading-tight">
+                {format(cursor, "MMMM")}
+              </p>
+              <p className="text-[11px] text-muted-foreground tabular-nums leading-tight">
+                {format(cursor, "yyyy")}
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
               <button
-                onClick={() => setCursor(subMonths(cursor, 1))}
-                onPointerDown={() => startMonthHold(-1)}
+                onClick={() => {
+                  setCursor(new Date());
+                  setSelected(new Date());
+                }}
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary mr-2"
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setCursor(addMonths(cursor, 1))}
+                onPointerDown={() => startMonthHold(1)}
                 onPointerUp={stopMonthHold}
                 onPointerLeave={stopMonthHold}
                 onPointerCancel={stopMonthHold}
                 className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
-                aria-label="Previous month"
+                aria-label="Next month"
               >
-                <ChevronLeft className="size-5" />
+                <ChevronRight className="size-5" />
               </button>
-              <div className="flex-1 text-center">
-                <p className="text-base font-display font-semibold leading-tight">{format(cursor, "MMMM")}</p>
-                <p className="text-[11px] text-muted-foreground tabular-nums leading-tight">{format(cursor, "yyyy")}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+              <div key={i} className="py-1">
+                {d}
               </div>
-              <div className="flex items-center gap-1">
+            ))}
+          </div>
+
+          <div
+            ref={calendarRef}
+            className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select touch-pan-y"
+          >
+            {days.map((d) => {
+              const key = format(d, "yyyy-MM-dd");
+              const list = byDay.get(key) ?? [];
+              const isSel = isSameDay(d, selected);
+              const isCur = isSameMonth(d, cursor);
+              const isToday = isSameDay(d, new Date());
+              const hasPending = list.some((b) => totalDue(b) > 0);
+              const dueSum = list.reduce((s, b) => s + totalDue(b), 0);
+              const totalSum = list.reduce((s, b) => s + b.totalAmount, 0);
+              return (
                 <button
-                  onClick={() => { setCursor(new Date()); setSelected(new Date()); }}
-                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary mr-2"
-                >Today</button>
-                <button
-                  onClick={() => setCursor(addMonths(cursor, 1))}
-                  onPointerDown={() => startMonthHold(1)}
-                  onPointerUp={stopMonthHold}
-                  onPointerLeave={stopMonthHold}
-                  onPointerCancel={stopMonthHold}
-                  className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
-                  aria-label="Next month"
+                  key={key}
+                  onClick={() => setSelected(d)}
+                  onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
+                  onTouchStart={() => startPress(key)}
+                  onTouchEnd={cancelPress}
+                  onTouchMove={cancelPress}
+                  onMouseDown={() => startPress(key)}
+                  onMouseUp={cancelPress}
+                  onMouseLeave={cancelPress}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setPeek(key);
+                  }}
+                  className={cn(
+                    "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition no-select",
+                    !isCur && "text-muted-foreground/40",
+                    isSel
+                      ? "bg-primary text-primary-foreground font-semibold"
+                      : "hover:bg-secondary",
+                    isToday && !isSel && "ring-1 ring-primary/40",
+                  )}
                 >
-                  <ChevronRight className="size-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-              {["S","M","T","W","T","F","S"].map((d, i) => <div key={i} className="py-1">{d}</div>)}
-            </div>
-
-            <div
-              ref={calendarRef}
-              className="grid grid-cols-7 gap-1 bg-card rounded-2xl p-2 card-shadow no-select touch-pan-y"
-            >
-
-              {days.map((d) => {
-                const key = format(d, "yyyy-MM-dd");
-                const list = byDay.get(key) ?? [];
-                const isSel = isSameDay(d, selected);
-                const isCur = isSameMonth(d, cursor);
-                const isToday = isSameDay(d, new Date());
-                const hasPending = list.some((b) => totalDue(b) > 0);
-                const dueSum = list.reduce((s, b) => s + totalDue(b), 0);
-                const totalSum = list.reduce((s, b) => s + b.totalAmount, 0);
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelected(d)}
-                    onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
-                    onTouchStart={() => startPress(key)}
-                    onTouchEnd={cancelPress}
-                    onTouchMove={cancelPress}
-                    onMouseDown={() => startPress(key)}
-                    onMouseUp={cancelPress}
-                    onMouseLeave={cancelPress}
-                    onContextMenu={(e) => { e.preventDefault(); setPeek(key); }}
-                    className={cn(
-                      "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition no-select",
-                      !isCur && "text-muted-foreground/40",
-                      isSel ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-secondary",
-                      isToday && !isSel && "ring-1 ring-primary/40",
-                    )}
+                  <span
+                    className={cn("tabular-nums", isToday && !isSel && "text-primary font-bold")}
                   >
-                    <span className={cn("tabular-nums", isToday && !isSel && "text-primary font-bold")}>{format(d, "d")}</span>
-                    {list.length > 0 && (
-                      <div className="flex gap-0.5">
-                        {list.slice(0, 3).map((b) => {
-                          const c = customers.find((x) => x.id === b.customerId);
-                          const isArtist = !!b.artistId || c?.kind === "artist";
-                          const dotColor = isArtist
-                            ? (settings.artistDotColor ?? "#d4af37")
-                            : b.service === "prepleat"
-                              ? (settings.prepleatDotColor ?? "#ffa029")
-                              : (settings.directDrapeDotColor ?? "#10b981");
-                          return (
-                            <span
-                              key={b.id}
-                              className={cn(
-                                "size-1.5 rounded-full",
-                                isSel && "bg-primary-foreground",
-                              )}
-                              style={!isSel ? { backgroundColor: dotColor } : undefined}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
-                    {calendarAmountDisplay !== "none" && (
-                      <>
-                        {dueSum > 0 && (calendarAmountDisplay === "pending" || calendarAmountDisplay === "both") && (
-                          <span className={cn("absolute top-0.5 right-1 text-[8px] font-bold leading-none", isSel ? "text-primary-foreground" : "text-destructive")}>
-                            ₹{dueSum > 999 ? Math.round(dueSum/1000) + "k" : dueSum}
+                    {format(d, "d")}
+                  </span>
+                  {list.length > 0 && (
+                    <div className="flex gap-0.5">
+                      {list.slice(0, 3).map((b) => {
+                        const c = customers.find((x) => x.id === b.customerId);
+                        const isArtist = !!b.artistId || c?.kind === "artist";
+                        const dotColor = isArtist
+                          ? (settings.artistDotColor ?? "#d4af37")
+                          : b.service === "prepleat"
+                            ? (settings.prepleatDotColor ?? "#ffa029")
+                            : (settings.directDrapeDotColor ?? "#10b981");
+                        return (
+                          <span
+                            key={b.id}
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              isSel && "bg-primary-foreground",
+                            )}
+                            style={!isSel ? { backgroundColor: dotColor } : undefined}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                  {calendarAmountDisplay !== "none" && (
+                    <>
+                      {dueSum > 0 &&
+                        (calendarAmountDisplay === "pending" ||
+                          calendarAmountDisplay === "both") && (
+                          <span
+                            className={cn(
+                              "absolute top-0.5 right-1 text-[8px] font-bold leading-none",
+                              isSel ? "text-primary-foreground" : "text-destructive",
+                            )}
+                          >
+                            ₹{dueSum > 999 ? Math.round(dueSum / 1000) + "k" : dueSum}
                           </span>
                         )}
-                        {totalSum > 0 && calendarAmountDisplay === "both" && (
-                          <span className={cn("absolute top-0.5 left-1 text-[8px] font-bold leading-none", isSel ? "text-primary-foreground" : "text-muted-foreground/80")}>
-                            ₹{totalSum > 999 ? Math.round(totalSum/1000) + "k" : totalSum}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center mt-1.5">Long-press peek · double-tap to book · swipe ← → or hold arrows for months</p>
+                      {totalSum > 0 && calendarAmountDisplay === "both" && (
+                        <span
+                          className={cn(
+                            "absolute top-0.5 left-1 text-[8px] font-bold leading-none",
+                            isSel ? "text-primary-foreground" : "text-muted-foreground/80",
+                          )}
+                        >
+                          ₹{totalSum > 999 ? Math.round(totalSum / 1000) + "k" : totalSum}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+            Long-press peek · double-tap to book · swipe ← → or hold arrows for months
+          </p>
 
-            {isSameMonth(selected, cursor) && (
+          {isSameMonth(selected, cursor) && (
             <div className="mt-5">
-
               <div className="flex items-center justify-between mb-2 gap-2">
                 <button
                   onClick={() => setSelected((d) => subDays(d, 1))}
                   className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
                   aria-label="Previous day"
-                ><ChevronLeft className="size-4" /></button>
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate flex-1 text-center">
                   {format(selected, "EEEE, MMM d")}
                 </h2>
@@ -424,7 +507,9 @@ function CalendarPage() {
                   onClick={() => setSelected((d) => addDays(d, 1))}
                   className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
                   aria-label="Next day"
-                ><ChevronRight className="size-4" /></button>
+                >
+                  <ChevronRight className="size-4" />
+                </button>
                 <Link
                   to="/new"
                   search={{ date: format(selected, "yyyy-MM-dd") }}
@@ -433,55 +518,69 @@ function CalendarPage() {
                   <Plus className="size-3.5" /> Book
                 </Link>
               </div>
-              <div
-                ref={daySwipeRef}
-                className="touch-pan-y"
-              >
-              {dayBookings.length === 0 ? (
-                <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground">
-                  No bookings on this day. Swipe ←/→ to change day.
-                </div>
-              ) : (
-                <ul className="space-y-2">
-                  {dayBookings.map((b) => (
-                    <BookingRow key={b.id} b={b} customers={customers} />
-                  ))}
-                </ul>
-              )}
+              <div ref={daySwipeRef} className="touch-pan-y">
+                {dayBookings.length === 0 ? (
+                  <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground">
+                    No bookings on this day. Swipe ←/→ to change day.
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {dayBookings.map((b) => (
+                      <BookingRow key={b.id} b={b} customers={customers} />
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
-            )}
+          )}
 
-
-            {monthEvents.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                    {format(cursor, "MMMM")} · {monthEvents.length} event{monthEvents.length > 1 ? "s" : ""}
-                  </h2>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">{fmtINR(monthEvents.reduce((s, b) => s + b.totalAmount, 0))}</span>
-                </div>
-                <ul className="space-y-2">
-                  {monthEvents.map((b) => (
-                    <BookingRow key={b.id} b={b} customers={customers} showDate />
-                  ))}
-                </ul>
+          {monthEvents.length > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                  {format(cursor, "MMMM")} · {monthEvents.length} event
+                  {monthEvents.length > 1 ? "s" : ""}
+                </h2>
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {fmtINR(monthEvents.reduce((s, b) => s + b.totalAmount, 0))}
+                </span>
               </div>
-            )}
-          </>
+              <ul className="space-y-2">
+                {monthEvents.map((b) => (
+                  <BookingRow key={b.id} b={b} customers={customers} showDate />
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
 
         {peek && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setPeek(null)}>
-            <div className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center"
+            onClick={() => setPeek(null)}
+          >
+            <div
+              className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display font-semibold">{format(parseISO(peek), "EEEE, MMM d")}</h3>
-                <button onClick={() => setPeek(null)} className="size-8 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
+                <h3 className="font-display font-semibold">
+                  {format(parseISO(peek), "EEEE, MMM d")}
+                </h3>
+                <button
+                  onClick={() => setPeek(null)}
+                  className="size-8 rounded-full bg-secondary flex items-center justify-center"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
               {peekBookings.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">No bookings.</p>
               ) : (
                 <ul className="space-y-2 max-h-[60vh] overflow-y-auto">
-                  {peekBookings.map((b) => <BookingRow key={b.id} b={b} customers={customers} />)}
+                  {peekBookings.map((b) => (
+                    <BookingRow key={b.id} b={b} customers={customers} />
+                  ))}
                 </ul>
               )}
               <Link
@@ -489,7 +588,9 @@ function CalendarPage() {
                 search={{ date: peek }}
                 onClick={() => setPeek(null)}
                 className="mt-3 block text-center py-3 rounded-2xl saree-gradient text-primary-foreground text-sm font-semibold"
-              >+ Book this date</Link>
+              >
+                + Book this date
+              </Link>
             </div>
           </div>
         )}
@@ -498,19 +599,28 @@ function CalendarPage() {
   );
 }
 
-const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: ReturnType<typeof useStore.getState>["bookings"][number]; customers: ReturnType<typeof useStore.getState>["customers"]; showDate?: boolean }) {
+const BookingRow = memo(function BookingRow({
+  b,
+  customers,
+  showDate,
+}: {
+  b: ReturnType<typeof useStore.getState>["bookings"][number];
+  customers: ReturnType<typeof useStore.getState>["customers"];
+  showDate?: boolean;
+}) {
   const c = customers.find((x) => x.id === b.customerId);
   const a = b.artistId ? customers.find((x) => x.id === b.artistId) : null;
   const due = totalDue(b);
   const settings = useStore((s) => s.settings);
   const isArtistBooking = !!b.artistId || c?.kind === "artist";
-  const tagColor = b.service === "prepleat"
-    ? (settings.prepleatDotColor ?? "#ffa029")
-    : (settings.directDrapeDotColor ?? "#10b981");
+  const tagColor =
+    b.service === "prepleat"
+      ? (settings.prepleatDotColor ?? "#ffa029")
+      : (settings.directDrapeDotColor ?? "#10b981");
 
   const cardCls = cn(
     "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
-    isArtistBooking 
+    isArtistBooking
       ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
       : b.service === "prepleat"
         ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
@@ -534,9 +644,14 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
-              <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">{c?.name ?? "Unknown"}</span>
+              <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
+                {c?.name ?? "Unknown"}
+              </span>
               {c?.phone && (
-                <span className="inline-flex gap-1.5 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                <span
+                  className="inline-flex gap-1.5 items-center shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <a
                     href={`tel:${c.phone.replace(/\D/g, "")}`}
                     className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
@@ -578,7 +693,8 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {showDate ? `${format(parseISO(b.deliveryDate), "EEE, MMM d")} · ` : ""}{fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+              {showDate ? `${format(parseISO(b.deliveryDate), "EEE, MMM d")} · ` : ""}
+              {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
             </p>
             {a && (
               <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
@@ -587,7 +703,10 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
           <div className="text-right shrink-0 pt-1">
             <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
             {due > 0 ? (
-              <p className="text-xs text-destructive font-semibold flex items-center justify-end"><IndianRupee className="size-3" />{Math.round(due).toLocaleString("en-IN")} due</p>
+              <p className="text-xs text-destructive font-semibold flex items-center justify-end">
+                <IndianRupee className="size-3" />
+                {Math.round(due).toLocaleString("en-IN")} due
+              </p>
             ) : (
               <p className="text-xs text-success font-semibold">Paid</p>
             )}

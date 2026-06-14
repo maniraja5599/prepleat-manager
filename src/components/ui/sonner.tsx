@@ -8,12 +8,16 @@ let lastClickedButton: HTMLElement | null = null;
 
 if (typeof window !== "undefined") {
   // Listen to all clicks to capture the last button clicked
-  window.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest("button, input[type='submit']");
-    if (btn) {
-      lastClickedButton = btn as HTMLElement;
-    }
-  }, true);
+  window.addEventListener(
+    "click",
+    (e) => {
+      const btn = (e.target as HTMLElement).closest("button, input[type='submit']");
+      if (btn) {
+        lastClickedButton = btn as HTMLElement;
+      }
+    },
+    true,
+  );
 
   // Monkey-patch toast.error
   const originalError = toast.error;
@@ -54,9 +58,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
           // Dynamic theme-matching colors, borders and left-accent highlights
-          success: "group-[.toaster]:bg-[color-mix(in_oklch,var(--success)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--success)_80%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--success)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--success)]",
-          error: "group-[.toaster]:bg-[color-mix(in_oklch,var(--destructive)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--destructive)_85%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--destructive)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--destructive)]",
-          warning: "group-[.toaster]:bg-[color-mix(in_oklch,var(--warning)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--warning)_85%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--warning)_35%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--warning)]",
+          success:
+            "group-[.toaster]:bg-[color-mix(in_oklch,var(--success)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--success)_80%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--success)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--success)]",
+          error:
+            "group-[.toaster]:bg-[color-mix(in_oklch,var(--destructive)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--destructive)_85%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--destructive)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--destructive)]",
+          warning:
+            "group-[.toaster]:bg-[color-mix(in_oklch,var(--warning)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--warning)_85%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--warning)_35%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--warning)]",
           info: "group-[.toaster]:bg-[color-mix(in_oklch,var(--primary)_10%,var(--card))] group-[.toaster]:text-[color-mix(in_oklch,var(--primary)_80%,var(--foreground))] group-[.toaster]:border-[color-mix(in_oklch,var(--primary)_30%,var(--border))] group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--primary)]",
         },
       }}

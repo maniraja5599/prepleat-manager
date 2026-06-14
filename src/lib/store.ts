@@ -78,7 +78,20 @@ export interface Customer {
   updatedAt?: string;
 }
 
-export type ThemeName = "maroon" | "midnight" | "emerald" | "royal" | "rose" | "sand" | "charcoal" | "gold" | "sunset" | "ocean" | "forest" | "vintage" | "custom";
+export type ThemeName =
+  | "maroon"
+  | "midnight"
+  | "emerald"
+  | "royal"
+  | "rose"
+  | "sand"
+  | "charcoal"
+  | "gold"
+  | "sunset"
+  | "ocean"
+  | "forest"
+  | "vintage"
+  | "custom";
 
 export interface CustomColors {
   primary?: string;
@@ -118,7 +131,14 @@ export interface DeletedBooking {
   deletedAt: string;
 }
 
-export type ActivityKind = "create" | "update" | "delete" | "restore" | "payment-add" | "payment-delete" | "cancel";
+export type ActivityKind =
+  | "create"
+  | "update"
+  | "delete"
+  | "restore"
+  | "payment-add"
+  | "payment-delete"
+  | "cancel";
 
 export interface ActivityEntry {
   id: string;
@@ -195,13 +215,18 @@ const generateBillNumber = (existing: Booking[]): string => {
 const describeDiff = (prev: Booking, next: Booking): string => {
   const parts: string[] = [];
   if (prev.service !== next.service) parts.push(`service ${prev.service}→${next.service}`);
-  if (prev.sareeCount !== next.sareeCount) parts.push(`sarees ${prev.sareeCount}→${next.sareeCount}`);
-  if (prev.pricePerSaree !== next.pricePerSaree) parts.push(`price ${prev.pricePerSaree}→${next.pricePerSaree}`);
-  if (prev.deliveryDate !== next.deliveryDate) parts.push(`date ${prev.deliveryDate.slice(0,10)}→${next.deliveryDate.slice(0,10)}`);
-  if (prev.deliveryTime !== next.deliveryTime) parts.push(`time ${prev.deliveryTime}→${next.deliveryTime}`);
+  if (prev.sareeCount !== next.sareeCount)
+    parts.push(`sarees ${prev.sareeCount}→${next.sareeCount}`);
+  if (prev.pricePerSaree !== next.pricePerSaree)
+    parts.push(`price ${prev.pricePerSaree}→${next.pricePerSaree}`);
+  if (prev.deliveryDate !== next.deliveryDate)
+    parts.push(`date ${prev.deliveryDate.slice(0, 10)}→${next.deliveryDate.slice(0, 10)}`);
+  if (prev.deliveryTime !== next.deliveryTime)
+    parts.push(`time ${prev.deliveryTime}→${next.deliveryTime}`);
   if (prev.status !== next.status) parts.push(`status ${prev.status}→${next.status}`);
   if ((prev.notes || "") !== (next.notes || "")) parts.push("notes changed");
-  if (prev.advancePaid !== next.advancePaid) parts.push(`paid ${prev.advancePaid}→${next.advancePaid}`);
+  if (prev.advancePaid !== next.advancePaid)
+    parts.push(`paid ${prev.advancePaid}→${next.advancePaid}`);
   return parts.length ? parts.join(", ") : "minor edit";
 };
 
@@ -233,8 +258,23 @@ export const useStore = create<State>()(
         theme: "royal",
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
-        occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
-        expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
+        occasionPresets: [
+          "Bride",
+          "Bridesmaid",
+          "Engagement",
+          "Reception",
+          "Baby ceremony",
+          "Function",
+        ],
+        expenseCategories: [
+          "Material",
+          "Travel",
+          "Salary",
+          "Rent",
+          "Utilities",
+          "Marketing",
+          "Other",
+        ],
         incomeCategories: ["Tips", "Sale", "Other Income"],
         paymentModes: ["gpay", "cash", "other"],
         prepleatDotColor: "#ffa029",
@@ -259,8 +299,12 @@ export const useStore = create<State>()(
           const ts = new Date().toISOString();
           const newTombs: Tombstone[] = [
             { id, type: "customer", ts },
-            ...s.bookings.filter((b) => b.customerId === id).map((b) => ({ id: b.id, type: "booking" as const, ts })),
-            ...s.payments.filter((p) => p.customerId === id).map((p) => ({ id: p.id, type: "payment" as const, ts })),
+            ...s.bookings
+              .filter((b) => b.customerId === id)
+              .map((b) => ({ id: b.id, type: "booking" as const, ts })),
+            ...s.payments
+              .filter((p) => p.customerId === id)
+              .map((p) => ({ id: p.id, type: "payment" as const, ts })),
           ];
           return {
             customers: s.customers.filter((x) => x.id !== id),
@@ -274,10 +318,21 @@ export const useStore = create<State>()(
       addBooking: (b) => {
         const billNumber = generateBillNumber(get().bookings);
         const now = new Date().toISOString();
-        const booking: Booking = { ...b, id: uid(), billNumber, createdAt: now, updatedAt: now, receivedAt: now, status: "pending" };
+        const booking: Booking = {
+          ...b,
+          id: uid(),
+          billNumber,
+          createdAt: now,
+          updatedAt: now,
+          receivedAt: now,
+          status: "pending",
+        };
         const entry: ActivityEntry = {
-          id: uid(), ts: new Date().toISOString(), kind: "create",
-          bookingId: booking.id, summary: `${billNumber} · ${booking.service} · ${booking.sareeCount} sarees`,
+          id: uid(),
+          ts: new Date().toISOString(),
+          kind: "create",
+          bookingId: booking.id,
+          summary: `${billNumber} · ${booking.service} · ${booking.sareeCount} sarees`,
         };
         set((s) => ({
           bookings: [booking, ...s.bookings],
@@ -288,7 +343,15 @@ export const useStore = create<State>()(
           const pid = uid();
           set((s) => ({
             payments: [
-              { id: pid, bookingId: booking.id, customerId: b.customerId, amount: b.advancePaid, date: now, note: "Advance", updatedAt: now },
+              {
+                id: pid,
+                bookingId: booking.id,
+                customerId: b.customerId,
+                amount: b.advancePaid,
+                date: now,
+                note: "Advance",
+                updatedAt: now,
+              },
               ...s.payments,
             ],
           }));
@@ -301,8 +364,13 @@ export const useStore = create<State>()(
           if (!prev) return s;
           const next = { ...prev, ...b, updatedAt: new Date().toISOString() };
           const entry: ActivityEntry = {
-            id: uid(), ts: new Date().toISOString(), kind: "update",
-            bookingId: id, summary: describeDiff(prev, next), prev, next,
+            id: uid(),
+            ts: new Date().toISOString(),
+            kind: "update",
+            bookingId: id,
+            summary: describeDiff(prev, next),
+            prev,
+            next,
           };
           return {
             bookings: s.bookings.map((x) => (x.id === id ? next : x)),
@@ -314,10 +382,19 @@ export const useStore = create<State>()(
         set((s) => {
           const prev = s.bookings.find((x) => x.id === id);
           if (!prev) return s;
-          const next: Booking = { ...prev, status: "cancelled", updatedAt: new Date().toISOString() };
+          const next: Booking = {
+            ...prev,
+            status: "cancelled",
+            updatedAt: new Date().toISOString(),
+          };
           const entry: ActivityEntry = {
-            id: uid(), ts: new Date().toISOString(), kind: "cancel",
-            bookingId: id, summary: `cancelled ${prev.billNumber ?? prev.service}`, prev, next,
+            id: uid(),
+            ts: new Date().toISOString(),
+            kind: "cancel",
+            bookingId: id,
+            summary: `cancelled ${prev.billNumber ?? prev.service}`,
+            prev,
+            next,
           };
           return {
             bookings: s.bookings.map((x) => (x.id === id ? next : x)),
@@ -337,8 +414,11 @@ export const useStore = create<State>()(
             ...s.trash.filter((t) => new Date(t.deletedAt).getTime() > sevenDaysAgo),
           ].slice(0, 50);
           const entry: ActivityEntry = {
-            id: uid(), ts: deletedAt, kind: "delete",
-            bookingId: id, summary: `deleted ${b.billNumber ?? b.service}`,
+            id: uid(),
+            ts: deletedAt,
+            kind: "delete",
+            bookingId: id,
+            summary: `deleted ${b.billNumber ?? b.service}`,
           };
           const newTombs: Tombstone[] = [
             { id, type: "booking", ts: deletedAt },
@@ -359,8 +439,11 @@ export const useStore = create<State>()(
           if (!t) return s;
           const now = new Date().toISOString();
           const entry: ActivityEntry = {
-            id: uid(), ts: now, kind: "restore",
-            bookingId: id, summary: `restored ${t.booking.billNumber ?? t.booking.service}`,
+            id: uid(),
+            ts: now,
+            kind: "restore",
+            bookingId: id,
+            summary: `restored ${t.booking.billNumber ?? t.booking.service}`,
           };
           const restoredIds = new Set([t.booking.id, ...t.payments.map((p) => p.id)]);
           return {
@@ -373,11 +456,15 @@ export const useStore = create<State>()(
         }),
       undoLastEdit: () => {
         const s = get();
-        const idx = s.activity.findIndex((e) => (e.kind === "update" || e.kind === "cancel") && e.prev && e.next);
+        const idx = s.activity.findIndex(
+          (e) => (e.kind === "update" || e.kind === "cancel") && e.prev && e.next,
+        );
         if (idx === -1) return false;
         const entry = s.activity[idx];
         set({
-          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x)),
+          bookings: s.bookings.map((x) =>
+            x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x,
+          ),
           activity: s.activity.filter((_, i) => i !== idx),
           redoStack: [entry, ...s.redoStack].slice(0, 50),
         });
@@ -389,8 +476,13 @@ export const useStore = create<State>()(
         const [entry, ...rest] = s.redoStack;
         if (!entry.next) return false;
         set({
-          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.next!, updatedAt: new Date().toISOString() } : x)),
-          activity: [{ ...entry, id: uid(), ts: new Date().toISOString() }, ...s.activity].slice(0, 50),
+          bookings: s.bookings.map((x) =>
+            x.id === entry.bookingId ? { ...entry.next!, updatedAt: new Date().toISOString() } : x,
+          ),
+          activity: [{ ...entry, id: uid(), ts: new Date().toISOString() }, ...s.activity].slice(
+            0,
+            50,
+          ),
           redoStack: rest,
         });
         return true;
@@ -402,7 +494,9 @@ export const useStore = create<State>()(
         const entry = s.activity[idx];
         if (!entry.prev || !entry.bookingId) return false;
         set({
-          bookings: s.bookings.map((x) => (x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x)),
+          bookings: s.bookings.map((x) =>
+            x.id === entry.bookingId ? { ...entry.prev!, updatedAt: new Date().toISOString() } : x,
+          ),
           activity: s.activity.filter((_, i) => i !== idx),
           redoStack: [entry, ...s.redoStack].slice(0, 50),
         });
@@ -426,10 +520,17 @@ export const useStore = create<State>()(
             };
           });
           const entry: ActivityEntry = {
-            id: uid(), ts: now, kind: "payment-add",
-            bookingId: p.bookingId, summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
+            id: uid(),
+            ts: now,
+            kind: "payment-add",
+            bookingId: p.bookingId,
+            summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
           };
-          return { payments: [payment, ...s.payments], bookings, activity: [entry, ...s.activity].slice(0, 50) };
+          return {
+            payments: [payment, ...s.payments],
+            bookings,
+            activity: [entry, ...s.activity].slice(0, 50),
+          };
         }),
       updatePayment: (id, patch) =>
         set((s) => ({
@@ -454,8 +555,11 @@ export const useStore = create<State>()(
             };
           });
           const entry: ActivityEntry = {
-            id: uid(), ts: now, kind: "payment-delete",
-            bookingId: pay.bookingId, summary: `removed payment ₹${pay.amount}`,
+            id: uid(),
+            ts: now,
+            kind: "payment-delete",
+            bookingId: pay.bookingId,
+            summary: `removed payment ₹${pay.amount}`,
           };
           return {
             payments: s.payments.filter((p) => p.id !== id),
@@ -464,7 +568,6 @@ export const useStore = create<State>()(
             tombstones: [{ id, type: "payment" as const, ts: now }, ...s.tombstones].slice(0, 1000),
           };
         }),
-
 
       addExpense: (e) => {
         const now = new Date().toISOString();
@@ -478,8 +581,7 @@ export const useStore = create<State>()(
             e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e,
           ),
         })),
-      deleteExpense: (id) =>
-        set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+      deleteExpense: (id) => set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
 
       addExtraIncome: (e) => {
         const now = new Date().toISOString();
@@ -492,33 +594,58 @@ export const useStore = create<State>()(
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
 
-      resetApp: () => set({
-        customers: [], bookings: [], payments: [], expenses: [], extraIncomes: [],
-        trash: [], activity: [], redoStack: [], tombstones: [],
-        settings: {
-          prepleatPrice: 350, drapePrice: 800,
-          artistPrepleatPrice: 300, artistDrapePrice: 700,
-          defaultMeasurements: [
-            { label: "Pallu", value: 40 },
-            { label: "Waist", value: 32 },
-            { label: "Hip", value: 38 },
-          ],
-          showPaymentOnCalendar: false,
-          calendarAmountDisplay: "none",
-          businessName: "Eyas Saree Drapist",
-          theme: "royal",
-          defaultPaymentMode: "gpay",
-          websiteUrl: "https://eyasdrapist.shop/",
-          occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
-          expenseCategories: ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"],
-          incomeCategories: ["Tips", "Sale", "Other Income"],
-          paymentModes: ["gpay", "cash", "other"],
-        },
-      }),
+      resetApp: () =>
+        set({
+          customers: [],
+          bookings: [],
+          payments: [],
+          expenses: [],
+          extraIncomes: [],
+          trash: [],
+          activity: [],
+          redoStack: [],
+          tombstones: [],
+          settings: {
+            prepleatPrice: 350,
+            drapePrice: 800,
+            artistPrepleatPrice: 300,
+            artistDrapePrice: 700,
+            defaultMeasurements: [
+              { label: "Pallu", value: 40 },
+              { label: "Waist", value: 32 },
+              { label: "Hip", value: 38 },
+            ],
+            showPaymentOnCalendar: false,
+            calendarAmountDisplay: "none",
+            businessName: "Eyas Saree Drapist",
+            theme: "royal",
+            defaultPaymentMode: "gpay",
+            websiteUrl: "https://eyasdrapist.shop/",
+            occasionPresets: [
+              "Bride",
+              "Bridesmaid",
+              "Engagement",
+              "Reception",
+              "Baby ceremony",
+              "Function",
+            ],
+            expenseCategories: [
+              "Material",
+              "Travel",
+              "Salary",
+              "Rent",
+              "Utilities",
+              "Marketing",
+              "Other",
+            ],
+            incomeCategories: ["Tips", "Sale", "Other Income"],
+            paymentModes: ["gpay", "cash", "other"],
+          },
+        }),
     }),
     {
       name: "saree-studio-v1",
-      version: 13,
+      version: 14,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -531,7 +658,8 @@ export const useStore = create<State>()(
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
         if (s.prepleatPrice === 150) s.prepleatPrice = 350;
         if (s.drapePrice === 300) s.drapePrice = 800;
-        if (typeof s.artistPrepleatPrice !== "number") s.artistPrepleatPrice = s.prepleatPrice ?? 350;
+        if (typeof s.artistPrepleatPrice !== "number")
+          s.artistPrepleatPrice = s.prepleatPrice ?? 350;
         if (typeof s.artistDrapePrice !== "number") s.artistDrapePrice = s.drapePrice ?? 800;
         if (Array.isArray(s.defaultMeasurements)) {
           const labels = s.defaultMeasurements.map((m: any) => m.label).join(",");
@@ -577,10 +705,25 @@ export const useStore = create<State>()(
           });
         }
         if (!Array.isArray(s.occasionPresets)) {
-          s.occasionPresets = ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"];
+          s.occasionPresets = [
+            "Bride",
+            "Bridesmaid",
+            "Engagement",
+            "Reception",
+            "Baby ceremony",
+            "Function",
+          ];
         }
         if (!Array.isArray(s.expenseCategories)) {
-          s.expenseCategories = ["Material", "Travel", "Salary", "Rent", "Utilities", "Marketing", "Other"];
+          s.expenseCategories = [
+            "Material",
+            "Travel",
+            "Salary",
+            "Rent",
+            "Utilities",
+            "Marketing",
+            "Other",
+          ];
         }
         if (!Array.isArray(s.incomeCategories)) {
           s.incomeCategories = ["Tips", "Sale", "Other Income"];
@@ -590,13 +733,18 @@ export const useStore = create<State>()(
         }
         persisted.settings = s;
         if (Array.isArray(persisted.customers)) {
-          persisted.customers = persisted.customers.map((c: any) => ({ kind: c.kind ?? "client", ...c }));
+          persisted.customers = persisted.customers.map((c: any) => ({
+            kind: c.kind ?? "client",
+            ...c,
+          }));
         }
         // Backfill bill numbers
         if (Array.isArray(persisted.bookings)) {
           const monthCounters = new Map<string, number>();
           // Sort by created date so existing order yields stable numbering
-          const sorted = [...persisted.bookings].sort((a: any, b: any) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
+          const sorted = [...persisted.bookings].sort((a: any, b: any) =>
+            (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
+          );
           for (const b of sorted) {
             if (b.billNumber) continue;
             const d = new Date(b.createdAt || Date.now());
@@ -609,8 +757,10 @@ export const useStore = create<State>()(
           // Backfill workflow timestamps
           for (const b of persisted.bookings) {
             if (!b.receivedAt) b.receivedAt = b.createdAt;
-            if (b.status === "delivered" && !b.deliveredAt) b.deliveredAt = b.completedAt || b.createdAt;
-            if ((b.status === "delivered" || b.status === "completed") && !b.workDoneAt) b.workDoneAt = b.completedAt || b.createdAt;
+            if (b.status === "delivered" && !b.deliveredAt)
+              b.deliveredAt = b.completedAt || b.createdAt;
+            if ((b.status === "delivered" || b.status === "completed") && !b.workDoneAt)
+              b.workDoneAt = b.completedAt || b.createdAt;
           }
         }
         if (!Array.isArray(persisted.activity)) persisted.activity = [];
@@ -620,7 +770,9 @@ export const useStore = create<State>()(
         if (!Array.isArray(persisted.extraIncomes)) persisted.extraIncomes = [];
         if (Array.isArray(persisted.bookings)) {
           for (const b of persisted.bookings) {
-            if (!b.updatedAt) b.updatedAt = b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt;
+            if (!b.updatedAt)
+              b.updatedAt =
+                b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt;
           }
         }
         if (Array.isArray(persisted.customers)) {
@@ -629,14 +781,263 @@ export const useStore = create<State>()(
         if (Array.isArray(persisted.payments)) {
           for (const p of persisted.payments) if (!p.updatedAt) p.updatedAt = p.date;
         }
+
+        if (_version < 14) {
+          const rawCsv = `13-01-2026,Saree Prepleat,1500,
+14-01-2026,Jeysu Prepleat,300,GPay
+16-01-2026,Srinithi Drape,1700,
+25-01-2026,Nandhini,1050,GPay
+26-01-2026,Sathya Artist,250,GPay
+26-01-2026,Keerthana,1650,GPay
+26-01-2026,Agashya Advance,1200,GPay
+26-01-2026,Anu Sri,650,GPay
+26-01-2026,Agashya Advance,400,GPay
+26-01-2026,Thermozhi,400,GPay
+27-01-2026,Asvini Mom,700,GPay
+27-01-2026,Asvini Chithi,1050,GPay
+27-01-2026,Maheswari,500,Cash
+27-01-2026,Maheswari Relative,500,Cash
+27-01-2026,Thermozhi,350,GPay
+27-01-2026,Sangeetha Gokulakrishnan,250,Cash
+27-01-2026,Bhoomika Engagement Drape,800,GPay
+28-01-2026,Pradeetha Artist,1500,Cash
+28-01-2026,Maha Prepleat,250,GPay
+29-01-2026,Dhanam Saree,250,Cash
+29-01-2026,Ragheni,400,Cash
+06-02-2026,Agashya Feb Event,1400,GPay
+06-02-2026,Agashya March Advance,800,GPay
+06-02-2026,Dr Priyanka,1700,GPay
+07-02-2026,Gokulapriya Advance,500,GPay
+09-02-2026,Yasodha,1250,Cash
+09-02-2026,Karthi,500,GPay
+09-02-2026,Arathi,350,GPay
+09-02-2026,Sujitha,250,GPay
+13-02-2026,Agashya Artist Advance,400,GPay
+13-02-2026,Agashya Artist April Advance,400,GPay
+14-02-2026,Sindhuja,100,GPay
+15-02-2026,Praneetha Artist,3200,GPay
+16-02-2026,Abirami,750,GPay
+17-02-2026,Soundarya Sathish,1800,GPay
+17-02-2026,Anu Jeysu Ref,300,GPay
+18-02-2026,Maheswari,500,Cash
+18-02-2026,Sowmiya,600,GPay
+18-02-2026,Sangeetha Half Saree,200,GPay
+18-02-2026,Priya Vijayapathi,450,GPay
+18-02-2026,Gokulapriya,1000,GPay
+18-03-2026,Srinithi,2450,GPay
+20-02-2026,Anu Renisha Drape,9500,GPay
+21-02-2026,Gokulapriya,500,GPay
+20-02-2026,Deepika Prepleat,300,Cash
+20-02-2026,Agashya,750,GPay
+21-02-2026,Srinithi,350,Cash
+21-02-2026,Poorvisha,1800,GPay
+22-02-2026,Praneetha Abirami Drape,2500,GPay
+23-02-2026,Anu Gumathi Drape,4050,GPay
+26-02-2026,Priyanka Athai Drape,850,GPay
+27-02-2026,Praneetha One Drape,850,GPay
+01-03-2026,Anu Sri Ref,700,GPay
+01-03-2026,Gokulapriya,650,GPay
+04-03-2026,Anusi Saree Prepleat,1650,GPay
+06-03-2026,Agashya,2900,GPay
+07-03-2026,Anusi,1150,GPay
+08-03-2026,Vikasini Artist,800,GPay
+11-03-2026,Praneetha,1000,GPay
+15-03-2026,Praneetha,850,GPay
+21-03-2026,Preena,300,Cash
+25-03-2026,Arathi Drape,1000,Cash
+25-03-2026,Sindhuja Drape,900,GPay
+25-03-2026,Nivetha Prepleat,750,GPay
+25-03-2026,Poonisha,1000,GPay
+27-03-2026,Elakkiya,1000,GPay
+26-03-2026,Shivani,2900,GPay
+27-03-2026,Anu,300,GPay
+03-04-2026,Nivetha,300,GPay
+05-04-2026,Sripriya,250,GPay
+07-04-2026,Anusi,700,GPay
+11-04-2026,Anusi,350,GPay
+12-04-2026,Priya Drape,900,GPay
+12-04-2026,Srinithi Drape,900,Cash
+12-04-2026,Yamini Advance,800,GPay
+13-04-2026,Praneetha,3500,GPay
+17-04-2026,Sanjana Prepleat,350,GPay
+18-04-2026,Anu Jeysu Ref,300,GPay
+19-04-2026,Anu Makeup Artist,350,GPay
+21-04-2026,Praneetha,1000,GPay
+24-04-2026,Shalini,700,Cash
+29-04-2026,Anusi,600,Cash
+01-05-2026,Praneetha,6100,GPay
+05-05-2026,Varthi,600,Cash
+06-05-2026,Jeysu Advance,1600,Cash
+08-05-2026,Oviya Prepleat,300,Cash
+12-05-2026,Priyadarshini,300,Cash
+12-05-2026,Yamini Maya,850,Cash
+16-05-2026,Maheswari,500,Cash
+16-05-2026,Sowmiya,1400,Cash
+16-05-2026,Praneetha,950,GPay
+17-05-2026,Dhivya,700,GPay
+17-05-2026,Yalini,1200,Cash
+20-05-2026,Yamini,100,GPay
+20-05-2026,Malarvizhi,1600,GPay
+22-05-2026,Suganya,800,GPay
+24-05-2026,Dhivya,350,Cash
+23-05-2026,Senthamil,1050,GPay
+24-05-2026,Saritha,2100,GPay
+25-05-2026,Kaimalar,2500,Cash
+25-05-2026,Sujitha,500,Cash
+26-05-2026,Suganya,900,GPay
+27-05-2026,Vijayalakshmi,350,Cash
+27-05-2026,Narmatha,350,GPay
+27-05-2026,Megha Mithra,3600,GPay
+28-05-2026,Praneetha,1850,GPay
+25-05-2026,Nandhika,3000,GPay
+28-05-2026,Kavya Artist,500,GPay
+25-05-2026,Dhivya,700,GPay
+25-05-2026,Anusi,1400,Cash
+27-05-2026,Sangeetha,300,Cash
+27-05-2026,Shalini,600,Cash
+27-05-2026,Jeyika,350,GPay
+27-05-2026,Bhoomika,650,Cash
+28-05-2026,Bhoomika,950,Cash
+28-05-2026,Agashya,700,Cash
+28-05-2026,Manochitra,350,GPay
+29-05-2026,Jeysu,1000,Cash
+29-05-2026,Kavya,500,Cash
+29-05-2026,Nivetha,500,Cash
+30-05-2026,Mithra,5600,GPay
+30-05-2026,Priya,2050,GPay
+31-05-2026,Selvanika,450,GPay
+01-06-2026,Praneetha,5750,Cash
+01-06-2026,Srinithi,900,Cash
+03-06-2026,Sanjana,900,Cash
+03-06-2026,Priya Suresh,1300,GPay
+03-06-2026,Anusi,1400,Cash
+04-06-2026,Anusi,950,GPay
+05-06-2026,Ramya,250,Cash
+06-06-2026,Priya Suresh,450,Cash
+06-06-2026,Selvanika,450,Cash
+07-06-2026,Navena Shree,350,Cash
+07-06-2026,Kavya Parthiban,600,Cash
+07-06-2026,Anusi,2450,GPay
+08-06-2026,Madhuwarshini,200,Cash
+08-06-2026,Sangeetha,1250,GPay
+13-06-2026,Shalini,1500,Cash`;
+
+          const customers = persisted.customers ?? [];
+          const bookings = persisted.bookings ?? [];
+          const payments = persisted.payments ?? [];
+
+          const lines = rawCsv
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean);
+          const monthCounters = new Map<string, number>();
+
+          for (const b of bookings) {
+            if (b.billNumber) {
+              const parts = b.billNumber.split("-");
+              if (parts.length === 3) {
+                const ym = parts[1];
+                const num = Number(parts[2]) || 0;
+                if (num > (monthCounters.get(ym) ?? 0)) {
+                  monthCounters.set(ym, num);
+                }
+              }
+            }
+          }
+
+          for (const line of lines) {
+            const parts = line.split(",");
+            if (parts.length < 3) continue;
+            const dateStr = parts[0].trim();
+            const name = parts[1].trim();
+            const amountStr = parts[2].trim();
+            const modeRaw = parts[3] ? parts[3].trim() : "";
+
+            const amount = Number(amountStr) || 0;
+            if (amount <= 0) continue;
+
+            const dateParts = dateStr.split("-");
+            if (dateParts.length !== 3) continue;
+            const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+            const timestamp = new Date(isoDate + "T12:00:00").toISOString();
+
+            let mode = "other";
+            if (modeRaw.toLowerCase() === "gpay") mode = "gpay";
+            else if (modeRaw.toLowerCase() === "cash") mode = "cash";
+
+            let c = customers.find((x: any) => x.name.toLowerCase() === name.toLowerCase());
+            if (!c) {
+              const isArtist = name.toLowerCase().includes("artist");
+              c = {
+                id: uid(),
+                kind: isArtist ? "artist" : "client",
+                name,
+                phone: "",
+                createdAt: timestamp,
+                updatedAt: timestamp,
+              };
+              customers.push(c);
+            }
+
+            let service = "prepleat";
+            if (name.toLowerCase().includes("drape")) {
+              service = "drape";
+            }
+
+            const ym = `${dateParts[2]}${dateParts[1]}`;
+            const prefix = `EYAS-${ym}-`;
+            const n = (monthCounters.get(ym) ?? 0) + 1;
+            monthCounters.set(ym, n);
+            const billNumber = `${prefix}${String(n).padStart(4, "0")}`;
+
+            const bId = uid();
+            const booking = {
+              id: bId,
+              billNumber,
+              customerId: c.id,
+              service,
+              sareeCount: 1,
+              pricePerSaree: amount,
+              totalAmount: amount,
+              advancePaid: amount,
+              deliveryDate: isoDate,
+              deliveryTime: "09:00",
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              completedAt: timestamp,
+              receivedAt: timestamp,
+              workDoneAt: timestamp,
+              deliveredAt: timestamp,
+              status: "delivered",
+            };
+            bookings.push(booking);
+
+            const pId = uid();
+            const payment = {
+              id: pId,
+              bookingId: bId,
+              customerId: c.id,
+              amount,
+              date: isoDate,
+              mode,
+              note: "Imported Earning",
+              updatedAt: timestamp,
+            };
+            payments.push(payment);
+          }
+
+          persisted.customers = customers;
+          persisted.bookings = bookings;
+          persisted.payments = payments;
+        }
+
         return persisted;
       },
     },
   ),
 );
 
-export const fmtINR = (n: number) =>
-  "₹" + Math.round(n).toLocaleString("en-IN");
+export const fmtINR = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
 
 export const fmtTime12 = (hhmm: string) => {
   const [hStr, mStr] = (hhmm || "00:00").split(":");
@@ -650,7 +1051,9 @@ export const fmtTime12 = (hhmm: string) => {
 export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - b.advancePaid);
 
 export const customerBookings = (cid: string, bookings: Booking[]) =>
-  bookings.filter((b) => b.customerId === cid).sort((a, b) => (a.deliveryDate < b.deliveryDate ? 1 : -1));
+  bookings
+    .filter((b) => b.customerId === cid)
+    .sort((a, b) => (a.deliveryDate < b.deliveryDate ? 1 : -1));
 
 export const lastPriceFor = (cid: string, service: ServiceType, bookings: Booking[]) => {
   const past = bookings

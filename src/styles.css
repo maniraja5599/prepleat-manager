@@ -356,15 +356,36 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; }
-  body { overscroll-behavior-y: none; }
-  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior-y: none;
+  }
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
 }
 
 @layer utilities {
   .saree-gradient {
-    background: linear-gradient(135deg, var(--primary) 0%, color-mix(in oklch, var(--primary), black 12%) 50%, color-mix(in oklch, var(--primary), var(--gold) 25%) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      color-mix(in oklch, var(--primary), black 12%) 50%,
+      color-mix(in oklch, var(--primary), var(--gold) 25%) 100%
+    );
   }
   .gold-text {
     background: linear-gradient(135deg, oklch(0.78 0.13 75), oklch(0.65 0.15 60));
@@ -373,14 +394,27 @@
     color: transparent;
   }
   .card-shadow {
-    box-shadow: 0 1px 0 oklch(0.22 0.04 25 / 0.05), 0 1px 2px oklch(0.22 0.04 25 / 0.06), 0 8px 24px -6px oklch(0.22 0.04 25 / 0.08);
+    box-shadow:
+      0 1px 0 oklch(0.22 0.04 25 / 0.05),
+      0 1px 2px oklch(0.22 0.04 25 / 0.06),
+      0 8px 24px -6px oklch(0.22 0.04 25 / 0.08);
     border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
   }
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .safe-header-top { padding-top: calc(env(safe-area-inset-top, 0px) + 1rem); }
-  .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-  .no-select, .no-select * {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .safe-header-top {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  }
+  .safe-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .no-select,
+  .no-select * {
     user-select: none !important;
     -webkit-user-select: none !important;
     -webkit-touch-callout: none !important;
@@ -389,15 +423,26 @@
 
 @layer base {
   /* Keep focused inputs visible above the mobile keyboard */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     scroll-margin-block: 8rem;
   }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
 }
 
 .button-error-flash {
@@ -447,7 +492,9 @@
   color: var(--color-foreground) !important;
   border: 1.5px solid var(--color-border) !important;
   border-radius: 1.25rem !important;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.12),
+    0 5px 15px rgba(0, 0, 0, 0.08) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   opacity: 0;
@@ -521,6 +568,10 @@ body:has(.sonner-toast-center-override [data-sonner-toast])::before {
 }
 
 @keyframes fade-in-backdrop {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

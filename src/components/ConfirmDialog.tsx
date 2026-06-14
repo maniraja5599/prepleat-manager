@@ -33,7 +33,9 @@ export function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-2xl max-w-sm">
         <AlertDialogHeader>
-          <div className={`mx-auto sm:mx-0 size-11 rounded-full flex items-center justify-center ${tone === "danger" ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"}`}>
+          <div
+            className={`mx-auto sm:mx-0 size-11 rounded-full flex items-center justify-center ${tone === "danger" ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"}`}
+          >
             <AlertTriangle className="size-5" />
           </div>
           <AlertDialogTitle>{title}</AlertDialogTitle>

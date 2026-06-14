@@ -29,7 +29,9 @@ export function ScrollNumber({ value, onChange, min = 20, max = 80, label }: Pro
     if (Math.abs(el.scrollTop - target) > 1) {
       settling.current = true;
       el.scrollTo({ top: target, behavior: "auto" });
-      requestAnimationFrame(() => { settling.current = false; });
+      requestAnimationFrame(() => {
+        settling.current = false;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
