@@ -666,7 +666,6 @@ export const useStore = create<State>()(
 28-01-2026,Maha Prepleat,250,GPay
 29-01-2026,Dhanam Saree,250,Cash
 29-01-2026,Ragheni,400,Cash
-
 06-02-2026,Agashya Feb Event,1400,GPay
 06-02-2026,Agashya March Advance,800,GPay
 06-02-2026,Dr Priyanka,1700,GPay
@@ -687,12 +686,12 @@ export const useStore = create<State>()(
 18-02-2026,Sangeetha Half Saree,200,GPay
 18-02-2026,Priya Vijayapathi,450,GPay
 18-02-2026,Gokulapriya,1000,GPay
-18-03-2026,Srinithi,2450,GPay
-
+18-02-2026,Srinithi,2450,GPay
 20-02-2026,Anu Renisha Drape,9500,GPay
-21-02-2026,Gokulapriya,500,GPay
 20-02-2026,Deepika Prepleat,300,Cash
 20-02-2026,Agashya,750,GPay
+20-02-2026,Praneetha,4000,GPay
+21-02-2026,Gokulapriya,500,GPay
 21-02-2026,Srinithi,350,Cash
 21-02-2026,Poorvisha,1800,GPay
 22-02-2026,Praneetha Abirami Drape,2500,GPay
@@ -711,10 +710,9 @@ export const useStore = create<State>()(
 25-03-2026,Arathi Drape,1000,Cash
 25-03-2026,Sindhuja Drape,900,GPay
 25-03-2026,Nivetha Prepleat,750,GPay
-
 25-03-2026,Poonisha,1000,GPay
-27-03-2026,Elakkiya,1000,GPay
 26-03-2026,Shivani,2900,GPay
+27-03-2026,Elakkiya,1000,GPay
 27-03-2026,Anu,300,GPay
 03-04-2026,Nivetha,300,GPay
 05-04-2026,Sripriya,250,GPay
@@ -731,56 +729,53 @@ export const useStore = create<State>()(
 24-04-2026,Shalini,700,Cash
 29-04-2026,Anusi,600,Cash
 01-05-2026,Praneetha,6100,GPay
-05-05-2026,Varthi,600,Cash
+05-05-2026,Varthi,1000,Cash
 06-05-2026,Jeysu Advance,1600,Cash
 08-05-2026,Oviya Prepleat,300,Cash
-
 12-05-2026,Priyadarshini,300,Cash
-12-05-2026,Yamini Maya,850,Cash
+12-05-2026,Yamini Maya,800,Cash
 16-05-2026,Maheswari,500,Cash
 16-05-2026,Sowmiya,1400,Cash
 16-05-2026,Praneetha,950,GPay
 17-05-2026,Dhivya,700,GPay
 17-05-2026,Yalini,1200,Cash
-20-05-2026,Yamini,100,GPay
+20-05-2026,Yamini,200,GPay
 20-05-2026,Malarvizhi,1600,GPay
 22-05-2026,Suganya,800,GPay
-24-05-2026,Dhivya,350,Cash
 23-05-2026,Senthamil,1050,GPay
+24-05-2026,Dhivya,350,Cash
 24-05-2026,Saritha,2100,GPay
 25-05-2026,Kaimalar,2500,Cash
 25-05-2026,Sujitha,500,Cash
+25-05-2026,Nandhika,3000,GPay
+25-05-2026,Dhivya,700,GPay
+25-05-2026,Anusi,1400,Cash
 26-05-2026,Suganya,900,GPay
 27-05-2026,Vijayalakshmi,350,Cash
 27-05-2026,Narmatha,350,GPay
 27-05-2026,Megha Mithra,3600,GPay
-28-05-2026,Praneetha,1850,GPay
-25-05-2026,Nandhika,3000,GPay
-28-05-2026,Kavya Artist,500,GPay
-
-25-05-2026,Dhivya,700,GPay
-25-05-2026,Anusi,1400,Cash
 27-05-2026,Sangeetha,300,Cash
 27-05-2026,Shalini,600,Cash
 27-05-2026,Jeyika,350,GPay
 27-05-2026,Bhoomika,650,Cash
+28-05-2026,Praneetha,1850,GPay
+28-05-2026,Kavya Artist,500,GPay
 28-05-2026,Bhoomika,950,Cash
 28-05-2026,Agashya,700,Cash
 28-05-2026,Manochitra,350,GPay
-29-05-2026,Jeysu,1000,Cash
+29-05-2026,Jeysu,1100,Cash
 29-05-2026,Kavya,500,Cash
 29-05-2026,Nivetha,500,Cash
 30-05-2026,Mithra,5600,GPay
 30-05-2026,Priya,2050,GPay
+30-05-2026,Srinithi,900,Cash
 31-05-2026,Selvanika,450,GPay
 01-06-2026,Praneetha,5750,Cash
-01-06-2026,Srinithi,900,Cash
 03-06-2026,Sanjana,900,Cash
 03-06-2026,Priya Suresh,1300,GPay
 03-06-2026,Anusi,1400,Cash
 04-06-2026,Anusi,950,GPay
 05-06-2026,Ramya,250,Cash
-
 06-06-2026,Priya Suresh,450,Cash
 06-06-2026,Selvanika,450,Cash
 07-06-2026,Navena Shree,350,Cash
@@ -1088,11 +1083,12 @@ export const useStore = create<State>()(
 18-02-2026,Sangeetha Half Saree,200,GPay
 18-02-2026,Priya Vijayapathi,450,GPay
 18-02-2026,Gokulapriya,1000,GPay
-18-03-2026,Srinithi,2450,GPay
+18-02-2026,Srinithi,2450,GPay
 20-02-2026,Anu Renisha Drape,9500,GPay
-21-02-2026,Gokulapriya,500,GPay
 20-02-2026,Deepika Prepleat,300,Cash
 20-02-2026,Agashya,750,GPay
+20-02-2026,Praneetha,4000,GPay
+21-02-2026,Gokulapriya,500,GPay
 21-02-2026,Srinithi,350,Cash
 21-02-2026,Poorvisha,1800,GPay
 22-02-2026,Praneetha Abirami Drape,2500,GPay
@@ -1112,8 +1108,8 @@ export const useStore = create<State>()(
 25-03-2026,Sindhuja Drape,900,GPay
 25-03-2026,Nivetha Prepleat,750,GPay
 25-03-2026,Poonisha,1000,GPay
-27-03-2026,Elakkiya,1000,GPay
 26-03-2026,Shivani,2900,GPay
+27-03-2026,Elakkiya,1000,GPay
 27-03-2026,Anu,300,GPay
 03-04-2026,Nivetha,300,GPay
 05-04-2026,Sripriya,250,GPay
@@ -1130,48 +1126,48 @@ export const useStore = create<State>()(
 24-04-2026,Shalini,700,Cash
 29-04-2026,Anusi,600,Cash
 01-05-2026,Praneetha,6100,GPay
-05-05-2026,Varthi,600,Cash
+05-05-2026,Varthi,1000,Cash
 06-05-2026,Jeysu Advance,1600,Cash
 08-05-2026,Oviya Prepleat,300,Cash
 12-05-2026,Priyadarshini,300,Cash
-12-05-2026,Yamini Maya,850,Cash
+12-05-2026,Yamini Maya,800,Cash
 16-05-2026,Maheswari,500,Cash
 16-05-2026,Sowmiya,1400,Cash
 16-05-2026,Praneetha,950,GPay
 17-05-2026,Dhivya,700,GPay
 17-05-2026,Yalini,1200,Cash
-20-05-2026,Yamini,100,GPay
+20-05-2026,Yamini,200,GPay
 20-05-2026,Malarvizhi,1600,GPay
 22-05-2026,Suganya,800,GPay
-24-05-2026,Dhivya,350,Cash
 23-05-2026,Senthamil,1050,GPay
+24-05-2026,Dhivya,350,Cash
 24-05-2026,Saritha,2100,GPay
 25-05-2026,Kaimalar,2500,Cash
 25-05-2026,Sujitha,500,Cash
+25-05-2026,Nandhika,3000,GPay
+25-05-2026,Dhivya,700,GPay
+25-05-2026,Anusi,1400,Cash
 26-05-2026,Suganya,900,GPay
 27-05-2026,Vijayalakshmi,350,Cash
 27-05-2026,Narmatha,350,GPay
 27-05-2026,Megha Mithra,3600,GPay
-28-05-2026,Praneetha,1850,GPay
-25-05-2026,Nandhika,3000,GPay
-28-05-2026,Kavya Artist,500,GPay
-25-05-2026,Dhivya,700,GPay
-25-05-2026,Anusi,1400,Cash
 27-05-2026,Sangeetha,300,Cash
 27-05-2026,Shalini,600,Cash
 27-05-2026,Jeyika,350,GPay
 27-05-2026,Bhoomika,650,Cash
+28-05-2026,Praneetha,1850,GPay
+28-05-2026,Kavya Artist,500,GPay
 28-05-2026,Bhoomika,950,Cash
 28-05-2026,Agashya,700,Cash
 28-05-2026,Manochitra,350,GPay
-29-05-2026,Jeysu,1000,Cash
+29-05-2026,Jeysu,1100,Cash
 29-05-2026,Kavya,500,Cash
 29-05-2026,Nivetha,500,Cash
 30-05-2026,Mithra,5600,GPay
 30-05-2026,Priya,2050,GPay
+30-05-2026,Srinithi,900,Cash
 31-05-2026,Selvanika,450,GPay
 01-06-2026,Praneetha,5750,Cash
-01-06-2026,Srinithi,900,Cash
 03-06-2026,Sanjana,900,Cash
 03-06-2026,Priya Suresh,1300,GPay
 03-06-2026,Anusi,1400,Cash
