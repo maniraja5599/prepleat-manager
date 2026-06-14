@@ -956,6 +956,22 @@ function EditPanel({
     return settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 }));
   });
 
+  const [showAddField, setShowAddField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState("");
+
+  const handleAddField = () => {
+    const name = newFieldName.trim();
+    if (!name) return;
+    if (measurements.some((m) => m.label.toLowerCase() === name.toLowerCase())) {
+      toast.error("This measurement already exists!");
+      return;
+    }
+    setMeasurements([...measurements, { label: name, value: 30 }]);
+    setNewFieldName("");
+    setShowAddField(false);
+    toast.success(`Added custom field: ${name}`);
+  };
+
   return (
     <div className="bg-card card-shadow rounded-2xl p-5 mt-4 space-y-4 border border-border/20">
       <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
@@ -1121,6 +1137,53 @@ function EditPanel({
                 />
               ))}
             </div>
+
+            {showAddField ? (
+              <div className="flex items-center gap-1.5 justify-center mt-2 border-t border-border/20 pt-2 max-w-[280px] mx-auto">
+                <input
+                  type="text"
+                  placeholder="Field name (e.g. Armhole)"
+                  value={newFieldName}
+                  onChange={(e) => setNewFieldName(e.target.value)}
+                  className="flex-1 text-[11px] h-7 px-3 border border-border rounded-full bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddField();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddField}
+                  className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddField(false);
+                    setNewFieldName("");
+                  }}
+                  className="h-7 px-3 rounded-full bg-secondary text-muted-foreground text-[10px] font-bold cursor-pointer hover:bg-secondary/80 active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center mt-2 border-t border-border/20 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddField(true)}
+                  className="text-[11px] font-semibold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
+                >
+                  + Add Custom Field
+                </button>
+              </div>
+            )}
+
             <p className="text-[9px] text-muted-foreground/85 mt-2 text-center">
               Scroll inside each picker to adjust value
             </p>
