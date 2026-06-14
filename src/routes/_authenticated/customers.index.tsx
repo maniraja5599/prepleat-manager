@@ -47,7 +47,7 @@ function CustomersPage() {
   const [tab, setTab] = useState<CustomerKind>("client");
   const [showAdd, setShowAdd] = useState(false);
   const [dueOnly, setDueOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<"due" | "name" | "orders">("due");
+  const [sortBy, setSortBy] = useState<"due" | "name" | "orders">("orders");
   const [showTopOnly, setShowTopOnly] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -87,7 +87,7 @@ function CustomersPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeFiltersCount = (dueOnly ? 1 : 0) + (sortBy !== "due" ? 1 : 0) + (showTopOnly ? 1 : 0);
+  const activeFiltersCount = (dueOnly ? 1 : 0) + (sortBy !== "orders" ? 1 : 0) + (showTopOnly ? 1 : 0);
   const balanceSummary = dueOnly ? "Only Outstanding Balance" : "All Accounts";
   const getSortLabel = (s: typeof sortBy) =>
     s === "due" ? "Balance Due" : s === "orders" ? "Orders Count" : "Alphabetical";
@@ -339,7 +339,7 @@ function CustomersPage() {
                     <button
                       onClick={() => {
                         setDueOnly(false);
-                        setSortBy("due");
+                        setSortBy("orders");
                         setShowTopOnly(false);
                         toast.success("Filters cleared", { duration: 1200 });
                       }}
