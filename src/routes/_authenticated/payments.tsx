@@ -382,21 +382,23 @@ function PaymentsPage() {
         />
       )}
 
-      {/* FAB add (expenses → expense, income → extra income) */}
-      {tab === "expenses" && (
-        <button
-          onClick={() => setAddOpen(true)}
-          className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center"
-          aria-label="Add expense"
-        ><Plus className="size-6" /></button>
-      )}
-      {tab === "income" && (
+      {/* Floating Action Buttons for Income & Expense */}
+      <div className="fixed bottom-24 right-4 z-30 flex gap-2 items-center">
         <button
           onClick={() => setAddIncomeOpen(true)}
-          className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-success text-white shadow-xl flex items-center justify-center"
+          className="px-3.5 py-2.5 bg-success hover:bg-success/90 text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
           aria-label="Add extra income"
-        ><Plus className="size-6" /></button>
-      )}
+        >
+          <Plus className="size-3.5" /> Income
+        </button>
+        <button
+          onClick={() => setAddOpen(true)}
+          className="px-3.5 py-2.5 bg-destructive hover:bg-destructive/90 text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
+          aria-label="Add expense"
+        >
+          <Plus className="size-3.5" /> Expense
+        </button>
+      </div>
 
       {addOpen && (
         <AddExpenseSheet
