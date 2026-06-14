@@ -392,12 +392,11 @@ function PaymentsPage() {
       {/* Floating Action Button */}
       <button
         onClick={() => setAskTypeOpen(true)}
-        className="fixed bottom-28 right-4 z-30 h-10 px-3.5 bg-primary text-primary-foreground shadow-xl rounded-full flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
+        className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-primary text-primary-foreground shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
         aria-label="Add transaction"
       >
         <Plus className="size-4" />
-        <span className="opacity-40 font-semibold">/</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider">Inc/Exp</span>
+        <span className="text-xs font-bold uppercase tracking-wider">Add</span>
       </button>
 
       {/* Transaction Type Selection Dialog */}
