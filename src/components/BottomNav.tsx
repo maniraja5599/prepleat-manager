@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Calendar, ListChecks, Wallet, Users, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
 const tabs: Tab[] = [
@@ -15,15 +15,26 @@ const tabs: Tab[] = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const lastTapRef = useRef<number>(0);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleTouchStart = (to: string) => {
-    if (to !== "/") return;
-    const now = Date.now();
-    if (now - lastTapRef.current < 300) {
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCalendarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
       navigate({ to: "/bookings" });
+    } else {
+      clickTimeoutRef.current = setTimeout(() => {
+        clickTimeoutRef.current = null;
+        navigate({ to: "/" });
+      }, 250);
     }
-    lastTapRef.current = now;
   };
 
   return (
@@ -51,13 +62,11 @@ export function BottomNav() {
             <li key={t.to} className="flex justify-center">
               <Link
                 to={t.to}
-                onDoubleClick={(e) => {
+                onClick={(e) => {
                   if (t.to === "/") {
-                    e.preventDefault();
-                    navigate({ to: "/bookings" });
+                    handleCalendarClick(e);
                   }
                 }}
-                onTouchStart={() => handleTouchStart(t.to)}
                 className={cn(
                   "relative flex flex-col items-center gap-0.5 py-2 px-3 my-1 rounded-2xl text-[10px] font-semibold transition",
                   active ? "text-primary bg-primary/10" : "text-muted-foreground active:bg-secondary",
