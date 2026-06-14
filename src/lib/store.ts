@@ -904,7 +904,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 14,
+      version: 15,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -1041,7 +1041,23 @@ export const useStore = create<State>()(
           for (const p of persisted.payments) if (!p.updatedAt) p.updatedAt = p.date;
         }
 
-        if (_version < 14) {
+        if (_version < 15) {
+          // Clean up any previously imported historical entries from v14 (note: "Imported Earning")
+          // to prevent double entries or orphaned old versions of corrected rows.
+          const payments = persisted.payments ?? [];
+          const importedPayments = payments.filter((p: any) => p.note === "Imported Earning");
+          const importedBookingIds = new Set(importedPayments.map((p: any) => p.bookingId).filter(Boolean));
+
+          persisted.payments = payments.filter((p: any) => p.note !== "Imported Earning");
+
+          const bookings = persisted.bookings ?? [];
+          persisted.bookings = bookings.filter((b: any) => !importedBookingIds.has(b.id));
+
+          const remainingBookingCustomerIds = new Set((persisted.bookings ?? []).map((b: any) => b.customerId));
+          const customers = persisted.customers ?? [];
+          persisted.customers = customers.filter((c: any) => remainingBookingCustomerIds.has(c.id));
+
+          // Import the corrected master CSV
           const rawCsv = `13-01-2026,Saree Prepleat,1500,
 14-01-2026,Jeysu Prepleat,300,GPay
 16-01-2026,Srinithi Drape,1700,
@@ -1182,17 +1198,14 @@ export const useStore = create<State>()(
 08-06-2026,Sangeetha,1250,GPay
 13-06-2026,Shalini,1500,Cash`;
 
-          const customers = persisted.customers ?? [];
-          const bookings = persisted.bookings ?? [];
-          const payments = persisted.payments ?? [];
-
           const lines = rawCsv
             .split("\n")
             .map((l) => l.trim())
             .filter(Boolean);
           const monthCounters = new Map<string, number>();
 
-          for (const b of bookings) {
+          // Recalculate month counters based on remaining bookings
+          for (const b of persisted.bookings ?? []) {
             if (b.billNumber) {
               const parts = b.billNumber.split("-");
               if (parts.length === 3) {
@@ -1204,6 +1217,10 @@ export const useStore = create<State>()(
               }
             }
           }
+
+          const finalCustomers = persisted.customers ?? [];
+          const finalBookings = persisted.bookings ?? [];
+          const finalPayments = persisted.payments ?? [];
 
           for (const line of lines) {
             const parts = line.split(",");
@@ -1226,17 +1243,17 @@ export const useStore = create<State>()(
             else if (modeRaw.toLowerCase() === "cash") mode = "cash";
 
             // Avoid duplicates
-            const isDuplicate = payments.some(
+            const isDuplicate = finalPayments.some(
               (p: any) =>
                 p.amount === amount &&
                 p.date === isoDate &&
                 p.mode === mode &&
-                customers.find((c: any) => c.id === p.customerId)?.name.toLowerCase() ===
+                finalCustomers.find((c: any) => c.id === p.customerId)?.name.toLowerCase() ===
                   name.toLowerCase(),
             );
             if (isDuplicate) continue;
 
-            let c = customers.find((x: any) => x.name.toLowerCase() === name.toLowerCase());
+            let c = finalCustomers.find((x: any) => x.name.toLowerCase() === name.toLowerCase());
             if (!c) {
               const isArtist = name.toLowerCase().includes("artist");
               c = {
@@ -1247,7 +1264,7 @@ export const useStore = create<State>()(
                 createdAt: timestamp,
                 updatedAt: timestamp,
               };
-              customers.push(c);
+              finalCustomers.push(c);
             }
 
             let service = "prepleat";
@@ -1281,7 +1298,7 @@ export const useStore = create<State>()(
               deliveredAt: timestamp,
               status: "delivered",
             };
-            bookings.push(booking);
+            finalBookings.push(booking);
 
             const pId = uid();
             const payment = {
@@ -1294,12 +1311,12 @@ export const useStore = create<State>()(
               note: "Imported Earning",
               updatedAt: timestamp,
             };
-            payments.push(payment);
+            finalPayments.push(payment);
           }
 
-          persisted.customers = customers;
-          persisted.bookings = bookings;
-          persisted.payments = payments;
+          persisted.customers = finalCustomers;
+          persisted.bookings = finalBookings;
+          persisted.payments = finalPayments;
         }
 
         return persisted;
