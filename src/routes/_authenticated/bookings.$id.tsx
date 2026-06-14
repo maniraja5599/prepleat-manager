@@ -240,7 +240,7 @@ function BookingDetail() {
       <div className="saree-gradient rounded-3xl p-5 text-primary-foreground card-shadow relative overflow-hidden">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/20 border border-white/10">
-            {booking.service}
+            {booking.service === "prepleat" ? "PRE" : booking.service}
           </span>
           <div className="flex items-center gap-1.5">
             {booking.billNumber && (
@@ -256,25 +256,25 @@ function BookingDetail() {
 
         <h1 className="text-2xl font-display font-bold mt-3 truncate">{customer?.name}</h1>
         
-        <div className="mt-1 flex items-center gap-1.5">
+        <div className="mt-1 flex items-center gap-2">
           <p className="text-xs opacity-90">{customer?.phone}</p>
           {phoneClean && (
-            <div className="flex gap-1 ml-0.5">
+            <div className="flex gap-1.5 ml-1">
               <a
                 href={`tel:${phoneClean}`}
-                className="size-5 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
+                className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
                 title="Call Customer"
               >
-                <Phone className="size-2.5 text-white" />
+                <Phone className="size-3 text-white" />
               </a>
               <a
                 href={`https://wa.me/${phoneClean}`}
                 target="_blank"
                 rel="noreferrer"
-                className="size-5 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
+                className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
                 title="WhatsApp Chat"
               >
-                <MessageCircle className="size-2.5 text-white" />
+                <MessageCircle className="size-3 text-white" />
               </a>
             </div>
           )}
@@ -773,7 +773,7 @@ function EditPanel({ booking, onCancel, onSave }: {
                 )}
               >
                 {active && <Check className="size-3.5 stroke-[3]" />}
-                {s}
+                {s === "prepleat" ? "PRE" : s}
               </button>
             );
           })}

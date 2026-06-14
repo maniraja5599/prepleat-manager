@@ -536,22 +536,22 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
               <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">{c?.name ?? "Unknown"}</span>
               {c?.phone && (
-                <span className="inline-flex gap-1 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                <span className="inline-flex gap-1.5 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
                   <a
                     href={`tel:${c.phone.replace(/\D/g, "")}`}
-                    className="size-5 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
                     title="Call Customer"
                   >
-                    <Phone className="size-2.5 text-muted-foreground" />
+                    <Phone className="size-3 text-muted-foreground" />
                   </a>
                   <a
                     href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="size-5 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
                     title="WhatsApp Chat"
                   >
-                    <MessageCircle className="size-2.5 text-muted-foreground" />
+                    <MessageCircle className="size-3 text-muted-foreground" />
                   </a>
                 </span>
               )}
@@ -559,7 +559,7 @@ const BookingRow = memo(function BookingRow({ b, customers, showDate }: { b: Ret
                 style={{ backgroundColor: tagColor }}
                 className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
               >
-                {b.service}
+                {b.service === "prepleat" ? "PRE" : b.service}
               </span>
               {b.billNumber && (
                 <span className="text-[8px] font-mono text-muted-foreground/70 shrink-0 bg-secondary/80 px-1 py-0.5 rounded">
