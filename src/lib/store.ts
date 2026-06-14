@@ -223,9 +223,9 @@ export const useStore = create<State>()(
         artistPrepleatPrice: 300,
         artistDrapePrice: 700,
         defaultMeasurements: [
-          { label: "P", value: 40 },
-          { label: "W", value: 32 },
-          { label: "H", value: 38 },
+          { label: "Pallu", value: 40 },
+          { label: "Waist", value: 32 },
+          { label: "Hip", value: 38 },
         ],
         showPaymentOnCalendar: false,
         calendarAmountDisplay: "none",
@@ -499,9 +499,9 @@ export const useStore = create<State>()(
           prepleatPrice: 350, drapePrice: 800,
           artistPrepleatPrice: 300, artistDrapePrice: 700,
           defaultMeasurements: [
-            { label: "P", value: 40 },
-            { label: "W", value: 32 },
-            { label: "H", value: 38 },
+            { label: "Pallu", value: 40 },
+            { label: "Waist", value: 32 },
+            { label: "Hip", value: 38 },
           ],
           showPaymentOnCalendar: false,
           calendarAmountDisplay: "none",
@@ -518,7 +518,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 11,
+      version: 12,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -532,11 +532,46 @@ export const useStore = create<State>()(
         if (typeof s.artistDrapePrice !== "number") s.artistDrapePrice = s.drapePrice ?? 800;
         if (Array.isArray(s.defaultMeasurements)) {
           const labels = s.defaultMeasurements.map((m: any) => m.label).join(",");
-          if (labels === "A,B,C") s.defaultMeasurements = [
-            { label: "P", value: 40 },
-            { label: "W", value: 32 },
-            { label: "H", value: 38 },
-          ];
+          if (labels === "A,B,C" || labels === "P,W,H") {
+            s.defaultMeasurements = [
+              { label: "Pallu", value: 40 },
+              { label: "Waist", value: 32 },
+              { label: "Hip", value: 38 },
+            ];
+          } else {
+            s.defaultMeasurements = s.defaultMeasurements.map((m: any) => {
+              if (m.label === "P") return { ...m, label: "Pallu" };
+              if (m.label === "W") return { ...m, label: "Waist" };
+              if (m.label === "H") return { ...m, label: "Hip" };
+              return m;
+            });
+          }
+        }
+        if (Array.isArray(persisted.bookings)) {
+          persisted.bookings = persisted.bookings.map((b: any) => {
+            if (Array.isArray(b.measurements)) {
+              b.measurements = b.measurements.map((m: any) => {
+                if (m.label === "P") return { ...m, label: "Pallu" };
+                if (m.label === "W") return { ...m, label: "Waist" };
+                if (m.label === "H") return { ...m, label: "Hip" };
+                return m;
+              });
+            }
+            return b;
+          });
+        }
+        if (Array.isArray(persisted.trash)) {
+          persisted.trash = persisted.trash.map((t: any) => {
+            if (t.booking && Array.isArray(t.booking.measurements)) {
+              t.booking.measurements = t.booking.measurements.map((m: any) => {
+                if (m.label === "P") return { ...m, label: "Pallu" };
+                if (m.label === "W") return { ...m, label: "Waist" };
+                if (m.label === "H") return { ...m, label: "Hip" };
+                return m;
+              });
+            }
+            return t;
+          });
         }
         if (!Array.isArray(s.occasionPresets)) {
           s.occasionPresets = ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"];

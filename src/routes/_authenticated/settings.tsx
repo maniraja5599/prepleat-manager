@@ -908,12 +908,12 @@ function SettingsPage() {
         open={confirmAction === "resetPricing"}
         onOpenChange={(v) => !v && setConfirmAction(null)}
         title="Reset pricing & measurements?"
-        description="Restores default prices (₹350 / ₹800) and default P/W/H measurements."
+        description="Restores default prices (₹350 / ₹800) and default Pallu/Waist/Hip measurements."
         confirmLabel="Reset"
         onConfirm={() => {
           update({
             prepleatPrice: 350, drapePrice: 800,
-            defaultMeasurements: [{ label: "P", value: 40 }, { label: "W", value: 32 }, { label: "H", value: 38 }],
+            defaultMeasurements: [{ label: "Pallu", value: 40 }, { label: "Waist", value: 32 }, { label: "Hip", value: 38 }],
             defaultPaymentMode: "gpay",
           });
           toast.success("Defaults restored");
