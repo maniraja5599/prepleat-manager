@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/store";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Search, IndianRupee, SlidersHorizontal, X as XIcon, History, CheckSquare, Trash2, Calendar, ArrowUpDown, Filter, Sparkles, Wallet, Layers, Clock, CheckCircle2, AlertCircle } from "lucide-react";
@@ -42,6 +42,17 @@ function BookingsPage() {
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  
+  // Ticker Index and interval for scrolling stats ticker in header
+  const [tickerIndex, setTickerIndex] = useState(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTickerIndex((prev) => (prev + 1) % 2);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
   const activeFiltersCount = (pay !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0) + (sort !== "delivery" ? 1 : 0);
 
   const getPaymentLabel = (p: PayFilter) => p === "all" ? "All Payments" : p === "due" ? "Due" : "Paid";
@@ -167,14 +178,82 @@ function BookingsPage() {
   const collected = list.reduce((s, b) => s + b.advancePaid, 0);
   const pending = list.reduce((s, b) => s + totalDue(b), 0);
 
+  const tickerItems = useMemo(() => {
+    return [
+      { label: "Collected", value: collected, color: "text-success" },
+      { label: "Pending", value: pending, color: pending > 0 ? "text-destructive" : "text-muted-foreground" },
+    ];
+  }, [collected, pending]);
+
   return (
-    <AppShell title="Bookings">
-      {/* Slim stat chips */}
-      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar items-center">
-        <StatChip label="Total" value={String(list.length)} />
-        <StatChip label="Collected" value={fmtINR(collected)} tone="success" />
-        <StatChip label="Pending" value={fmtINR(pending)} tone={pending > 0 ? "danger" : "muted"} />
-        <div className="flex gap-1.5 items-center shrink-0 ml-auto">
+    <AppShell>
+      {/* Sticky Header block (Title + Ticker + Tab Bar) */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
+        <div className="flex items-center justify-between gap-4 h-9">
+          <div>
+            <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">Bookings</h1>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {counts.active} active · {counts.history} completed
+            </p>
+          </div>
+          
+          {/* Scrolling Stats Ticker */}
+          <div className="h-7 overflow-hidden relative min-w-[110px]">
+            <div 
+              className="transition-transform duration-500 ease-in-out" 
+              style={{ transform: `translateY(-${tickerIndex * 28}px)` }}
+            >
+              {tickerItems.map((item, idx) => (
+                <div key={idx} className="h-7 flex flex-col items-end justify-center">
+                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">{item.label}</span>
+                  <span className={cn("text-xs font-extrabold tabular-nums mt-0.5 leading-none", item.color)}>{fmtINR(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Horizontal Scrollable Filter Row */}
+        <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar items-center pb-0.5">
+          {([
+            { id: "active" as const, label: "Active", count: counts.active },
+            { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
+            { id: "drape" as const, label: "Direct Drape", count: counts.drape },
+            { id: "artist" as const, label: "Artist", count: counts.artist },
+            { id: "history" as const, label: "History", count: counts.history },
+          ]).map((item) => {
+            const isActive = mainFilter === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setMainFilter(item.id)}
+                className={cn(
+                  "shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95",
+                  isActive
+                    ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                    : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                )}
+              >
+                <span>{item.label}</span>
+                <span className={cn(
+                  "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  {item.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Action Buttons Bar */}
+      <div className="flex gap-1.5 mb-3 items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {list.length} bookings matched
+        </span>
+        
+        <div className="flex gap-1.5 items-center">
           <button
             onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
             className={cn(
@@ -409,38 +488,7 @@ function BookingsPage() {
         </Sheet>
       </div>
 
-      {/* Horizontal Scrollable Filter Row */}
-      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar items-center pb-1">
-        {([
-          { id: "active" as const, label: "Active", count: counts.active },
-          { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
-          { id: "drape" as const, label: "Direct Drape", count: counts.drape },
-          { id: "artist" as const, label: "Artist", count: counts.artist },
-          { id: "history" as const, label: "History", count: counts.history },
-        ]).map((item) => {
-          const isActive = mainFilter === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setMainFilter(item.id)}
-              className={cn(
-                "shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5",
-                isActive
-                  ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                  : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-              )}
-            >
-              <span>{item.label}</span>
-              <span className={cn(
-                "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-                isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-              )}>
-                {item.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Removed duplicate tabs */}
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
