@@ -184,7 +184,7 @@ function CustomersPage() {
             )}
           >
             <TrendingUp className="size-2.5" />
-            Top Customer
+            Top
           </button>
         </div>
         
