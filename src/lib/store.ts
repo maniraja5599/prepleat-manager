@@ -230,7 +230,7 @@ export const useStore = create<State>()(
         showPaymentOnCalendar: false,
         calendarAmountDisplay: "none",
         businessName: "Eyas Saree Drapist",
-        theme: "maroon",
+        theme: "royal",
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
         occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
@@ -506,7 +506,7 @@ export const useStore = create<State>()(
           showPaymentOnCalendar: false,
           calendarAmountDisplay: "none",
           businessName: "Eyas Saree Drapist",
-          theme: "maroon",
+          theme: "royal",
           defaultPaymentMode: "gpay",
           websiteUrl: "https://eyasdrapist.shop/",
           occasionPresets: ["Bride", "Bridesmaid", "Engagement", "Reception", "Baby ceremony", "Function"],
@@ -518,10 +518,13 @@ export const useStore = create<State>()(
     }),
     {
       name: "saree-studio-v1",
-      version: 12,
+      version: 13,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
+        if (s.theme === "maroon" || s.theme === undefined) {
+          s.theme = "royal";
+        }
         if (s.calendarAmountDisplay === undefined) {
           s.calendarAmountDisplay = s.showPaymentOnCalendar ? "pending" : "none";
         }

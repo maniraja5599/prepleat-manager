@@ -30,10 +30,10 @@ const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] =
 ];
 
 const THEMES: { id: ThemeName; label: string; bg: string; fg: string; card: string; primary: string; accent: string; border: string }[] = [
+  { id: "royal",    label: "Royal Violet", bg: "#f0eefa", fg: "#1c1340", card: "#ffffff", primary: "#5b3fc8", accent: "#cfc5f0", border: "#dcd5ee" },
   { id: "maroon",   label: "Maroon Ivory", bg: "#fdf8ef", fg: "#3a1010", card: "#ffffff", primary: "#7a1f2a", accent: "#e8c878", border: "#e7dccb" },
   { id: "midnight", label: "Midnight",     bg: "#1a1014", fg: "#f5ecd9", card: "#2a1c20", primary: "#c5483f", accent: "#5a3a35", border: "#3a2c30" },
   { id: "emerald",  label: "Emerald",      bg: "#eef7f1", fg: "#102a1c", card: "#ffffff", primary: "#1f6b4a", accent: "#bfe3cc", border: "#d4e7da" },
-  { id: "royal",    label: "Royal Violet", bg: "#f0eefa", fg: "#1c1340", card: "#ffffff", primary: "#5b3fc8", accent: "#cfc5f0", border: "#dcd5ee" },
   { id: "rose",     label: "Rose Pink",    bg: "#fdeef3", fg: "#3a1024", card: "#ffffff", primary: "#c9457e", accent: "#f4c4d6", border: "#eed4dd" },
   { id: "sand",     label: "Sand Desert",  bg: "#f5ecd9", fg: "#3a2614", card: "#fdf6e8", primary: "#8a5a2a", accent: "#dcc299", border: "#dcc8a8" },
   { id: "charcoal", label: "Charcoal",     bg: "#1c1c1c", fg: "#f5f5f5", card: "#2a2a2a", primary: "#d4a24e", accent: "#3a342a", border: "#3a3a3a" },
@@ -606,12 +606,12 @@ function SettingsPage() {
               {settings.theme === "custom" && (
                 <button
                   onClick={() => {
-                    update({ customColors: undefined, customPrimary: undefined, theme: "maroon" });
+                    update({ customColors: undefined, customPrimary: undefined, theme: "royal" });
                     toast.success("Custom theme reset to default", { duration: 1200 });
                   }}
                   className="mt-4 text-[11px] text-muted-foreground font-semibold hover:text-foreground underline cursor-pointer"
                 >
-                  Reset to Maroon Ivory
+                  Reset to Royal Violet
                 </button>
               )}
             </div>
@@ -895,10 +895,10 @@ function SettingsPage() {
         open={confirmAction === "resetTheme"}
         onOpenChange={(v) => !v && setConfirmAction(null)}
         title="Reset theme to default?"
-        description="Switches back to Maroon Ivory and clears custom colours."
+        description="Switches back to Royal Violet and clears custom colours."
         confirmLabel="Reset"
         onConfirm={() => {
-          update({ theme: "maroon", customPrimary: undefined, customColors: undefined });
+          update({ theme: "royal", customPrimary: undefined, customColors: undefined });
           toast.success("Theme reset");
           setConfirmAction(null);
         }}
