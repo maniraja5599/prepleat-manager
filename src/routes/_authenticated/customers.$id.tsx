@@ -363,6 +363,16 @@ function CustomerDetail() {
         </div>
       )}
 
+      {customer.kind === "client" && (
+        <Link
+          to="/new"
+          search={{ customerId: customer.id }}
+          className="w-full saree-gradient text-white py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition card-shadow mt-3 text-center text-sm shadow-md"
+        >
+          📅 Book Appointment / Order
+        </Link>
+      )}
+
       <div className="grid grid-cols-2 gap-2 mt-3">
         <button
           onClick={sendWhatsApp}

@@ -55,6 +55,7 @@ const isValidIndianMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (s: Record<string, unknown>) => ({
     date: typeof s.date === "string" ? s.date : undefined,
+    customerId: typeof s.customerId === "string" ? s.customerId : undefined,
   }),
   head: () => ({ meta: [{ title: "New Booking — Eyas Saree Drapist" }] }),
   component: NewBooking,
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/_authenticated/new")({
 
 function NewBooking() {
   const navigate = useNavigate();
-  const { date: presetDate } = Route.useSearch();
+  const { date: presetDate, customerId: presetCustomerId } = Route.useSearch();
   const settings = useStore((s) => s.settings);
   const allCustomers = useStore((s) => s.customers);
   const customers = useMemo(
@@ -177,22 +178,37 @@ function NewBooking() {
     setNewAddress("");
     setNameFocus(false);
 
-    // Auto-load measurements from their last booking if available
-    const custBookings = bookings.filter((b) => b.customerId === c.id);
-    if (custBookings.length > 0) {
-      const lastBooking = [...custBookings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-      if (lastBooking.measurements && lastBooking.measurements.length > 0) {
-        setMeasurements(lastBooking.measurements);
-        setShowMeasure(true);
+    if (c.measurements && c.measurements.length > 0) {
+      setMeasurements(c.measurements);
+      setShowMeasure(true);
+    } else {
+      // Auto-load measurements from their last booking if available
+      const custBookings = bookings.filter((b) => b.customerId === c.id);
+      if (custBookings.length > 0) {
+        const lastBooking = [...custBookings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+        if (lastBooking.measurements && lastBooking.measurements.length > 0) {
+          setMeasurements(lastBooking.measurements);
+          setShowMeasure(true);
+        } else {
+          setMeasurements(settings.defaultMeasurements);
+          setShowMeasure(false);
+        }
       } else {
         setMeasurements(settings.defaultMeasurements);
         setShowMeasure(false);
       }
-    } else {
-      setMeasurements(settings.defaultMeasurements);
-      setShowMeasure(false);
     }
   };
+
+  // Pre-load customer if search param customerId is provided
+  useEffect(() => {
+    if (presetCustomerId && customers.length > 0) {
+      const cust = customers.find((c) => c.id === presetCustomerId);
+      if (cust) {
+        pickCustomer(cust);
+      }
+    }
+  }, [presetCustomerId, customers]);
 
   const handlePasteClick = async () => {
     try {
