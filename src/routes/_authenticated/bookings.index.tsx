@@ -270,7 +270,6 @@ function BookingsPage() {
             { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
             { id: "drape" as const, label: "Direct Drape", count: counts.drape },
             { id: "artist" as const, label: "Artist", count: counts.artist },
-            { id: "history" as const, label: "History", count: counts.history },
           ].map((item) => {
             const isActive = mainFilter === item.id;
             return (
@@ -308,13 +307,39 @@ function BookingsPage() {
         </span>
 
         <div className="flex gap-1.5 items-center">
+          {!selectMode && (
+            <button
+              onClick={() => {
+                setMainFilter((curr) => (curr === "history" ? "active" : "history"));
+              }}
+              className={cn(
+                "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
+                mainFilter === "history"
+                  ? "bg-primary text-primary-foreground border border-primary shadow-sm"
+                  : "bg-card border border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
+              )}
+            >
+              <History className="size-3.5" /> History
+              <span
+                className={cn(
+                  "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+                  mainFilter === "history"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {counts.history}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               setSelectMode((v) => !v);
               setSelected(new Set());
             }}
             className={cn(
-              "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+              "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
               selectMode
                 ? "bg-primary text-primary-foreground"
                 : "bg-card border border-border text-muted-foreground",
@@ -322,6 +347,7 @@ function BookingsPage() {
           >
             <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
           </button>
+
           {!selectMode && (
             <Link
               to="/"
