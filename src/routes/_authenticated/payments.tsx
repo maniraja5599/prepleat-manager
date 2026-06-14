@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { IndianRupee, TrendingUp, AlertCircle, Wallet, Download, FileText, Sparkles, TrendingDown, Users, Crown, CalendarCheck, ArrowRight, Plus, Trash2, Receipt, PieChart, Tag, X } from "lucide-react";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, ComposedChart } from "recharts";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -991,6 +991,35 @@ function SummaryView(p: {
   // Dynamically switch data based on active chartMode
   const chartData = p.trend12;
 
+  // Calculate domains for allTimeTrend composed chart to keep bars small at the bottom
+  const allTimeDomains = useMemo(() => {
+    if (!p.allTimeTrend || p.allTimeTrend.length === 0) {
+      return { minNet: 0, maxNet: 1000, maxBarStacked: 1000 };
+    }
+    
+    let minNet = Infinity;
+    let maxNet = -Infinity;
+    let maxBarStacked = 0;
+    
+    p.allTimeTrend.forEach((t) => {
+      if (t.net < minNet) minNet = t.net;
+      if (t.net > maxNet) maxNet = t.net;
+      
+      const stacked = t.amount + t.expense;
+      if (stacked > maxBarStacked) maxBarStacked = stacked;
+    });
+    
+    const netRange = maxNet - minNet;
+    const netPadding = netRange === 0 ? 1000 : netRange * 0.15;
+    const safeMaxBarStacked = maxBarStacked || 1000;
+    
+    return {
+      minNet: minNet < 0 ? minNet - netPadding : 0,
+      maxNet: maxNet + netPadding,
+      maxBarStacked: safeMaxBarStacked * 3.5,
+    };
+  }, [p.allTimeTrend]);
+
   // Memos for dynamic helper metrics under the chart
   const metrics = useMemo(() => {
     if (chartMode === "12months") {
@@ -1108,7 +1137,7 @@ function SummaryView(p: {
               <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No transaction data yet</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={p.allTimeTrend} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={p.allTimeTrend} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.4} />
                   <XAxis
                     dataKey="month"
@@ -1116,14 +1145,27 @@ function SummaryView(p: {
                     tickLine={false}
                     tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                   />
-                  <YAxis hide />
+                  {/* Dual hidden Y-axes to control scaling and keep bars small at the bottom */}
+                  <YAxis yAxisId="net" hide domain={[allTimeDomains.minNet, allTimeDomains.maxNet]} />
+                  <YAxis yAxisId="bars" hide domain={[0, allTimeDomains.maxBarStacked]} />
+                  
                   <Tooltip
                     contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
-                    formatter={(v: number, name: string) => [fmtINR(v), name === "amount" ? "Income" : "Expense"]}
+                    formatter={(v: number, name: string) => {
+                      const label = 
+                        name === "amount" ? "Income" : 
+                        name === "expense" ? "Expense" : 
+                        name === "net" ? "Net Profit" : name;
+                      return [fmtINR(v), label];
+                    }}
                   />
-                  <Line type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                </LineChart>
+                  {/* Stacked Income & Expense bars at the bottom using yAxisId="bars" */}
+                  <Bar yAxisId="bars" dataKey="amount" fill="#10b981" stackId="a" barSize={10} opacity={0.8} />
+                  <Bar yAxisId="bars" dataKey="expense" fill="#ef4444" stackId="a" barSize={10} radius={[3, 3, 0, 0]} opacity={0.8} />
+                  
+                  {/* Net Profit Line chart overlay using yAxisId="net" */}
+                  <Line yAxisId="net" type="monotone" dataKey="net" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 2.5 }} activeDot={{ r: 4.5 }} />
+                </ComposedChart>
               </ResponsiveContainer>
             )}
           </div>
