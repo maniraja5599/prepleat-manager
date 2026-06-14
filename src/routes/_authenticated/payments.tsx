@@ -347,8 +347,14 @@ function PaymentsPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                "py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition",
-                active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground",
+                "py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer",
+                active
+                  ? t.id === "income"
+                    ? "bg-success text-white shadow"
+                    : t.id === "expenses"
+                      ? "bg-destructive text-white shadow"
+                      : "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:bg-secondary/40",
               )}
             >
               <Icon className="size-3.5" /> {t.label}
@@ -382,23 +388,21 @@ function PaymentsPage() {
         />
       )}
 
-      {/* Floating Action Buttons for Income & Expense */}
-      <div className="fixed bottom-24 right-4 z-30 flex gap-2 items-center">
-        <button
-          onClick={() => setAddIncomeOpen(true)}
-          className="px-3.5 py-2.5 bg-success hover:bg-success/90 text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
-          aria-label="Add extra income"
-        >
-          <Plus className="size-3.5" /> Income
-        </button>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="px-3.5 py-2.5 bg-destructive hover:bg-destructive/90 text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
-          aria-label="Add expense"
-        >
-          <Plus className="size-3.5" /> Expense
-        </button>
-      </div>
+      {/* Floating Action Buttons for Income (Left) & Expense (Right) */}
+      <button
+        onClick={() => setAddIncomeOpen(true)}
+        className="fixed bottom-24 left-4 z-30 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1 active:scale-95 transition cursor-pointer"
+        aria-label="Add extra income"
+      >
+        <Plus className="size-3" /> Income
+      </button>
+      <button
+        onClick={() => setAddOpen(true)}
+        className="fixed bottom-24 right-4 z-30 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg flex items-center gap-1 active:scale-95 transition cursor-pointer"
+        aria-label="Add expense"
+      >
+        <Plus className="size-3" /> Expense
+      </button>
 
       {addOpen && (
         <AddExpenseSheet
