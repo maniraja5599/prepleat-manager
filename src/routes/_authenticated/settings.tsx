@@ -160,10 +160,16 @@ function SettingsPage() {
   };
 
   return (
-    <AppShell wide title="Settings" subtitle="Changes save instantly">
+    <AppShell wide>
+      {/* Sticky Header block (Title + Subtitle) */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
+        <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">Settings</h1>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Changes save instantly</p>
+      </div>
+
       <div className="grid gap-3 grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
         {/* Left rail — icon-only on mobile, full list on desktop */}
-        <nav className="sticky top-16 self-start z-30">
+        <nav className="sticky top-[calc(env(safe-area-inset-top,0px)+7.75rem)] self-start z-30">
           <ul className="bg-card card-shadow rounded-2xl p-1.5 sm:p-2 space-y-1">
             {TABS.map((t) => {
               const active = tab === t.id;
