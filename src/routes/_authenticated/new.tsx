@@ -1031,14 +1031,24 @@ function NewBooking() {
           <>
             <div className="flex justify-around items-start py-3 gap-2 flex-wrap mt-2 border-t border-border">
               {measurements.map((m, i) => (
-                <ScrollNumber
-                  key={i}
-                  label={m.label}
-                  value={m.value}
-                  onChange={(v) =>
-                    setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
-                  }
-                />
+                <div key={i} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMeasurements(measurements.filter((_, idx) => idx !== i));
+                    }}
+                    className="absolute -top-1.5 -right-1.5 z-30 size-4 rounded-full bg-destructive/95 text-white flex items-center justify-center cursor-pointer shadow active:scale-95 transition"
+                  >
+                    <X className="size-2.5" strokeWidth={3} />
+                  </button>
+                  <ScrollNumber
+                    label={m.label}
+                    value={m.value}
+                    onChange={(v) =>
+                      setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                    }
+                  />
+                </div>
               ))}
             </div>
 
@@ -1063,7 +1073,7 @@ function NewBooking() {
                   onClick={handleAddField}
                   className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
                 >
-                  Add
+                  Save
                 </button>
                 <button
                   type="button"
@@ -1094,7 +1104,7 @@ function NewBooking() {
           </>
         ) : (
           <p className="text-xs text-muted-foreground mt-2">
-            Turn on to record blouse measurements for this customer.
+            Turn on to record body measurements for this customer.
           </p>
         )}
       </section>

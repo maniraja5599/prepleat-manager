@@ -1098,7 +1098,7 @@ function EditPanel({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Blouse Measurements
+              Body Measurements
             </p>
             <p className="text-[9px] text-muted-foreground mt-0.5">
               Toggle to record size chart (inch)
@@ -1127,14 +1127,24 @@ function EditPanel({
           <div className="pt-2 border-t border-border/30">
             <div className="flex justify-around items-start py-2 gap-2 flex-wrap bg-background/50 rounded-xl border border-border/10">
               {measurements.map((m, i) => (
-                <ScrollNumber
-                  key={i}
-                  label={m.label}
-                  value={m.value}
-                  onChange={(v) =>
-                    setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
-                  }
-                />
+                <div key={i} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMeasurements(measurements.filter((_, idx) => idx !== i));
+                    }}
+                    className="absolute -top-1.5 -right-1.5 z-30 size-4 rounded-full bg-destructive/95 text-white flex items-center justify-center cursor-pointer shadow active:scale-95 transition"
+                  >
+                    <X className="size-2.5" strokeWidth={3} />
+                  </button>
+                  <ScrollNumber
+                    label={m.label}
+                    value={m.value}
+                    onChange={(v) =>
+                      setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                    }
+                  />
+                </div>
               ))}
             </div>
 
@@ -1159,7 +1169,7 @@ function EditPanel({
                   onClick={handleAddField}
                   className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
                 >
-                  Add
+                  Save
                 </button>
                 <button
                   type="button"
