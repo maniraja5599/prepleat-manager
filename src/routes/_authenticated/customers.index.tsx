@@ -31,6 +31,16 @@ function CustomersPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
 
+  // States and interval for vertical scrolling stats ticker in header
+  const [tickerIndex, setTickerIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTickerIndex((prev) => (prev + 1) % 2);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
   const activeFiltersCount = (dueOnly ? 1 : 0) + (sortBy !== "due" ? 1 : 0);
   const balanceSummary = dueOnly ? "Only Outstanding Balance" : "All Accounts";
   const getSortLabel = (s: typeof sortBy) => s === "due" ? "Balance Due" : s === "orders" ? "Orders Count" : "Alphabetical";
@@ -66,36 +76,113 @@ function CustomersPage() {
     return { count: list.length, totalDueAll, totalOrders, withDue, totalCollectedAll };
   }, [list]);
 
-  return (
-    <AppShell
-      title={tab === "client" ? "Clients" : "Artists"}
-      subtitle={`${tab === "client" ? clientCount : artistCount} ${tab === "client" ? "clients" : "artists"}`}
-    >
-      {/* Slim stats chip bar (mirrors bookings page exactly) */}
-      <div className="flex gap-1.5 mb-3 overflow-x-auto no-scrollbar items-center">
-        <StatChip label="Total" value={String(visibleSummary.count)} />
-        <StatChip label="Collected" value={fmtINR(visibleSummary.totalCollectedAll)} tone="success" />
-        <StatChip label="Outstanding" value={fmtINR(visibleSummary.totalDueAll)} tone={visibleSummary.totalDueAll > 0 ? "danger" : "muted"} />
-        
-        <button
-          onClick={() => setShowAdd((v) => !v)}
-          className={cn(
-            "shrink-0 ml-auto rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-            showAdd ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
-          )}
-        >
-          <Plus className="size-3.5" /> Add
-        </button>
+  const tickerItems = useMemo(() => {
+    return [
+      { label: "Collected", value: visibleSummary.totalCollectedAll, color: "text-success" },
+      { label: "Outstanding", value: visibleSummary.totalDueAll, color: visibleSummary.totalDueAll > 0 ? "text-destructive" : "text-muted-foreground" },
+    ];
+  }, [visibleSummary]);
 
-        <button
-          onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
-          className={cn(
-            "shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
-            selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
-          )}
-        >
-          <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
-        </button>
+  return (
+    <AppShell>
+      {/* Sticky Header block (Title + Ticker + Tab Bar) */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
+        <div className="flex items-center justify-between gap-4 h-9">
+          <div>
+            <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">Customers</h1>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{clientCount} clients · {artistCount} artists</p>
+          </div>
+          
+          {/* Scrolling Stats Ticker */}
+          <div className="h-7 overflow-hidden relative min-w-[110px]">
+            <div 
+              className="transition-transform duration-500 ease-in-out" 
+              style={{ transform: `translateY(-${tickerIndex * 28}px)` }}
+            >
+              {tickerItems.map((item, idx) => (
+                <div key={idx} className="h-7 flex flex-col items-end justify-center">
+                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">{item.label}</span>
+                  <span className={cn("text-xs font-extrabold tabular-nums mt-0.5 leading-none", item.color)}>{fmtINR(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Buttons (Clients / Artists) */}
+        <div className="grid grid-cols-2 gap-1 bg-secondary/60 p-1 rounded-full mt-2.5">
+          <button
+            onClick={() => {
+              setTab("client");
+              setSelected(new Set());
+              setSelectMode(false);
+            }}
+            className={cn(
+              "py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 active:scale-95",
+              tab === "client"
+                ? "bg-card text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <span>Clients</span>
+            <span className={cn(
+              "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+              tab === "client" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"
+            )}>
+              {clientCount}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setTab("artist");
+              setSelected(new Set());
+              setSelectMode(false);
+            }}
+            className={cn(
+              "py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 active:scale-95",
+              tab === "artist"
+                ? "bg-card text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <span>Artists</span>
+            <span className={cn(
+              "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
+              tab === "artist" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"
+            )}>
+              {artistCount}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Action Buttons Bar */}
+      <div className="flex gap-1.5 mb-3 items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {list.length} {tab === "client" ? "clients" : "artists"} matched
+        </span>
+        
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setShowAdd((v) => !v)}
+            className={cn(
+              "rounded-full px-3 py-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+              showAdd ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+            )}
+          >
+            <Plus className="size-3.5" /> Add
+          </button>
+
+          <button
+            onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
+            className={cn(
+              "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer",
+              selectMode ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground",
+            )}
+          >
+            <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
+          </button>
+        </div>
       </div>
 
 
@@ -234,51 +321,7 @@ function CustomersPage() {
         </Sheet>
       </div>
 
-      {/* Client / Artist Tabs */}
-      <div className="grid grid-cols-2 gap-1 bg-secondary/60 p-1 rounded-full mb-3">
-        <button
-          onClick={() => {
-            setTab("client");
-            setSelected(new Set());
-            setSelectMode(false);
-          }}
-          className={cn(
-            "py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer text-center flex items-center justify-center gap-1.5",
-            tab === "client"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <span>Clients</span>
-          <span className={cn(
-            "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-            tab === "client" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"
-          )}>
-            {clientCount}
-          </span>
-        </button>
-        <button
-          onClick={() => {
-            setTab("artist");
-            setSelected(new Set());
-            setSelectMode(false);
-          }}
-          className={cn(
-            "py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer text-center flex items-center justify-center gap-1.5",
-            tab === "artist"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <span>Artists</span>
-          <span className={cn(
-            "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-            tab === "artist" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"
-          )}>
-            {artistCount}
-          </span>
-        </button>
-      </div>
+      {/* Removed duplicate tabs */}
 
       {selectMode && (
         <div className="bg-card card-shadow rounded-2xl p-2 mb-3 flex items-center gap-2">
