@@ -1182,11 +1182,29 @@ function NewBooking() {
           onClick={() => setReviewOpen(false)}
         >
           <div
-            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl"
+            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-display font-semibold mb-1">Quick review</h3>
-            <p className="text-xs text-muted-foreground mb-4">Confirm details before saving.</p>
+            <div className="saree-gradient -mx-5 -mt-5 px-5 py-4 text-primary-foreground mb-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] uppercase tracking-wider opacity-90 font-black">
+                  Quick Review
+                </span>
+                <span className="text-[9px] uppercase tracking-wider opacity-90 font-black bg-white/20 px-2 py-0.5 rounded-full">
+                  {bookingSource === "artist" ? "Artist" : "Direct"}
+                </span>
+              </div>
+              <h4 className="text-lg font-display font-extrabold truncate mt-1.5 leading-tight">
+                {bookingSource === "artist" 
+                  ? (artists.find((a) => a.id === artistId)?.name ?? "Artist")
+                  : (selectedCust?.name || newName || "Walk-in Customer")}
+              </h4>
+              {bookingSource === "artist" && (selectedCust?.name || newName) && (
+                <p className="text-xs opacity-90 mt-0.5 truncate">
+                  Client: <span className="font-bold">{selectedCust?.name || newName}</span>
+                </p>
+              )}
+            </div>
             <ReviewRow label="Service" value={service === "prepleat" ? "PrePleat" : "Drape"} />
             <ReviewRow label="Customer" value={selectedCust?.name || newName} />
             <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
