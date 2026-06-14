@@ -392,10 +392,12 @@ function PaymentsPage() {
       {/* Floating Action Button */}
       <button
         onClick={() => setAskTypeOpen(true)}
-        className="fixed bottom-24 right-4 z-30 size-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center active:scale-95 transition cursor-pointer"
+        className="fixed bottom-28 right-4 z-30 h-10 px-3.5 bg-primary text-primary-foreground shadow-xl rounded-full flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
         aria-label="Add transaction"
       >
-        <Plus className="size-6" />
+        <Plus className="size-4" />
+        <span className="opacity-40 font-semibold">/</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider">Inc/Exp</span>
       </button>
 
       {/* Transaction Type Selection Dialog */}
@@ -911,7 +913,7 @@ function AddExpenseSheet({
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-bold text-lg">Add expense</h3>
+          <h3 className="font-display font-bold text-lg text-destructive">Expense</h3>
           <button onClick={onClose} className="size-8 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
         </div>
 
@@ -1007,7 +1009,7 @@ function AddIncomeSheet({
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-bold text-lg">Add extra income</h3>
+          <h3 className="font-display font-bold text-lg text-success">Income</h3>
           <button onClick={onClose} className="size-9 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
         </div>
 
