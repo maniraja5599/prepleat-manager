@@ -41,7 +41,7 @@ function PaymentsPage() {
   const addExtraIncome = useStore((s) => s.addExtraIncome);
   const deleteExtraIncome = useStore((s) => s.deleteExtraIncome);
 
-  const [tab, setTab] = useState<TabId>("income");
+  const [tab, setTab] = useState<TabId>("summary");
   const [exportOpen, setExportOpen] = useState(false);
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
   const [addTransactionType, setAddTransactionType] = useState<"income" | "expense">("income");
@@ -155,6 +155,77 @@ function PaymentsPage() {
   const recentExpenses = useMemo(() => {
     return [...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 25);
   }, [expenses]);
+
+  // Split total income by source (Services + Extra Income categories)
+  const incomeByCategory = useMemo(() => {
+    const m = new Map<string, number>();
+    payments.forEach((p) => {
+      const b = bookings.find((x) => x.id === p.bookingId);
+      const key = b?.service ?? "Draping Service";
+      m.set(key, (m.get(key) ?? 0) + p.amount);
+    });
+    extraIncomes.forEach((e) => {
+      m.set(e.category, (m.get(e.category) ?? 0) + e.amount);
+    });
+    return Array.from(m.entries())
+      .map(([cat, amount]) => ({ cat, amount, pct: lifetime > 0 ? Math.round((amount / lifetime) * 100) : 0 }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [payments, extraIncomes, bookings, lifetime]);
+
+  // Chronological stream of recent transactions (Income + Expense combined)
+  const unifiedRecentTransactions = useMemo(() => {
+    const list: Array<{
+      id: string;
+      type: "income" | "expense";
+      amount: number;
+      category: string;
+      note?: string;
+      date: string;
+      mode?: PaymentMode;
+      customerName?: string;
+    }> = [];
+
+    payments.forEach((p) => {
+      const c = customers.find((x) => x.id === p.customerId);
+      const b = bookings.find((x) => x.id === p.bookingId);
+      list.push({
+        id: p.id,
+        type: "income",
+        amount: p.amount,
+        category: b?.service ?? "Booking Payment",
+        note: p.note,
+        date: p.date,
+        mode: p.mode,
+        customerName: c?.name,
+      });
+    });
+
+    extraIncomes.forEach((e) => {
+      list.push({
+        id: e.id,
+        type: "income",
+        amount: e.amount,
+        category: e.category,
+        note: e.note,
+        date: e.date,
+        mode: e.mode,
+      });
+    });
+
+    expenses.forEach((e) => {
+      list.push({
+        id: e.id,
+        type: "expense",
+        amount: e.amount,
+        category: e.category,
+        note: e.note,
+        date: e.date,
+        mode: e.mode as PaymentMode,
+      });
+    });
+
+    return list.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+  }, [payments, extraIncomes, expenses, customers, bookings]);
 
   // Exports
   const downloadBlob = (data: BlobPart, filename: string, type: string) => {
@@ -333,15 +404,35 @@ function PaymentsPage() {
         </div>
       </div>
 
+      {/* Dynamic Keyframe Animations for Sequential Icon Bounce */}
+      <style>{`
+        @keyframes dynamic-pump {
+          0% { transform: scale(1); }
+          25% { transform: scale(1.35); }
+          50% { transform: scale(0.9); }
+          75% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+        .animate-pump-income {
+          animation: dynamic-pump 0.7s cubic-bezier(0.25, 0.8, 0.25, 1) 0.3s both;
+        }
+        .animate-pump-expense {
+          animation: dynamic-pump 0.7s cubic-bezier(0.25, 0.8, 0.25, 1) 0.6s both;
+        }
+      `}</style>
+
       {/* TAB BAR */}
       <div className="bg-card card-shadow rounded-full p-1 mb-3 grid grid-cols-3 gap-1 sticky top-2 z-20">
         {([
+          { id: "summary", label: "Summary", icon: PieChart },
           { id: "income", label: "Income", icon: Wallet },
           { id: "expenses", label: "Expenses", icon: Receipt },
-          { id: "summary", label: "Summary", icon: PieChart },
         ] as const).map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
+          const animationClass =
+            t.id === "income" ? "animate-pump-income" :
+            t.id === "expenses" ? "animate-pump-expense" : "";
           return (
             <button
               key={t.id}
@@ -357,7 +448,7 @@ function PaymentsPage() {
                   : "text-muted-foreground hover:bg-secondary/40",
               )}
             >
-              <Icon className="size-3.5" /> {t.label}
+              <Icon className={cn("size-3.5", animationClass)} /> {t.label}
             </button>
           );
         })}
@@ -389,6 +480,8 @@ function PaymentsPage() {
           lifetime={lifetime} totalExpense={totalExpense} netProfit={netProfit}
           totalPending={totalPending} totalBilled={totalBilled} collectionRate={collectionRate}
           trend12={trend12} expenseByCategory={expenseByCategory}
+          incomeByCategory={incomeByCategory}
+          unifiedRecentTransactions={unifiedRecentTransactions}
         />
       )}
 
@@ -811,6 +904,17 @@ function SummaryView(p: {
   totalPending: number; totalBilled: number; collectionRate: number;
   trend12: { month: string; amount: number; expense: number; net: number }[];
   expenseByCategory: { cat: string; amount: number; pct: number }[];
+  incomeByCategory: { cat: string; amount: number; pct: number }[];
+  unifiedRecentTransactions: Array<{
+    id: string;
+    type: "income" | "expense";
+    amount: number;
+    category: string;
+    note?: string;
+    date: string;
+    mode?: PaymentMode;
+    customerName?: string;
+  }>;
 }) {
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
   return (
@@ -820,6 +924,37 @@ function SummaryView(p: {
         <Stat tint="danger" icon={<Receipt className="size-3.5" />} label="Expense" value={fmtINR(p.totalExpense)} />
         <Stat tint="primary" icon={<TrendingUp className="size-3.5" />} label="Net profit" value={fmtINR(p.netProfit)} />
         <Stat tint="muted" icon={<IndianRupee className="size-3.5" />} label="Margin" value={`${margin}%`} />
+      </div>
+
+      {/* Side-by-side Top Sources */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Earning Source</p>
+          {p.incomeByCategory.length > 0 ? (
+            <div className="mt-1">
+              <p className="font-semibold text-sm truncate text-success">{p.incomeByCategory[0].cat}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                {fmtINR(p.incomeByCategory[0].amount)} ({p.incomeByCategory[0].pct}%)
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">No earnings yet</p>
+          )}
+        </div>
+
+        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top Spending Category</p>
+          {p.expenseByCategory.length > 0 ? (
+            <div className="mt-1">
+              <p className="font-semibold text-sm truncate text-destructive">{p.expenseByCategory[0].cat}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                {fmtINR(p.expenseByCategory[0].amount)} ({p.expenseByCategory[0].pct}%)
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">No expenses yet</p>
+          )}
+        </div>
       </div>
 
       <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
@@ -855,7 +990,7 @@ function SummaryView(p: {
       </div>
 
       {p.expenseByCategory.length > 0 && (
-        <div className="bg-card card-shadow rounded-2xl p-3">
+        <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Expense breakdown</p>
           <ul className="space-y-1.5">
             {p.expenseByCategory.map((row) => (
@@ -867,6 +1002,70 @@ function SummaryView(p: {
           </ul>
         </div>
       )}
+
+      {/* Unified Recent Cash Flow Timeline */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-20">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Recent Cash Flow</p>
+          <span className="text-[10px] text-muted-foreground">last 10 transactions</span>
+        </div>
+
+        {p.unifiedRecentTransactions.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">No transactions recorded yet</p>
+        ) : (
+          <div className="max-h-[300px] overflow-y-auto pr-1">
+            <ul className="space-y-2.5 relative border-l border-border pl-3 ml-2.5">
+              {p.unifiedRecentTransactions.map((tx) => {
+                const isInc = tx.type === "income";
+                return (
+                  <li key={tx.id} className="relative">
+                    {/* Timeline dot */}
+                    <div className={cn(
+                      "absolute -left-[17px] top-1.5 size-2 rounded-full border bg-card transition-all duration-300",
+                      isInc ? "border-success bg-success" : "border-destructive bg-destructive"
+                    )} />
+
+                    <div className="flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn(
+                            "px-1 py-0.5 rounded text-[8px] font-bold uppercase shrink-0",
+                            isInc ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                          )}>
+                            {isInc ? "In" : "Out"}
+                          </span>
+                          <p className="font-semibold text-sm truncate text-foreground">
+                            {tx.category}
+                          </p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                          {tx.customerName ? `${tx.customerName} · ` : ""}
+                          {format(parseISO(tx.date), "MMM d · h:mm a")}
+                          {tx.note ? ` · ${tx.note}` : ""}
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <p className={cn(
+                          "font-bold text-sm tabular-nums",
+                          isInc ? "text-success" : "text-destructive"
+                        )}>
+                          {isInc ? "+" : "−"}{fmtINR(tx.amount)}
+                        </p>
+                        {tx.mode && (
+                          <span className="text-[9px] uppercase font-semibold text-muted-foreground block leading-none mt-0.5">
+                            {tx.mode}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
     </>
   );
 }
