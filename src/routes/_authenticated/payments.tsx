@@ -43,9 +43,8 @@ function PaymentsPage() {
 
   const [tab, setTab] = useState<TabId>("income");
   const [exportOpen, setExportOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addIncomeOpen, setAddIncomeOpen] = useState(false);
-  const [askTypeOpen, setAskTypeOpen] = useState(false);
+  const [addTransactionOpen, setAddTransactionOpen] = useState(false);
+  const [addTransactionType, setAddTransactionType] = useState<"income" | "expense">("income");
   const [pendingDelete, setPendingDelete] = useState<{ type: "expense" | "income"; id: string } | null>(null);
 
   // === Lifetime ===
@@ -377,7 +376,11 @@ function PaymentsPage() {
         <ExpensesView
           expenses={expenses} totalExpense={totalExpense} categories={categories}
           expenseByCategory={expenseByCategory} trend12={trend12} recentExpenses={recentExpenses}
-          onAdd={() => setAddOpen(true)} onDelete={(id) => setPendingDelete({ type: "expense", id })}
+          onAdd={() => {
+            setAddTransactionType("expense");
+            setAddTransactionOpen(true);
+          }}
+          onDelete={(id) => setPendingDelete({ type: "expense", id })}
         />
       )}
 
@@ -390,82 +393,67 @@ function PaymentsPage() {
       )}
 
       {/* Floating Action Button */}
-      <button
-        onClick={() => setAskTypeOpen(true)}
-        className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-primary text-primary-foreground shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
-        aria-label="Add transaction"
-      >
-        <Plus className="size-4" />
-        <span className="text-xs font-bold uppercase tracking-wider">Add</span>
-      </button>
-
-      {/* Transaction Type Selection Dialog */}
-      {askTypeOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAskTypeOpen(false)} />
-          <div className="bg-card w-full max-w-sm rounded-t-3xl sm:rounded-2xl p-5 card-shadow z-10 animate-in slide-in-from-bottom-4 duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-bold text-base text-foreground">Add Transaction</h3>
-              <button
-                onClick={() => setAskTypeOpen(false)}
-                className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            
-            <p className="text-xs text-muted-foreground mb-4">Choose the type of transaction you want to record:</p>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  setAskTypeOpen(false);
-                  setAddIncomeOpen(true);
-                }}
-                className="py-3 px-4 bg-success hover:bg-success/90 text-white font-bold text-sm rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-              >
-                <Plus className="size-5" />
-                <span>Income</span>
-              </button>
-              <button
-                onClick={() => {
-                  setAskTypeOpen(false);
-                  setAddOpen(true);
-                }}
-                className="py-3 px-4 bg-destructive hover:bg-destructive/90 text-white font-bold text-sm rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-              >
-                <Plus className="size-5" />
-                <span>Expense</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {addOpen && (
-        <AddExpenseSheet
-          categories={categories}
-          defaultMode={settings.defaultPaymentMode ?? "gpay"}
-          modes={settings.paymentModes ?? ["gpay","cash","other"]}
-          onClose={() => setAddOpen(false)}
-          onSave={(payload) => {
-            addExpense(payload);
-            toast.success("Expense added", { duration: 1500 });
-            setAddOpen(false);
+      {tab === "income" && (
+        <button
+          onClick={() => {
+            setAddTransactionType("income");
+            setAddTransactionOpen(true);
           }}
-        />
+          className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-success hover:bg-success/90 text-white shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
+          aria-label="Add income"
+        >
+          <Plus className="size-4" />
+          <span className="text-xs font-bold uppercase tracking-wider">Add Income</span>
+        </button>
       )}
 
-      {addIncomeOpen && (
-        <AddIncomeSheet
-          categories={incomeCats}
+      {tab === "expenses" && (
+        <button
+          onClick={() => {
+            setAddTransactionType("expense");
+            setAddTransactionOpen(true);
+          }}
+          className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-destructive hover:bg-destructive/90 text-white shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
+          aria-label="Add expense"
+        >
+          <Plus className="size-4" />
+          <span className="text-xs font-bold uppercase tracking-wider">Add Expense</span>
+        </button>
+      )}
+
+      {tab === "summary" && (
+        <button
+          onClick={() => {
+            setAddTransactionType("income"); // pre-select income on summary tab
+            setAddTransactionOpen(true);
+          }}
+          className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-primary text-primary-foreground shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
+          aria-label="Add transaction"
+        >
+          <Plus className="size-4" />
+          <span className="text-xs font-bold uppercase tracking-wider">Add</span>
+        </button>
+      )}
+
+      {addTransactionOpen && (
+        <AddTransactionSheet
+          initialType={addTransactionType}
+          incomeCategories={incomeCats}
+          expenseCategories={categories}
           defaultMode={settings.defaultPaymentMode ?? "gpay"}
           modes={settings.paymentModes ?? ["gpay","cash","other"]}
-          onClose={() => setAddIncomeOpen(false)}
-          onSave={(payload) => {
-            addExtraIncome(payload);
-            toast.success("Income added", { duration: 1500 });
-            setAddIncomeOpen(false);
+          onClose={() => setAddTransactionOpen(false)}
+          onSave={(type, payload) => {
+            if (type === "income") {
+              addExtraIncome(payload);
+              toast.success("Income added", { duration: 1500 });
+              setTab("income"); // Switch tab live
+            } else {
+              addExpense(payload);
+              toast.success("Expense added", { duration: 1500 });
+              setTab("expenses"); // Switch tab live
+            }
+            setAddTransactionOpen(false);
           }}
         />
       )}
@@ -883,41 +871,115 @@ function SummaryView(p: {
   );
 }
 
-// === Add expense sheet ===
-function AddExpenseSheet({
-  categories, defaultMode, modes, onClose, onSave,
+// === Unified Add Transaction Sheet ===
+function AddTransactionSheet({
+  initialType,
+  incomeCategories,
+  expenseCategories,
+  defaultMode,
+  modes,
+  onClose,
+  onSave,
 }: {
-  categories: string[];
+  initialType: "income" | "expense";
+  incomeCategories: string[];
+  expenseCategories: string[];
   defaultMode: PaymentMode;
   modes: string[];
   onClose: () => void;
-  onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
+  onSave: (type: "income" | "expense", p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
 }) {
+  const [type, setType] = useState<"income" | "expense">(initialType);
   const [amount, setAmount] = useState<string>("");
-  const [category, setCategory] = useState<string>(categories[0] ?? "Other");
+
+  const categories = type === "income" ? incomeCategories : expenseCategories;
+  const [category, setCategory] = useState<string>(
+    initialType === "income"
+      ? (incomeCategories[0] ?? "Other Income")
+      : (expenseCategories[0] ?? "Other")
+  );
+
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<PaymentMode>(defaultMode);
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+
+  const handleTypeChange = (newType: "income" | "expense") => {
+    setType(newType);
+    const newCats = newType === "income" ? incomeCategories : expenseCategories;
+    setCategory(newCats[0] ?? (newType === "income" ? "Other Income" : "Other"));
+  };
 
   const submit = () => {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("Enter a valid amount");
     if (!category) return toast.error("Pick a category");
     const iso = new Date(`${date}T${new Date().toTimeString().slice(0, 8)}`).toISOString();
-    onSave({ amount: amt, category, note: note.trim() || undefined, date: iso, mode });
+    onSave(type, { amount: amt, category, note: note.trim() || undefined, date: iso, mode });
   };
+
+  const isIncome = type === "income";
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-bold text-lg text-destructive">Expense</h3>
-          <button onClick={onClose} className="size-8 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
+      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={cn(
+            "font-display font-bold text-lg transition-colors duration-300",
+            isIncome ? "text-success" : "text-destructive"
+          )}>
+            New {isIncome ? "Income" : "Expense"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+          >
+            <X className="size-4" />
+          </button>
         </div>
 
+        {/* Sliding Segmented Controller */}
+        <div className="relative flex p-1 bg-secondary rounded-2xl mb-4 border border-border">
+          {/* Sliding background indicator */}
+          <div
+            className={cn(
+              "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-all duration-300 ease-out shadow-sm",
+              isIncome
+                ? "left-1 bg-success/15 border border-success/30"
+                : "left-[calc(50%+2px)] bg-destructive/15 border border-destructive/30"
+            )}
+          />
+
+          <button
+            type="button"
+            onClick={() => handleTypeChange("income")}
+            className={cn(
+              "relative z-10 flex-1 py-2.5 text-xs font-bold text-center transition-colors duration-300 cursor-pointer flex items-center justify-center gap-1.5",
+              isIncome ? "text-success" : "text-muted-foreground"
+            )}
+          >
+            <Plus className="size-3.5" /> Income
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTypeChange("expense")}
+            className={cn(
+              "relative z-10 flex-1 py-2.5 text-xs font-bold text-center transition-colors duration-300 cursor-pointer flex items-center justify-center gap-1.5",
+              !isIncome ? "text-destructive" : "text-muted-foreground"
+            )}
+          >
+            <Plus className="size-3.5" /> Expense
+          </button>
+        </div>
+
+        {/* Amount Input */}
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
-        <div className="flex items-center gap-2 bg-secondary rounded-2xl px-3 py-3 mt-1 mb-3">
+        <div className={cn(
+          "relative mt-1 mb-3 transition-colors duration-300 border-2 rounded-2xl flex items-center px-3 py-2 bg-secondary",
+          isIncome ? "focus-within:border-success/50 border-transparent" : "focus-within:border-destructive/50 border-transparent"
+        )}>
           <IndianRupee className="size-5 text-muted-foreground" />
           <input
             type="number"
@@ -926,153 +988,111 @@ function AddExpenseSheet({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="bg-transparent flex-1 text-2xl font-bold tabular-nums focus:outline-none"
+            className="bg-transparent flex-1 pl-1 text-2xl font-bold tabular-nums focus:outline-none"
           />
         </div>
 
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
-        <div className="flex flex-wrap gap-1.5 mt-1 mb-3">
-          {categories.map((c) => {
-            const active = category === c;
-            return (
-              <button key={c} onClick={() => setCategory(c)}
-                className={cn("px-3 py-1.5 rounded-full text-xs font-semibold", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                {c}
-              </button>
-            );
-          })}
-        </div>
-
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Date</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-3 text-sm focus:outline-none"
-        />
-
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
-        <div className="flex flex-wrap gap-2 mt-1 mb-3">
-          {modes.map((m) => {
-            const active = mode === m;
-            return (
-              <button key={m} onClick={() => setMode(m)}
-                className={cn("px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                {m}
-              </button>
-            );
-          })}
-        </div>
-
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Note (optional)</label>
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="e.g. Cloth purchase"
-          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-4 text-sm focus:outline-none"
-        />
-
-        <button onClick={submit} className="w-full py-3 rounded-full bg-primary text-primary-foreground font-bold">
-          Save expense
-        </button>
-      </div>
-    </>
-  );
-}
-
-function AddIncomeSheet({
-  categories, defaultMode, modes, onClose, onSave,
-}: {
-  categories: string[];
-  defaultMode: PaymentMode;
-  modes: string[];
-  onClose: () => void;
-  onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
-}) {
-  const [amount, setAmount] = useState<string>("");
-  const [category, setCategory] = useState<string>(categories[0] ?? "Other Income");
-  const [note, setNote] = useState("");
-  const [mode, setMode] = useState<PaymentMode>(defaultMode);
-  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
-
-  const submit = () => {
-    const amt = Number(amount);
-    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
-    if (!category) return toast.error("Pick a category");
-    const iso = new Date(`${date}T${new Date().toTimeString().slice(0, 8)}`).toISOString();
-    onSave({ amount: amt, category, note: note.trim() || undefined, date: iso, mode });
-  };
-
-  return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-bold text-lg text-success">Income</h3>
-          <button onClick={onClose} className="size-9 rounded-full bg-secondary flex items-center justify-center"><X className="size-4" /></button>
+        {/* Category Selector */}
+        <div className="flex items-baseline justify-between mb-1">
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
+          {categories.length === 0 && (
+            <span className="text-[9px] text-destructive font-medium">
+              No custom categories set
+            </span>
+          )}
         </div>
 
         {categories.length === 0 ? (
-          <p className="text-xs text-muted-foreground mb-3">
-            Add income categories in Settings → Headers first.
-          </p>
-        ) : null}
+          <div className="bg-secondary rounded-xl p-3 text-center mb-3 text-xs text-muted-foreground">
+            {isIncome
+              ? "Add income categories in Settings → Headers"
+              : "Add expense categories in Settings → Pricing"}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 mt-1 mb-3 max-h-32 overflow-y-auto pr-1">
+            {categories.map((c) => {
+              const active = category === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 cursor-pointer",
+                    active
+                      ? isIncome
+                        ? "bg-success text-white shadow-sm"
+                        : "bg-destructive text-white shadow-sm"
+                      : "bg-secondary text-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
-        <div className="relative mt-1 mb-3">
-          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            type="number" inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-            className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-3 text-lg font-bold tabular-nums focus:outline-none"
-            autoFocus
-          />
-        </div>
-
-        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
-        <div className="flex flex-wrap gap-1.5 mt-1 mb-3">
-          {categories.map((c) => {
-            const active = category === c;
-            return (
-              <button key={c} onClick={() => setCategory(c)}
-                className={cn("px-3 py-1.5 rounded-full text-xs font-semibold", active ? "bg-success text-white" : "bg-secondary")}>{c}</button>
-            );
-          })}
-        </div>
-
+        {/* Date Input */}
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Date</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-3 text-sm focus:outline-none"
+          className={cn(
+            "w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-3 text-sm focus:outline-none border-2 border-transparent transition-colors duration-300",
+            isIncome ? "focus:border-success/50" : "focus:border-destructive/50"
+          )}
         />
 
+        {/* Mode Selector */}
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mode</label>
         <div className="flex flex-wrap gap-2 mt-1 mb-3">
           {modes.map((m) => {
             const active = mode === m;
             return (
-              <button key={m} onClick={() => setMode(m)}
-                className={cn("px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider", active ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m as PaymentMode)}
+                className={cn(
+                  "px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-200 active:scale-95 cursor-pointer",
+                  active
+                    ? isIncome
+                      ? "bg-success text-white shadow-sm"
+                      : "bg-destructive text-white shadow-sm"
+                    : "bg-secondary text-foreground hover:bg-secondary/80"
+                )}
+              >
                 {m}
               </button>
             );
           })}
         </div>
 
+        {/* Note Input */}
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Note (optional)</label>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="e.g. Tip from bride"
-          className="w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-4 text-sm focus:outline-none"
+          placeholder={isIncome ? "e.g. Tip from bride" : "e.g. Cloth purchase"}
+          className={cn(
+            "w-full bg-secondary rounded-2xl px-3 py-2.5 mt-1 mb-5 text-sm focus:outline-none border-2 border-transparent transition-colors duration-300",
+            isIncome ? "focus:border-success/50" : "focus:border-destructive/50"
+          )}
         />
 
-        <button onClick={submit} className="w-full py-3 rounded-full bg-success text-white font-bold">
-          Save income
+        {/* Submit Button */}
+        <button
+          onClick={submit}
+          className={cn(
+            "w-full py-3 rounded-full font-bold text-white shadow-md active:scale-98 transition-all duration-300 cursor-pointer text-sm uppercase tracking-wider",
+            isIncome
+              ? "bg-success hover:bg-success/90 hover:shadow-success/20"
+              : "bg-destructive hover:bg-destructive/90 hover:shadow-destructive/20"
+          )}
+        >
+          Save {isIncome ? "income" : "expense"}
         </button>
       </div>
     </>
