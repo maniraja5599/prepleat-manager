@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, type CustomerKind } from "@/lib/store";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Phone, Plus, SlidersHorizontal, Users, IndianRupee, AlertCircle, CheckSquare, Trash2, X as XIcon, Filter, ArrowUpDown, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
