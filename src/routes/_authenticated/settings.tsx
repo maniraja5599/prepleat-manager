@@ -1082,18 +1082,17 @@ function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) =
   return (
     <div className="space-y-4">
       <Section title="Interactive Guide">
-        <div className="p-4 rounded-2xl border border-primary/20 bg-primary/5 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h4 className="text-sm font-semibold flex items-center gap-1.5">
-              <Sparkles className="size-4 text-primary animate-pulse" /> App Shortcuts Tour
-            </h4>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Show the guide walkthrough highlighting swipe gestures, swipe tabs, and double-tap pickers.
-            </p>
+        <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex items-center gap-2">
+            <Sparkles className="size-4 text-primary animate-pulse shrink-0" />
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-foreground">Shortcuts Tour</h4>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-normal">Interactive onboarding guide</p>
+            </div>
           </div>
           <button
             onClick={handleStartTour}
-            className="shrink-0 px-4 py-2 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition shadow-sm shadow-primary/25 cursor-pointer"
+            className="shrink-0 px-3 py-1.5 rounded-lg saree-gradient text-primary-foreground text-[10px] font-extrabold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-sm shadow-primary/20"
           >
             Start Tour
           </button>
