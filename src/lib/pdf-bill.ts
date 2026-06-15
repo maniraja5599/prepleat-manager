@@ -48,7 +48,7 @@ async function fetchAsDataUrl(url: string): Promise<string | null> {
 // Flatten any transparent / off-white pixels onto a warm cream background so
 // the PDF logo never shows a black square when alpha is missing. Returns the
 // re-encoded JPEG data URL on success, or the original on failure.
-async function flattenLogoOnCream(dataUrl: string): Promise<string> {
+async function flattenLogoOnCream(dataUrl: string, bgColorHex: string): Promise<string> {
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const im = new Image();
@@ -63,9 +63,19 @@ async function flattenLogoOnCream(dataUrl: string): Promise<string> {
     canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return dataUrl;
-    ctx.clearRect(0, 0, size, size);
-    // Cover-fit the logo centered
-    const ratio = Math.min(size / img.width, size / img.height);
+
+    // Fill background with the header's primary background color to match perfectly
+    ctx.fillStyle = bgColorHex;
+    ctx.fillRect(0, 0, size, size);
+
+    // Draw a solid white circle badge in the center
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cover-fit the logo slightly smaller inside the white circle badge
+    const ratio = Math.min((size - 24) / img.width, (size - 24) / img.height);
     const w = img.width * ratio;
     const h = img.height * ratio;
     ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
@@ -123,7 +133,7 @@ export async function generateBillPDF(opts: {
   // Logo: draw the transparent PNG directly.
   if (logoData) {
     try {
-      const flat = await flattenLogoOnCream(logoData);
+      const flat = await flattenLogoOnCream(logoData, primaryHex);
       const cx = 38;
       const cy = 46;
       const r = 22;
@@ -133,30 +143,47 @@ export async function generateBillPDF(opts: {
     }
   }
 
+  // Calculate text block height to center it vertically in the 92pt header
+  const slogan = settings.businessSlogan || "Drape with grace · Pleat with love";
+  let textBlockH = 15; // Company name height
+  if (slogan) textBlockH += 12;
+  if (settings.businessPhone) textBlockH += 11;
+  let addrLines: string[] = [];
+  if (settings.businessAddress) {
+    addrLines = doc.splitTextToSize(settings.businessAddress, W / 2 - 15);
+    textBlockH += addrLines.length * 9;
+  }
+
+  // Start Y baseline for company name (centered vertically)
+  const startY = 46 - (textBlockH / 2) + 9;
+
   doc.setTextColor(255, 248, 230);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15.5);
-  doc.text(settings.businessName || "Eyas Saree Drapist", 72, 28);
+  doc.text(settings.businessName || "Eyas Saree Drapist", 72, startY);
   
+  let currentY = startY;
+
   // Tagline / slogan
-  const slogan = settings.businessSlogan || "Drape with grace · Pleat with love";
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...gold);
-  doc.text(slogan, 72, 40);
+  if (slogan) {
+    currentY += 12;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...gold);
+    doc.text(slogan, 72, currentY);
+  }
 
   // Business Phone & Address
-  let currentY = 52;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(245, 240, 255); // soft cream/off-white
 
   if (settings.businessPhone) {
-    doc.text(`Ph: ${settings.businessPhone}`, 72, currentY);
     currentY += 11;
+    doc.text(`Ph: ${settings.businessPhone}`, 72, currentY);
   }
-  if (settings.businessAddress) {
-    const addrLines = doc.splitTextToSize(settings.businessAddress, W / 2 - 15);
+  if (settings.businessAddress && addrLines.length > 0) {
+    currentY += 10;
     doc.text(addrLines, 72, currentY);
   }
 
