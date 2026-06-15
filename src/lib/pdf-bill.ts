@@ -52,7 +52,9 @@ async function flattenLogoOnCream(dataUrl: string, bgColorHex: string): Promise<
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const im = new Image();
-      im.crossOrigin = "anonymous";
+      if (!dataUrl.startsWith("data:")) {
+        im.crossOrigin = "anonymous";
+      }
       im.onload = () => resolve(im);
       im.onerror = reject;
       im.src = dataUrl;
@@ -68,14 +70,8 @@ async function flattenLogoOnCream(dataUrl: string, bgColorHex: string): Promise<
     ctx.fillStyle = bgColorHex;
     ctx.fillRect(0, 0, size, size);
 
-    // Draw a solid white circle badge in the center
-    ctx.fillStyle = "#FFFFFF";
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Cover-fit the logo slightly smaller inside the white circle badge
-    const ratio = Math.min((size - 24) / img.width, (size - 24) / img.height);
+    // Cover-fit the logo centered on top of the matching background color
+    const ratio = Math.min(size / img.width, size / img.height);
     const w = img.width * ratio;
     const h = img.height * ratio;
     ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
