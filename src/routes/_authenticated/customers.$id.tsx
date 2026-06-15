@@ -502,13 +502,15 @@ function CustomerDetail() {
         </div>
       )}
 
-      <Link
-        to="/new"
-        search={customer.kind === "client" ? { customerId: customer.id } : { artistId: customer.id }}
-        className="w-full saree-gradient text-white py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition card-shadow mt-3 text-center text-sm shadow-md"
-      >
-        📅 {customer.kind === "client" ? "Book Appointment / Order" : "Book for this Artist"}
-      </Link>
+      <div className="relative mt-3 book-ring-animate rounded-2xl">
+        <Link
+          to="/new"
+          search={customer.kind === "client" ? { customerId: customer.id } : { artistId: customer.id }}
+          className="relative z-10 w-full saree-gradient text-white py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition card-shadow text-center text-sm shadow-md"
+        >
+          📅 {customer.kind === "client" ? "Book Appointment / Order" : "Book for this Artist"}
+        </Link>
+      </div>
 
       {/* Send Message Buttons */}
       {customer.phone && (

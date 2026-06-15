@@ -575,3 +575,30 @@ body:has(.sonner-toast-center-override [data-sonner-toast])::before {
     opacity: 1;
   }
 }
+
+/* Book button outer ring pulse animation */
+@keyframes book-ring-pulse {
+  0% {
+    box-shadow: 0 0 0 0px oklch(0.72 0.18 10 / 0.55);
+    opacity: 1;
+  }
+  60% {
+    box-shadow: 0 0 0 8px oklch(0.72 0.18 10 / 0);
+    opacity: 0;
+  }
+  100% {
+    box-shadow: 0 0 0 0px oklch(0.72 0.18 10 / 0);
+    opacity: 0;
+  }
+}
+
+.book-ring-animate::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: transparent;
+  animation: book-ring-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+  z-index: 0;
+}
