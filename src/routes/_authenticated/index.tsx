@@ -283,7 +283,7 @@ function CalendarPage() {
   const peekBookings = peek ? (byDay.get(peek) ?? []) : [];
 
   return (
-    <AppShell showBrand title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
+    <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
         <GrowthDashboard />
         <div className="grid grid-cols-3 gap-2 mb-4">

@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, fmtINR } from "@/lib/store";
@@ -15,6 +15,11 @@ import {
   X,
   ChevronRight,
   AlertTriangle,
+  Search,
+  User,
+  Receipt,
+  IndianRupee,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -26,13 +31,19 @@ interface Props {
   /** @deprecated brand strip now renders on every page automatically */
   showBrand?: boolean;
   wide?: boolean;
+  showFloatingSearch?: boolean;
 }
 
-export function AppShell({ title, subtitle, children, wide }: Props) {
+export function AppShell({ title, subtitle, children, wide, showFloatingSearch }: Props) {
   const settings = useStore((s) => s.settings);
   const logo = settings.logoDataUrl || logoAsset;
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
+
+  const navigate = useNavigate();
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
 
   const [sync, setSync] = useState(() => {
     if (typeof window !== "undefined" && (window as any).__syncStatus) {
@@ -97,6 +108,72 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const getCustomerName = (customerId: string) => {
     const cust = customers.find((c) => c.id === customerId);
     return cust?.name || "Client";
+  };
+
+  // Perform search across customers, bookings, and payments
+  const getSearchResults = () => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return { customers: [], bookings: [], payments: [] };
+
+    const digitsOnlyQ = q.replace(/\D/g, "");
+
+    // 1. Search Customers
+    const filteredCustomers = customers.filter((c) => {
+      const nameMatch = c.name.toLowerCase().includes(q);
+      const digitsOnlyPhone = c.phone.replace(/\D/g, "");
+      const phoneMatch = digitsOnlyQ ? digitsOnlyPhone.includes(digitsOnlyQ) : c.phone.includes(q);
+      const addressMatch = c.address ? c.address.toLowerCase().includes(q) : false;
+      const refMatch = c.reference ? c.reference.toLowerCase().includes(q) : false;
+      
+      return nameMatch || phoneMatch || addressMatch || refMatch;
+    });
+
+    // 2. Search Bookings
+    const filteredBookings = bookings.filter((b) => {
+      const cust = customers.find((c) => c.id === b.customerId);
+      const custName = cust?.name.toLowerCase() || "";
+      const digitsOnlyPhone = cust?.phone.replace(/\D/g, "") || "";
+      const phoneMatch = digitsOnlyQ ? digitsOnlyPhone.includes(digitsOnlyQ) : (cust?.phone.includes(q) || false);
+      const billNum = b.billNumber?.toLowerCase() || b.id.toLowerCase();
+      const notes = b.notes?.toLowerCase() || "";
+      const service = b.service.toLowerCase();
+      
+      return (
+        billNum.includes(q) ||
+        service.includes(q) ||
+        notes.includes(q) ||
+        custName.includes(q) ||
+        phoneMatch
+      );
+    });
+
+    // 3. Search Payments
+    const allPayments = useStore.getState().payments;
+    const filteredPayments = allPayments.filter((p) => {
+      const b = bookings.find((bk) => bk.id === p.bookingId);
+      const billNum = b?.billNumber?.toLowerCase() || "";
+      const cust = b ? customers.find((c) => c.id === b.customerId) : null;
+      const custName = cust?.name.toLowerCase() || "";
+      const digitsOnlyPhone = cust?.phone.replace(/\D/g, "") || "";
+      const phoneMatch = digitsOnlyQ ? digitsOnlyPhone.includes(digitsOnlyQ) : (cust?.phone.includes(q) || false);
+      const note = p.note?.toLowerCase() || "";
+      const mode = p.mode?.toLowerCase() || "";
+      
+      return (
+        billNum.includes(q) ||
+        custName.includes(q) ||
+        phoneMatch ||
+        note.includes(q) ||
+        mode.includes(q) ||
+        String(p.amount).includes(q)
+      );
+    });
+
+    return {
+      customers: filteredCustomers,
+      bookings: filteredBookings,
+      payments: filteredPayments,
+    };
   };
 
   useEffect(() => {
@@ -520,6 +597,337 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                         </Link>
                       ))}
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Floating Search FAB Button */}
+      {showFloatingSearch && (
+        <div className="fixed bottom-20 inset-x-0 pointer-events-none z-40">
+          <div className="max-w-md mx-auto relative px-5">
+            <button
+              onClick={() => {
+                setShowSearchModal(true);
+                setActiveTab("all");
+              }}
+              className="absolute right-5 bottom-0 pointer-events-auto size-12 rounded-full saree-gradient text-white flex items-center justify-center shadow-lg shadow-primary/25 active:scale-90 hover:scale-105 transition duration-200 cursor-pointer"
+              title="Global Search"
+            >
+              <Search className="size-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Global Search Popup Modal */}
+      {showSearchModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => {
+            setShowSearchModal(false);
+            setSearchQuery("");
+          }}
+        >
+          <div
+            className="w-full max-w-md bg-card border border-border/30 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh] text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-border/20 flex flex-col gap-3 bg-secondary/35">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Search className="size-4 text-primary" /> Global Search
+                  </h3>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                    Search bookings, customers, and payments instantly
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    setSearchQuery("");
+                  }}
+                  className="size-8 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition cursor-pointer"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {/* Input field */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Type phone number, bill number, name..."
+                  autoFocus
+                  className="w-full bg-background/90 text-foreground border border-border/60 rounded-2xl py-3 pl-10 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-muted-foreground"
+                />
+                <Search className="absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-3 size-6 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Tabs */}
+              {searchQuery && (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1">
+                  <button
+                    onClick={() => setActiveTab("all")}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                      activeTab === "all"
+                        ? "saree-gradient text-white"
+                        : "bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    All ({getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("customers")}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                      activeTab === "customers"
+                        ? "saree-gradient text-white"
+                        : "bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Customers ({getSearchResults().customers.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("bookings")}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                      activeTab === "bookings"
+                        ? "saree-gradient text-white"
+                        : "bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Bookings ({getSearchResults().bookings.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("payments")}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                      activeTab === "payments"
+                        ? "saree-gradient text-white"
+                        : "bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Payments ({getSearchResults().payments.length})
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Results Area */}
+            <div className="px-5 py-4 overflow-y-auto flex-1">
+              {!searchQuery ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  Type something to search across all data...
+                </div>
+              ) : (getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length) === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  No matches found for "{searchQuery}"
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Category: Customers */}
+                  {(activeTab === "all" || activeTab === "customers") && getSearchResults().customers.length > 0 && (
+                    <div>
+                      {activeTab === "all" && (
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <User className="size-3 text-primary/80" /> Customers
+                        </h4>
+                      )}
+                      <div className="space-y-2">
+                        {getSearchResults().customers.map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              navigate({ to: `/customers/${c.id}` });
+                              setShowSearchModal(false);
+                              setSearchQuery("");
+                            }}
+                            className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
+                          >
+                            <div className="min-w-0 pr-2 flex-1">
+                              <p className="font-semibold text-sm text-foreground truncate">{c.name}</p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Phone className="size-3" /> {c.phone}
+                              </p>
+                              {c.address && (
+                                <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
+                                  {c.address}
+                                </p>
+                              )}
+                              {c.reference && (
+                                <p className="text-[10px] text-primary/80 truncate mt-0.5">
+                                  ref: {c.reference}
+                                </p>
+                              )}
+                              {c.measurements && c.measurements.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
+                                  {c.measurements.map((m, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
+                                    >
+                                      {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[9px] font-semibold bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 self-start mt-0.5">
+                              {c.kind ?? "client"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category: Bookings */}
+                  {(activeTab === "all" || activeTab === "bookings") && getSearchResults().bookings.length > 0 && (
+                    <div>
+                      {activeTab === "all" && (
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
+                          <Receipt className="size-3 text-primary/80" /> Bookings
+                        </h4>
+                      )}
+                      <div className="space-y-2">
+                        {getSearchResults().bookings.map((b) => {
+                          const cust = customers.find((c) => c.id === b.customerId);
+                          const due = totalDue(b);
+                          return (
+                            <button
+                              key={b.id}
+                              onClick={() => {
+                                navigate({ to: `/bookings/${b.id}` });
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
+                            >
+                              <div className="min-w-0 pr-2 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-sm text-foreground truncate">
+                                    {cust?.name || "Client"}
+                                  </span>
+                                  <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
+                                    #{b.billNumber || b.id.slice(0, 6).toUpperCase()}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {b.service === "prepleat" ? "PrePleat Saree" : "Saree Drape"} · {b.sareeCount} saree{b.sareeCount !== 1 && "s"}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+                                  Delivery: {format(parseISO(b.deliveryDate), "MMM d, yyyy")}
+                                </p>
+                                {b.notes && (
+                                  <p className="text-[10px] text-muted-foreground/80 mt-0.5 italic truncate">
+                                    Note: {b.notes}
+                                  </p>
+                                )}
+                                {b.measurements && b.measurements.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
+                                    {b.measurements.map((m, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
+                                      >
+                                        {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right shrink-0 flex flex-col items-end gap-1.5 pl-2">
+                                <span className="text-[9px] font-bold bg-secondary/80 border border-border/10 px-2 py-0.5 rounded-full uppercase tracking-wider text-foreground">
+                                  {b.status}
+                                </span>
+                                <div className="text-xs font-semibold tabular-nums text-foreground">
+                                  {fmtINR(b.totalAmount)}
+                                </div>
+                                {due > 0 ? (
+                                  <div className="text-[10px] text-destructive font-bold">
+                                    {fmtINR(due)} due
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-success font-bold">Paid</div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category: Payments */}
+                  {(activeTab === "all" || activeTab === "payments") && getSearchResults().payments.length > 0 && (
+                    <div>
+                      {activeTab === "all" && (
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
+                          <IndianRupee className="size-3 text-primary/80" /> Payments
+                        </h4>
+                      )}
+                      <div className="space-y-2">
+                        {getSearchResults().payments.map((p) => {
+                          const b = bookings.find((bk) => bk.id === p.bookingId);
+                          const cust = b ? customers.find((c) => c.id === b.customerId) : null;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => {
+                                navigate({ to: `/bookings/${p.bookingId}` });
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
+                            >
+                              <div className="min-w-0 pr-2 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-sm text-primary">
+                                    {fmtINR(p.amount)}
+                                  </span>
+                                  <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded text-muted-foreground font-semibold">
+                                    {(p.mode ?? "gpay").toUpperCase()}
+                                  </span>
+                                  {b?.billNumber && (
+                                    <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
+                                      #{b.billNumber.split("-").pop()}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-foreground mt-0.5 truncate">
+                                  Billed To: {cust?.name || "Client"}
+                                </p>
+                                {p.note && (
+                                  <p className="text-[10px] text-muted-foreground/80 mt-0.5 italic truncate">
+                                    Note: {p.note}
+                                  </p>
+                                )}
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Date: {format(parseISO(p.date), "MMM d, yyyy")}
+                                </p>
+                              </div>
+                              <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
