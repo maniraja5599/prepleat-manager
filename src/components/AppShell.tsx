@@ -54,6 +54,16 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     }
   }, [searchQuery, activeTab]);
 
+  // Listen for open-global-search event
+  useEffect(() => {
+    const handleOpenSearch = () => {
+      setShowSearchModal(true);
+      setActiveTab("all");
+    };
+    window.addEventListener("open-global-search", handleOpenSearch);
+    return () => window.removeEventListener("open-global-search", handleOpenSearch);
+  }, []);
+
   const [sync, setSync] = useState(() => {
     if (typeof window !== "undefined" && (window as any).__syncStatus) {
       return (window as any).__syncStatus;
@@ -297,11 +307,10 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                   setShowSearchModal(true);
                   setActiveTab("all");
                 }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary hover:bg-secondary/80 border border-border/10 text-muted-foreground text-[10px] font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shrink-0"
+                className="size-8.5 rounded-full bg-secondary hover:bg-secondary/80 border border-border/10 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition cursor-pointer shrink-0"
                 title="Global Search"
               >
-                <Search className="size-3 text-primary" />
-                <span>Search</span>
+                <Search className="size-4 text-primary" />
               </button>
             )}
 

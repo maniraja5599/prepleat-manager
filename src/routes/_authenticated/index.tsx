@@ -408,7 +408,7 @@ function CalendarPage() {
                 <button
                   key={key}
                   onClick={() => setSelected(d)}
-                  onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
+                  onDoubleClick={() => window.dispatchEvent(new Event("open-global-search"))}
                   onTouchStart={() => startPress(key)}
                   onTouchEnd={cancelPress}
                   onTouchMove={cancelPress}
