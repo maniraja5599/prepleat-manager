@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { GrowthDashboard } from "@/components/GrowthDashboard";
-import { useStore, totalDue, fmtINR, fmtTime12 } from "@/lib/store";
+import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate } from "@/lib/store";
 import {
   startOfMonth,
   endOfMonth,
@@ -408,7 +408,7 @@ function CalendarPage() {
                 <button
                   key={key}
                   onClick={() => setSelected(d)}
-                  onDoubleClick={() => window.dispatchEvent(new Event("open-global-search"))}
+                  onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
                   onTouchStart={() => startPress(key)}
                   onTouchEnd={cancelPress}
                   onTouchMove={cancelPress}
@@ -504,7 +504,7 @@ function CalendarPage() {
                   <ChevronLeft className="size-4" />
                 </button>
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate flex-1 text-center">
-                  {format(selected, "EEEE, MMM d")}
+                  {format(selected, "EEEE")} · {formatAppDate(selected)}
                 </h2>
                 <button
                   onClick={() => setSelected((d) => addDays(d, 1))}
@@ -568,7 +568,7 @@ function CalendarPage() {
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display font-semibold">
-                  {format(parseISO(peek), "EEEE, MMM d")}
+                  {format(parseISO(peek), "EEEE")} · {formatAppDate(peek)}
                 </h3>
                 <button
                   onClick={() => setPeek(null)}
@@ -696,7 +696,7 @@ const BookingRow = memo(function BookingRow({
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {showDate ? `${format(parseISO(b.deliveryDate), "EEE, MMM d")} · ` : ""}
+              {showDate ? `${formatAppDate(b.deliveryDate)} · ` : ""}
               {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
             </p>
             {a && (

@@ -771,6 +771,58 @@ function SettingsPage() {
                 </div>
               </Section>
 
+              {/* Date & Time Settings Section */}
+              <Section title="Date & Time Formats">
+                <p className="text-[11px] text-muted-foreground mb-4">
+                  Configure how dates and times are formatted across the app.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                      Date Format
+                    </label>
+                    <select
+                      value={settings.dateFormat || "DD-MM-YYYY"}
+                      onChange={(e) => update({ dateFormat: e.target.value })}
+                      className="input mt-1.5 cursor-pointer bg-secondary"
+                    >
+                      <option value="DD-MM-YYYY">DD-MM-YYYY (e.g. 15-06-2026)</option>
+                      <option value="YYYY-MM-DD">YYYY-MM-DD (e.g. 2026-06-15)</option>
+                      <option value="MM/DD/YYYY">MM/DD/YYYY (e.g. 06/15/2026)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                      Time Format
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 mt-1.5">
+                      <button
+                        onClick={() => update({ timeFormat: "12" })}
+                        className={cn(
+                          "py-2 px-3 rounded-full text-xs font-semibold border transition cursor-pointer",
+                          (settings.timeFormat || "12") === "12"
+                            ? "saree-gradient text-white border-transparent"
+                            : "bg-secondary border-border/10 text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        12-Hour (e.g. 05:30 PM)
+                      </button>
+                      <button
+                        onClick={() => update({ timeFormat: "24" })}
+                        className={cn(
+                          "py-2 px-3 rounded-full text-xs font-semibold border transition cursor-pointer",
+                          settings.timeFormat === "24"
+                            ? "saree-gradient text-white border-transparent"
+                            : "bg-secondary border-border/10 text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        24-Hour (e.g. 17:30)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+
               {/* Predefined Palettes Section */}
               <Section title="Color Palettes">
                 <p className="text-xs text-muted-foreground mb-3">

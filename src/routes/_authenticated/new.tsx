@@ -8,6 +8,7 @@ import {
   bookingsOnDate,
   type ServiceType,
   type Measurement,
+  formatAppDate,
 } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -978,7 +979,7 @@ function NewBooking() {
           />
         </div>
         <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
-          {format(parseISO(deliveryDate), "EEE, MMM d")} · {fmtTime12(deliveryTime)}
+          {formatAppDate(deliveryDate)} · {fmtTime12(deliveryTime)}
         </p>
         <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">
           Tip · tap the 📅 / 🕒 icon for a full picker
@@ -1224,7 +1225,7 @@ function NewBooking() {
             <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
             <ReviewRow
               label="Delivery"
-              value={`${format(parseISO(deliveryDate), "EEE, MMM d")} · ${fmtTime12(deliveryTime)}`}
+              value={`${formatAppDate(deliveryDate)} · ${fmtTime12(deliveryTime)}`}
             />
             {artistId && (
               <ReviewRow

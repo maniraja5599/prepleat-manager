@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import type { Booking, Customer, Settings, Payment } from "./store";
-import { fmtTime12, totalDue } from "./store";
+import { fmtTime12, totalDue, formatAppDate, formatAppTime, formatAppDateTime } from "./store";
 import logoAsset from "@/assets/eyas-logo.png";
 
 // Helvetica (jsPDF default) lacks the ₹ glyph — it renders as ? or a box.
@@ -189,8 +189,8 @@ export async function generateBillPDF(opts: {
   doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 36, {
     align: "right",
   });
-  doc.text(format(new Date(), "MMM d, yyyy"), W - 18, 48, { align: "right" });
-  doc.text(`Booked ${format(parseISO(booking.createdAt), "MMM d, yyyy")}`, W - 18, 60, {
+  doc.text(formatAppDate(new Date()), W - 18, 48, { align: "right" });
+  doc.text(`Booked ${formatAppDate(booking.createdAt)}`, W - 18, 60, {
     align: "right",
   });
 
@@ -219,7 +219,7 @@ export async function generateBillPDF(opts: {
   doc.text("DELIVERY", W - 20, y, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text(format(parseISO(booking.deliveryDate), "EEE, MMM d, yyyy"), W - 20, y + 15, {
+  doc.text(formatAppDate(booking.deliveryDate), W - 20, y + 15, {
     align: "right",
   });
   doc.setTextColor(...muted);
@@ -313,7 +313,7 @@ export async function generateBillPDF(opts: {
   // Sub-status and Date (Bottom line)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(5);
-  const dateStr = format(new Date(), "dd MMM yyyy").toUpperCase();
+  const dateStr = formatAppDate(new Date()).toUpperCase();
   doc.text(`${subStamp} · ${dateStr}`, sx, ry + 29, { align: "center" });
 
   cy += 8;
@@ -332,7 +332,7 @@ export async function generateBillPDF(opts: {
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date))
         .map((p) => [
-          format(parseISO(p.date), "MMM d, h:mm a"),
+          formatAppDateTime(p.date),
           (p.mode ?? "gpay").toUpperCase(),
           p.note ?? "—",
           rs(p.amount),
@@ -371,7 +371,7 @@ export async function generateBillPDF(opts: {
   doc.setTextColor(...muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text(`Generated ${format(new Date(), "MMM d, yyyy · h:mm a")}`, W - 20, H - 30, {
+  doc.text(`Generated ${formatAppDateTime(new Date().toISOString())}`, W - 20, H - 30, {
     align: "right",
   });
 

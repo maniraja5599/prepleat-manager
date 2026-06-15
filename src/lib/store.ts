@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { format as dfFormat, parseISO } from "date-fns";
 
 export type ServiceType = "prepleat" | "drape";
 
@@ -127,6 +128,8 @@ export interface Settings {
   prepleatDotColor?: string;
   directDrapeDotColor?: string;
   artistDotColor?: string;
+  dateFormat?: string;
+  timeFormat?: string;
 }
 
 export interface DeletedBooking {
@@ -289,6 +292,8 @@ export const useStore = create<State>()(
         prepleatDotColor: "#ffa029",
         directDrapeDotColor: "#10b981",
         artistDotColor: "#d4af37",
+        dateFormat: "DD-MM-YYYY",
+        timeFormat: "12",
       },
 
       addCustomer: (c) => {
@@ -652,6 +657,8 @@ export const useStore = create<State>()(
             ],
             incomeCategories: ["Tips", "Sale", "Other Income"],
             paymentModes: ["gpay", "cash", "other"],
+            dateFormat: "DD-MM-YYYY",
+            timeFormat: "12",
           },
         }),
 
@@ -1496,14 +1503,77 @@ export const useStore = create<State>()(
 
 export const fmtINR = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
 
-export const fmtTime12 = (hhmm: string) => {
-  const [hStr, mStr] = (hhmm || "00:00").split(":");
-  const h = Number(hStr) || 0;
-  const m = Number(mStr) || 0;
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = ((h + 11) % 12) + 1;
-  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+export const formatAppDate = (dateInput: string | Date | undefined | null): string => {
+  if (!dateInput) return "";
+  try {
+    const settings = useStore.getState().settings;
+    const dateFormat = settings.dateFormat || "DD-MM-YYYY";
+    const d = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
+    let fmt = dateFormat;
+    if (fmt === "DD-MM-YYYY") fmt = "dd-MM-yyyy";
+    if (fmt === "YYYY-MM-DD") fmt = "yyyy-MM-dd";
+    if (fmt === "MM/DD/YYYY") fmt = "MM/dd/yyyy";
+    return dfFormat(d, fmt);
+  } catch {
+    return String(dateInput);
+  }
 };
+
+export const formatAppTime = (timeStr: string | undefined | null): string => {
+  if (!timeStr) return "";
+  try {
+    const settings = useStore.getState().settings;
+    const timeFormatSetting = settings.timeFormat || "12";
+    
+    let tempDate = new Date();
+    const match12 = timeStr.match(/(\d+):(\d+)\s*(AM|PM|am|pm)/i);
+    const match24 = timeStr.match(/^(\d+):(\d+)$/);
+    if (match12) {
+      let hrs = parseInt(match12[1]);
+      const mins = parseInt(match12[2]);
+      const pm = match12[3].toUpperCase() === "PM";
+      if (pm && hrs < 12) hrs += 12;
+      if (!pm && hrs === 12) hrs = 0;
+      tempDate.setHours(hrs, mins, 0, 0);
+    } else if (match24) {
+      const hrs = parseInt(match24[1]);
+      const mins = parseInt(match24[2]);
+      tempDate.setHours(hrs, mins, 0, 0);
+    } else {
+      return timeStr;
+    }
+
+    if (timeFormatSetting === "12") {
+      const h = tempDate.getHours();
+      const m = tempDate.getMinutes();
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = ((h + 11) % 12) + 1;
+      return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+    } else {
+      const h = tempDate.getHours();
+      const m = tempDate.getMinutes();
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    }
+  } catch {
+    return timeStr;
+  }
+};
+
+export const formatAppDateTime = (isoString: string | undefined | null): string => {
+  if (!isoString) return "";
+  try {
+    const datePart = formatAppDate(isoString);
+    const d = parseISO(isoString);
+    const settings = useStore.getState().settings;
+    const timeFormatSetting = settings.timeFormat || "12";
+    const timePart = dfFormat(d, timeFormatSetting === "12" ? "hh:mm a" : "HH:mm");
+    return `${datePart} · ${timePart}`;
+  } catch {
+    return String(isoString);
+  }
+};
+
+export const fmtTime12 = (hhmm: string) => formatAppTime(hhmm);
 
 export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - b.advancePaid);
 

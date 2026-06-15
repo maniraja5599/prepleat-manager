@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, totalDue, type PaymentMode } from "@/lib/store";
+import { useStore, fmtINR, totalDue, formatAppDate, formatAppTime, formatAppDateTime, type PaymentMode } from "@/lib/store";
 import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -469,7 +469,7 @@ function PaymentsPage() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Lifetime Report`, 40, 68);
-    doc.text(`Generated: ${format(new Date(), "PPp")}`, 40, 82);
+    doc.text(`Generated: ${formatAppDateTime(new Date().toISOString())}`, 40, 82);
 
     doc.setDrawColor(220);
     doc.roundedRect(40, 96, w - 80, 70, 6, 6);
@@ -496,7 +496,7 @@ function PaymentsPage() {
           const c = customers.find((x) => x.id === p.customerId);
           const b = bookings.find((x) => x.id === p.bookingId);
           return [
-            format(parseISO(p.date), "dd MMM yy, HH:mm"),
+            formatAppDateTime(p.date),
             c?.name ?? "Unknown",
             (b?.billNumber ?? "").split("-").pop() || "—",
             (p.mode ?? "other").toUpperCase(),
@@ -515,7 +515,7 @@ function PaymentsPage() {
         body: [...expenses]
           .sort((a, b) => b.date.localeCompare(a.date))
           .map((e) => [
-            format(parseISO(e.date), "dd MMM yy"),
+            formatAppDate(e.date),
             e.category,
             (e.mode ?? "—").toUpperCase(),
             e.note ?? "",
@@ -1092,7 +1092,7 @@ function IncomeView(p: {
                       </p>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      {format(parseISO(pay.date), "MMM d · h:mm a")}
+                      {formatAppDateTime(pay.date)}
                       {b ? ` · ${b.service}` : ""}
                     </p>
                   </div>
@@ -1177,7 +1177,7 @@ function IncomeView(p: {
                         </p>
                       </div>
                       <p className="text-[10px] text-muted-foreground truncate">
-                        {format(parseISO(e.date), "MMM d · h:mm a")}
+                        {formatAppDateTime(e.date)}
                         {e.note ? ` · ${e.note}` : ""}
                       </p>
                     </div>
@@ -1359,7 +1359,7 @@ function ExpensesView(p: {
                       </p>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      {format(parseISO(e.date), "MMM d · h:mm a")}
+                      {formatAppDateTime(e.date)}
                       {e.note ? ` · ${e.note}` : ""}
                     </p>
                   </div>
@@ -1815,7 +1815,7 @@ function SummaryView(p: {
                           </div>
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
                             {tx.customerName ? `${tx.category} · ` : ""}
-                            {format(parseISO(tx.date), "MMM d · h:mm a")}
+                            {formatAppDateTime(tx.date)}
                             {tx.note ? ` · ${tx.note}` : ""}
                           </p>
                         </div>

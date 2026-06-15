@@ -9,6 +9,9 @@ import {
   type PaymentMode,
   type Payment,
   type Measurement,
+  formatAppDate,
+  formatAppTime,
+  formatAppDateTime,
 } from "@/lib/store";
 import { format, parseISO } from "date-fns";
 import {
@@ -103,7 +106,7 @@ function BookingDetail() {
     withLink = true,
   ) => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
-    const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
+    const dateStr = formatAppDate(booking.deliveryDate);
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
     let parts: string[] = [];
@@ -511,7 +514,7 @@ function BookingDetail() {
             </p>
             <p className="font-semibold text-sm mt-0.5 flex items-center gap-1">
               <Calendar className="size-3.5 shrink-0" />
-              {format(parseISO(booking.deliveryDate), "EEE, MMM d")}
+              {formatAppDate(booking.deliveryDate)}
             </p>
             <p className="opacity-95 text-[11px] mt-0.5 ml-4.5 flex items-center gap-1">
               <Clock className="size-3 shrink-0" />
@@ -639,7 +642,7 @@ function BookingDetail() {
                   </span>
                   {ts && (
                     <span className="text-[8px] text-muted-foreground/80 mt-0.5 leading-none">
-                      {format(parseISO(ts), "MMM d")}
+                      {formatAppDate(ts)}
                     </span>
                   )}
                 </button>
@@ -890,7 +893,7 @@ function BookingDetail() {
                     className="w-full flex justify-between items-center text-[11px] text-muted-foreground border border-border/20 rounded-xl px-3 py-2 bg-secondary/30 hover:bg-secondary/60 hover:text-foreground transition text-left cursor-pointer"
                   >
                     <span className="truncate pr-2">
-                      <span className="font-semibold">{format(parseISO(p.date), "MMM d")}</span>
+                      <span className="font-semibold">{formatAppDate(p.date)}</span>
                       {" · "}
                       <span className="uppercase font-bold text-[9px] border border-border rounded px-1 py-0.5 bg-background">
                         {p.mode ?? "gpay"}
@@ -1014,7 +1017,7 @@ function BookingDetail() {
                   className="bg-secondary rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <Row label="Time" value={format(parseISO(activePayment.date), "h:mm a")} />
+              <Row label="Time" value={formatAppTime(format(parseISO(activePayment.date), "HH:mm"))} />
               {activePayment.note && <Row label="Note" value={activePayment.note} />}
             </div>
             <button

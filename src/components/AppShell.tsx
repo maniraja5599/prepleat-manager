@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "./BottomNav";
-import { useStore, totalDue, fmtINR } from "@/lib/store";
+import { useStore, totalDue, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
 import {
   CloudOff,
@@ -71,11 +71,6 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     return { syncStatus: "synced", showStatus: false, errorMessage: "" };
   });
 
-  const [showPopup, setShowPopup] = useState(false);
-  const [tickerIndex, setTickerIndex] = useState(0);
-  const [tickerItems, setTickerItems] = useState<
-    Array<{ type: string; text: string; icon: string; color: string }>
-  >([]);
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
@@ -85,6 +80,29 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
       }
     });
   }, []);
+
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentDateTimeStr = useMemo(() => {
+    const dateFmt = settings.dateFormat || "DD-MM-YYYY";
+    const timeFmt = settings.timeFormat || "12";
+    
+    let dFmt = dateFmt;
+    if (dFmt === "DD-MM-YYYY") dFmt = "dd-MM-yyyy";
+    if (dFmt === "YYYY-MM-DD") dFmt = "yyyy-MM-dd";
+    if (dFmt === "MM/DD/YYYY") dFmt = "MM/dd/yyyy";
+
+    const datePart = format(currentDateTime, dFmt);
+    const timePart = format(currentDateTime, timeFmt === "12" ? "hh:mm:ss a" : "HH:mm:ss");
+    return `${datePart} · ${timePart}`;
+  }, [currentDateTime, settings.dateFormat, settings.timeFormat]);
 
   useEffect(() => {
     const handleUpdate = (e: Event) => {
@@ -104,23 +122,6 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
       return d === today;
     } catch {
       return false;
-    }
-  };
-
-  const getNextBooking = () => {
-    try {
-      const todayStr = format(new Date(), "yyyy-MM-dd");
-      const upcoming = bookings
-        .filter(
-          (b) =>
-            b.status !== "cancelled" &&
-            b.status !== "delivered" &&
-            format(parseISO(b.deliveryDate), "yyyy-MM-dd") >= todayStr,
-        )
-        .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate));
-      return upcoming[0];
-    } catch {
-      return null;
     }
   };
 
@@ -195,15 +196,42 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     };
   };
 
-  useEffect(() => {
-    const todayCount = bookings.filter(
-      (b) => b.status !== "cancelled" && isToday(b.deliveryDate),
-    ).length;
-    const nextB = getNextBooking();
-    const dueCount = bookings.filter(
-      (b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0,
-    ).length;
+  // Selectors for Notification Hub Dashboard
+  const todayBookings = bookings.filter(
+    (b) => b.status !== "cancelled" && isToday(b.deliveryDate)
+  );
 
+  const upcomingBookings = bookings
+    .filter(
+      (b) =>
+        b.status !== "cancelled" &&
+        b.status !== "delivered" &&
+        !isToday(b.deliveryDate) &&
+        new Date(b.deliveryDate) >= new Date(),
+    )
+    .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
+    .slice(0, 3);
+
+  const outstandingBookings = bookings
+    .filter(
+      (b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0,
+    )
+    .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
+    .slice(0, 3);
+
+  // Expanding Status Pill states, refs & effects
+  const [currentNotification, setCurrentNotification] = useState<{
+    type: string;
+    text: string;
+    icon: string;
+    color: string;
+  } | null>(null);
+  const [showPill, setShowPill] = useState(false);
+  const lastStatusRef = useRef(sync.syncStatus);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeIndexRef = useRef(0);
+
+  const getNotificationItems = () => {
     const items = [];
 
     // 1. Connection / Sync item
@@ -233,33 +261,47 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
         type: "sync",
         text: isGuest ? "Local Synced" : "Cloud Synced",
         icon: "synced",
-        color: "text-success bg-success/10 border-success/20",
+        color: "text-success bg-[oklch(0.55_0.13_150)]/[0.08] border-[oklch(0.55_0.13_150)]/20",
       });
     }
 
     // 2. Today's Bookings
-    if (todayCount > 0) {
+    if (todayBookings.length > 0) {
       items.push({
         type: "today",
-        text: `${todayCount} ${todayCount === 1 ? "Booking" : "Bookings"} Today`,
+        text: `${todayBookings.length} Bookings Today`,
         icon: "calendar",
         color: "text-primary bg-primary/10 border-primary/20",
       });
     }
 
     // 3. Next Booking
+    const nextB = bookings
+      .filter(
+        (b) =>
+          b.status !== "cancelled" &&
+          b.status !== "delivered" &&
+          new Date(b.deliveryDate) >= new Date(),
+      )
+      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))[0];
+      
     if (nextB) {
       const cust = customers.find((c) => c.id === nextB.customerId);
-      const timeStr = nextB.deliveryTime ? nextB.deliveryTime : "";
+      const dateStr = formatAppDate(nextB.deliveryDate);
+      const timeStr = nextB.deliveryTime ? ` @ ${formatAppTime(nextB.deliveryTime)}` : "";
       items.push({
         type: "next",
-        text: `Next: ${cust?.name || "Client"} @ ${timeStr}`,
+        text: `Next: ${cust?.name || "Client"} · ${dateStr}${timeStr}`,
         icon: "clock",
         color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
       });
     }
 
-    // 4. Due Payments
+    // 4. Outstanding Dues
+    const dueCount = bookings.filter(
+      (b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0,
+    ).length;
+    
     if (dueCount > 0) {
       items.push({
         type: "due",
@@ -269,20 +311,117 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
       });
     }
 
-    setTickerItems(items);
-  }, [bookings, sync, customers, isGuest]);
+    return items;
+  };
 
-  // Rotate ticker index
+  const triggerPillCycle = (item: typeof currentNotification, durationMs = 4000) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setCurrentNotification(item);
+    setShowPill(true);
+    timerRef.current = setTimeout(() => {
+      setShowPill(false);
+    }, durationMs);
+  };
+
+  // 1. Listen for sync changes to show instant feedback
   useEffect(() => {
-    if (tickerItems.length <= 1) {
-      setTickerIndex(0);
-      return;
+    if (sync.syncStatus !== lastStatusRef.current) {
+      lastStatusRef.current = sync.syncStatus;
+      const items = getNotificationItems();
+      const syncItem = items.find((x) => x.type === "sync");
+      if (syncItem) {
+        triggerPillCycle(syncItem, 5000);
+      }
     }
-    const timer = setInterval(() => {
-      setTickerIndex((prev) => (prev + 1) % tickerItems.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [tickerItems]);
+  }, [sync.syncStatus]);
+
+  // 2. Periodic background notifications ticker
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const items = getNotificationItems();
+      if (items.length === 0) return;
+      
+      activeIndexRef.current = (activeIndexRef.current + 1) % items.length;
+      const nextItem = items[activeIndexRef.current];
+      triggerPillCycle(nextItem, 4000);
+    }, 12000);
+
+    // Run once on load to show sync status
+    const items = getNotificationItems();
+    if (items.length > 0) {
+      triggerPillCycle(items[0], 4000);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [bookings, sync.syncStatus, customers]);
+
+  // Split logic for long notifications to cycle vertically
+  const currentText = currentNotification?.text || "";
+  
+  const slides = useMemo(() => {
+    if (!currentText) return [];
+    
+    // 1. Initial split based on separators
+    let segments: string[] = [];
+    let textToSplit = currentText;
+    if (textToSplit.includes(" @ ")) {
+      textToSplit = textToSplit.replace(" @ ", " · @ ");
+    }
+    
+    if (textToSplit.includes(" · ")) {
+      segments = textToSplit.split(" · ");
+    } else {
+      segments = [textToSplit];
+    }
+
+    // 2. Further split any segments that are still too long (> 16 chars)
+    const finalSlides: string[] = [];
+    for (const seg of segments) {
+      if (seg.length <= 16) {
+        finalSlides.push(seg);
+      } else {
+        const mid = Math.floor(seg.length / 2);
+        const spaceBefore = seg.lastIndexOf(" ", mid);
+        const spaceAfter = seg.indexOf(" ", mid);
+        let splitIdx = -1;
+        if (spaceBefore !== -1 && spaceAfter !== -1) {
+          splitIdx = (mid - spaceBefore < spaceAfter - mid) ? spaceBefore : spaceAfter;
+        } else {
+          splitIdx = spaceBefore !== -1 ? spaceBefore : spaceAfter;
+        }
+
+        if (splitIdx !== -1) {
+          finalSlides.push(seg.slice(0, splitIdx).trim());
+          finalSlides.push(seg.slice(splitIdx + 1).trim());
+        } else {
+          finalSlides.push(seg);
+        }
+      }
+    }
+
+    return finalSlides;
+  }, [currentText]);
+
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  // Reset slide index when notification updates
+  useEffect(() => {
+    setSlideIndex(0);
+  }, [currentText]);
+
+  // Cycle slideIndex if there are multiple slides inside an active pill display
+  useEffect(() => {
+    if (slides.length <= 1 || !showPill) return;
+    
+    const interval = setInterval(() => {
+      setSlideIndex((prev) => (prev + 1) % slides.length);
+    }, 2200);
+
+    return () => clearInterval(interval);
+  }, [slides, showPill]);
 
   return (
     <div className="min-h-[100dvh] bg-background pb-28">
@@ -295,64 +434,97 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
               alt={settings.businessName}
               className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25 shrink-0"
             />
-            <p className="text-[13px] font-display font-semibold tracking-tight truncate shrink-0">
-              {settings.businessName}
-            </p>
+            <div className="flex flex-col min-w-0">
+              <p className="text-[13px] font-display font-semibold tracking-tight truncate">
+                {settings.businessName}
+              </p>
+              <p className="text-[8.5px] text-muted-foreground/90 font-mono font-medium tracking-tight mt-0.5 leading-none shrink-0">
+                {currentDateTimeStr}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto shrink-0 min-w-0">
-            {showFloatingSearch && (
-              <button
-                onClick={() => {
-                  setShowSearchModal(true);
-                  setActiveTab("all");
-                }}
-                className="size-8.5 rounded-full bg-secondary hover:bg-secondary/80 border border-border/10 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition cursor-pointer shrink-0"
-                title="Global Search"
-              >
-                <Search className="size-4 text-primary" />
-              </button>
-            )}
-
-            {/* Live Info Ticker (rendered in top-right slot) */}
-            {tickerItems.length > 0 && (
-              <button
-                onClick={() => setShowPopup(true)}
+          <div className="flex items-center ml-auto shrink-0 min-w-0">
+            {/* Sliding expanding pill */}
+            <div
+              onClick={() => {
+                setShowSearchModal(true);
+                setActiveTab("all");
+              }}
+              className={cn(
+                "h-8.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-500 ease-in-out cursor-pointer overflow-hidden origin-right",
+                showPill && currentNotification
+                  ? "max-w-[150px] xs:max-w-[180px] px-3 opacity-100 mr-2 border-border/10 scale-100"
+                  : "max-w-0 px-0 opacity-0 mr-0 border-transparent scale-95",
+                currentNotification?.color,
+              )}
+            >
+              {currentNotification?.icon === "syncing" && (
+                <RefreshCw className="size-2.5 animate-spin shrink-0" />
+              )}
+              {currentNotification?.icon === "offline" && <CloudOff className="size-2.5 shrink-0" />}
+              {currentNotification?.icon === "error" && (
+                <AlertCircle className="size-2.5 animate-shake-sm text-red-500 shrink-0" />
+              )}
+              {currentNotification?.icon === "synced" && <Check className="size-2.5 shrink-0" />}
+              {currentNotification?.icon === "calendar" && (
+                <Calendar className="size-2.5 text-primary shrink-0" />
+              )}
+              {currentNotification?.icon === "clock" && (
+                <Clock className="size-2.5 text-indigo-500 shrink-0" />
+              )}
+              {currentNotification?.icon === "wallet" && (
+                <Wallet className="size-2.5 text-rose-500 shrink-0" />
+              )}
+              <span 
+                key={`${currentText}-${slideIndex}`} 
                 className={cn(
-                  "px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 animate-in fade-in slide-in-from-right-2 cursor-pointer max-w-[100px] xs:max-w-[140px] sm:max-w-none truncate hover:brightness-95 active:scale-95 shrink-0",
-                  tickerItems[tickerIndex]?.color,
+                  "truncate whitespace-nowrap inline-block",
+                  slides.length > 1 ? "animate-slide-up-cycle" : "animate-slide-up-single"
                 )}
               >
-                {tickerItems[tickerIndex]?.icon === "syncing" && (
-                  <RefreshCw className="size-2.5 animate-spin" />
-                )}
-                {tickerItems[tickerIndex]?.icon === "offline" && <CloudOff className="size-2.5" />}
-                {tickerItems[tickerIndex]?.icon === "error" && (
-                  <AlertCircle className="size-2.5 animate-shake-sm text-red-500" />
-                )}
-                {tickerItems[tickerIndex]?.icon === "synced" && <Check className="size-2.5" />}
-                {tickerItems[tickerIndex]?.icon === "calendar" && (
-                  <Calendar className="size-2.5 text-primary" />
-                )}
-                {tickerItems[tickerIndex]?.icon === "clock" && (
-                  <Clock className="size-2.5 text-indigo-500" />
-                )}
-                {tickerItems[tickerIndex]?.icon === "wallet" && (
-                  <Wallet className="size-2.5 text-rose-500" />
-                )}
-                <span className="truncate">{tickerItems[tickerIndex]?.text}</span>
-              </button>
-            )}
+                {slides[slideIndex]}
+              </span>
+            </div>
 
-            {/* Fallback gold dot if ticker is empty */}
-            {tickerItems.length === 0 && (
-              <div className="shrink-0 flex items-center">
+            {/* Global Search Button */}
+            <button
+              onClick={() => {
+                setShowSearchModal(true);
+                setActiveTab("all");
+              }}
+              className="relative size-10 rounded-full bg-secondary hover:bg-secondary/80 border border-border/10 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition cursor-pointer shrink-0"
+              title={
+                sync.syncStatus === "synced"
+                  ? (isGuest ? "Saved Locally (Tap to search)" : "Database Synced (Tap to search)")
+                  : sync.syncStatus === "syncing"
+                  ? "Syncing... (Tap to search)"
+                  : sync.syncStatus === "offline"
+                  ? "Offline Mode (Tap to search)"
+                  : "Sync Error! Tap to resolve"
+              }
+            >
+              <Search className="size-5 text-primary" strokeWidth={2.5} />
+              
+              {/* Sync Status Badge Dot */}
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center">
+                {sync.syncStatus === "syncing" && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                )}
+                {sync.syncStatus === "error" && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                )}
                 <span
-                  className="size-1.5 rounded-full bg-gold/60 animate-in fade-in duration-300"
-                  aria-hidden
+                  className={cn(
+                    "relative inline-flex rounded-full h-2.5 w-2.5 border border-background shadow-xs",
+                    sync.syncStatus === "synced" && "bg-emerald-500",
+                    sync.syncStatus === "syncing" && "bg-blue-500",
+                    sync.syncStatus === "offline" && "bg-amber-500",
+                    sync.syncStatus === "error" && "bg-red-500",
+                  )}
                 />
-              </div>
-            )}
+              </span>
+            </button>
           </div>
           <style>{`
             @keyframes shake-sm {
@@ -369,6 +541,22 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
             }
             .animate-bounce-slow {
               animation: bounce-slow 2s infinite ease-in-out;
+            }
+            @keyframes slide-up-cycle {
+              0% { transform: translateY(8px); opacity: 0; }
+              12% { transform: translateY(0); opacity: 1; }
+              88% { transform: translateY(0); opacity: 1; }
+              100% { transform: translateY(-8px); opacity: 0; }
+            }
+            .animate-slide-up-cycle {
+              animation: slide-up-cycle 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            @keyframes slide-up-single {
+              0% { transform: translateY(8px); opacity: 0; }
+              100% { transform: translateY(0); opacity: 1; }
+            }
+            .animate-slide-up-single {
+              animation: slide-up-single 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
           `}</style>
         </div>
@@ -396,448 +584,338 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
       </div>
       <BottomNav />
 
-      {/* Notification Hub Popup Modal */}
-      {showPopup && (
-        <div
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-start justify-center p-4 pt-16 animate-in fade-in duration-200"
-          onClick={() => setShowPopup(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-card/95 backdrop-blur-md rounded-2xl border border-border/30 shadow-2xl overflow-hidden animate-in slide-in-from-top-4 duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="p-4 border-b border-border/20 flex items-center justify-between bg-secondary/35">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Notification Hub
-                </h3>
-                <p className="text-[9px] text-muted-foreground mt-0.5">
-                  Real-time alerts and shortcuts
-                </p>
-              </div>
-              <button
-                onClick={() => setShowPopup(false)}
-                className="size-7 rounded-lg hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Sync Status Card */}
-              <div
-                className={cn(
-                  "p-3 rounded-xl border flex flex-col gap-2 transition-all",
-                  sync.syncStatus === "synced" &&
-                    "bg-[oklch(0.55_0.13_150)]/[0.04] border-[oklch(0.55_0.13_150)]/15 text-[oklch(0.55_0.13_150)]",
-                  sync.syncStatus === "syncing" &&
-                    "bg-blue-500/[0.04] border-blue-500/15 text-blue-500",
-                  sync.syncStatus === "offline" &&
-                    "bg-amber-500/[0.04] border-amber-500/15 text-amber-500",
-                  sync.syncStatus === "error" && "bg-red-500/[0.04] border-red-500/20 text-red-500",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  {sync.syncStatus === "syncing" && <RefreshCw className="size-4 animate-spin" />}
-                  {sync.syncStatus === "offline" && (
-                    <CloudOff className="size-4 animate-bounce-slow" />
-                  )}
-                  {sync.syncStatus === "error" && (
-                    <AlertTriangle className="size-4 animate-shake-sm" />
-                  )}
-                  {sync.syncStatus === "synced" && <Check className="size-4 stroke-[3]" />}
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    {sync.syncStatus === "synced" &&
-                      (isGuest ? "Saved Locally" : "Database Synced")}
-                    {sync.syncStatus === "syncing" &&
-                      (isGuest ? "Saving Locally..." : "Syncing Data...")}
-                    {sync.syncStatus === "offline" && "Offline Mode Active"}
-                    {sync.syncStatus === "error" &&
-                      (isGuest ? "Local Save Error" : "Database Sync Error")}
-                  </span>
-                </div>
-
-                <p className="text-[10px] text-muted-foreground/90 leading-normal">
-                  {sync.syncStatus === "synced" &&
-                    (isGuest
-                      ? "All records are fully updated and saved securely on your device."
-                      : "All records are fully updated and saved securely to the cloud.")}
-                  {sync.syncStatus === "syncing" &&
-                    (isGuest
-                      ? "We are saving your changes locally."
-                      : "We are uploading your changes and pulling the latest updates.")}
-                  {sync.syncStatus === "offline" &&
-                    "No connection. You can keep editing; changes will auto-sync when online."}
-                  {sync.syncStatus === "error" &&
-                    (isGuest
-                      ? "Failed to save data locally. Check your device storage."
-                      : "Failed to connect to the cloud database. Tap retry to reconnect.")}
-                </p>
-
-                {sync.syncStatus === "error" && (
-                  <div className="mt-1 space-y-2">
-                    <p className="text-[9px] font-mono bg-destructive/5 text-destructive border border-destructive/10 rounded-lg p-2 max-h-16 overflow-y-auto whitespace-pre-wrap leading-tight">
-                      {sync.errorMessage || "Network connection interrupted or session expired."}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.dispatchEvent(new Event("sync-retry"));
-                      }}
-                      className="w-full py-1.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider hover:bg-red-600 active:scale-95 transition cursor-pointer"
-                    >
-                      Retry Connection
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Today's Bookings */}
-              {bookings.filter((b) => b.status !== "cancelled" && isToday(b.deliveryDate)).length >
-              0 ? (
-                <div className="space-y-1.5">
-                  <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                    Today's Bookings
-                  </h4>
-                  <div className="space-y-1">
-                    {bookings
-                      .filter((b) => b.status !== "cancelled" && isToday(b.deliveryDate))
-                      .map((b) => (
-                        <Link
-                          key={b.id}
-                          to="/bookings/$id"
-                          params={{ id: b.id }}
-                          onClick={() => setShowPopup(false)}
-                          className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left animate-in slide-in-from-bottom-1"
-                        >
-                          <div className="min-w-0 pr-2">
-                            <p className="text-xs font-semibold truncate">
-                              {getCustomerName(b.customerId)}
-                            </p>
-                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
-                              {b.service} · {b.sareeCount} {b.sareeCount === 1 ? "Saree" : "Sarees"}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0 flex items-center gap-1.5">
-                            <div>
-                              <p className="text-[10px] font-bold">{b.deliveryTime}</p>
-                              <p className="text-[9px] text-success font-semibold">
-                                {fmtINR(b.totalAmount)}
-                              </p>
-                            </div>
-                            <ChevronRight className="size-3 text-muted-foreground" />
-                          </div>
-                        </Link>
-                      ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3 bg-secondary/15 rounded-xl border border-border/10 text-center">
-                  <p className="text-[10px] text-muted-foreground/80">
-                    No bookings scheduled for today.
-                  </p>
-                </div>
-              )}
-
-              {/* Next Upcoming Booking */}
-              {bookings.filter(
-                (b) =>
-                  b.status !== "cancelled" &&
-                  b.status !== "delivered" &&
-                  !isToday(b.deliveryDate) &&
-                  new Date(b.deliveryDate) >= new Date(),
-              ).length > 0 && (
-                <div className="space-y-1.5">
-                  <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                    Next Upcoming Bookings
-                  </h4>
-                  <div className="space-y-1">
-                    {bookings
-                      .filter(
-                        (b) =>
-                          b.status !== "cancelled" &&
-                          b.status !== "delivered" &&
-                          !isToday(b.deliveryDate) &&
-                          new Date(b.deliveryDate) >= new Date(),
-                      )
-                      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
-                      .slice(0, 3)
-                      .map((b) => (
-                        <Link
-                          key={b.id}
-                          to="/bookings/$id"
-                          params={{ id: b.id }}
-                          onClick={() => setShowPopup(false)}
-                          className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left animate-in slide-in-from-bottom-1"
-                        >
-                          <div className="min-w-0 pr-2">
-                            <p className="text-xs font-semibold truncate">
-                              {getCustomerName(b.customerId)}
-                            </p>
-                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
-                              {format(parseISO(b.deliveryDate), "MMM d")} · {b.deliveryTime}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0 flex items-center gap-1.5">
-                            <ChevronRight className="size-3 text-muted-foreground" />
-                          </div>
-                        </Link>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Outstanding Payments */}
-              {bookings.filter(
-                (b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0,
-              ).length > 0 && (
-                <div className="space-y-1.5">
-                  <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                    Outstanding Payments
-                  </h4>
-                  <div className="space-y-1">
-                    {bookings
-                      .filter(
-                        (b) =>
-                          b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0,
-                      )
-                      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
-                      .slice(0, 3)
-                      .map((b) => (
-                        <Link
-                          key={b.id}
-                          to="/bookings/$id"
-                          params={{ id: b.id }}
-                          onClick={() => setShowPopup(false)}
-                          className="flex justify-between items-center p-2.5 rounded-xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left animate-in slide-in-from-bottom-1"
-                        >
-                          <div className="min-w-0 pr-2">
-                            <p className="text-xs font-semibold truncate">
-                              {getCustomerName(b.customerId)}
-                            </p>
-                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
-                              Total: {fmtINR(b.totalAmount)}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0 flex items-center gap-1.5">
-                            <div>
-                              <p className="text-[10px] font-bold text-destructive">
-                                {fmtINR(totalDue(b))} due
-                              </p>
-                            </div>
-                            <ChevronRight className="size-3 text-muted-foreground" />
-                          </div>
-                        </Link>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       {/* Global Search Popup Modal */}
       {showSearchModal && (
         <div
           className="fixed inset-0 z-50 bg-background flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Modal Header */}
-          <div className="px-4 py-3 border-b border-border/10 flex items-center gap-3 bg-card shrink-0">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search phone, bill, customer details..."
-                autoFocus
-                className="w-full bg-secondary text-foreground border border-border/40 rounded-xl py-2 pl-9 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-muted-foreground"
-              />
-              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-              {searchQuery && (
+          <div className={cn("w-full flex-1 flex flex-col mx-auto", wide ? "max-w-3xl" : "max-w-md")}>
+            {/* Modal Header */}
+            <div className="px-4 py-3 border-b border-border/10 flex items-center gap-3 bg-card shrink-0">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search phone, bill, customer details..."
+                  autoFocus
+                  className="w-full bg-secondary text-foreground border border-border/40 rounded-xl py-2 pl-9 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-muted-foreground"
+                />
+                <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" strokeWidth={2.5} />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-2 size-6 rounded-full hover:bg-secondary/80 flex items-center justify-center text-muted-foreground cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setShowSearchModal(false);
+                  setSearchQuery("");
+                }}
+                className="text-sm font-semibold text-primary px-1 hover:opacity-80 active:scale-95 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Tabs */}
+            {searchQuery && (
+              <div className="px-4 py-2 border-b border-border/10 bg-card flex gap-1.5 overflow-x-auto no-scrollbar shrink-0">
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-2 size-6 rounded-full hover:bg-secondary/80 flex items-center justify-center text-muted-foreground cursor-pointer"
+                  onClick={() => setActiveTab("all")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                    activeTab === "all"
+                      ? "saree-gradient text-white"
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
                 >
-                  <X className="size-3.5" />
+                  All ({getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length})
                 </button>
-              )}
-            </div>
-            <button
-              onClick={() => {
-                setShowSearchModal(false);
-                setSearchQuery("");
-              }}
-              className="text-sm font-semibold text-primary px-1 hover:opacity-80 active:scale-95 transition cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {/* Tabs */}
-          {searchQuery && (
-            <div className="px-4 py-2 border-b border-border/10 bg-card flex gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-              <button
-                onClick={() => setActiveTab("all")}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
-                  activeTab === "all"
-                    ? "saree-gradient text-white"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                All ({getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("customers")}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
-                  activeTab === "customers"
-                    ? "saree-gradient text-white"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Customers ({getSearchResults().customers.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("bookings")}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
-                  activeTab === "bookings"
-                    ? "saree-gradient text-white"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Bookings ({getSearchResults().bookings.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("payments")}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
-                  activeTab === "payments"
-                    ? "saree-gradient text-white"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Payments ({getSearchResults().payments.length})
-              </button>
-            </div>
-          )}
-
-          {/* Results Area */}
-          <div ref={resultsRef} className="px-4 py-4 overflow-y-auto flex-1 bg-background/30">
-            {!searchQuery ? (
-              <div className="text-center py-12 text-sm text-muted-foreground">
-                Type phone number, bill number, name or payments...
+                <button
+                  onClick={() => setActiveTab("customers")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                    activeTab === "customers"
+                      ? "saree-gradient text-white"
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Customers ({getSearchResults().customers.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("bookings")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                    activeTab === "bookings"
+                      ? "saree-gradient text-white"
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Bookings ({getSearchResults().bookings.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("payments")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition",
+                    activeTab === "payments"
+                      ? "saree-gradient text-white"
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Payments ({getSearchResults().payments.length})
+                </button>
               </div>
-            ) : (getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length) === 0 ? (
-              <div className="text-center py-12 text-sm text-muted-foreground">
-                No matches found for "{searchQuery}"
-              </div>
-            ) : (
-              <div className="space-y-4 pb-20">
-                {/* Category: Customers */}
-                {(activeTab === "all" || activeTab === "customers") && getSearchResults().customers.length > 0 && (
+            )}
+
+            {/* Results Area */}
+            <div ref={resultsRef} className="px-4 py-4 overflow-y-auto flex-1 bg-background/30">
+              {!searchQuery ? (
+                <div className="space-y-5 pb-20">
+                  {/* Dashboard / Notification Hub inside Search */}
                   <div>
-                    {activeTab === "all" && (
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                        <User className="size-3 text-primary/80" /> Customers
-                      </h4>
-                    )}
-                    <div className="space-y-2">
-                      {getSearchResults().customers.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            navigate({ to: `/customers/${c.id}` });
-                            setShowSearchModal(false);
-                            setSearchQuery("");
-                          }}
-                          className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
-                        >
-                          <div className="min-w-0 pr-2 flex-1">
-                            <p className="font-semibold text-sm text-foreground truncate">{c.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Phone className="size-3" /> {c.phone}
-                            </p>
-                            {c.address && (
-                              <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
-                                {c.address}
-                              </p>
-                            )}
-                            {c.reference && (
-                              <p className="text-[10px] text-primary/80 truncate mt-0.5">
-                                ref: {c.reference}
-                              </p>
-                            )}
-                            {c.measurements && c.measurements.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
-                                {c.measurements.map((m, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
-                                  >
-                                    {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[9px] font-semibold bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 self-start mt-0.5">
-                            {c.kind ?? "client"}
-                          </span>
-                        </button>
-                      ))}
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      System Sync Status
+                    </h3>
+                    {/* Sync Status Card */}
+                    <div
+                      className={cn(
+                        "p-3 rounded-2xl border flex flex-col gap-2 transition-all",
+                        sync.syncStatus === "synced" &&
+                          "bg-[oklch(0.55_0.13_150)]/[0.04] border-[oklch(0.55_0.13_150)]/15 text-[oklch(0.55_0.13_150)]",
+                        sync.syncStatus === "syncing" &&
+                          "bg-blue-500/[0.04] border-blue-500/15 text-blue-500",
+                        sync.syncStatus === "offline" &&
+                          "bg-amber-500/[0.04] border-amber-500/15 text-amber-500",
+                        sync.syncStatus === "error" && "bg-red-500/[0.04] border-red-500/20 text-red-500",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {sync.syncStatus === "syncing" && <RefreshCw className="size-4 animate-spin" />}
+                        {sync.syncStatus === "offline" && (
+                          <CloudOff className="size-4 animate-bounce-slow" />
+                        )}
+                        {sync.syncStatus === "error" && (
+                          <AlertTriangle className="size-4 animate-shake-sm" />
+                        )}
+                        {sync.syncStatus === "synced" && <Check className="size-4 stroke-[3]" />}
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          {sync.syncStatus === "synced" &&
+                            (isGuest ? "Saved Locally" : "Database Synced")}
+                          {sync.syncStatus === "syncing" &&
+                            (isGuest ? "Saving Locally..." : "Syncing Data...")}
+                          {sync.syncStatus === "offline" && "Offline Mode Active"}
+                          {sync.syncStatus === "error" &&
+                            (isGuest ? "Local Save Error" : "Database Sync Error")}
+                        </span>
+                      </div>
+
+                      <p className="text-[10px] text-muted-foreground/90 leading-normal">
+                        {sync.syncStatus === "synced" &&
+                          (isGuest
+                            ? "All records are fully updated and saved securely on your device."
+                            : "All records are fully updated and saved securely to the cloud.")}
+                        {sync.syncStatus === "syncing" &&
+                          (isGuest
+                            ? "We are saving your changes locally."
+                            : "We are uploading your changes and pulling the latest updates.")}
+                        {sync.syncStatus === "offline" &&
+                          "No connection. You can keep editing; changes will auto-sync when online."}
+                        {sync.syncStatus === "error" &&
+                          (isGuest
+                            ? "Failed to save data locally. Check your device storage."
+                            : "Failed to connect to the cloud database. Tap retry to reconnect.")}
+                      </p>
+
+                      {sync.syncStatus === "error" && (
+                        <div className="mt-1 space-y-2">
+                          <p className="text-[9px] font-mono bg-destructive/5 text-destructive border border-destructive/10 rounded-lg p-2 max-h-16 overflow-y-auto whitespace-pre-wrap leading-tight">
+                            {sync.errorMessage || "Network connection interrupted or session expired."}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              window.dispatchEvent(new Event("sync-retry"));
+                            }}
+                            className="w-full py-1.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider hover:bg-red-600 active:scale-95 transition cursor-pointer"
+                          >
+                            Retry Connection
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
 
-                {/* Category: Bookings */}
-                {(activeTab === "all" || activeTab === "bookings") && getSearchResults().bookings.length > 0 && (
+                  {/* Today's Bookings */}
                   <div>
-                    {activeTab === "all" && (
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
-                        <Receipt className="size-3 text-primary/80" /> Bookings
-                      </h4>
-                    )}
-                    <div className="space-y-2">
-                      {getSearchResults().bookings.map((b) => {
-                        const cust = customers.find((c) => c.id === b.customerId);
-                        const due = totalDue(b);
-                        return (
-                          <button
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Calendar className="size-3 text-primary/80" /> Today's Bookings
+                    </h3>
+                    {todayBookings.length > 0 ? (
+                      <div className="space-y-2">
+                        {todayBookings.map((b) => (
+                          <Link
                             key={b.id}
+                            to="/bookings/$id"
+                            params={{ id: b.id }}
                             onClick={() => {
-                              navigate({ to: `/bookings/${b.id}` });
+                              setShowSearchModal(false);
+                              setSearchQuery("");
+                            }}
+                            className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="text-xs font-semibold truncate">
+                                {getCustomerName(b.customerId)}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
+                                {b.service === "prepleat" ? "PrePleat Saree" : "Saree Drape"} · {b.sareeCount} {b.sareeCount === 1 ? "Saree" : "Sarees"}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0 flex items-center gap-1.5">
+                              <div>
+                                <p className="text-[10px] font-bold">{b.deliveryTime}</p>
+                                <p className="text-[9px] text-success font-semibold">
+                                  {fmtINR(b.totalAmount)}
+                                </p>
+                              </div>
+                              <ChevronRight className="size-3 text-muted-foreground" />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3.5 bg-secondary/15 rounded-2xl border border-border/10 text-center">
+                        <p className="text-[10px] text-muted-foreground/80">
+                          No bookings scheduled for today.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Next Upcoming Bookings */}
+                  {upcomingBookings.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <Clock className="size-3 text-indigo-500/80" /> Next Upcoming Bookings
+                      </h3>
+                      <div className="space-y-2">
+                        {upcomingBookings.map((b) => (
+                          <Link
+                            key={b.id}
+                            to="/bookings/$id"
+                            params={{ id: b.id }}
+                            onClick={() => {
+                              setShowSearchModal(false);
+                              setSearchQuery("");
+                            }}
+                            className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="text-xs font-semibold truncate">
+                                {getCustomerName(b.customerId)}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
+                                {formatAppDate(b.deliveryDate)} · {formatAppTime(b.deliveryTime)}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0 flex items-center gap-1.5">
+                              <ChevronRight className="size-3 text-muted-foreground" />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Outstanding Payments */}
+                  {outstandingBookings.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <Wallet className="size-3 text-rose-500/80" /> Outstanding Payments
+                      </h3>
+                      <div className="space-y-2">
+                        {outstandingBookings.map((b) => (
+                          <Link
+                            key={b.id}
+                            to="/bookings/$id"
+                            params={{ id: b.id }}
+                            onClick={() => {
+                              setShowSearchModal(false);
+                              setSearchQuery("");
+                            }}
+                            className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="text-xs font-semibold truncate">
+                                {getCustomerName(b.customerId)}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
+                                Total: {fmtINR(b.totalAmount)}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0 flex items-center gap-1.5">
+                              <div>
+                                <p className="text-[10px] font-bold text-destructive">
+                                  {fmtINR(totalDue(b))} due
+                                </p>
+                              </div>
+                              <ChevronRight className="size-3 text-muted-foreground" />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length) === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  No matches found for "{searchQuery}"
+                </div>
+              ) : (
+                <div className="space-y-4 pb-20">
+                  {/* Category: Customers */}
+                  {(activeTab === "all" || activeTab === "customers") && getSearchResults().customers.length > 0 && (
+                    <div>
+                      {activeTab === "all" && (
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <User className="size-3 text-primary/80" /> Customers
+                        </h4>
+                      )}
+                      <div className="space-y-2">
+                        {getSearchResults().customers.map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              navigate({ to: `/customers/${c.id}` });
                               setShowSearchModal(false);
                               setSearchQuery("");
                             }}
                             className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
                           >
                             <div className="min-w-0 pr-2 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-sm text-foreground truncate">
-                                  {cust?.name || "Client"}
-                                </span>
-                                <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
-                                  #{b.billNumber || b.id.slice(0, 6).toUpperCase()}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {b.service === "prepleat" ? "PrePleat Saree" : "Saree Drape"} · {b.sareeCount} saree{b.sareeCount !== 1 && "s"}
+                              <p className="font-semibold text-sm text-foreground truncate">{c.name}</p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Phone className="size-3" /> {c.phone}
                               </p>
-                              <p className="text-[10px] text-muted-foreground/80 mt-0.5">
-                                Delivery: {format(parseISO(b.deliveryDate), "MMM d, yyyy")}
-                              </p>
-                              {b.notes && (
-                                <p className="text-[10px] text-muted-foreground/80 mt-0.5 italic truncate">
-                                  Note: {b.notes}
+                              {c.address && (
+                                <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
+                                  {c.address}
                                 </p>
                               )}
-                              {b.measurements && b.measurements.length > 0 && (
+                              {c.reference && (
+                                <p className="text-[10px] text-primary/80 truncate mt-0.5">
+                                  ref: {c.reference}
+                                </p>
+                              )}
+                              {c.measurements && c.measurements.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
-                                  {b.measurements.map((m, idx) => (
+                                  {c.measurements.map((m, idx) => (
                                     <span
                                       key={idx}
                                       className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
@@ -848,85 +926,150 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                                 </div>
                               )}
                             </div>
-                            <div className="text-right shrink-0 flex flex-col items-end gap-1.5 pl-2">
-                              <span className="text-[9px] font-bold bg-secondary/80 border border-border/10 px-2 py-0.5 rounded-full uppercase tracking-wider text-foreground">
-                                {b.status}
-                              </span>
-                              <div className="text-xs font-semibold tabular-nums text-foreground">
-                                {fmtINR(b.totalAmount)}
-                              </div>
-                              {due > 0 ? (
-                                <div className="text-[10px] text-destructive font-bold">
-                                  {fmtINR(due)} due
-                                </div>
-                              ) : (
-                                <div className="text-[10px] text-success font-bold">Paid</div>
-                              )}
-                            </div>
+                            <span className="text-[9px] font-semibold bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 self-start mt-0.5">
+                              {c.kind ?? "client"}
+                            </span>
                           </button>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Category: Payments */}
-                {(activeTab === "all" || activeTab === "payments") && getSearchResults().payments.length > 0 && (
-                  <div>
-                    {activeTab === "all" && (
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
-                        <IndianRupee className="size-3 text-primary/80" /> Payments
-                      </h4>
-                    )}
-                    <div className="space-y-2">
-                      {getSearchResults().payments.map((p) => {
-                        const b = bookings.find((bk) => bk.id === p.bookingId);
-                        const cust = b ? customers.find((c) => c.id === b.customerId) : null;
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={() => {
-                              navigate({ to: `/bookings/${p.bookingId}` });
-                              setShowSearchModal(false);
-                              setSearchQuery("");
-                            }}
-                            className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
-                          >
-                            <div className="min-w-0 pr-2 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-sm text-primary">
-                                  {fmtINR(p.amount)}
-                                </span>
-                                <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded text-muted-foreground font-semibold">
-                                  {(p.mode ?? "gpay").toUpperCase()}
-                                </span>
-                                {b?.billNumber && (
-                                  <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
-                                    #{b.billNumber.split("-").pop()}
+                  {/* Category: Bookings */}
+                  {(activeTab === "all" || activeTab === "bookings") && getSearchResults().bookings.length > 0 && (
+                    <div>
+                      {activeTab === "all" && (
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
+                          <Receipt className="size-3 text-primary/80" /> Bookings
+                        </h4>
+                      )}
+                      <div className="space-y-2">
+                        {getSearchResults().bookings.map((b) => {
+                          const cust = customers.find((c) => c.id === b.customerId);
+                          const due = totalDue(b);
+                          return (
+                            <button
+                              key={b.id}
+                              onClick={() => {
+                                navigate({ to: `/bookings/${b.id}` });
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
+                            >
+                              <div className="min-w-0 pr-2 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-sm text-foreground truncate">
+                                    {cust?.name || "Client"}
                                   </span>
+                                  <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
+                                    #{b.billNumber || b.id.slice(0, 6).toUpperCase()}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {b.service === "prepleat" ? "PrePleat Saree" : "Saree Drape"} · {b.sareeCount} saree{b.sareeCount !== 1 && "s"}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+                                  Delivery: {formatAppDate(b.deliveryDate)}
+                                </p>
+                                {b.notes && (
+                                  <p className="text-[10px] text-muted-foreground/80 mt-0.5 italic truncate">
+                                    Note: {b.notes}
+                                  </p>
+                                )}
+                                {b.measurements && b.measurements.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
+                                    {b.measurements.map((m, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
+                                      >
+                                        {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
+                                      </span>
+                                    ))}
+                                  </div>
                                 )}
                               </div>
-                              <p className="text-xs text-foreground mt-0.5 truncate">
-                                Billed To: {cust?.name || "Client"}
-                              </p>
-                              {p.note && (
-                                <p className="text-[10px] text-muted-foreground/80 mt-0.5 italic truncate">
-                                  Note: {p.note}
-                                </p>
-                              )}
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Date: {format(parseISO(p.date), "MMM d, yyyy")}
-                              </p>
-                            </div>
-                            <ChevronRight className="size-4 text-muted-foreground shrink-0" />
-                          </button>
-                        );
-                      })}
+                              <div className="text-right shrink-0 flex flex-col items-end gap-1.5 pl-2">
+                                <span className="text-[9px] font-bold bg-secondary/80 border border-border/10 px-2 py-0.5 rounded-full uppercase tracking-wider text-foreground">
+                                  {b.status}
+                                </span>
+                                <div className="text-xs font-semibold tabular-nums text-foreground">
+                                  {fmtINR(b.totalAmount)}
+                                </div>
+                                {due > 0 ? (
+                                  <div className="text-[10px] text-destructive font-bold">
+                                    {fmtINR(due)} due
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-success font-bold">Paid</div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+
+                  {/* Category: Payments */}
+                  {(activeTab === "all" || activeTab === "payments") && getSearchResults().payments.length > 0 && (
+                    <div>
+                      {activeTab === "all" && (
+                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
+                          <IndianRupee className="size-3 text-primary/80" /> Payments
+                        </h4>
+                      )}
+                      <div className="space-y-2">
+                        {getSearchResults().payments.map((p) => {
+                          const b = bookings.find((bk) => bk.id === p.bookingId);
+                          const cust = b ? customers.find((c) => c.id === b.customerId) : null;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => {
+                                navigate({ to: `/bookings/${p.bookingId}` });
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
+                            >
+                              <div className="min-w-0 pr-2 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-sm text-primary">
+                                    {fmtINR(p.amount)}
+                                  </span>
+                                  <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded text-muted-foreground font-semibold">
+                                    {(p.mode ?? "gpay").toUpperCase()}
+                                  </span>
+                                  {b?.billNumber && (
+                                    <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
+                                      #{b.billNumber.split("-").pop()}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-foreground mt-0.5 truncate">
+                                  Billed To: {cust?.name || "Client"}
+                                </p>
+                                {p.note && (
+                                  <p className="text-[10px] text-muted-foreground/80 mt-0.5 italic truncate">
+                                    Note: {p.note}
+                                  </p>
+                                )}
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Date: {formatAppDate(p.date)}
+                                </p>
+                              </div>
+                              <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

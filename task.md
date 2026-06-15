@@ -19,4 +19,13 @@
 - [x] Implement global button shake and flash color animations on error/warning clicks
 - [x] Prevent vertical page scrolling during horizontal month gestures on the calendar
 - [x] Prevent vertical page scrolling during horizontal day gestures on the booking list
-- [x] Verify build compiles successfully (`npm run build`)
+- [x] Implement changes in `AppShell.tsx`
+  - [x] Remove deprecated states: `showPopup`, `tickerIndex`, `tickerItems`
+  - [x] Remove ticker rotating logic effects
+  - [x] Calculate today's bookings, next upcoming bookings, and outstanding payments in the component body
+  - [x] Update header search button (render always, size-10, top-right absolute sync status dot badge with animation and tooltip)
+  - [x] Update Search Modal (restrict max-width based on `wide`, display Notification Hub dashboard when query is empty, close modal and clear query on link click)
+  - [x] Remove deprecated ticker popup modal HTML/JSX
+- [x] Verify changes
+  - [x] Run typescript checks (`npx tsc --noEmit`)
+  - [x] Run production build (`npm run build`)

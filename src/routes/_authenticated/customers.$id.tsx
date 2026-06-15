@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, customerBookings, totalDue, fmtINR, type Measurement } from "@/lib/store";
+import { useStore, customerBookings, totalDue, fmtINR, formatAppDate, type Measurement } from "@/lib/store";
 import {
   ArrowLeft,
   MessageCircle,
@@ -99,7 +99,7 @@ function CustomerDetail() {
       lines.push(`💰 *Balance Due:* ${fmtINR(totalDueAll)}`);
       if (nextDelivery) {
         lines.push(
-          `📅 *Delivery Date:* ${format(parseISO(nextDelivery.deliveryDate), "EEE, d MMM yyyy")}`,
+          `📅 *Delivery Date:* ${formatAppDate(nextDelivery.deliveryDate)}`,
         );
       }
       lines.push("");
@@ -132,7 +132,7 @@ function CustomerDetail() {
         `Reminder: You have ${pendingOrders.length} pending order(s). Balance due: ${fmtINR(totalDueAll)}.`,
       );
       if (nextDelivery) {
-        lines.push(`Delivery: ${format(parseISO(nextDelivery.deliveryDate), "d MMM yyyy")}.`);
+        lines.push(`Delivery: ${formatAppDate(nextDelivery.deliveryDate)}.`);
       }
       lines.push(`Please settle before delivery. Pay via GPay/Cash.`);
     } else if (cb.length > 0) {
@@ -598,7 +598,7 @@ function CustomerDetail() {
                       {b.service}
                     </p>
                     <p className="font-semibold">
-                      {format(parseISO(b.deliveryDate), "MMM d, yyyy")}
+                      {formatAppDate(b.deliveryDate)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {b.sareeCount} × {fmtINR(b.pricePerSaree)}

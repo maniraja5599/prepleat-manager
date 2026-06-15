@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR, fmtTime12, type ServiceType } from "@/lib/store";
+import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
@@ -712,7 +712,7 @@ function BookingsPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {format(parseISO(b.deliveryDate), "EEE, MMM d")} · {fmtTime12(b.deliveryTime)}{" "}
+                      {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)}{" "}
                       · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
                     </p>
                     {a && (
