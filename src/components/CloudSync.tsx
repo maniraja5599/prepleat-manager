@@ -1,35 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { db, onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 import { useStore, type Booking, type Customer, type Payment, type Tombstone } from "@/lib/store";
-import { CloudOff, RefreshCw, AlertCircle, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-/**
- * Offline-first two-way cloud sync for the local zustand store.
- *
- *  - The local store (persisted to localStorage) is the source of truth while
- *    offline — the app keeps working with no internet.
- *  - On mount, tab focus, reconnect, and via Postgres realtime on the user's
- *    app_settings row → PULL the cloud snapshot and MERGE with local.
- *  - On any local change → mark dirty and PUSH (debounced). If the push fails
- *    (offline / network error) it stays dirty and retries automatically when
- *    the device comes back online.
- *  - Merge is per-record last-write-wins using each record's updatedAt, so
- *    edits from two devices never clobber each other unless they edited the
- *    exact same record (then the most recent edit wins).
- *  - Deletes propagate via tombstones, so a record deleted on one device
- *    cannot be resurrected by an older copy from another device.
- */
 
 type Snapshot = {
   customers?: Customer[];
   bookings?: Booking[];
   payments?: Payment[];
+  expenses?: ReturnType<typeof useStore.getState>["expenses"];
+  extraIncomes?: ReturnType<typeof useStore.getState>["extraIncomes"];
   trash?: ReturnType<typeof useStore.getState>["trash"];
   activity?: ReturnType<typeof useStore.getState>["activity"];
   settings?: Partial<ReturnType<typeof useStore.getState>["settings"]>;
   tombstones?: Tombstone[];
 };
+
+type SyncStatus = "synced" | "syncing" | "offline" | "error";
 
 function mergeById<T extends { id: string }>(
   a: T[] = [],
@@ -40,22 +26,17 @@ function mergeById<T extends { id: string }>(
   for (const x of a) map.set(x.id, x);
   for (const y of b) {
     const existing = map.get(y.id);
-    if (!existing) map.set(y.id, y);
-    else map.set(y.id, pickNewer ? pickNewer(existing, y) : y);
+    map.set(y.id, existing && pickNewer ? pickNewer(existing, y) : y);
   }
   return Array.from(map.values());
 }
 
 const bookingTs = (b: Booking) =>
-  b.updatedAt ||
-  b.deliveredAt ||
-  b.workDoneAt ||
-  b.completedAt ||
-  b.receivedAt ||
-  b.createdAt ||
-  "";
+  b.updatedAt || b.deliveredAt || b.workDoneAt || b.completedAt || b.receivedAt || b.createdAt || "";
 const customerTs = (c: Customer) => c.updatedAt || c.createdAt || "";
 const paymentTs = (p: Payment) => p.updatedAt || p.date || "";
+const genericTs = (x: { updatedAt?: string; date?: string; createdAt?: string }) =>
+  x.updatedAt || x.date || x.createdAt || "";
 
 function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
   let customers = mergeById(local.customers, cloud.customers, (x, y) =>
@@ -64,47 +45,39 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
   let payments = mergeById(local.payments, cloud.payments, (x, y) =>
     paymentTs(y) > paymentTs(x) ? y : x,
   );
-  let bookings = mergeById(local.bookings ?? [], cloud.bookings ?? [], (x, y) =>
+  let bookings = mergeById(local.bookings, cloud.bookings, (x, y) =>
     bookingTs(y) > bookingTs(x) ? y : x,
   );
 
-  // Tombstones: union both sides, newest wins per record.
   const tombMap = new Map<string, Tombstone>();
   for (const t of [...(local.tombstones ?? []), ...(cloud.tombstones ?? [])]) {
     const key = `${t.type}:${t.id}`;
-    const ex = tombMap.get(key);
-    if (!ex || t.ts > ex.ts) tombMap.set(key, t);
+    const existing = tombMap.get(key);
+    if (!existing || t.ts > existing.ts) tombMap.set(key, t);
   }
-  // Apply tombstones: a record only survives if it was touched AFTER the
-  // delete (i.e. restored on another device) — in that case drop the
-  // tombstone so the restore propagates too.
+
   const alive = (type: Tombstone["type"], id: string, ts: string) => {
     const key = `${type}:${id}`;
-    const t = tombMap.get(key);
-    if (!t) return true;
-    if (ts > t.ts) {
+    const tombstone = tombMap.get(key);
+    if (!tombstone) return true;
+    if (ts > tombstone.ts) {
       tombMap.delete(key);
       return true;
     }
     return false;
   };
+
   customers = customers.filter((c) => alive("customer", c.id, customerTs(c)));
   bookings = bookings.filter((b) => alive("booking", b.id, bookingTs(b)));
   payments = payments.filter((p) => alive("payment", p.id, paymentTs(p)));
-  const tombstones = Array.from(tombMap.values())
-    .sort((a, b) => (a.ts < b.ts ? 1 : -1))
-    .slice(0, 1000);
 
-  // Recompute advancePaid from merged payments so both devices agree.
   const paidByBooking = new Map<string, number>();
   for (const p of payments) {
     paidByBooking.set(p.bookingId, (paidByBooking.get(p.bookingId) ?? 0) + (p.amount || 0));
   }
   bookings = bookings.map((b) => {
-    const paid = paidByBooking.get(b.id) ?? 0;
-    const advancePaid = Math.max(b.advancePaid ?? 0, paid);
-    let status = b.status;
-    if (advancePaid >= b.totalAmount && status === "pending") status = "completed";
+    const advancePaid = Math.max(b.advancePaid ?? 0, paidByBooking.get(b.id) ?? 0);
+    const status = advancePaid >= b.totalAmount && b.status === "pending" ? "completed" : b.status;
     return { ...b, advancePaid, status };
   });
 
@@ -120,21 +93,55 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
     .sort((a, b) => (a.ts < b.ts ? 1 : -1))
     .slice(0, 200);
 
-  // Settings: prefer cloud values where present, fall back to local.
-  const settings = { ...(local.settings ?? {}), ...(cloud.settings ?? {}) };
+  return {
+    customers,
+    bookings,
+    payments,
+    expenses: mergeById(local.expenses, cloud.expenses, (x, y) =>
+      genericTs(y) > genericTs(x) ? y : x,
+    ),
+    extraIncomes: mergeById(local.extraIncomes, cloud.extraIncomes, (x, y) =>
+      genericTs(y) > genericTs(x) ? y : x,
+    ),
+    trash,
+    activity,
+    settings: { ...(local.settings ?? {}), ...(cloud.settings ?? {}) },
+    tombstones: Array.from(tombMap.values())
+      .sort((a, b) => (a.ts < b.ts ? 1 : -1))
+      .slice(0, 1000),
+  };
+}
 
-  return { customers, bookings, payments, trash, activity, settings, tombstones };
+function makeSnapshot(): Snapshot {
+  const state = useStore.getState();
+  return JSON.parse(
+    JSON.stringify({
+      customers: state.customers,
+      bookings: state.bookings,
+      payments: state.payments,
+      expenses: state.expenses,
+      extraIncomes: state.extraIncomes,
+      trash: state.trash,
+      activity: state.activity,
+      settings: state.settings,
+      tombstones: state.tombstones,
+    }),
+  );
+}
+
+function stateDoc(user: AppUser) {
+  if (!db) return null;
+  return doc(db, "users", user.id, "app", "state");
 }
 
 export function CloudSync() {
   const pulledOnce = useRef(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastServerUpdatedAt = useRef<string | null>(null);
   const isApplyingRemote = useRef(false);
   const dirty = useRef(false);
+  const currentUser = useRef<AppUser | null>(null);
 
-  // Sync state variables
-  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">(
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(
     typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "synced",
   );
   const [showStatus, setShowStatus] = useState(false);
@@ -142,283 +149,184 @@ export function CloudSync() {
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      (window as any).__syncStatus = { syncStatus, showStatus, errorMessage };
-      window.dispatchEvent(
-        new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus, errorMessage } }),
-      );
-    }
+    if (typeof window === "undefined") return;
+    (window as any).__syncStatus = { syncStatus, showStatus, errorMessage };
+    window.dispatchEvent(
+      new CustomEvent("sync-status-update", { detail: { syncStatus, showStatus, errorMessage } }),
+    );
   }, [syncStatus, showStatus, errorMessage]);
 
   const clearHideTimer = () => {
-    if (hideTimer.current) {
-      clearTimeout(hideTimer.current);
-      hideTimer.current = null;
-    }
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = null;
   };
 
-  const triggerSyncedFadeOut = () => {
+  const fadeSynced = () => {
     clearHideTimer();
-    hideTimer.current = setTimeout(() => {
-      setShowStatus(false);
-    }, 2000);
+    hideTimer.current = setTimeout(() => setShowStatus(false), 2000);
   };
 
-  const triggerErrorFadeOut = () => {
+  const setError = (message: string) => {
+    setSyncStatus("error");
+    setErrorMessage(message);
+    setShowStatus(true);
     clearHideTimer();
-    hideTimer.current = setTimeout(() => {
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setSyncStatus("offline");
-      } else {
-        setShowStatus(false);
-      }
-    }, 3000);
+    hideTimer.current = setTimeout(() => setShowStatus(false), 3000);
   };
 
-  // ---- PULL --------------------------------------------------------------
   const pullAndMerge = useRef(async () => {
-    try {
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setSyncStatus("offline");
-        setShowStatus(true);
-        return;
-      }
-      clearHideTimer();
-      setSyncStatus("syncing");
-      setErrorMessage("");
-      setShowStatus(true);
-
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        setShowStatus(false);
-        return;
-      }
-      if (auth.user.is_anonymous) {
-        setSyncStatus("synced");
-        setErrorMessage("");
-        setShowStatus(false);
-        pulledOnce.current = true;
-        return;
-      }
-      const { data: row, error } = await supabase
-        .from("app_settings")
-        .select("data, updated_at")
-        .eq("user_id", auth.user.id)
-        .maybeSingle();
-      if (error) {
-        setSyncStatus("error");
-        setErrorMessage(error.message || "Failed to retrieve cloud data");
-        triggerErrorFadeOut();
-        return; // offline / network error — keep local data, retry later
-      }
-      if (!row?.data || typeof row.data !== "object") {
-        pulledOnce.current = true;
-        setSyncStatus("synced");
-        setErrorMessage("");
-        triggerSyncedFadeOut();
-        return;
-      }
-      const cloud = row.data as Snapshot;
-      const state = useStore.getState();
-      const local: Snapshot = {
-        customers: state.customers,
-        bookings: state.bookings,
-        payments: state.payments,
-        trash: state.trash,
-        activity: state.activity,
-        settings: state.settings,
-        tombstones: state.tombstones,
-      };
-      const merged = mergeSnapshots(local, cloud);
-      isApplyingRemote.current = true;
-      useStore.setState({
-        customers: merged.customers,
-        bookings: merged.bookings,
-        payments: merged.payments,
-        trash: merged.trash,
-        activity: merged.activity,
-        tombstones: merged.tombstones,
-        settings: { ...state.settings, ...(merged.settings ?? {}) },
-      });
-      isApplyingRemote.current = false;
-      lastServerUpdatedAt.current = row.updated_at ?? null;
+    const user = currentUser.current ?? (await waitForAppUser());
+    currentUser.current = user;
+    if (!user || user.isAnonymous) {
       pulledOnce.current = true;
-
       setSyncStatus("synced");
-      setErrorMessage("");
-      triggerSyncedFadeOut();
-    } catch (err: any) {
-      // Offline — local store keeps working; we retry on reconnect.
-      isApplyingRemote.current = false;
-      setSyncStatus("error");
-      setErrorMessage(err?.message || String(err));
-      triggerErrorFadeOut();
+      setShowStatus(false);
+      return;
     }
-  }).current;
-
-  // ---- PUSH --------------------------------------------------------------
-  const pushNow = useRef(async () => {
+    const ref = stateDoc(user);
+    if (!ref) {
+      setError("Firebase is not configured. Add Firebase settings in .env.");
+      return;
+    }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSyncStatus("offline");
+      setShowStatus(true);
+      return;
+    }
+    clearHideTimer();
+    setSyncStatus("syncing");
+    setErrorMessage("");
+    setShowStatus(true);
     try {
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setSyncStatus("offline");
-        setShowStatus(true);
-        return; // stay dirty, retry on reconnect
+      const snap = await getDoc(ref);
+      const cloud = (snap.data()?.data ?? {}) as Snapshot;
+      if (snap.exists()) {
+        const state = useStore.getState();
+        const merged = mergeSnapshots(makeSnapshot(), cloud);
+        isApplyingRemote.current = true;
+        useStore.setState({
+          customers: merged.customers,
+          bookings: merged.bookings,
+          payments: merged.payments,
+          expenses: merged.expenses,
+          extraIncomes: merged.extraIncomes,
+          trash: merged.trash,
+          activity: merged.activity,
+          tombstones: merged.tombstones,
+          settings: { ...state.settings, ...(merged.settings ?? {}) },
+        });
+        isApplyingRemote.current = false;
       }
-      clearHideTimer();
-      setSyncStatus("syncing");
-      setErrorMessage("");
-      setShowStatus(true);
-
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        setShowStatus(false);
-        return;
-      }
-      if (auth.user.is_anonymous) {
-        setSyncStatus("synced");
-        setErrorMessage("");
-        setShowStatus(false);
-        dirty.current = false;
-        return;
-      }
-      // Re-check cloud for newer writes before overwriting.
-      const { data: row } = await supabase
-        .from("app_settings")
-        .select("updated_at")
-        .eq("user_id", auth.user.id)
-        .maybeSingle();
-      if (
-        row?.updated_at &&
-        lastServerUpdatedAt.current &&
-        row.updated_at > lastServerUpdatedAt.current
-      ) {
-        // Another device wrote since we last pulled — pull & merge first.
-        await pullAndMerge();
-      }
-      const state = useStore.getState();
-      const payload = JSON.parse(
-        JSON.stringify({
-          customers: state.customers,
-          bookings: state.bookings,
-          payments: state.payments,
-          trash: state.trash,
-          activity: state.activity,
-          settings: state.settings,
-          tombstones: state.tombstones,
-        }),
-      );
-      const { data: upserted, error } = await supabase
-        .from("app_settings")
-        .upsert({ user_id: auth.user.id, data: payload })
-        .select("updated_at")
-        .maybeSingle();
-      if (error) {
-        setSyncStatus("error");
-        setErrorMessage(error.message || "Failed to upload local database changes");
-        triggerErrorFadeOut();
-        return; // stay dirty, retry on reconnect
-      }
-      if (upserted?.updated_at) lastServerUpdatedAt.current = upserted.updated_at;
-      dirty.current = false;
-
+      pulledOnce.current = true;
       setSyncStatus("synced");
-      setErrorMessage("");
-      triggerSyncedFadeOut();
-    } catch (err: any) {
-      // Offline — stay dirty, retry when back online.
-      setSyncStatus("error");
-      setErrorMessage(err?.message || String(err));
-      triggerErrorFadeOut();
+      fadeSynced();
+    } catch (error) {
+      isApplyingRemote.current = false;
+      setError(error instanceof Error ? error.message : "Failed to download cloud data");
     }
   }).current;
 
-  // ---- LIFECYCLE ---------------------------------------------------------
-  useEffect(() => {
-    void pullAndMerge();
-
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") {
-        void (async () => {
-          await pullAndMerge();
-          if (dirty.current) await pushNow();
-        })();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("focus", onVisibility);
-
-    // Internet came back → pull latest, then push anything saved offline.
-    const onOnline = () => {
-      setSyncStatus("syncing");
+  const pushNow = useRef(async () => {
+    const user = currentUser.current ?? (await waitForAppUser());
+    currentUser.current = user;
+    if (!user || user.isAnonymous) {
+      dirty.current = false;
+      setSyncStatus("synced");
+      setShowStatus(false);
+      return;
+    }
+    const ref = stateDoc(user);
+    if (!ref) {
+      setError("Firebase is not configured. Add Firebase settings in .env.");
+      return;
+    }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSyncStatus("offline");
       setShowStatus(true);
+      return;
+    }
+    clearHideTimer();
+    setSyncStatus("syncing");
+    setErrorMessage("");
+    setShowStatus(true);
+    try {
+      await setDoc(ref, { data: makeSnapshot(), updatedAt: serverTimestamp() }, { merge: true });
+      dirty.current = false;
+      setSyncStatus("synced");
+      fadeSynced();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to upload local data");
+    }
+  }).current;
+
+  useEffect(() => {
+    let unsubscribeSnapshot: (() => void) | undefined;
+    const unsubscribeAuth = onAppAuthStateChanged((user) => {
+      currentUser.current = user;
+      pulledOnce.current = false;
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+      unsubscribeSnapshot = undefined;
+      if (!user || user.isAnonymous) {
+        setSyncStatus("synced");
+        setShowStatus(false);
+        pulledOnce.current = true;
+        return;
+      }
+      const ref = stateDoc(user);
+      if (!ref) {
+        setError("Firebase is not configured. Add Firebase settings in .env.");
+        return;
+      }
+      void pullAndMerge();
+      unsubscribeSnapshot = onSnapshot(
+        ref,
+        (snapshot) => {
+          if (!snapshot.exists() || isApplyingRemote.current) return;
+          const cloud = (snapshot.data()?.data ?? {}) as Snapshot;
+          const state = useStore.getState();
+          const merged = mergeSnapshots(makeSnapshot(), cloud);
+          isApplyingRemote.current = true;
+          useStore.setState({
+            customers: merged.customers,
+            bookings: merged.bookings,
+            payments: merged.payments,
+            expenses: merged.expenses,
+            extraIncomes: merged.extraIncomes,
+            trash: merged.trash,
+            activity: merged.activity,
+            tombstones: merged.tombstones,
+            settings: { ...state.settings, ...(merged.settings ?? {}) },
+          });
+          isApplyingRemote.current = false;
+        },
+        (error) => setError(error.message),
+      );
+    });
+
+    const retry = () => {
       void (async () => {
         await pullAndMerge();
         if (dirty.current) await pushNow();
       })();
     };
-    const onOffline = () => {
+    const online = () => retry();
+    const offline = () => {
       clearHideTimer();
       setSyncStatus("offline");
       setShowStatus(true);
     };
-    const onRetry = () => {
-      setSyncStatus("syncing");
-      setErrorMessage("");
-      setShowStatus(true);
-      void (async () => {
-        await pullAndMerge();
-        if (dirty.current) await pushNow();
-      })();
-    };
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    window.addEventListener("sync-retry", onRetry);
-
-    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") void pullAndMerge();
-    });
-
-    // Realtime: react to writes from other devices on our own row.
-    let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user || auth.user.is_anonymous || cancelled) return;
-      const topic = `app_settings:${auth.user.id}`;
-      // Remove any stale channel with the same topic before re-creating —
-      // re-using a subscribed channel throws when adding callbacks.
-      for (const c of supabase.getChannels()) {
-        if (c.topic === `realtime:${topic}`) {
-          await supabase.removeChannel(c);
-        }
-      }
-      if (cancelled) return;
-      channel = supabase
-        .channel(topic)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "app_settings",
-            filter: `user_id=eq.${auth.user.id}`,
-          },
-          () => {
-            void pullAndMerge();
-          },
-        )
-        .subscribe();
-    })();
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    window.addEventListener("focus", retry);
+    window.addEventListener("sync-retry", retry);
 
     return () => {
-      cancelled = true;
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("focus", onVisibility);
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-      window.removeEventListener("sync-retry", onRetry);
-      authSub.subscription.unsubscribe();
-      if (channel) supabase.removeChannel(channel);
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("focus", retry);
+      window.removeEventListener("sync-retry", retry);
       clearHideTimer();
     };
   }, [pullAndMerge, pushNow]);
@@ -426,7 +334,7 @@ export function CloudSync() {
   useEffect(() => {
     const unsub = useStore.subscribe(() => {
       if (isApplyingRemote.current) return;
-      dirty.current = true; // remember there's unsynced local work (offline-safe)
+      dirty.current = true;
       if (!pulledOnce.current) return;
       if (pushTimer.current) clearTimeout(pushTimer.current);
       pushTimer.current = setTimeout(() => {

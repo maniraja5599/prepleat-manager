@@ -1,15 +1,19 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { CloudSync } from "@/components/CloudSync";
 import { AppTour } from "@/components/AppTour";
 import logoAsset from "@/assets/eyas-logo.png";
+import { onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 
-let cachedSession: any = null;
+let cachedUser: AppUser | null = null;
 
 if (typeof window !== "undefined") {
-  // Synchronously listen to auth state changes to keep cachedSession in sync
-  supabase.auth.onAuthStateChange((_e, session) => {
-    cachedSession = session;
+  onAppAuthStateChanged((user) => {
+    cachedUser = user;
+  });
+  window.addEventListener("local-auth-change", () => {
+    void waitForAppUser(50).then((user) => {
+      cachedUser = user;
+    });
   });
 }
 
@@ -18,38 +22,18 @@ export const Route = createFileRoute("/_authenticated")({
   pendingComponent: AuthSplash,
   pendingMs: 600, // Show loading component only if loading takes more than 600ms
   beforeLoad: async () => {
-    // If we already have a cached session, return it synchronously (instant transition)
-    if (cachedSession) {
-      return { user: cachedSession.user };
+    // If we already have a cached user, return it synchronously (instant transition)
+    if (cachedUser) {
+      return { user: cachedUser };
     }
 
-    // First try the cached session (synchronous from localStorage) — this avoids
+    // First try the cached auth state (synchronous from localStorage) — this avoids
     // a network round-trip on first launch that can cause a flash of blank page
     // when the app is opened from the Home-screen bookmark.
-    let {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      // On a cold standalone (PWA) launch the Supabase client may still be
-      // re-hydrating its persisted session. Wait briefly for the INITIAL_SESSION
-      // event before deciding the user is unauthenticated.
-      session = await new Promise((resolve) => {
-        const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-          if (s) {
-            clearTimeout(timer);
-            sub.subscription.unsubscribe();
-            resolve(s);
-          }
-        });
-        const timer = setTimeout(() => {
-          sub.subscription.unsubscribe();
-          resolve(null);
-        }, 1200);
-      });
-    }
-    if (!session) throw redirect({ to: "/auth" });
-    cachedSession = session;
-    return { user: session.user };
+    const user = await waitForAppUser();
+    if (!user) throw redirect({ to: "/auth" });
+    cachedUser = user;
+    return { user };
   },
   component: () => (
     <>

@@ -20,7 +20,6 @@ import { Route as AuthenticatedCustomersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBookingsRouteImport } from './routes/_authenticated/bookings'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedBookingsIndexRouteImport } from './routes/_authenticated/bookings.index'
-import { Route as ApiPublicBookingRequestsRouteImport } from './routes/api/public/booking-requests'
 import { Route as AuthenticatedCustomersIdRouteImport } from './routes/_authenticated/customers.$id'
 import { Route as AuthenticatedBookingsIdRouteImport } from './routes/_authenticated/bookings.$id'
 
@@ -80,12 +79,6 @@ const AuthenticatedBookingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedBookingsRoute,
   } as any)
-const ApiPublicBookingRequestsRoute =
-  ApiPublicBookingRequestsRouteImport.update({
-    id: '/api/public/booking-requests',
-    path: '/api/public/booking-requests',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AuthenticatedCustomersIdRoute =
   AuthenticatedCustomersIdRouteImport.update({
     id: '/$id',
@@ -109,7 +102,6 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/customers/$id': typeof AuthenticatedCustomersIdRoute
-  '/api/public/booking-requests': typeof ApiPublicBookingRequestsRoute
   '/bookings/': typeof AuthenticatedBookingsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
 }
@@ -122,7 +114,6 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/customers/$id': typeof AuthenticatedCustomersIdRoute
-  '/api/public/booking-requests': typeof ApiPublicBookingRequestsRoute
   '/bookings': typeof AuthenticatedBookingsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
 }
@@ -139,7 +130,6 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/bookings/$id': typeof AuthenticatedBookingsIdRoute
   '/_authenticated/customers/$id': typeof AuthenticatedCustomersIdRoute
-  '/api/public/booking-requests': typeof ApiPublicBookingRequestsRoute
   '/_authenticated/bookings/': typeof AuthenticatedBookingsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
 }
@@ -156,7 +146,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/bookings/$id'
     | '/customers/$id'
-    | '/api/public/booking-requests'
     | '/bookings/'
     | '/customers/'
   fileRoutesByTo: FileRoutesByTo
@@ -169,7 +158,6 @@ export interface FileRouteTypes {
     | '/'
     | '/bookings/$id'
     | '/customers/$id'
-    | '/api/public/booking-requests'
     | '/bookings'
     | '/customers'
   id:
@@ -185,7 +173,6 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/bookings/$id'
     | '/_authenticated/customers/$id'
-    | '/api/public/booking-requests'
     | '/_authenticated/bookings/'
     | '/_authenticated/customers/'
   fileRoutesById: FileRoutesById
@@ -194,7 +181,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   BookRoute: typeof BookRoute
-  ApiPublicBookingRequestsRoute: typeof ApiPublicBookingRequestsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -276,13 +262,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookingsIndexRouteImport
       parentRoute: typeof AuthenticatedBookingsRoute
     }
-    '/api/public/booking-requests': {
-      id: '/api/public/booking-requests'
-      path: '/api/public/booking-requests'
-      fullPath: '/api/public/booking-requests'
-      preLoaderRoute: typeof ApiPublicBookingRequestsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/customers/$id': {
       id: '/_authenticated/customers/$id'
       path: '/$id'
@@ -356,7 +335,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   BookRoute: BookRoute,
-  ApiPublicBookingRequestsRoute: ApiPublicBookingRequestsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -149,6 +149,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((error) => {
+        console.warn("Service worker registration failed", error);
+      });
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeApplier />

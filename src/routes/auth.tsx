@@ -1,9 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoAsset from "@/assets/eyas-logo.png";
 import { Loader2, Mail, Lock, UserRound } from "lucide-react";
+import {
+  createAccountWithEmail,
+  signInAsGuest,
+  signInWithEmail,
+  signInWithGoogle,
+  waitForAppUser,
+} from "@/integrations/firebase/client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -28,8 +34,8 @@ function AuthPage() {
 
   // If already signed in, bounce to home
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/" });
+    waitForAppUser(300).then((user) => {
+      if (user) navigate({ to: "/" });
     });
   }, [navigate]);
 
@@ -38,9 +44,8 @@ function AuthPage() {
     if (!email || !password) return;
     setBusy("email");
     try {
-      const fn = mode === "signin" ? supabase.auth.signInWithPassword : supabase.auth.signUp;
-      const { error } = await fn.bind(supabase.auth)({ email, password });
-      if (error) throw error;
+      if (mode === "signin") await signInWithEmail(email, password);
+      else await createAccountWithEmail(email, password);
       toast.success(mode === "signin" ? "Welcome back!" : "Account created");
       navigate({ to: "/" });
     } catch (err) {
@@ -52,39 +57,47 @@ function AuthPage() {
 
   async function handleGoogle() {
     setBusy("google");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    if (error) {
-      toast.error(error.message || "Google sign-in failed");
+    try {
+      await signInWithGoogle();
+      toast.success("Welcome back!");
+      navigate({ to: "/" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
       setBusy(null);
     }
   }
 
   async function handleGuest() {
     setBusy("guest");
-    const { error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      toast.error(error.message);
+    try {
+      await signInAsGuest();
+      toast.success("Welcome! You're using a guest account.");
+      navigate({ to: "/" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Guest sign-in failed");
       setBusy(null);
-      return;
     }
-    toast.success("Welcome! You're using a guest account.");
-    navigate({ to: "/" });
   }
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="size-16 rounded-full overflow-hidden ring-2 ring-primary/30 mb-3">
+          <div
+            className="size-16 rounded-full overflow-hidden ring-2 ring-primary/30 mb-3"
+            style={{ width: 64, height: 64, overflow: "hidden" }}
+          >
             <img
               src={logoAsset}
               alt=""
-              className="size-full rounded-full object-cover scale-[1.18]"
+              className="size-full rounded-full object-cover"
+              style={{
+                display: "block",
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                transform: "scale(1.18)",
+              }}
             />
           </div>
           <h1 className="text-2xl font-display font-semibold tracking-tight">Eyas Saree Drapist</h1>

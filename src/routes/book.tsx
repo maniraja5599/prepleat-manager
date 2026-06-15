@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import logoAsset from "@/assets/eyas-logo.png";
 import { z } from "zod";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db, signInAsGuest } from "@/integrations/firebase/client";
 
-const recipientSchema = z.string().uuid();
+const recipientSchema = z.string().min(6).max(128);
 
 export const Route = createFileRoute("/book")({
   head: () => ({
@@ -41,28 +43,27 @@ function PublicBookPage() {
     if (!name.trim() || !phone.trim()) return toast.error("Name and phone are required");
     setSubmitting(true);
     try {
-      const res = await fetch("/api/public/booking-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner_user_id: recipient,
-          name: name.trim(),
-          phone: phone.trim(),
-          service,
-          saree_count: sareeCount,
-          delivery_date: deliveryDate || null,
-          delivery_time: deliveryTime || null,
-          notes: notes.trim() || null,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(json?.error || "Could not submit request");
+      if (!db) {
+        toast.error("Firebase is not configured yet");
         return;
       }
+      await signInAsGuest();
+      await addDoc(collection(db, "bookingRequests"), {
+        owner_user_id: recipient,
+        name: name.trim(),
+        phone: phone.trim(),
+        service,
+        saree_count: sareeCount,
+        delivery_date: deliveryDate || null,
+        delivery_time: deliveryTime || null,
+        notes: notes.trim() || null,
+        status: "pending",
+        created_at: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+      });
       setDone(true);
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }

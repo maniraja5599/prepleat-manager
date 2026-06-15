@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { signOut, waitForAppUser } from "@/integrations/firebase/client";
 import logoAsset from "@/assets/eyas-logo.png";
 import { formatDistanceToNow } from "date-fns";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -1736,13 +1736,13 @@ function AccountBlock() {
   const [email, setEmail] = useState<string>("");
   const [isGuest, setIsGuest] = useState(false);
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setEmail(data.user?.email ?? "");
-      setIsGuest(!!data.user?.is_anonymous);
+    waitForAppUser(300).then((user) => {
+      setEmail(user?.email ?? "");
+      setIsGuest(!!user?.isAnonymous);
     });
   }, []);
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const handleSignOut = async () => {
+    await signOut();
     navigate({ to: "/auth" });
   };
   return (
@@ -1758,7 +1758,7 @@ function AccountBlock() {
         </p>
       </div>
       <button
-        onClick={signOut}
+        onClick={handleSignOut}
         className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-full bg-secondary text-sm font-medium"
       >
         <LogOut className="size-3.5" /> Sign out

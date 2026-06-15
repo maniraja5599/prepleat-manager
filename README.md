@@ -45,6 +45,20 @@ npm run dev
 
 Open [http://localhost:8080](http://localhost:8080) in your browser.
 
+To access it from another device on the same Wi-Fi or local network, use your computer's LAN IP instead of `localhost`.
+
+On Windows, you can find it with:
+
+```bash
+ipconfig
+```
+
+Look for the `IPv4 Address` under your active network adapter, then open:
+
+```text
+http://YOUR_IP_ADDRESS:8080
+```
+
 ### 5. Build for Production
 
 To build the application for deployment (e.g., to Cloudflare Workers, Netlify, or Node.js host):

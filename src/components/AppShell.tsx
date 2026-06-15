@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
+import { waitForAppUser } from "@/integrations/firebase/client";
 import {
   CloudOff,
   RefreshCw,
@@ -74,10 +74,8 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.is_anonymous) {
-        setIsGuest(true);
-      }
+    waitForAppUser(300).then((user) => {
+      setIsGuest(!!user?.isAnonymous);
     });
   }, []);
 

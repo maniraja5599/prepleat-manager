@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { collection, getDocs, limit, orderBy, query, updateDoc, where, doc } from "firebase/firestore";
+import { db, waitForAppUser } from "@/integrations/firebase/client";
 import { useStore, type ServiceType } from "@/lib/store";
 import { Check, X, Inbox, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -30,13 +31,30 @@ export function BookingRequestsInbox() {
 
   const fetch = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("booking_requests")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (!error && data) setRequests(data as BookingRequest[]);
+    try {
+      const user = await waitForAppUser(300);
+      if (!db || !user || user.isAnonymous) {
+        setRequests([]);
+        return;
+      }
+      const snapshot = await getDocs(
+        query(
+          collection(db, "bookingRequests"),
+          where("owner_user_id", "==", user.id),
+          where("status", "==", "pending"),
+          orderBy("created_at", "desc"),
+          limit(20),
+        ),
+      );
+      setRequests(
+        snapshot.docs.map((item) => ({
+          id: item.id,
+          ...(item.data() as Omit<BookingRequest, "id">),
+        })),
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not load booking requests");
+    }
     setLoading(false);
   };
 
@@ -67,14 +85,14 @@ export function BookingRequestsInbox() {
       deliveryTime: r.delivery_time || "10:00",
       notes: r.notes ? `[Request] ${r.notes}` : "[From public request form]",
     });
-    await supabase.from("booking_requests").update({ status: "confirmed" }).eq("id", r.id);
+    if (db) await updateDoc(doc(db, "bookingRequests", r.id), { status: "confirmed" });
     setRequests((rs) => rs.filter((x) => x.id !== r.id));
     toast.success("Request accepted");
     navigate({ to: "/bookings/$id", params: { id: b.id } });
   };
 
   const dismiss = async (id: string) => {
-    await supabase.from("booking_requests").update({ status: "dismissed" }).eq("id", id);
+    if (db) await updateDoc(doc(db, "bookingRequests", id), { status: "dismissed" });
     setRequests((rs) => rs.filter((x) => x.id !== id));
     toast.success("Request dismissed");
   };
