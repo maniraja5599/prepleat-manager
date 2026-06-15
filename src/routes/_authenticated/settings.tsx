@@ -1936,8 +1936,8 @@ function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) =
             <div>
               <p className="font-semibold text-foreground">Bottom Nav Calendar Double-Click</p>
               <p className="text-muted-foreground">
-                Double-click or double-tap the **Calendar** icon in the bottom navbar to navigate
-                straight to the **Bookings** list.
+                Double-click or double-tap the **Calendar** icon in the bottom navbar to open
+                the **Global Search** overlay.
               </p>
             </div>
           </div>

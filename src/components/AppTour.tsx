@@ -133,7 +133,7 @@ export function AppTour() {
     {
       title: "Bottom Nav Shortcut",
       subtitle: "Calendar Double-Click",
-      desc: "Double-click or double-tap the Calendar tab icon in the bottom navigation bar to instantly jump straight to your Bookings list page.",
+      desc: "Double-click or double-tap the Calendar tab icon in the bottom navigation bar to instantly open the global search modal.",
       icon: Calendar,
       color: "text-emerald-500 bg-emerald-500/10",
       illustration: (

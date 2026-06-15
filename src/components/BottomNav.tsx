@@ -28,7 +28,7 @@ export function BottomNav() {
     if (clickTimeoutRef.current) {
       clearTimeout(clickTimeoutRef.current);
       clickTimeoutRef.current = null;
-      navigate({ to: "/bookings" });
+      window.dispatchEvent(new Event("open-global-search"));
     } else {
       clickTimeoutRef.current = setTimeout(() => {
         clickTimeoutRef.current = null;
