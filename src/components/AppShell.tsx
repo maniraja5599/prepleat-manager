@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "./BottomNav";
@@ -44,6 +44,15 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
+
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top when search query or active tab changes
+  useEffect(() => {
+    if (resultsRef.current) {
+      resultsRef.current.scrollTop = 0;
+    }
+  }, [searchQuery, activeTab]);
 
   const [sync, setSync] = useState(() => {
     if (typeof window !== "undefined" && (window as any).__syncStatus) {
@@ -281,45 +290,60 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
             </p>
           </div>
 
-          {/* Live Info Ticker (rendered in top-right slot) */}
-          {tickerItems.length > 0 && (
-            <button
-              onClick={() => setShowPopup(true)}
-              className={cn(
-                "px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 animate-in fade-in slide-in-from-right-2 cursor-pointer max-w-[140px] sm:max-w-none truncate hover:brightness-95 active:scale-95 shrink-0 ml-auto",
-                tickerItems[tickerIndex]?.color,
-              )}
-            >
-              {tickerItems[tickerIndex]?.icon === "syncing" && (
-                <RefreshCw className="size-2.5 animate-spin" />
-              )}
-              {tickerItems[tickerIndex]?.icon === "offline" && <CloudOff className="size-2.5" />}
-              {tickerItems[tickerIndex]?.icon === "error" && (
-                <AlertCircle className="size-2.5 animate-shake-sm text-red-500" />
-              )}
-              {tickerItems[tickerIndex]?.icon === "synced" && <Check className="size-2.5" />}
-              {tickerItems[tickerIndex]?.icon === "calendar" && (
-                <Calendar className="size-2.5 text-primary" />
-              )}
-              {tickerItems[tickerIndex]?.icon === "clock" && (
-                <Clock className="size-2.5 text-indigo-500" />
-              )}
-              {tickerItems[tickerIndex]?.icon === "wallet" && (
-                <Wallet className="size-2.5 text-rose-500" />
-              )}
-              <span className="truncate">{tickerItems[tickerIndex]?.text}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 ml-auto shrink-0 min-w-0">
+            {showFloatingSearch && (
+              <button
+                onClick={() => {
+                  setShowSearchModal(true);
+                  setActiveTab("all");
+                }}
+                className="size-8 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition cursor-pointer"
+                title="Global Search"
+              >
+                <Search className="size-4" />
+              </button>
+            )}
 
-          {/* Fallback gold dot if ticker is empty */}
-          {tickerItems.length === 0 && (
-            <div className="ml-auto shrink-0 flex items-center">
-              <span
-                className="size-1.5 rounded-full bg-gold/60 animate-in fade-in duration-300"
-                aria-hidden
-              />
-            </div>
-          )}
+            {/* Live Info Ticker (rendered in top-right slot) */}
+            {tickerItems.length > 0 && (
+              <button
+                onClick={() => setShowPopup(true)}
+                className={cn(
+                  "px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 animate-in fade-in slide-in-from-right-2 cursor-pointer max-w-[100px] xs:max-w-[140px] sm:max-w-none truncate hover:brightness-95 active:scale-95 shrink-0",
+                  tickerItems[tickerIndex]?.color,
+                )}
+              >
+                {tickerItems[tickerIndex]?.icon === "syncing" && (
+                  <RefreshCw className="size-2.5 animate-spin" />
+                )}
+                {tickerItems[tickerIndex]?.icon === "offline" && <CloudOff className="size-2.5" />}
+                {tickerItems[tickerIndex]?.icon === "error" && (
+                  <AlertCircle className="size-2.5 animate-shake-sm text-red-500" />
+                )}
+                {tickerItems[tickerIndex]?.icon === "synced" && <Check className="size-2.5" />}
+                {tickerItems[tickerIndex]?.icon === "calendar" && (
+                  <Calendar className="size-2.5 text-primary" />
+                )}
+                {tickerItems[tickerIndex]?.icon === "clock" && (
+                  <Clock className="size-2.5 text-indigo-500" />
+                )}
+                {tickerItems[tickerIndex]?.icon === "wallet" && (
+                  <Wallet className="size-2.5 text-rose-500" />
+                )}
+                <span className="truncate">{tickerItems[tickerIndex]?.text}</span>
+              </button>
+            )}
+
+            {/* Fallback gold dot if ticker is empty */}
+            {tickerItems.length === 0 && (
+              <div className="shrink-0 flex items-center">
+                <span
+                  className="size-1.5 rounded-full bg-gold/60 animate-in fade-in duration-300"
+                  aria-hidden
+                />
+              </div>
+            )}
+          </div>
           <style>{`
             @keyframes shake-sm {
               0%, 100% { transform: translateX(0); }
@@ -603,35 +627,17 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
           </div>
         </div>
       )}
-      {/* Floating Search FAB Button */}
-      {showFloatingSearch && (
-        <div className="fixed bottom-20 inset-x-0 pointer-events-none z-40">
-          <div className="max-w-md mx-auto relative px-5">
-            <button
-              onClick={() => {
-                setShowSearchModal(true);
-                setActiveTab("all");
-              }}
-              className="absolute right-5 bottom-0 pointer-events-auto size-12 rounded-full saree-gradient text-white flex items-center justify-center shadow-lg shadow-primary/25 active:scale-90 hover:scale-105 transition duration-200 cursor-pointer"
-              title="Global Search"
-            >
-              <Search className="size-5" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Global Search Popup Modal */}
       {showSearchModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs"
           onClick={() => {
             setShowSearchModal(false);
             setSearchQuery("");
           }}
         >
           <div
-            className="w-full max-w-md bg-card border border-border/30 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh] text-left"
+            className="fixed top-[calc(env(safe-area-inset-top,0px)+12px)] left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-card border border-border/30 rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-top-4 duration-200 flex flex-col max-h-[calc(100dvh-env(safe-area-inset-top,0px)-24px)] text-left"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -729,7 +735,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
             </div>
 
             {/* Results Area */}
-            <div className="px-5 py-4 overflow-y-auto flex-1">
+            <div ref={resultsRef} className="px-5 py-4 overflow-y-auto flex-1">
               {!searchQuery ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   Type something to search across all data...
