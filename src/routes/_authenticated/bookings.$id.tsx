@@ -336,7 +336,14 @@ function BookingDetail() {
         <h1 className="text-2xl font-display font-bold mt-3 truncate">{customer?.name}</h1>
 
         <div className="mt-1 flex items-center gap-2">
-          <p className="text-xs opacity-90">{customer?.phone}</p>
+          {customer?.phone && (
+            <a
+              href={`tel:${phoneClean}`}
+              className="text-xs opacity-90 hover:underline cursor-pointer"
+            >
+              {customer.phone}
+            </a>
+          )}
           {phoneClean && (
             <div className="flex gap-1.5 ml-1">
               <a
