@@ -11,6 +11,8 @@ import {
   X,
   MapPin,
   MessageSquare,
+  Send,
+  Eye,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -30,13 +32,16 @@ function CustomerDetail() {
   const deleteCustomer = useStore((s) => s.deleteCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
   const settings = useStore((s) => s.settings);
-  const businessName = settings.businessName;
+  const businessName = settings.businessName || "Eyas Drapist";
   const websiteUrl = settings.websiteUrl || "https://eyasdrapist.shop/";
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(customer?.name ?? "");
   const [phone, setPhone] = useState(customer?.phone ?? "");
   const [address, setAddress] = useState(customer?.address ?? "");
   const [reference, setReference] = useState(customer?.reference ?? "");
+
+  // Message preview modal state
+  const [previewMode, setPreviewMode] = useState<null | "whatsapp" | "sms">(null);
 
   const [showMeasure, setShowMeasure] = useState(() => !!customer?.measurements && customer.measurements.length > 0);
   const [measurements, setMeasurements] = useState<Measurement[]>(() => {
@@ -71,54 +76,162 @@ function CustomerDetail() {
   const cb = customerBookings(customer.id, bookings);
   const totalSpent = cb.reduce((s, b) => s + b.advancePaid, 0);
   const totalDueAll = cb.reduce((s, b) => s + totalDue(b), 0);
+  const pendingOrders = cb.filter((b) => totalDue(b) > 0);
+  const nextDelivery = pendingOrders[0];
 
-  const buildMessage = (richEmojis: boolean) => {
-    const e = (s: string) => (richEmojis ? s : "");
-    const pending = cb.filter((b) => totalDue(b) > 0);
+  // Build a beautiful, client-friendly WhatsApp message
+  const buildWhatsAppMessage = () => {
     const lines: string[] = [];
-    lines.push(`${e("💛 ")}*${businessName}*`);
+
+    lines.push(`🌸 *${businessName}*`);
     lines.push("");
-    lines.push(`Hi ${customer.name} ${e("🙏")}`);
-    if (pending.length) {
-      lines.push(
-        `A gentle reminder ${e("🌸")} — you have ${pending.length} pending order${pending.length > 1 ? "s" : ""}.`,
-      );
+    lines.push(`Hi *${customer.name}* 🙏`);
+    lines.push("");
+
+    if (pendingOrders.length > 0) {
+      lines.push(`A gentle reminder about your ${pendingOrders.length > 1 ? `*${pendingOrders.length} pending orders*` : "*pending order*"} with us.`);
       lines.push("");
-      lines.push(`${e("💰 ")}*Balance due:* ${fmtINR(totalDueAll)}`);
-      const next = pending[0];
-      if (next)
-        lines.push(
-          `${e("📅 ")}*Next delivery:* ${format(parseISO(next.deliveryDate), "EEE, MMM d")}`,
-        );
+      lines.push(`💰 *Balance Due:* ${fmtINR(totalDueAll)}`);
+      if (nextDelivery) {
+        lines.push(`📅 *Delivery Date:* ${format(parseISO(nextDelivery.deliveryDate), "EEE, d MMM yyyy")}`);
+      }
       lines.push("");
-      lines.push(`Pay via GPay / Cash on delivery. Thank you ${e("✨")}`);
+      lines.push(`Please settle the balance on or before delivery. You can pay via *GPay / Cash*.`);
+    } else if (cb.length > 0) {
+      lines.push(`Thank you for trusting us with your special occasion! 💛`);
+      lines.push(`It was a pleasure draping for you. Hope to see you again soon! ✨`);
     } else {
-      lines.push(`Thank you for choosing us ${e("💛✨")}`);
-      lines.push(`Looking forward to draping for you again soon.`);
+      lines.push(`We'd love to have you visit us for your next special occasion! ✨`);
+      lines.push(`Feel free to reach out to book your appointment.`);
     }
+
     lines.push("");
-    lines.push(`${e("🌐 ")}${websiteUrl}`);
+    lines.push(`🔗 ${websiteUrl}`);
+
     return lines.join("\n");
   };
 
-  const sendWhatsApp = () => {
-    if (!customer.phone) return toast.error("No phone");
-    const ph = customer.phone.replace(/\D/g, "");
-    window.location.href = `https://wa.me/${ph}?text=${encodeURIComponent(buildMessage(true))}`;
+  // Build a plain SMS-friendly message (no markdown, shorter)
+  const buildSmsMessage = () => {
+    const lines: string[] = [];
+
+    lines.push(`${businessName}`);
+    lines.push(`Hi ${customer.name},`);
+
+    if (pendingOrders.length > 0) {
+      lines.push(`Reminder: You have ${pendingOrders.length} pending order(s). Balance due: ${fmtINR(totalDueAll)}.`);
+      if (nextDelivery) {
+        lines.push(`Delivery: ${format(parseISO(nextDelivery.deliveryDate), "d MMM yyyy")}.`);
+      }
+      lines.push(`Please settle before delivery. Pay via GPay/Cash.`);
+    } else if (cb.length > 0) {
+      lines.push(`Thank you for choosing us! Hope to see you again soon.`);
+    } else {
+      lines.push(`We'd love to have you for your next occasion. Feel free to reach out!`);
+    }
+
+    lines.push(websiteUrl);
+
+    return lines.join("\n");
   };
 
-  const sendSMS = () => {
-    if (!customer.phone) return toast.error("No phone");
+  const handleSendWhatsApp = () => {
+    if (!customer.phone) return toast.error("No phone number saved for this customer");
     const ph = customer.phone.replace(/\D/g, "");
-    const msg = buildMessage(false)
-      .replace(/\*/g, "")
-      .replace(/\n{2,}/g, "\n")
-      .trim();
-    window.location.href = `sms:${ph}?&body=${encodeURIComponent(msg)}`;
+    const text = buildWhatsAppMessage();
+    window.location.href = `https://wa.me/${ph.startsWith("91") ? ph : "91" + ph}?text=${encodeURIComponent(text)}`;
+    setPreviewMode(null);
   };
+
+  const handleSendSMS = () => {
+    if (!customer.phone) return toast.error("No phone number saved for this customer");
+    const ph = customer.phone.replace(/\D/g, "");
+    const msg = buildSmsMessage();
+    window.location.href = `sms:${ph}&body=${encodeURIComponent(msg)}`;
+    setPreviewMode(null);
+  };
+
+  const previewMessage = previewMode === "whatsapp" ? buildWhatsAppMessage() : buildSmsMessage();
 
   return (
     <AppShell>
+      {/* Message Preview Modal */}
+      {previewMode && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0">
+          <div className="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
+            {/* Modal Header */}
+            <div
+              className={cn(
+                "px-5 py-4 flex items-center justify-between",
+                previewMode === "whatsapp"
+                  ? "bg-[oklch(0.55_0.18_150)] text-white"
+                  : "bg-primary text-primary-foreground"
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                {previewMode === "whatsapp" ? (
+                  <MessageCircle className="size-5" />
+                ) : (
+                  <MessageSquare className="size-5" />
+                )}
+                <div>
+                  <p className="font-bold text-sm">
+                    {previewMode === "whatsapp" ? "WhatsApp Preview" : "SMS Preview"}
+                  </p>
+                  <p className="text-[11px] opacity-80">To: {customer.name} · {customer.phone}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewMode(null)}
+                className="size-8 rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Message Preview */}
+            <div className="px-5 py-4 max-h-[55vh] overflow-y-auto">
+              <div
+                className={cn(
+                  "rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap font-mono",
+                  previewMode === "whatsapp"
+                    ? "bg-[#dcf8c6] text-[#111] text-xs"
+                    : "bg-secondary text-foreground text-xs"
+                )}
+              >
+                {previewMessage}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                {previewMode === "whatsapp"
+                  ? "Opens WhatsApp with this message pre-filled"
+                  : "Opens your SMS app with this message pre-filled"}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 pb-5 grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => setPreviewMode(null)}
+                className="py-3 rounded-2xl bg-secondary text-foreground text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <X className="size-4" /> Cancel
+              </button>
+              <button
+                onClick={previewMode === "whatsapp" ? handleSendWhatsApp : handleSendSMS}
+                className={cn(
+                  "py-3 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition shadow-sm",
+                  previewMode === "whatsapp"
+                    ? "bg-[oklch(0.55_0.18_150)]"
+                    : "saree-gradient"
+                )}
+              >
+                <Send className="size-4" /> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-4 pb-3">
         <button
           onClick={() => navigate({ to: "/customers" })}
@@ -371,20 +484,30 @@ function CustomerDetail() {
         📅 {customer.kind === "client" ? "Book Appointment / Order" : "Book for this Artist"}
       </Link>
 
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <button
-          onClick={sendWhatsApp}
-          className="bg-[oklch(0.62_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
-        >
-          <MessageCircle className="size-5" /> WhatsApp
-        </button>
-        <button
-          onClick={sendSMS}
-          className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold active:scale-95 transition"
-        >
-          <MessageSquare className="size-5" /> SMS
-        </button>
-      </div>
+      {/* Send Message Buttons */}
+      {customer.phone && (
+        <div className="bg-card card-shadow rounded-3xl p-4 mt-3 border border-border/10">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Eye className="size-3" /> Send Message
+          </p>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={() => setPreviewMode("whatsapp")}
+              className="bg-[oklch(0.55_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold active:scale-95 transition cursor-pointer"
+            >
+              <MessageCircle className="size-4.5" />
+              WhatsApp
+            </button>
+            <button
+              onClick={() => setPreviewMode("sms")}
+              className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold active:scale-95 transition cursor-pointer"
+            >
+              <MessageSquare className="size-4.5" />
+              SMS
+            </button>
+          </div>
+        </div>
+      )}
 
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mt-5 mb-2">
         History
