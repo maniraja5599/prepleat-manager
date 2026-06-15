@@ -600,44 +600,69 @@ function SwipeableCard({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
+  const dirLocked = useRef<"h" | "v" | null>(null);
   const [offset, setOffset] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const THRESHOLD = 70; // px to trigger reveal
-  const BOOK_WIDTH = 80;
+  const revealedRef = useRef(false);
+  const offsetRef = useRef(0);
+  const activeSwipe = useRef(false);
+  const THRESHOLD = 55;
+  const BOOK_WIDTH = 62;
+  const GAP = 6;
+
+  useEffect(() => { revealedRef.current = revealed; }, [revealed]);
+  useEffect(() => { offsetRef.current = offset; }, [offset]);
+
+  // Non-passive touchmove: lets us call preventDefault to stop scroll during horizontal swipe
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => {
+      if (startX.current === null || startY.current === null) return;
+      const dx = e.touches[0].clientX - startX.current;
+      const dy = e.touches[0].clientY - startY.current;
+      if (!dirLocked.current) {
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+          dirLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+        }
+        return;
+      }
+      if (dirLocked.current === "v") return;
+      e.preventDefault();
+      activeSwipe.current = true;
+      if (dx < 0) {
+        setOffset(Math.max(dx, -(BOOK_WIDTH + GAP + 6)));
+      } else if (revealedRef.current) {
+        setOffset(Math.min(0, -(BOOK_WIDTH + GAP) + dx));
+      }
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
+  }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
     startY.current = e.touches[0].clientY;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (startX.current === null || startY.current === null) return;
-    const dx = e.touches[0].clientX - startX.current;
-    const dy = e.touches[0].clientY - startY.current;
-    // Only handle horizontal swipes (dx must dominate)
-    if (Math.abs(dy) > Math.abs(dx)) return;
-    if (dx < 0) {
-      // swiping left
-      e.preventDefault();
-      setOffset(Math.max(dx, -BOOK_WIDTH - 10));
-    } else if (revealed && dx > 0) {
-      e.preventDefault();
-      setOffset(Math.min(0, -BOOK_WIDTH + dx));
-    }
+    dirLocked.current = null;
+    activeSwipe.current = false;
   };
 
   const onTouchEnd = () => {
-    if (offset < -THRESHOLD) {
-      setRevealed(true);
-      setOffset(-BOOK_WIDTH);
-    } else {
-      setRevealed(false);
-      setOffset(0);
+    if (dirLocked.current === "h") {
+      if (offsetRef.current < -THRESHOLD) {
+        setRevealed(true);
+        setOffset(-(BOOK_WIDTH + GAP));
+      } else {
+        setRevealed(false);
+        setOffset(0);
+      }
     }
     startX.current = null;
     startY.current = null;
+    dirLocked.current = null;
   };
 
   const handleBook = (e: React.MouseEvent) => {
@@ -648,35 +673,30 @@ function SwipeableCard({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Book action revealed on swipe left */}
-      <div
-        className="absolute inset-y-0 right-0 flex items-center justify-center saree-gradient rounded-2xl"
-        style={{ width: BOOK_WIDTH }}
-      >
+    <div ref={containerRef} style={{ position: "relative", overflow: "hidden", borderRadius: "1rem" }}>
+      {/* Book button behind the card, with GAP spacing */}
+      <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: BOOK_WIDTH + GAP, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
         <button
           onClick={handleBook}
-          className="flex flex-col items-center justify-center gap-1 text-white w-full h-full cursor-pointer active:brightness-90"
+          style={{ width: BOOK_WIDTH, height: "calc(100% - 8px)" }}
+          className="saree-gradient rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white cursor-pointer active:brightness-90"
         >
-          <CalendarPlus className="size-5" />
-          <span className="text-[10px] font-bold uppercase tracking-wide">Book</span>
+          <CalendarPlus className="size-4" />
+          <span className="text-[9px] font-bold uppercase tracking-wide leading-none">Book</span>
         </button>
       </div>
 
-      {/* Card — slides left on swipe */}
+      {/* Card slides left on swipe */}
       <div
         style={{
           transform: `translateX(${offset}px)`,
-          transition: startX.current === null ? "transform 0.25s ease" : "none",
+          transition: activeSwipe.current ? "none" : "transform 0.22s cubic-bezier(.4,0,.2,1)",
+          willChange: "transform",
         }}
         onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onClick={() => {
-          if (revealed) {
-            setRevealed(false);
-            setOffset(0);
-          }
+          if (revealed) { setRevealed(false); setOffset(0); }
         }}
       >
         <Link to="/customers/$id" params={{ id }} className={cls}>
@@ -686,6 +706,7 @@ function SwipeableCard({
     </div>
   );
 }
+
 
 function StatChip({
   label,
