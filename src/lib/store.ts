@@ -117,6 +117,9 @@ export interface Settings {
   logoDataUrl?: string;
   defaultPaymentMode?: PaymentMode;
   websiteUrl?: string;
+  businessSlogan?: string;
+  businessPhone?: string;
+  businessAddress?: string;
   occasionPresets?: string[];
   expenseCategories?: string[];
   incomeCategories?: string[];
@@ -261,6 +264,9 @@ export const useStore = create<State>()(
         theme: "royal",
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
+        businessSlogan: "Drape with grace · Pleat with love",
+        businessPhone: "",
+        businessAddress: "",
         occasionPresets: [
           "Bride",
           "Bridesmaid",
@@ -624,6 +630,9 @@ export const useStore = create<State>()(
             theme: "royal",
             defaultPaymentMode: "gpay",
             websiteUrl: "https://eyasdrapist.shop/",
+            businessSlogan: "Drape with grace · Pleat with love",
+            businessPhone: "",
+            businessAddress: "",
             occasionPresets: [
               "Bride",
               "Bridesmaid",

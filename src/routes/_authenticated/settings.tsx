@@ -735,6 +735,40 @@ function SettingsPage() {
                     className="input mt-1.5"
                   />
                 </div>
+                <div className="mt-4">
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Company slogan
+                  </label>
+                  <input
+                    value={settings.businessSlogan ?? ""}
+                    onChange={(e) => update({ businessSlogan: e.target.value })}
+                    placeholder="e.g. Drape with grace · Pleat with love"
+                    className="input mt-1.5"
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Mobile number
+                  </label>
+                  <input
+                    value={settings.businessPhone ?? ""}
+                    onChange={(e) => update({ businessPhone: e.target.value })}
+                    placeholder="e.g. +91 83000 30123"
+                    className="input mt-1.5"
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Business address
+                  </label>
+                  <textarea
+                    value={settings.businessAddress ?? ""}
+                    onChange={(e) => update({ businessAddress: e.target.value })}
+                    placeholder="e.g. 123, Street name, City"
+                    rows={2}
+                    className="input mt-1.5 rounded-2xl resize-none"
+                  />
+                </div>
               </Section>
 
               {/* Predefined Palettes Section */}

@@ -116,15 +116,16 @@ export async function generateBillPDF(opts: {
   const ink: [number, number, number] = [40, 40, 40];
 
   // ===== Header band =====
+  const headerH = 92;
   doc.setFillColor(...accent);
-  doc.rect(0, 0, W, 78, "F");
+  doc.rect(0, 0, W, headerH, "F");
 
   // Logo: draw the transparent PNG directly.
   if (logoData) {
     try {
       const flat = await flattenLogoOnCream(logoData);
       const cx = 38;
-      const cy = 39;
+      const cy = 46;
       const r = 22;
       doc.addImage(flat, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
     } catch {
@@ -134,26 +135,43 @@ export async function generateBillPDF(opts: {
 
   doc.setTextColor(255, 248, 230);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  doc.text(settings.businessName || "Eyas Saree Drapist", 72, 36);
-  // Tagline / slogan (sits under the business name) — drawn from the brand site.
+  doc.setFontSize(15.5);
+  doc.text(settings.businessName || "Eyas Saree Drapist", 72, 28);
+  
+  // Tagline / slogan
+  const slogan = settings.businessSlogan || "Drape with grace · Pleat with love";
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8.5);
   doc.setTextColor(...gold);
-  doc.text("Drape with grace · Pleat with love", 72, 50);
+  doc.text(slogan, 72, 40);
+
+  // Business Phone & Address
+  let currentY = 52;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(245, 240, 255); // soft cream/off-white
+
+  if (settings.businessPhone) {
+    doc.text(`Ph: ${settings.businessPhone}`, 72, currentY);
+    currentY += 11;
+  }
+  if (settings.businessAddress) {
+    const addrLines = doc.splitTextToSize(settings.businessAddress, W / 2 - 15);
+    doc.text(addrLines, 72, currentY);
+  }
 
   doc.setTextColor(255, 248, 230);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 30, {
+  doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 36, {
     align: "right",
   });
-  doc.text(format(new Date(), "MMM d, yyyy"), W - 18, 42, { align: "right" });
-  doc.text(`Booked ${format(parseISO(booking.createdAt), "MMM d, yyyy")}`, W - 18, 54, {
+  doc.text(format(new Date(), "MMM d, yyyy"), W - 18, 48, { align: "right" });
+  doc.text(`Booked ${format(parseISO(booking.createdAt), "MMM d, yyyy")}`, W - 18, 60, {
     align: "right",
   });
 
-  let y = 100;
+  let y = 115;
 
   // ===== Billed to =====
   doc.setTextColor(...ink);
@@ -334,9 +352,6 @@ export async function generateBillPDF(opts: {
     align: "right",
   });
 
-  doc.setFontSize(6.5);
-  doc.setTextColor(180, 180, 180);
-  doc.text("Bill software by ManiRaja", W / 2, H - 14, { align: "center" });
 
   const fname = `bill-${booking.billNumber || booking.id.slice(0, 6)}-${(customer?.name || "customer").replace(/\s+/g, "_")}.pdf`;
   doc.save(fname);

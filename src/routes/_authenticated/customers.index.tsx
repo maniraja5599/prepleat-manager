@@ -660,7 +660,13 @@ function CustomersPage() {
                   <p className="font-semibold truncate">{c.name}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Phone className="size-3" />
-                    {c.phone}
+                    <a
+                      href={`tel:${c.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:underline hover:text-primary transition inline-flex items-center gap-0.5 cursor-pointer font-medium"
+                    >
+                      {c.phone}
+                    </a>
                   </p>
                   {c.address && (
                     <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">

@@ -369,10 +369,13 @@ function CustomerDetail() {
         ) : (
           <>
             <h1 className="text-2xl font-display font-semibold truncate">{customer.name}</h1>
-            <p className="text-sm opacity-90 flex items-center gap-1 mt-1">
+            <a
+              href={`tel:${customer.phone}`}
+              className="text-sm opacity-90 hover:underline inline-flex items-center gap-1 mt-1 cursor-pointer"
+            >
               <Phone className="size-3.5" />
               {customer.phone}
-            </p>
+            </a>
             {customer.address && (
               <p className="text-xs opacity-80 mt-1 flex items-start gap-1">
                 <MapPin className="size-3.5 mt-0.5 shrink-0" />
@@ -541,27 +544,34 @@ function CustomerDetail() {
         </Link>
       </div>
 
-      {/* Send Message Buttons */}
+      {/* Quick Actions (Call / WhatsApp / SMS) */}
       {customer.phone && (
         <div className="bg-card card-shadow rounded-3xl p-4 mt-3 border border-border/10">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Eye className="size-3" /> Send Message
+            <Eye className="size-3" /> Quick Actions
           </p>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => setPreviewMode("whatsapp")}
-              className="bg-[oklch(0.55_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold active:scale-95 transition cursor-pointer"
+              className="bg-[oklch(0.55_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
             >
-              <MessageCircle className="size-4.5" />
+              <MessageCircle className="size-4" />
               WhatsApp
             </button>
             <button
               onClick={() => setPreviewMode("sms")}
-              className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold active:scale-95 transition cursor-pointer"
+              className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
             >
-              <MessageSquare className="size-4.5" />
+              <MessageSquare className="size-4" />
               SMS
             </button>
+            <a
+              href={`tel:${customer.phone}`}
+              className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
+            >
+              <Phone className="size-4" />
+              Call
+            </a>
           </div>
         </div>
       )}
