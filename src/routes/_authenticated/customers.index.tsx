@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, type CustomerKind, type Measurement } from "@/lib/store";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Search,
   Phone,
@@ -17,6 +17,7 @@ import {
   Filter,
   ArrowUpDown,
   TrendingUp,
+  CalendarPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -52,6 +53,7 @@ function CustomersPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const settings = useStore((s) => s.settings);
   const [showMeasure, setShowMeasure] = useState(false);
@@ -298,8 +300,13 @@ function CustomersPage() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
+              ref={searchRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              onFocus={() => {
+                // Scroll to top so sticky header stays visible when keyboard opens
+                setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+              }}
               placeholder={`Search ${tab === "client" ? "clients" : "artists"}...`}
               className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
             />
@@ -546,9 +553,13 @@ function CustomersPage() {
                     {inner}
                   </button>
                 ) : (
-                  <Link to="/customers/$id" params={{ id: c.id }} className={cls}>
+                  <SwipeableCard
+                    id={c.id}
+                    kind={c.kind ?? "client"}
+                    cls={cls}
+                  >
                     {inner}
-                  </Link>
+                  </SwipeableCard>
                 )}
               </li>
             );
@@ -573,6 +584,106 @@ function CustomersPage() {
         }}
       />
     </AppShell>
+  );
+}
+
+// Swipeable card — swipe left to reveal Book button
+function SwipeableCard({
+  id,
+  kind,
+  cls,
+  children,
+}: {
+  id: string;
+  kind: "client" | "artist";
+  cls: string;
+  children: React.ReactNode;
+}) {
+  const navigate = useNavigate();
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const THRESHOLD = 70; // px to trigger reveal
+  const BOOK_WIDTH = 80;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startX.current === null || startY.current === null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    const dy = e.touches[0].clientY - startY.current;
+    // Only handle horizontal swipes (dx must dominate)
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) {
+      // swiping left
+      e.preventDefault();
+      setOffset(Math.max(dx, -BOOK_WIDTH - 10));
+    } else if (revealed && dx > 0) {
+      e.preventDefault();
+      setOffset(Math.min(0, -BOOK_WIDTH + dx));
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (offset < -THRESHOLD) {
+      setRevealed(true);
+      setOffset(-BOOK_WIDTH);
+    } else {
+      setRevealed(false);
+      setOffset(0);
+    }
+    startX.current = null;
+    startY.current = null;
+  };
+
+  const handleBook = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const search = kind === "client" ? { customerId: id } : { artistId: id };
+    navigate({ to: "/new", search });
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Book action revealed on swipe left */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-center justify-center saree-gradient rounded-2xl"
+        style={{ width: BOOK_WIDTH }}
+      >
+        <button
+          onClick={handleBook}
+          className="flex flex-col items-center justify-center gap-1 text-white w-full h-full cursor-pointer active:brightness-90"
+        >
+          <CalendarPlus className="size-5" />
+          <span className="text-[10px] font-bold uppercase tracking-wide">Book</span>
+        </button>
+      </div>
+
+      {/* Card — slides left on swipe */}
+      <div
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: startX.current === null ? "transform 0.25s ease" : "none",
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onClick={() => {
+          if (revealed) {
+            setRevealed(false);
+            setOffset(0);
+          }
+        }}
+      >
+        <Link to="/customers/$id" params={{ id }} className={cls}>
+          {children}
+        </Link>
+      </div>
+    </div>
   );
 }
 
