@@ -28,6 +28,8 @@ import {
   CreditCard,
   Lock,
   Unlock,
+  Info,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,7 +61,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "pricing" | "headers" | "theme" | "data" | "account" | "help";
+type TabId = "pricing" | "headers" | "theme" | "data" | "account" | "help" | "about";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
   { id: "pricing", label: "Pricing", hint: "Defaults & measures", icon: IndianRupee },
   { id: "theme", label: "Theme & Brand", hint: "Logo, name & colors", icon: Palette },
@@ -67,6 +69,7 @@ const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] =
   { id: "data", label: "Data & Recovery", hint: "Backup, log & reset", icon: Database },
   { id: "account", label: "Account", hint: "Sign in & sync", icon: User },
   { id: "help", label: "Help", hint: "Docs & guide", icon: HelpCircle },
+  { id: "about", label: "About", hint: "Developer & App info", icon: Info },
 ];
 
 const THEMES: {
@@ -233,7 +236,7 @@ function SettingsPage() {
 
   // Swipe tab switching on mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const TABS_ORDER: TabId[] = ["pricing", "theme", "headers", "data", "account", "help"];
+  const TABS_ORDER: TabId[] = ["pricing", "theme", "headers", "data", "account", "help", "about"];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
@@ -1460,6 +1463,8 @@ function SettingsPage() {
           )}
 
           {tab === "help" && <HelpBlock query={helpQuery} setQuery={setHelpQuery} />}
+
+          {tab === "about" && <AboutBlock />}
         </div>
         <p className="mt-6 text-center text-[11px] text-muted-foreground/70 tabular-nums">
           App version v{APP_VERSION}
@@ -2206,5 +2211,97 @@ function ActivityBlock() {
         )}
       </Section>
     </>
+  );
+}
+
+function AboutBlock() {
+  return (
+    <div className="space-y-4 animate-fade-in">
+      {/* Brand Profile Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-card border border-border/40 p-6 card-shadow flex flex-col items-center text-center">
+        {/* Soft background gradient glow */}
+        <div className="absolute -right-20 -top-20 size-40 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 size-40 rounded-full bg-gold/10 blur-3xl" />
+
+        {/* Logo container */}
+        <div className="size-20 rounded-full saree-gradient p-0.5 shadow-md flex items-center justify-center mb-4 active:scale-95 transition-transform duration-300">
+          <div className="w-full h-full bg-card rounded-full flex items-center justify-center p-2.5">
+            <img src={logoAsset} alt="Eyas Logo" className="object-contain w-full h-full" />
+          </div>
+        </div>
+
+        <h3 className="text-xl font-display font-bold text-foreground">Saree PrePleat Manager</h3>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">
+          Version {APP_VERSION}
+        </p>
+
+        <p className="text-xs text-foreground/80 max-w-sm mt-3.5 leading-relaxed">
+          A premium, all-in-one boutique management platform designed specifically for professional
+          Saree Draping Artists and Prepleating Studios. Streamlining bookings, client records,
+          custom measurements, and automated invoicing.
+        </p>
+      </div>
+
+      {/* Developer Details Card */}
+      <div className="rounded-2xl bg-card border border-border/40 p-5 card-shadow space-y-3.5">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Sparkles className="size-3.5 text-gold" /> Developer Information
+        </h4>
+
+        <div className="flex items-center gap-3.5 bg-secondary/30 rounded-xl p-3.5 border border-border/10">
+          <div className="size-11 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-base shadow-inner shrink-0">
+            MR
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider leading-none">
+              Developed By
+            </p>
+            <p className="text-sm font-bold text-foreground mt-1.5 leading-none">Mani Raja</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3.5 bg-secondary/30 rounded-xl p-3.5 border border-border/10">
+          <div className="size-11 rounded-full bg-success/15 text-success flex items-center justify-center shadow-inner shrink-0">
+            <Phone className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider leading-none">
+              Contact Number
+            </p>
+            <a
+              href="tel:+918300030123"
+              className="text-sm font-extrabold text-primary hover:underline mt-1.5 inline-block active:scale-95 transition-transform"
+            >
+              +91 83000 30123
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* App Features Grid */}
+      <div className="rounded-2xl bg-card border border-border/40 p-5 card-shadow space-y-3">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Key Capabilities
+        </h4>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="p-2.5 bg-secondary/20 rounded-xl border border-border/5">
+            <p className="text-[11px] font-bold text-foreground">📅 Smart Calendar</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Manage draping slots</p>
+          </div>
+          <div className="p-2.5 bg-secondary/20 rounded-xl border border-border/5">
+            <p className="text-[11px] font-bold text-foreground">📏 Body Measures</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Save charts & custom fields</p>
+          </div>
+          <div className="p-2.5 bg-secondary/20 rounded-xl border border-border/5">
+            <p className="text-[11px] font-bold text-foreground">🧾 PDF Invoicing</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Beautiful digital receipts</p>
+          </div>
+          <div className="p-2.5 bg-secondary/20 rounded-xl border border-border/5">
+            <p className="text-[11px] font-bold text-foreground">☁️ Cloud Sync</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Automatic secure backups</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

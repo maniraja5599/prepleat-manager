@@ -6,8 +6,26 @@ import { fmtTime12, totalDue } from "./store";
 import logoAsset from "@/assets/eyas-logo.png";
 
 // Helvetica (jsPDF default) lacks the ₹ glyph — it renders as ? or a box.
-// Use the universally-supported "Rs." prefix inside the PDF only.
 const rs = (n: number) => "Rs. " + Math.round(n).toLocaleString("en-IN");
+
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "");
+  const num = parseInt(clean, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+const THEME_COLORS: Record<string, { primary: string; accent: string }> = {
+  royal: { primary: "#5b3fc8", accent: "#cfc5f0" },
+  maroon: { primary: "#7a1f2a", accent: "#e8c878" },
+  midnight: { primary: "#c5483f", accent: "#5a3a35" },
+  emerald: { primary: "#1f6b4a", accent: "#bfe3cc" },
+  rose: { primary: "#c9457e", accent: "#f4c4d6" },
+  sand: { primary: "#8a5a2a", accent: "#dcc299" },
+  charcoal: { primary: "#d4a24e", accent: "#3a342a" },
+  gold: { primary: "#c89a3a", accent: "#f0d77a" },
+  sunset: { primary: "#c85a3a", accent: "#f4cca8" },
+  ocean: { primary: "#2c78a0", accent: "#a8daf4" },
+};
 
 // Best-effort fetch + base64 conversion for the brand logo. Returns null on
 // failure (CORS, offline, etc.) so the caller can still render without it.
@@ -80,8 +98,20 @@ export async function generateBillPDF(opts: {
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
 
-  const accent: [number, number, number] = [122, 31, 42];
-  const gold: [number, number, number] = [200, 156, 76];
+  let primaryHex = "#7a1f2a"; // Default maroon
+  let accentHex = "#e8c878"; // Default gold
+
+  const tName = settings.theme || "royal";
+  if (tName === "custom" && settings.customPrimary) {
+    primaryHex = settings.customPrimary;
+    accentHex = "#e8c878";
+  } else if (THEME_COLORS[tName]) {
+    primaryHex = THEME_COLORS[tName].primary;
+    accentHex = THEME_COLORS[tName].accent;
+  }
+
+  const accent: [number, number, number] = hexToRgb(primaryHex);
+  const gold: [number, number, number] = hexToRgb(accentHex);
   const muted: [number, number, number] = [120, 120, 120];
   const ink: [number, number, number] = [40, 40, 40];
 
@@ -89,15 +119,13 @@ export async function generateBillPDF(opts: {
   doc.setFillColor(...accent);
   doc.rect(0, 0, W, 78, "F");
 
-  // Round logo: draw a white circle then clipped square image on top.
+  // Logo: draw the transparent PNG directly.
   if (logoData) {
     try {
       const flat = await flattenLogoOnCream(logoData);
       const cx = 38;
       const cy = 39;
       const r = 22;
-      doc.setFillColor(255, 248, 230);
-      doc.circle(cx, cy, r + 2, "F");
       doc.addImage(flat, "PNG", cx - r, cy - r, r * 2, r * 2, undefined, "FAST");
     } catch {
       /* ignore bad logo */
@@ -111,7 +139,7 @@ export async function generateBillPDF(opts: {
   // Tagline / slogan (sits under the business name) — drawn from the brand site.
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8.5);
-  doc.setTextColor(245, 215, 180);
+  doc.setTextColor(...gold);
   doc.text("Drape with grace · Pleat with love", 72, 50);
 
   doc.setTextColor(255, 248, 230);
@@ -206,26 +234,46 @@ export async function generateBillPDF(opts: {
     cy += rowH;
   }
 
-  // Round rubber-stamp on the left — two concentric circles + label.
+  // Rectangular rubber-stamp on the left — double border + business name + status + date.
   const stamp = due === 0 ? "PAID" : "DUE";
   const subStamp = due === 0 ? "IN FULL" : "BALANCE";
   const stampColor: [number, number, number] = due === 0 ? [38, 130, 70] : [190, 50, 50];
+
+  const w = 70;
+  const h = 34;
   const sx = 60;
   const sy = cy - rowH * 2;
+  const rx = sx - w / 2;
+  const ry = sy - h / 2;
+
   doc.setDrawColor(...stampColor);
   doc.setTextColor(...stampColor);
-  doc.setLineWidth(1.8);
-  doc.circle(sx, sy, 28);
+
+  // Outer rectangle
+  doc.setLineWidth(1.6);
+  doc.rect(rx, ry, w, h, "D");
+
+  // Inner rectangle
   doc.setLineWidth(0.6);
-  doc.circle(sx, sy, 24);
+  doc.rect(rx + 2, ry + 2, w - 4, h - 4, "D");
+
+  // Business Name (Top line)
+  const rawBizName = settings.businessName || "Eyas Saree Drapist";
+  const bizName = rawBizName.length > 20 ? rawBizName.slice(0, 18) + ".." : rawBizName;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text(stamp, sx, sy + 2, { align: "center" });
-  doc.setFontSize(6.5);
-  doc.setFont("helvetica", "normal");
-  doc.text(subStamp, sx, sy + 11, { align: "center" });
   doc.setFontSize(5.5);
-  doc.text(format(new Date(), "dd MMM yyyy").toUpperCase(), sx, sy - 11, { align: "center" });
+  doc.text(bizName.toUpperCase(), sx, ry + 8, { align: "center" });
+
+  // Status (Middle line, large and bold)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(stamp, sx, ry + 20, { align: "center" });
+
+  // Sub-status and Date (Bottom line)
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5);
+  const dateStr = format(new Date(), "dd MMM yyyy").toUpperCase();
+  doc.text(`${subStamp} · ${dateStr}`, sx, ry + 29, { align: "center" });
 
   cy += 8;
 
