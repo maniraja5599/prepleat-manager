@@ -1085,7 +1085,13 @@ export const useStore = create<State>()(
         if (typeof s.artistPrepleatPrice !== "number")
           s.artistPrepleatPrice = s.prepleatPrice ?? 350;
         if (typeof s.artistDrapePrice !== "number") s.artistDrapePrice = s.drapePrice ?? 800;
-        if (Array.isArray(s.defaultMeasurements)) {
+        if (!Array.isArray(s.defaultMeasurements)) {
+          s.defaultMeasurements = [
+            { label: "Pallu", value: 40 },
+            { label: "Waist", value: 32 },
+            { label: "Hip", value: 38 },
+          ];
+        } else {
           const labels = s.defaultMeasurements.map((m: any) => m.label).join(",");
           if (labels === "A,B,C" || labels === "P,W,H") {
             s.defaultMeasurements = [

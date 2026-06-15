@@ -446,13 +446,13 @@ function SettingsPage() {
                   bookings.
                 </p>
                 <ul className="space-y-2">
-                  {settings.defaultMeasurements.map((m, i) => (
+                  {(settings.defaultMeasurements ?? []).map((m, i) => (
                     <li key={i} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
                       <input
                         value={m.label}
                         onChange={(e) =>
                           update({
-                            defaultMeasurements: settings.defaultMeasurements.map((x, j) =>
+                            defaultMeasurements: (settings.defaultMeasurements ?? []).map((x, j) =>
                               i === j ? { ...x, label: e.target.value } : x,
                             ),
                           })
@@ -464,7 +464,7 @@ function SettingsPage() {
                         <button
                           onClick={() =>
                             update({
-                              defaultMeasurements: settings.defaultMeasurements.map((x, j) =>
+                              defaultMeasurements: (settings.defaultMeasurements ?? []).map((x, j) =>
                                 i === j ? { ...x, value: Math.max(10, x.value - 1) } : x,
                               ),
                             })
@@ -478,7 +478,7 @@ function SettingsPage() {
                           value={m.value}
                           onChange={(e) =>
                             update({
-                              defaultMeasurements: settings.defaultMeasurements.map((x, j) =>
+                              defaultMeasurements: (settings.defaultMeasurements ?? []).map((x, j) =>
                                 i === j ? { ...x, value: Number(e.target.value) || 0 } : x,
                               ),
                             })
@@ -488,7 +488,7 @@ function SettingsPage() {
                         <button
                           onClick={() =>
                             update({
-                              defaultMeasurements: settings.defaultMeasurements.map((x, j) =>
+                              defaultMeasurements: (settings.defaultMeasurements ?? []).map((x, j) =>
                                 i === j ? { ...x, value: x.value + 1 } : x,
                               ),
                             })
@@ -502,7 +502,7 @@ function SettingsPage() {
                       <button
                         onClick={() =>
                           update({
-                            defaultMeasurements: settings.defaultMeasurements.filter(
+                            defaultMeasurements: (settings.defaultMeasurements ?? []).filter(
                               (_, j) => j !== i,
                             ),
                           })
@@ -514,12 +514,12 @@ function SettingsPage() {
                     </li>
                   ))}
                 </ul>
-                {settings.defaultMeasurements.length < 6 && (
+                {(settings.defaultMeasurements ?? []).length < 6 && (
                   <button
                     onClick={() =>
                       update({
                         defaultMeasurements: [
-                          ...settings.defaultMeasurements,
+                          ...(settings.defaultMeasurements ?? []),
                           { label: "X", value: 40 },
                         ],
                       })
