@@ -27,6 +27,7 @@ import {
   Phone,
   Calendar,
   Clock,
+  Send,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -65,6 +66,11 @@ function BookingDetail() {
   const [editing, setEditing] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  const [previewMode, setPreviewMode] = useState<null | {
+    channel: "whatsapp" | "sms";
+    kind: "reminder" | "bill" | "balance" | "status";
+  }>(null);
+  const [includeLink, setIncludeLink] = useState(true);
 
   if (!booking) {
     return (
@@ -92,16 +98,21 @@ function BookingDetail() {
         ? "received"
         : "new";
 
-  const buildWhatsAppMessage = (kind: "reminder" | "bill" | "balance" | "status") => {
+  const buildWhatsAppMessage = (
+    kind: "reminder" | "bill" | "balance" | "status",
+    withLink = true,
+  ) => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
     const dateStr = format(parseISO(booking.deliveryDate), "EEE, MMM d");
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
+    let parts: string[] = [];
+
     if (kind === "status") {
       const head = `🧵 *${businessName}*`;
-      const greet = `Hi ${customer?.name} ✨`;
+      const greet = `Hi ${customer?.name || "Customer"} ✨`;
       if (currentStage === "received") {
-        return [
+        parts = [
           head,
           "",
           greet,
@@ -109,13 +120,10 @@ function BookingDetail() {
           `Sarees: ${booking.sareeCount}`,
           `Delivery: 📅 ${dateStr}, ${timeStr}`,
           due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully paid`,
-          "",
-          `🌐 ${site}`,
-        ].join("\n");
-      }
-      if (currentStage === "ready") {
+        ];
+      } else if (currentStage === "ready") {
         const label = booking.service === "prepleat" ? "PrePleat is ready" : "Drape is ready";
-        return [
+        parts = [
           head,
           "",
           greet,
@@ -124,12 +132,9 @@ function BookingDetail() {
           due > 0
             ? `Balance to pay: ${fmtINR(due)} (GPay / Cash)`
             : `Already fully paid — thank you!`,
-          "",
-          `🌐 ${site}`,
-        ].join("\n");
-      }
-      if (currentStage === "delivered") {
-        return [
+        ];
+      } else if (currentStage === "delivered") {
+        parts = [
           head,
           "",
           greet,
@@ -142,17 +147,17 @@ function BookingDetail() {
           due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully Paid`,
           "",
           `Hope to drape for you again ✨`,
-          `🌐 ${site}`,
-        ].join("\n");
+        ];
+      } else {
+        kind = "bill";
       }
-      // new — same as bill
-      kind = "bill";
     }
+    
     if (kind === "balance") {
-      return [
+      parts = [
         `💛 *${businessName}*`,
         ``,
-        `Hi ${customer?.name} 🙏`,
+        `Hi ${customer?.name || "Customer"} 🙏`,
         `A gentle reminder — your saree order has a remaining balance.`,
         ``,
         `🧾 *Total:* ${fmtINR(booking.totalAmount)}`,
@@ -162,34 +167,41 @@ function BookingDetail() {
         `📅 Delivery: ${dateStr}, ${timeStr}`,
         ``,
         `You can pay via GPay / Cash on delivery. Thank you ✨`,
-        `🌐 ${site}`,
-      ].join("\n");
+      ];
     }
-    const lines = [
-      kind === "bill" ? `🧾 *${businessName}* — Bill` : `🧵 *${businessName}*`,
-      ``,
-      `Hi ${customer?.name} ✨`,
-      kind === "bill"
-        ? `Thank you for choosing us 💛 Here are your order details:`
-        : `Friendly reminder about your saree order 💛`,
-      ``,
-      `📌 *Service:* ${booking.service.toUpperCase()}`,
-      `🪡 *Sarees:* ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
-      `📅 *Delivery:* ${dateStr}, ${timeStr}`,
-      ``,
-      `*Total:* ${fmtINR(booking.totalAmount)}`,
-      `*Paid:* ${fmtINR(paid)}`,
-      due > 0 ? `*Balance:* ${fmtINR(due)}` : `*Status:* ✅ Fully Paid`,
-      ``,
-      `🌐 ${site}`,
-    ];
-    return lines.join("\n");
+    
+    if (kind === "bill") {
+      parts = [
+        `🧾 *${businessName}* — Bill`,
+        ``,
+        `Hi ${customer?.name || "Customer"} ✨`,
+        `Thank you for choosing us 💛 Here are your order details:`,
+        ``,
+        `📌 *Service:* ${booking.service.toUpperCase()}`,
+        `🪡 *Sarees:* ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
+        `📅 *Delivery:* ${dateStr}, ${timeStr}`,
+        ``,
+        `*Total:* ${fmtINR(booking.totalAmount)}`,
+        `*Paid:* ${fmtINR(paid)}`,
+        due > 0 ? `*Balance:* ${fmtINR(due)}` : `*Status:* ✅ Fully Paid`,
+      ];
+    }
+
+    if (withLink) {
+      parts.push("");
+      parts.push(`🌐 ${site}`);
+    }
+
+    return parts.join("\n");
   };
 
-  const sendWhatsApp = (kind: "reminder" | "bill" | "balance" | "status" = "reminder") => {
+  const sendWhatsApp = (
+    kind: "reminder" | "bill" | "balance" | "status" = "reminder",
+    withLink = true,
+  ) => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const encoded = encodeURIComponent(buildWhatsAppMessage(kind));
+    const encoded = encodeURIComponent(buildWhatsAppMessage(kind, withLink));
     window.location.href = `https://wa.me/${phone}?text=${encoded}`;
   };
 
@@ -203,10 +215,13 @@ function BookingDetail() {
     }
   };
 
-  const sendSMS = (kind: "reminder" | "bill" | "balance" | "status" = "status") => {
+  const sendSMS = (
+    kind: "reminder" | "bill" | "balance" | "status" = "status",
+    withLink = true,
+  ) => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
-    const msg = buildWhatsAppMessage(kind)
+    const msg = buildWhatsAppMessage(kind, withLink)
       .replace(/\*/g, "")
       .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏]/g, "")
       .replace(/\n{2,}/g, "\n")
@@ -270,6 +285,118 @@ function BookingDetail() {
 
   return (
     <AppShell>
+      {/* Message Preview Modal */}
+      {previewMode && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left">
+          <div className="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
+            {/* Modal Header */}
+            <div
+              className={cn(
+                "px-5 py-4 flex items-center justify-between",
+                previewMode.channel === "whatsapp"
+                  ? "bg-[oklch(0.55_0.18_150)] text-white"
+                  : "bg-primary text-primary-foreground",
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                {previewMode.channel === "whatsapp" ? (
+                  <MessageCircle className="size-5" />
+                ) : (
+                  <MessageSquare className="size-5" />
+                )}
+                <div>
+                  <p className="font-bold text-sm">
+                    {previewMode.channel === "whatsapp" ? "WhatsApp Preview" : "SMS Preview"}
+                  </p>
+                  <p className="text-[11px] opacity-80">
+                    To: {customer?.name || "Customer"} · {customer?.phone}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewMode(null)}
+                className="size-8 rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Message Preview */}
+            <div className="px-5 py-4 max-h-[55vh] overflow-y-auto">
+              <div
+                className={cn(
+                  "rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap font-mono",
+                  previewMode.channel === "whatsapp"
+                    ? "bg-[#dcf8c6] text-[#111] text-xs"
+                    : "bg-secondary text-foreground text-xs",
+                )}
+              >
+                {previewMode.channel === "whatsapp"
+                  ? buildWhatsAppMessage(previewMode.kind, includeLink)
+                  : buildWhatsAppMessage(previewMode.kind, includeLink)
+                      .replace(/\*/g, "")
+                      .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏]/g, "")
+                      .replace(/\n{2,}/g, "\n")
+                      .trim()}
+              </div>
+              {/* Include link toggle */}
+              <div className="mt-3 flex items-center justify-between bg-secondary rounded-2xl px-4 py-2.5">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Include website link</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {previewMode.channel === "whatsapp"
+                      ? "Link shows a big preview card in WhatsApp"
+                      : "Adds website URL to SMS"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeLink}
+                  onClick={() => setIncludeLink(!includeLink)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer shrink-0",
+                    includeLink ? "saree-gradient" : "bg-muted-foreground/20",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block size-4.5 rounded-full bg-white shadow transition-transform",
+                      includeLink ? "translate-x-5.5" : "translate-x-1",
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 pb-5 grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => setPreviewMode(null)}
+                className="py-3 rounded-2xl bg-secondary text-foreground text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <X className="size-4" /> Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (previewMode.channel === "whatsapp") {
+                    sendWhatsApp(previewMode.kind, includeLink);
+                  } else {
+                    sendSMS(previewMode.kind, includeLink);
+                  }
+                  setPreviewMode(null);
+                }}
+                className={cn(
+                  "py-3 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition shadow-sm",
+                  previewMode.channel === "whatsapp" ? "bg-[oklch(0.55_0.18_150)]" : "saree-gradient",
+                )}
+              >
+                <Send className="size-4" /> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between pt-4 pb-3">
         <button
           onClick={() => navigate({ to: "/bookings" })}
@@ -535,7 +662,7 @@ function BookingDetail() {
                 </p>
               </div>
               <button
-                onClick={() => sendWhatsApp("status")}
+                onClick={() => setPreviewMode({ channel: "whatsapp", kind: "status" })}
                 className="px-4 py-2 saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-primary/20"
               >
                 <MessageCircle className="size-4" /> Send Update
@@ -789,7 +916,7 @@ function BookingDetail() {
 
         <div className="grid grid-cols-2 gap-2.5">
           <button
-            onClick={() => sendWhatsApp("bill")}
+            onClick={() => setPreviewMode({ channel: "whatsapp", kind: "bill" })}
             className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
           >
             <Receipt className="size-4 text-primary" /> WhatsApp Bill
@@ -805,7 +932,7 @@ function BookingDetail() {
 
         <div className="grid grid-cols-3 gap-2 mt-2.5">
           <button
-            onClick={() => sendSMS()}
+            onClick={() => setPreviewMode({ channel: "sms", kind: "status" })}
             className="py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
           >
             <MessageSquare className="size-3.5" /> SMS Update
@@ -813,7 +940,7 @@ function BookingDetail() {
 
           {due > 0 && booking.status !== "cancelled" && (
             <button
-              onClick={() => sendWhatsApp("balance")}
+              onClick={() => setPreviewMode({ channel: "whatsapp", kind: "balance" })}
               className="py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
             >
               <IndianRupee className="size-3.5" /> Remind Due
