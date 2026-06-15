@@ -42,6 +42,7 @@ function CustomerDetail() {
 
   // Message preview modal state
   const [previewMode, setPreviewMode] = useState<null | "whatsapp" | "sms">(null);
+  const [includeLink, setIncludeLink] = useState(false);
 
   const [showMeasure, setShowMeasure] = useState(() => !!customer?.measurements && customer.measurements.length > 0);
   const [measurements, setMeasurements] = useState<Measurement[]>(() => {
@@ -80,7 +81,7 @@ function CustomerDetail() {
   const nextDelivery = pendingOrders[0];
 
   // Build a beautiful, client-friendly WhatsApp message
-  const buildWhatsAppMessage = () => {
+  const buildWhatsAppMessage = (withLink = includeLink) => {
     const lines: string[] = [];
 
     lines.push(`🌸 *${businessName}*`);
@@ -105,14 +106,16 @@ function CustomerDetail() {
       lines.push(`Feel free to reach out to book your appointment.`);
     }
 
-    lines.push("");
-    lines.push(`🔗 ${websiteUrl}`);
+    if (withLink) {
+      lines.push("");
+      lines.push(`🔗 ${websiteUrl}`);
+    }
 
     return lines.join("\n");
   };
 
   // Build a plain SMS-friendly message (no markdown, shorter)
-  const buildSmsMessage = () => {
+  const buildSmsMessage = (withLink = includeLink) => {
     const lines: string[] = [];
 
     lines.push(`${businessName}`);
@@ -130,7 +133,9 @@ function CustomerDetail() {
       lines.push(`We'd love to have you for your next occasion. Feel free to reach out!`);
     }
 
-    lines.push(websiteUrl);
+    if (withLink) {
+      lines.push(websiteUrl);
+    }
 
     return lines.join("\n");
   };
@@ -151,7 +156,7 @@ function CustomerDetail() {
     setPreviewMode(null);
   };
 
-  const previewMessage = previewMode === "whatsapp" ? buildWhatsAppMessage() : buildSmsMessage();
+  const previewMessage = previewMode === "whatsapp" ? buildWhatsAppMessage(includeLink) : buildSmsMessage(includeLink);
 
   return (
     <AppShell>
@@ -201,11 +206,32 @@ function CustomerDetail() {
               >
                 {previewMessage}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                {previewMode === "whatsapp"
-                  ? "Opens WhatsApp with this message pre-filled"
-                  : "Opens your SMS app with this message pre-filled"}
-              </p>
+              {/* Include link toggle */}
+              <div className="mt-3 flex items-center justify-between bg-secondary rounded-2xl px-4 py-2.5">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Include website link</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {previewMode === "whatsapp" ? "Link shows a big preview card in WhatsApp" : "Adds website URL to SMS"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeLink}
+                  onClick={() => setIncludeLink(!includeLink)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer shrink-0",
+                    includeLink ? "saree-gradient" : "bg-muted-foreground/20"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block size-4.5 rounded-full bg-white shadow transition-transform",
+                      includeLink ? "translate-x-5.5" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
             </div>
 
             {/* Actions */}
