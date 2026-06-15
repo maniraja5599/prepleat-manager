@@ -197,7 +197,8 @@ function BookingsPage() {
   }, [bookings, mainFilter, showPast, pay, sort, q, customers, dateBounds]);
 
   const counts = useMemo(() => {
-    const statusFilter = (b: any) => showPast ? b.status === "delivered" : b.status !== "delivered";
+    const statusFilter = (b: any) =>
+      showPast ? b.status === "delivered" : b.status !== "delivered";
     return {
       active: bookings.filter((b) => statusFilter(b)).length,
       prepleat: bookings.filter((b) => b.service === "prepleat" && statusFilter(b)).length,

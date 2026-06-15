@@ -63,7 +63,9 @@ function CustomersPage() {
 
   useEffect(() => {
     if (settings?.defaultMeasurements) {
-      setMeasurements(settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
+      setMeasurements(
+        settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })),
+      );
     }
   }, [settings?.defaultMeasurements]);
 
@@ -89,7 +91,8 @@ function CustomersPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeFiltersCount = (dueOnly ? 1 : 0) + (sortBy !== "orders" ? 1 : 0) + (showTopOnly ? 1 : 0);
+  const activeFiltersCount =
+    (dueOnly ? 1 : 0) + (sortBy !== "orders" ? 1 : 0) + (showTopOnly ? 1 : 0);
   const balanceSummary = dueOnly ? "Only Outstanding Balance" : "All Accounts";
   const getSortLabel = (s: typeof sortBy) =>
     s === "due" ? "Balance Due" : s === "orders" ? "Orders Count" : "Alphabetical";
@@ -522,7 +525,9 @@ function CustomersPage() {
                           label={m.label}
                           value={m.value}
                           onChange={(v) =>
-                            setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                            setMeasurements(
+                              measurements.map((x, j) => (i === j ? { ...x, value: v } : x)),
+                            )
                           }
                         />
                       </div>
@@ -586,14 +591,19 @@ function CustomersPage() {
                 name: name.trim(),
                 phone: phone.trim(),
                 address: address.trim() || undefined,
-                measurements: (tab === "client" && showMeasure) ? measurements : undefined,
+                measurements: tab === "client" && showMeasure ? measurements : undefined,
               });
               setName("");
               setPhone("");
               setAddress("");
               setShowMeasure(false);
               if (settings?.defaultMeasurements) {
-                setMeasurements(settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
+                setMeasurements(
+                  settings.defaultMeasurements.map((m) => ({
+                    label: m.label,
+                    value: m.value ?? 30,
+                  })),
+                );
               }
               setShowAddField(false);
               setNewFieldName("");
@@ -665,7 +675,10 @@ function CustomersPage() {
                   {c.measurements && c.measurements.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
                       {c.measurements.map((m, idx) => (
-                        <span key={idx} className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold">
+                        <span
+                          key={idx}
+                          className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
+                        >
                           {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
                         </span>
                       ))}
@@ -709,11 +722,7 @@ function CustomersPage() {
                     {inner}
                   </button>
                 ) : (
-                  <SwipeableCard
-                    id={c.id}
-                    kind={c.kind ?? "client"}
-                    cls={cls}
-                  >
+                  <SwipeableCard id={c.id} kind={c.kind ?? "client"} cls={cls}>
                     {inner}
                   </SwipeableCard>
                 )}
@@ -769,8 +778,12 @@ function SwipeableCard({
   const BOOK_WIDTH = 62;
   const GAP = 6;
 
-  useEffect(() => { revealedRef.current = revealed; }, [revealed]);
-  useEffect(() => { offsetRef.current = offset; }, [offset]);
+  useEffect(() => {
+    revealedRef.current = revealed;
+  }, [revealed]);
+  useEffect(() => {
+    offsetRef.current = offset;
+  }, [offset]);
 
   // Non-passive touchmove: lets us call preventDefault to stop scroll during horizontal swipe
   useEffect(() => {
@@ -829,9 +842,23 @@ function SwipeableCard({
   };
 
   return (
-    <div ref={containerRef} style={{ position: "relative", overflow: "hidden", borderRadius: "1rem" }}>
+    <div
+      ref={containerRef}
+      style={{ position: "relative", overflow: "hidden", borderRadius: "1rem" }}
+    >
       {/* Book button behind the card, with GAP spacing */}
-      <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: BOOK_WIDTH + GAP, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: BOOK_WIDTH + GAP,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+        }}
+      >
         <button
           onClick={handleBook}
           style={{ width: BOOK_WIDTH, height: "calc(100% - 8px)" }}
@@ -852,7 +879,10 @@ function SwipeableCard({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onClick={() => {
-          if (revealed) { setRevealed(false); setOffset(0); }
+          if (revealed) {
+            setRevealed(false);
+            setOffset(0);
+          }
         }}
       >
         <Link to="/customers/$id" params={{ id }} className={cls}>
@@ -862,7 +892,6 @@ function SwipeableCard({
     </div>
   );
 }
-
 
 function StatChip({
   label,

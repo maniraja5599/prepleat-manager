@@ -53,7 +53,13 @@ function sanitizeIndianPhone(raw: string): string {
 const isValidIndianMobile = (d: string) => /^[6-9]\d{9}$/.test(d);
 
 export const Route = createFileRoute("/_authenticated/new")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): {
+    date?: string;
+    customerId?: string;
+    artistId?: string;
+  } => ({
     date: typeof s.date === "string" ? s.date : undefined,
     customerId: typeof s.customerId === "string" ? s.customerId : undefined,
     artistId: typeof s.artistId === "string" ? s.artistId : undefined,
@@ -64,7 +70,11 @@ export const Route = createFileRoute("/_authenticated/new")({
 
 function NewBooking() {
   const navigate = useNavigate();
-  const { date: presetDate, customerId: presetCustomerId, artistId: presetArtistId } = Route.useSearch();
+  const {
+    date: presetDate,
+    customerId: presetCustomerId,
+    artistId: presetArtistId,
+  } = Route.useSearch();
   const settings = useStore((s) => s.settings);
   const allCustomers = useStore((s) => s.customers);
   const customers = useMemo(
@@ -186,7 +196,9 @@ function NewBooking() {
       // Auto-load measurements from their last booking if available
       const custBookings = bookings.filter((b) => b.customerId === c.id);
       if (custBookings.length > 0) {
-        const lastBooking = [...custBookings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+        const lastBooking = [...custBookings].sort((a, b) =>
+          b.createdAt.localeCompare(a.createdAt),
+        )[0];
         if (lastBooking.measurements && lastBooking.measurements.length > 0) {
           setMeasurements(lastBooking.measurements);
           setShowMeasure(true);
@@ -1073,7 +1085,9 @@ function NewBooking() {
                     label={m.label}
                     value={m.value}
                     onChange={(v) =>
-                      setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                      setMeasurements(
+                        measurements.map((x, j) => (i === j ? { ...x, value: v } : x)),
+                      )
                     }
                   />
                 </div>
@@ -1195,9 +1209,9 @@ function NewBooking() {
                 </span>
               </div>
               <h4 className="text-lg font-display font-extrabold truncate mt-1.5 leading-tight">
-                {bookingSource === "artist" 
+                {bookingSource === "artist"
                   ? (artists.find((a) => a.id === artistId)?.name ?? "Artist")
-                  : (selectedCust?.name || newName || "Walk-in Customer")}
+                  : selectedCust?.name || newName || "Walk-in Customer"}
               </h4>
               {bookingSource === "artist" && (selectedCust?.name || newName) && (
                 <p className="text-xs opacity-90 mt-0.5 truncate">

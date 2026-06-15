@@ -74,7 +74,7 @@ function getLocalGuestSession() {
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
     if (!_supabase) _supabase = createSupabaseClient();
-    
+
     // Intercept auth module for seamless local guest session fallback
     if (prop === "auth") {
       const originalAuth = _supabase.auth;
@@ -86,9 +86,15 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
               try {
                 const res = await originalAuth.signInAnonymously();
                 if (!res.error) return res;
-                console.warn("[Guest Mode] Supabase anonymous sign-in failed, falling back to local guest session:", res.error.message);
+                console.warn(
+                  "[Guest Mode] Supabase anonymous sign-in failed, falling back to local guest session:",
+                  res.error.message,
+                );
               } catch (e) {
-                console.warn("[Guest Mode] Supabase anonymous sign-in failed, falling back to local guest session:", e);
+                console.warn(
+                  "[Guest Mode] Supabase anonymous sign-in failed, falling back to local guest session:",
+                  e,
+                );
               }
               if (typeof window !== "undefined") {
                 localStorage.setItem("local_guest_session", "true");
@@ -96,14 +102,20 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
                 triggerAuthListeners("SIGNED_IN", session);
                 return { data: { session, user: session.user }, error: null };
               }
-              return { data: { session: null, user: null }, error: new Error("LocalStorage not available") };
+              return {
+                data: { session: null, user: null },
+                error: new Error("LocalStorage not available"),
+              };
             };
           }
 
           // Intercept getSession
           if (authProp === "getSession") {
             return async () => {
-              if (typeof window !== "undefined" && localStorage.getItem("local_guest_session") === "true") {
+              if (
+                typeof window !== "undefined" &&
+                localStorage.getItem("local_guest_session") === "true"
+              ) {
                 const session = getLocalGuestSession();
                 return { data: { session }, error: null };
               }
@@ -114,7 +126,10 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
           // Intercept getUser
           if (authProp === "getUser") {
             return async (token?: string) => {
-              if (typeof window !== "undefined" && localStorage.getItem("local_guest_session") === "true") {
+              if (
+                typeof window !== "undefined" &&
+                localStorage.getItem("local_guest_session") === "true"
+              ) {
                 const session = getLocalGuestSession();
                 return { data: { user: session.user }, error: null };
               }
@@ -125,7 +140,10 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
           // Intercept signOut
           if (authProp === "signOut") {
             return async (options?: any) => {
-              if (typeof window !== "undefined" && localStorage.getItem("local_guest_session") === "true") {
+              if (
+                typeof window !== "undefined" &&
+                localStorage.getItem("local_guest_session") === "true"
+              ) {
                 localStorage.removeItem("local_guest_session");
                 triggerAuthListeners("SIGNED_OUT", null);
                 return { error: null };
@@ -153,15 +171,15 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
                         authListeners.delete(callback);
                       }
                       originalResult.data.subscription.unsubscribe();
-                    }
-                  }
-                }
+                    },
+                  },
+                },
               };
             };
           }
 
           return Reflect.get(authTarget, authProp, authReceiver);
-        }
+        },
       });
     }
 

@@ -1141,7 +1141,9 @@ function EditPanel({
                     label={m.label}
                     value={m.value}
                     onChange={(v) =>
-                      setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                      setMeasurements(
+                        measurements.map((x, j) => (i === j ? { ...x, value: v } : x)),
+                      )
                     }
                   />
                 </div>

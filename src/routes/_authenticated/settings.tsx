@@ -1269,17 +1269,31 @@ function SettingsPage() {
                   >
                     {isHistoryImported ? (
                       <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="size-3.5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                        </svg>
                         Undo
                       </>
                     ) : (
-                      <><Upload className="size-3.5" /> Import History</>
+                      <>
+                        <Upload className="size-3.5" /> Import History
+                      </>
                     )}
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {isHistoryImported
-                    ? "✓ History already imported. Click \"Undo\" to remove it."
+                    ? '✓ History already imported. Click "Undo" to remove it.'
                     : "Import your previous earnings history into payments."}
                 </p>
                 <input
@@ -1513,17 +1527,27 @@ function SettingsPage() {
         confirmLabel="Yes, Remove"
         description={(() => {
           const importedPmts = (payments ?? []).filter((p: any) => p.note === "Imported Earning");
-          const importedBookingIds = new Set(importedPmts.map((p: any) => p.bookingId).filter(Boolean));
-          const importedBookings = (bookings ?? []).filter((b: any) => importedBookingIds.has(b.id));
+          const importedBookingIds = new Set(
+            importedPmts.map((p: any) => p.bookingId).filter(Boolean),
+          );
+          const importedBookings = (bookings ?? []).filter((b: any) =>
+            importedBookingIds.has(b.id),
+          );
           const importedCustomerIds = new Set(importedBookings.map((b: any) => b.customerId));
           const remainingBookingCustomerIds = new Set(
-            (bookings ?? []).filter((b: any) => !importedBookingIds.has(b.id)).map((b: any) => b.customerId)
+            (bookings ?? [])
+              .filter((b: any) => !importedBookingIds.has(b.id))
+              .map((b: any) => b.customerId),
           );
-          const removedClients = [...importedCustomerIds].filter((id) => !remainingBookingCustomerIds.has(id));
+          const removedClients = [...importedCustomerIds].filter(
+            (id) => !remainingBookingCustomerIds.has(id),
+          );
           const totalAmt = importedPmts.reduce((s: number, p: any) => s + (p.amount || 0), 0);
           return (
             <div className="space-y-3 text-sm">
-              <p className="text-muted-foreground">The following imported data will be permanently deleted:</p>
+              <p className="text-muted-foreground">
+                The following imported data will be permanently deleted:
+              </p>
               <div className="bg-destructive/10 rounded-xl p-3 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Payments removed</span>
@@ -1542,7 +1566,9 @@ function SettingsPage() {
                   <span className="font-bold text-destructive">{fmtINR(totalAmt)}</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">This cannot be undone. You can re-import anytime.</p>
+              <p className="text-xs text-muted-foreground">
+                This cannot be undone. You can re-import anytime.
+              </p>
             </div>
           );
         })()}

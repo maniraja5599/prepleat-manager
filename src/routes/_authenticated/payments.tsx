@@ -1421,7 +1421,10 @@ function SummaryView(p: {
       };
     }
 
-    let minNet = Infinity, maxNet = -Infinity, maxBarStacked = 0, running = 0;
+    let minNet = Infinity,
+      maxNet = -Infinity,
+      maxBarStacked = 0,
+      running = 0;
 
     const allTimeWithCumulative = p.allTimeTrend.map((t) => {
       running += t.amount;
@@ -1450,8 +1453,11 @@ function SummaryView(p: {
 
   // Milestone badges for cumulative
   const milestones = useMemo(
-    () => [25000, 50000, 75000, 100000, 150000, 200000, 300000, 500000].filter((v) => v <= lifetimeCumulative),
-    [lifetimeCumulative]
+    () =>
+      [25000, 50000, 75000, 100000, 150000, 200000, 300000, 500000].filter(
+        (v) => v <= lifetimeCumulative,
+      ),
+    [lifetimeCumulative],
   );
 
   // Memos for dynamic helper metrics under the chart
@@ -1512,10 +1518,13 @@ function SummaryView(p: {
                   }}
                   formatter={(v: number, name: string) => {
                     const label =
-                      name === "cumulative" ? "Cumulative Total"
-                      : name === "amount" ? "Income"
-                      : name === "expense" ? "Expense"
-                      : name;
+                      name === "cumulative"
+                        ? "Cumulative Total"
+                        : name === "amount"
+                          ? "Income"
+                          : name === "expense"
+                            ? "Expense"
+                            : name;
                     return [fmtINR(v), label];
                   }}
                 />
@@ -1529,13 +1538,33 @@ function SummaryView(p: {
                   strokeWidth={2.5}
                   strokeOpacity={1.0}
                   fill="url(#cumulativeAreaGrad)"
-                  dot={{ r: 2.5, fill: "var(--color-card)", stroke: "var(--color-primary)", strokeWidth: 1.5 }}
+                  dot={{
+                    r: 2.5,
+                    fill: "var(--color-card)",
+                    stroke: "var(--color-primary)",
+                    strokeWidth: 1.5,
+                  }}
                   activeDot={{ r: 4.5, fill: "var(--color-primary)" }}
                 />
 
                 {/* Stacked Income & Expense bars */}
-                <Bar yAxisId="bars" dataKey="amount" fill="#10b981" stackId="a" barSize={10} opacity={0.85} />
-                <Bar yAxisId="bars" dataKey="expense" fill="#ef4444" stackId="a" barSize={10} radius={[3, 3, 0, 0]} opacity={0.85} />
+                <Bar
+                  yAxisId="bars"
+                  dataKey="amount"
+                  fill="#10b981"
+                  stackId="a"
+                  barSize={10}
+                  opacity={0.85}
+                />
+                <Bar
+                  yAxisId="bars"
+                  dataKey="expense"
+                  fill="#ef4444"
+                  stackId="a"
+                  barSize={10}
+                  radius={[3, 3, 0, 0]}
+                  opacity={0.85}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -1545,7 +1574,10 @@ function SummaryView(p: {
         {milestones.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
             {milestones.map((v) => (
-              <span key={v} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              <span
+                key={v}
+                className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary"
+              >
                 ✓ {v >= 100000 ? `₹${v / 100000}L` : `₹${v / 1000}k`}
               </span>
             ))}
@@ -1651,35 +1683,50 @@ function SummaryView(p: {
       </div>
 
       {/* Monthly Analytics Card */}
-      {p.allTimeTrend.length > 0 && (() => {
-        const months = p.allTimeTrend.filter(m => m.amount > 0);
-        const totalIncome = months.reduce((s, m) => s + m.amount, 0);
-        const avgPerMonth = months.length > 0 ? totalIncome / months.length : 0;
-        const peak = months.reduce((a, b) => b.amount > a.amount ? b : a, months[0]);
-        const lowest = months.reduce((a, b) => b.amount < a.amount ? b : a, months[0]);
-        return (
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2.5">Monthly Analytics</p>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-primary/8 rounded-xl p-2.5 text-center">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Avg / Month</p>
-                <p className="font-bold text-sm text-primary tabular-nums">{fmtINR(avgPerMonth)}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{months.length} months</p>
-              </div>
-              <div className="bg-success/8 rounded-xl p-2.5 text-center">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Peak Month</p>
-                <p className="font-bold text-sm text-success tabular-nums">{fmtINR(peak.amount)}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{peak.month}</p>
-              </div>
-              <div className="bg-destructive/8 rounded-xl p-2.5 text-center">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Low Month</p>
-                <p className="font-bold text-sm text-destructive tabular-nums">{fmtINR(lowest.amount)}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{lowest.month}</p>
+      {p.allTimeTrend.length > 0 &&
+        (() => {
+          const months = p.allTimeTrend.filter((m) => m.amount > 0);
+          const totalIncome = months.reduce((s, m) => s + m.amount, 0);
+          const avgPerMonth = months.length > 0 ? totalIncome / months.length : 0;
+          const peak = months.reduce((a, b) => (b.amount > a.amount ? b : a), months[0]);
+          const lowest = months.reduce((a, b) => (b.amount < a.amount ? b : a), months[0]);
+          return (
+            <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2.5">
+                Monthly Analytics
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-primary/8 rounded-xl p-2.5 text-center">
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                    Avg / Month
+                  </p>
+                  <p className="font-bold text-sm text-primary tabular-nums">
+                    {fmtINR(avgPerMonth)}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{months.length} months</p>
+                </div>
+                <div className="bg-success/8 rounded-xl p-2.5 text-center">
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                    Peak Month
+                  </p>
+                  <p className="font-bold text-sm text-success tabular-nums">
+                    {fmtINR(peak.amount)}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{peak.month}</p>
+                </div>
+                <div className="bg-destructive/8 rounded-xl p-2.5 text-center">
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                    Low Month
+                  </p>
+                  <p className="font-bold text-sm text-destructive tabular-nums">
+                    {fmtINR(lowest.amount)}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{lowest.month}</p>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Unified Recent Cash Flow Timeline */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-20">
@@ -1695,11 +1742,7 @@ function SummaryView(p: {
               className="text-[10px] font-semibold bg-secondary border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer outline-none"
             >
               <option value="all">All Time</option>
-              {Array.from(
-                new Set(
-                  p.unifiedRecentTransactions.map((tx) => tx.date.slice(0, 7))
-                )
-              )
+              {Array.from(new Set(p.unifiedRecentTransactions.map((tx) => tx.date.slice(0, 7))))
                 .sort((a, b) => b.localeCompare(a))
                 .map((ym) => (
                   <option key={ym} value={ym}>
@@ -1712,9 +1755,10 @@ function SummaryView(p: {
 
         {/* filtered list */}
         {(() => {
-          const filtered = dateFilter === "all"
-            ? p.unifiedRecentTransactions
-            : p.unifiedRecentTransactions.filter((tx) => tx.date.startsWith(dateFilter));
+          const filtered =
+            dateFilter === "all"
+              ? p.unifiedRecentTransactions
+              : p.unifiedRecentTransactions.filter((tx) => tx.date.startsWith(dateFilter));
           return filtered.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-6">
               No transactions for this period
@@ -1724,8 +1768,20 @@ function SummaryView(p: {
               {/* filtered summary row */}
               {dateFilter !== "all" && (
                 <div className="flex justify-between text-[10px] font-semibold mb-2 px-1">
-                  <span className="text-success">In: {fmtINR(filtered.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0))}</span>
-                  <span className="text-destructive">Out: {fmtINR(filtered.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0))}</span>
+                  <span className="text-success">
+                    In:{" "}
+                    {fmtINR(
+                      filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
+                    )}
+                  </span>
+                  <span className="text-destructive">
+                    Out:{" "}
+                    {fmtINR(
+                      filtered
+                        .filter((t) => t.type === "expense")
+                        .reduce((s, t) => s + t.amount, 0),
+                    )}
+                  </span>
                   <span className="text-muted-foreground">{filtered.length} txns</span>
                 </div>
               )}

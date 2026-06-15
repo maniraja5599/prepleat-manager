@@ -797,37 +797,115 @@ export const useStore = create<State>()(
           .map((l) => l.trim())
           .filter(Boolean);
         const allCsvNames = new Set([
-          "saree prepleat", "jeysu prepleat", "srinithi drape", "nandhini", 
-          "sathya artist", "keerthana", "agashya advance", "anu sri", 
-          "thermozhi", "asvini mom", "asvini chithi", "maheswari", 
-          "maheswari relative", "sangeetha gokulakrishnan", "bhoomika engagement drape", 
-          "pradeetha artist", "maha prepleat", "dhanam saree", "ragheni", 
-          "agashya feb event", "agashya march advance", "dr priyanka", 
-          "gokulapriya advance", "yasodha", "karthi", "arathi", 
-          "sujitha", "agashya artist advance", "agashya artist april advance", 
-          "sindhuja", "praneetha artist", "abirami", "soundarya sathish", 
-          "anu jeysu ref", "sowmiya", "sangeetha half saree", "priya vijayapathi", 
-          "gokulapriya", "srinithi", "anu renisha drape", "deepika prepleat", 
-          "agashya", "praneetha", "poorvisha", "praneetha abirami drape", 
-          "anu sri ref", "anusi saree prepleat", "anusi", "vikasini artist", 
-          "praneetha one drape", "preena", "arathi drape", "sindhuja drape", 
-          "anu gumathi drape", "priyadarshini", "priyanka athai drape", 
-          "anu makeup artist", "sangeetha", "malarvizhi", "dhivya", 
-          "yamini", "sripriya", "yamini maya", "yamini advance", 
-          "elakkiya", "saritha", "megha mithra", "mithra", 
-          "sanjana", "sanjana prepleat", "nandhika", "senthamil", 
-          "sathya", "kavya artist", "kavya", "manochitra", 
-          "vijayalakshmi", "selvanika", "navena shree", "kavya parthiban", 
-          "madhuwarshini", "poonisha", "oviya prepleat", "shalini", 
-          "shivani", "suganya", "varthi", "jeysu", "jeysu advance", 
-          "priya", "priya drape", "priya suresh", "yalini",
-          "agashya artist", "anu artist", "jeysu artist", "bhoomika",
-          "asvini", "priyanka", "maha", "nivetha", "oviya"
+          "saree prepleat",
+          "jeysu prepleat",
+          "srinithi drape",
+          "nandhini",
+          "sathya artist",
+          "keerthana",
+          "agashya advance",
+          "anu sri",
+          "thermozhi",
+          "asvini mom",
+          "asvini chithi",
+          "maheswari",
+          "maheswari relative",
+          "sangeetha gokulakrishnan",
+          "bhoomika engagement drape",
+          "pradeetha artist",
+          "maha prepleat",
+          "dhanam saree",
+          "ragheni",
+          "agashya feb event",
+          "agashya march advance",
+          "dr priyanka",
+          "gokulapriya advance",
+          "yasodha",
+          "karthi",
+          "arathi",
+          "sujitha",
+          "agashya artist advance",
+          "agashya artist april advance",
+          "sindhuja",
+          "praneetha artist",
+          "abirami",
+          "soundarya sathish",
+          "anu jeysu ref",
+          "sowmiya",
+          "sangeetha half saree",
+          "priya vijayapathi",
+          "gokulapriya",
+          "srinithi",
+          "anu renisha drape",
+          "deepika prepleat",
+          "agashya",
+          "praneetha",
+          "poorvisha",
+          "praneetha abirami drape",
+          "anu sri ref",
+          "anusi saree prepleat",
+          "anusi",
+          "vikasini artist",
+          "praneetha one drape",
+          "preena",
+          "arathi drape",
+          "sindhuja drape",
+          "anu gumathi drape",
+          "priyadarshini",
+          "priyanka athai drape",
+          "anu makeup artist",
+          "sangeetha",
+          "malarvizhi",
+          "dhivya",
+          "yamini",
+          "sripriya",
+          "yamini maya",
+          "yamini advance",
+          "elakkiya",
+          "saritha",
+          "megha mithra",
+          "mithra",
+          "sanjana",
+          "sanjana prepleat",
+          "nandhika",
+          "senthamil",
+          "sathya",
+          "kavya artist",
+          "kavya",
+          "manochitra",
+          "vijayalakshmi",
+          "selvanika",
+          "navena shree",
+          "kavya parthiban",
+          "madhuwarshini",
+          "poonisha",
+          "oviya prepleat",
+          "shalini",
+          "shivani",
+          "suganya",
+          "varthi",
+          "jeysu",
+          "jeysu advance",
+          "priya",
+          "priya drape",
+          "priya suresh",
+          "yalini",
+          "agashya artist",
+          "anu artist",
+          "jeysu artist",
+          "bhoomika",
+          "asvini",
+          "priyanka",
+          "maha",
+          "nivetha",
+          "oviya",
         ]);
 
         const paymentsBefore = get().payments ?? [];
         const importedPayments = paymentsBefore.filter((p: any) => p.note === "Imported Earning");
-        const importedBookingIds = new Set(importedPayments.map((p: any) => p.bookingId).filter(Boolean));
+        const importedBookingIds = new Set(
+          importedPayments.map((p: any) => p.bookingId).filter(Boolean),
+        );
 
         const payments = paymentsBefore.filter((p: any) => p.note !== "Imported Earning");
         const bookings = (get().bookings ?? []).filter((b: any) => !importedBookingIds.has(b.id));
@@ -900,7 +978,7 @@ export const useStore = create<State>()(
             customers.push(c);
           }
 
-          let service = "prepleat";
+          let service: ServiceType = "prepleat";
           if (name.toLowerCase().includes("drape")) {
             service = "drape";
           }
@@ -912,7 +990,7 @@ export const useStore = create<State>()(
           const billNumber = `${prefix}${String(n).padStart(4, "0")}`;
 
           const bId = uid();
-          const booking = {
+          const booking: Booking = {
             id: bId,
             billNumber,
             customerId: c.id,
@@ -953,20 +1031,16 @@ export const useStore = create<State>()(
 
       undoImportHistoricalCsv: () => {
         const importedPayments = (get().payments ?? []).filter(
-          (p: any) => p.note === "Imported Earning"
+          (p: any) => p.note === "Imported Earning",
         );
         if (importedPayments.length === 0) return;
 
         const importedBookingIds = new Set(
-          importedPayments.map((p: any) => p.bookingId).filter(Boolean)
+          importedPayments.map((p: any) => p.bookingId).filter(Boolean),
         );
 
-        const payments = (get().payments ?? []).filter(
-          (p: any) => p.note !== "Imported Earning"
-        );
-        const bookings = (get().bookings ?? []).filter(
-          (b: any) => !importedBookingIds.has(b.id)
-        );
+        const payments = (get().payments ?? []).filter((p: any) => p.note !== "Imported Earning");
+        const bookings = (get().bookings ?? []).filter((b: any) => !importedBookingIds.has(b.id));
 
         const remainingCustomerIds = new Set(bookings.map((b: any) => b.customerId));
         const customers = (get().customers ?? []).filter((c: any) => {
@@ -1121,7 +1195,9 @@ export const useStore = create<State>()(
           // to prevent double entries or duplicate client/artist entries.
           const payments = persisted.payments ?? [];
           const importedPayments = payments.filter((p: any) => p.note === "Imported Earning");
-          const importedBookingIds = new Set(importedPayments.map((p: any) => p.bookingId).filter(Boolean));
+          const importedBookingIds = new Set(
+            importedPayments.map((p: any) => p.bookingId).filter(Boolean),
+          );
 
           persisted.payments = payments.filter((p: any) => p.note !== "Imported Earning");
 
@@ -1273,7 +1349,9 @@ export const useStore = create<State>()(
             .split("\n")
             .map((l) => l.trim())
             .filter(Boolean);
-const remainingBookingCustomerIds = new Set((persisted.bookings ?? []).map((b: any) => b.customerId));
+          const remainingBookingCustomerIds = new Set(
+            (persisted.bookings ?? []).map((b: any) => b.customerId),
+          );
           const customers = persisted.customers ?? [];
           persisted.customers = customers.filter((c: any) => {
             if (c.kind === "client") {

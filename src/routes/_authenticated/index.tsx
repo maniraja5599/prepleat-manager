@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { guide?: string } => ({
     guide: typeof s.guide === "string" ? s.guide : undefined,
   }),
   head: () => ({
@@ -473,8 +473,7 @@ function CalendarPage() {
                         )}
                       {/* Total amount — shown in "total" and "both" modes */}
                       {totalSum > 0 &&
-                        (calendarAmountDisplay === "total" ||
-                          calendarAmountDisplay === "both") && (
+                        (calendarAmountDisplay === "total" || calendarAmountDisplay === "both") && (
                           <span
                             className={cn(
                               "absolute top-0.5 left-1 text-[8px] font-bold leading-none",

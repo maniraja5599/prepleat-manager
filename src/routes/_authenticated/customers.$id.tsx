@@ -44,7 +44,9 @@ function CustomerDetail() {
   const [previewMode, setPreviewMode] = useState<null | "whatsapp" | "sms">(null);
   const [includeLink, setIncludeLink] = useState(false);
 
-  const [showMeasure, setShowMeasure] = useState(() => !!customer?.measurements && customer.measurements.length > 0);
+  const [showMeasure, setShowMeasure] = useState(
+    () => !!customer?.measurements && customer.measurements.length > 0,
+  );
   const [measurements, setMeasurements] = useState<Measurement[]>(() => {
     if (customer?.measurements && customer.measurements.length > 0) {
       return customer.measurements;
@@ -90,11 +92,15 @@ function CustomerDetail() {
     lines.push("");
 
     if (pendingOrders.length > 0) {
-      lines.push(`A gentle reminder about your ${pendingOrders.length > 1 ? `*${pendingOrders.length} pending orders*` : "*pending order*"} with us.`);
+      lines.push(
+        `A gentle reminder about your ${pendingOrders.length > 1 ? `*${pendingOrders.length} pending orders*` : "*pending order*"} with us.`,
+      );
       lines.push("");
       lines.push(`💰 *Balance Due:* ${fmtINR(totalDueAll)}`);
       if (nextDelivery) {
-        lines.push(`📅 *Delivery Date:* ${format(parseISO(nextDelivery.deliveryDate), "EEE, d MMM yyyy")}`);
+        lines.push(
+          `📅 *Delivery Date:* ${format(parseISO(nextDelivery.deliveryDate), "EEE, d MMM yyyy")}`,
+        );
       }
       lines.push("");
       lines.push(`Please settle the balance on or before delivery. You can pay via *GPay / Cash*.`);
@@ -122,7 +128,9 @@ function CustomerDetail() {
     lines.push(`Hi ${customer.name},`);
 
     if (pendingOrders.length > 0) {
-      lines.push(`Reminder: You have ${pendingOrders.length} pending order(s). Balance due: ${fmtINR(totalDueAll)}.`);
+      lines.push(
+        `Reminder: You have ${pendingOrders.length} pending order(s). Balance due: ${fmtINR(totalDueAll)}.`,
+      );
       if (nextDelivery) {
         lines.push(`Delivery: ${format(parseISO(nextDelivery.deliveryDate), "d MMM yyyy")}.`);
       }
@@ -156,7 +164,8 @@ function CustomerDetail() {
     setPreviewMode(null);
   };
 
-  const previewMessage = previewMode === "whatsapp" ? buildWhatsAppMessage(includeLink) : buildSmsMessage(includeLink);
+  const previewMessage =
+    previewMode === "whatsapp" ? buildWhatsAppMessage(includeLink) : buildSmsMessage(includeLink);
 
   return (
     <AppShell>
@@ -170,7 +179,7 @@ function CustomerDetail() {
                 "px-5 py-4 flex items-center justify-between",
                 previewMode === "whatsapp"
                   ? "bg-[oklch(0.55_0.18_150)] text-white"
-                  : "bg-primary text-primary-foreground"
+                  : "bg-primary text-primary-foreground",
               )}
             >
               <div className="flex items-center gap-2.5">
@@ -183,7 +192,9 @@ function CustomerDetail() {
                   <p className="font-bold text-sm">
                     {previewMode === "whatsapp" ? "WhatsApp Preview" : "SMS Preview"}
                   </p>
-                  <p className="text-[11px] opacity-80">To: {customer.name} · {customer.phone}</p>
+                  <p className="text-[11px] opacity-80">
+                    To: {customer.name} · {customer.phone}
+                  </p>
                 </div>
               </div>
               <button
@@ -201,7 +212,7 @@ function CustomerDetail() {
                   "rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap font-mono",
                   previewMode === "whatsapp"
                     ? "bg-[#dcf8c6] text-[#111] text-xs"
-                    : "bg-secondary text-foreground text-xs"
+                    : "bg-secondary text-foreground text-xs",
                 )}
               >
                 {previewMessage}
@@ -211,7 +222,9 @@ function CustomerDetail() {
                 <div>
                   <p className="text-xs font-semibold text-foreground">Include website link</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {previewMode === "whatsapp" ? "Link shows a big preview card in WhatsApp" : "Adds website URL to SMS"}
+                    {previewMode === "whatsapp"
+                      ? "Link shows a big preview card in WhatsApp"
+                      : "Adds website URL to SMS"}
                   </p>
                 </div>
                 <button
@@ -221,13 +234,13 @@ function CustomerDetail() {
                   onClick={() => setIncludeLink(!includeLink)}
                   className={cn(
                     "relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer shrink-0",
-                    includeLink ? "saree-gradient" : "bg-muted-foreground/20"
+                    includeLink ? "saree-gradient" : "bg-muted-foreground/20",
                   )}
                 >
                   <span
                     className={cn(
                       "inline-block size-4.5 rounded-full bg-white shadow transition-transform",
-                      includeLink ? "translate-x-5.5" : "translate-x-1"
+                      includeLink ? "translate-x-5.5" : "translate-x-1",
                     )}
                   />
                 </button>
@@ -246,9 +259,7 @@ function CustomerDetail() {
                 onClick={previewMode === "whatsapp" ? handleSendWhatsApp : handleSendSMS}
                 className={cn(
                   "py-3 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition shadow-sm",
-                  previewMode === "whatsapp"
-                    ? "bg-[oklch(0.55_0.18_150)]"
-                    : "saree-gradient"
+                  previewMode === "whatsapp" ? "bg-[oklch(0.55_0.18_150)]" : "saree-gradient",
                 )}
               >
                 <Send className="size-4" /> Send
@@ -274,7 +285,8 @@ function CustomerDetail() {
                   phone: phone.trim() || customer.phone,
                   address: address.trim() || undefined,
                   reference: reference.trim() || undefined,
-                  measurements: (customer.kind === "client" && showMeasure) ? measurements : undefined,
+                  measurements:
+                    customer.kind === "client" && showMeasure ? measurements : undefined,
                 });
                 toast.success("Customer updated");
               } else {
@@ -282,7 +294,14 @@ function CustomerDetail() {
                 setPhone(customer.phone);
                 setAddress(customer.address ?? "");
                 setReference(customer.reference ?? "");
-                setMeasurements(customer.measurements && customer.measurements.length > 0 ? customer.measurements : settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
+                setMeasurements(
+                  customer.measurements && customer.measurements.length > 0
+                    ? customer.measurements
+                    : settings.defaultMeasurements.map((m) => ({
+                        label: m.label,
+                        value: m.value ?? 30,
+                      })),
+                );
                 setShowMeasure(!!customer.measurements && customer.measurements.length > 0);
               }
               setEditing(!editing);
@@ -429,7 +448,9 @@ function CustomerDetail() {
                       label={m.label}
                       value={m.value}
                       onChange={(v) =>
-                        setMeasurements(measurements.map((x, j) => (i === j ? { ...x, value: v } : x)))
+                        setMeasurements(
+                          measurements.map((x, j) => (i === j ? { ...x, value: v } : x)),
+                        )
                       }
                     />
                   </div>
@@ -486,26 +507,34 @@ function CustomerDetail() {
         </div>
       )}
 
-      {!editing && customer.kind === "client" && customer.measurements && customer.measurements.length > 0 && (
-        <div className="bg-card card-shadow rounded-3xl p-4 mt-3 border border-border/10">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
-            <span>📐</span> Body Measurements
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {customer.measurements.map((m, idx) => (
-              <div key={idx} className="bg-secondary px-3 py-2 rounded-2xl flex flex-col min-w-[70px]">
-                <span className="text-[10px] text-muted-foreground font-semibold">{m.label}</span>
-                <span className="text-sm font-bold text-foreground mt-0.5">{m.value}"</span>
-              </div>
-            ))}
+      {!editing &&
+        customer.kind === "client" &&
+        customer.measurements &&
+        customer.measurements.length > 0 && (
+          <div className="bg-card card-shadow rounded-3xl p-4 mt-3 border border-border/10">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+              <span>📐</span> Body Measurements
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {customer.measurements.map((m, idx) => (
+                <div
+                  key={idx}
+                  className="bg-secondary px-3 py-2 rounded-2xl flex flex-col min-w-[70px]"
+                >
+                  <span className="text-[10px] text-muted-foreground font-semibold">{m.label}</span>
+                  <span className="text-sm font-bold text-foreground mt-0.5">{m.value}"</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       <div className="relative mt-3 book-ring-animate rounded-2xl">
         <Link
           to="/new"
-          search={customer.kind === "client" ? { customerId: customer.id } : { artistId: customer.id }}
+          search={
+            customer.kind === "client" ? { customerId: customer.id } : { artistId: customer.id }
+          }
           className="relative z-10 w-full saree-gradient text-white py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition card-shadow text-center text-sm shadow-md"
         >
           📅 {customer.kind === "client" ? "Book Appointment / Order" : "Book for this Artist"}
