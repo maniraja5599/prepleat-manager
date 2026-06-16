@@ -53,6 +53,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const APP_VERSION = "1.0.0";
 
@@ -61,15 +68,13 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "pricing" | "headers" | "theme" | "data" | "account" | "help" | "about";
+type TabId = "pricing" | "theme" | "headers" | "data" | "account";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
   { id: "pricing", label: "Pricing", hint: "Defaults & measures", icon: IndianRupee },
   { id: "theme", label: "Theme & Brand", hint: "Logo, name & colors", icon: Palette },
   { id: "headers", label: "Headers", hint: "Categories & modes", icon: Tag },
   { id: "data", label: "Data & Recovery", hint: "Backup, log & reset", icon: Database },
   { id: "account", label: "Account", hint: "Sign in & sync", icon: User },
-  { id: "help", label: "Help", hint: "Docs & guide", icon: HelpCircle },
-  { id: "about", label: "About", hint: "Developer & App info", icon: Info },
 ];
 
 const THEMES: {
@@ -236,7 +241,7 @@ function SettingsPage() {
 
   // Swipe tab switching on mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const TABS_ORDER: TabId[] = ["pricing", "theme", "headers", "data", "account", "help", "about"];
+  const TABS_ORDER: TabId[] = ["pricing", "theme", "headers", "data", "account"];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
@@ -332,11 +337,28 @@ function SettingsPage() {
   return (
     <AppShell wide>
       {/* Sticky Header block (Title + Subtitle) */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
-        <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Changes save instantly</p>
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
+            Settings
+          </h1>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Changes save instantly</p>
+        </div>
+        {/* Help button aligned directly next to settings title on the top right */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-foreground text-xs font-semibold cursor-pointer hover:bg-secondary/80 active:scale-95 transition shadow-sm">
+              <HelpCircle className="size-3.5 text-primary animate-pulse" />
+              <span>Help</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Help & Guide</DialogTitle>
+            </DialogHeader>
+            <HelpBlock query={helpQuery} setQuery={setHelpQuery} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-3 grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
@@ -1543,14 +1565,15 @@ function SettingsPage() {
           )}
 
           {tab === "account" && (
-            <Section title="Account">
-              <AccountBlock />
-            </Section>
+            <div className="space-y-6">
+              <Section title="Account">
+                <AccountBlock />
+              </Section>
+              <Section title="About App">
+                <AboutBlock />
+              </Section>
+            </div>
           )}
-
-          {tab === "help" && <HelpBlock query={helpQuery} setQuery={setHelpQuery} />}
-
-          {tab === "about" && <AboutBlock />}
         </div>
         <p className="mt-6 text-center text-[11px] text-muted-foreground/70 tabular-nums">
           App version v{APP_VERSION}
