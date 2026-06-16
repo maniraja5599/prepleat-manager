@@ -55,6 +55,7 @@ function BookingDetail() {
 
   const addPayment = useStore((s) => s.addPayment);
   const deletePayment = useStore((s) => s.deletePayment);
+  const restorePayment = useStore((s) => s.restorePayment);
   const updatePayment = useStore((s) => s.updatePayment);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const cancelBooking = useStore((s) => s.cancelBooking);
@@ -1022,10 +1023,21 @@ function BookingDetail() {
             </div>
             <button
               onClick={() => {
-                if (!confirm("Delete this payment?")) return;
-                deletePayment(activePayment.id);
-                setActivePayment(null);
-                toast.success("Payment removed");
+                if (activePayment && confirm("Delete this payment?")) {
+                  const pid = activePayment.id;
+                  deletePayment(pid);
+                  setActivePayment(null);
+                  toast.success("Payment removed", {
+                    action: {
+                      label: "Undo",
+                      onClick: () => {
+                        restorePayment(pid);
+                        toast.success("Payment restored");
+                      },
+                    },
+                    duration: 6000,
+                  });
+                }
               }}
               className="mt-4 w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-semibold flex items-center justify-center gap-2"
             >

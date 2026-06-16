@@ -57,6 +57,7 @@ function BookingsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const deleteBooking = useStore((s) => s.deleteBooking);
+  const restoreBooking = useStore((s) => s.restoreBooking);
   const settings = useStore((s) => s.settings);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -782,11 +783,21 @@ function BookingsPage() {
         tone="danger"
         onConfirm={() => {
           const n = selected.size;
-          selected.forEach((id) => deleteBooking(id));
+          const ids = Array.from(selected);
+          ids.forEach((id) => deleteBooking(id));
           setSelected(new Set());
           setSelectMode(false);
           setConfirmOpen(false);
-          toast.success(`${n} booking${n > 1 ? "s" : ""} deleted`);
+          toast.success(`${n} booking${n > 1 ? "s" : ""} deleted`, {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                ids.forEach((id) => restoreBooking(id));
+                toast.success("Bookings restored");
+              },
+            },
+            duration: 6000,
+          });
         }}
       />
     </AppShell>

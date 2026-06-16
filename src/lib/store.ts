@@ -138,6 +138,28 @@ export interface DeletedBooking {
   deletedAt: string;
 }
 
+export interface DeletedCustomer {
+  customer: Customer;
+  bookings: Booking[];
+  payments: Payment[];
+  deletedAt: string;
+}
+
+export interface DeletedPayment {
+  payment: Payment;
+  deletedAt: string;
+}
+
+export interface DeletedExpense {
+  expense: Expense;
+  deletedAt: string;
+}
+
+export interface DeletedExtraIncome {
+  extraIncome: ExtraIncome;
+  deletedAt: string;
+}
+
 export type ActivityKind =
   | "create"
   | "update"
@@ -159,7 +181,7 @@ export interface ActivityEntry {
 
 export interface Tombstone {
   id: string;
-  type: "booking" | "payment" | "customer";
+  type: "booking" | "payment" | "customer" | "expense" | "extraIncome";
   ts: string;
 }
 
@@ -171,6 +193,10 @@ interface State {
   extraIncomes: ExtraIncome[];
   settings: Settings;
   trash: DeletedBooking[];
+  deletedCustomers: DeletedCustomer[];
+  deletedPayments: DeletedPayment[];
+  deletedExpenses: DeletedExpense[];
+  deletedExtraIncomes: DeletedExtraIncome[];
   activity: ActivityEntry[];
   redoStack: ActivityEntry[];
   tombstones: Tombstone[];
@@ -178,6 +204,7 @@ interface State {
   addCustomer: (c: Omit<Customer, "id" | "createdAt">) => Customer;
   updateCustomer: (id: string, c: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
+  restoreCustomer: (id: string) => void;
   getCustomer: (id: string) => Customer | undefined;
 
   addBooking: (b: Omit<Booking, "id" | "createdAt" | "status" | "billNumber">) => Booking;
@@ -193,13 +220,16 @@ interface State {
   addPayment: (p: Omit<Payment, "id">) => void;
   updatePayment: (id: string, p: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
+  restorePayment: (id: string) => void;
 
   addExpense: (e: Omit<Expense, "id" | "updatedAt">) => Expense;
   updateExpense: (id: string, e: Partial<Expense>) => void;
   deleteExpense: (id: string) => void;
+  restoreExpense: (id: string) => void;
 
   addExtraIncome: (e: Omit<ExtraIncome, "id" | "updatedAt">) => ExtraIncome;
   deleteExtraIncome: (id: string) => void;
+  restoreExtraIncome: (id: string) => void;
 
   updateSettings: (s: Partial<Settings>) => void;
   resetApp: () => void;
@@ -248,6 +278,10 @@ export const useStore = create<State>()(
       expenses: [],
       extraIncomes: [],
       trash: [],
+      deletedCustomers: [],
+      deletedPayments: [],
+      deletedExpenses: [],
+      deletedExtraIncomes: [],
       activity: [],
       redoStack: [],
       tombstones: [],
@@ -310,21 +344,52 @@ export const useStore = create<State>()(
         })),
       deleteCustomer: (id) =>
         set((s) => {
+          const c = s.customers.find((x) => x.id === id);
+          if (!c) return s;
           const ts = new Date().toISOString();
+          const relatedBookings = s.bookings.filter((b) => b.customerId === id);
+          const relatedPayments = s.payments.filter((p) => p.customerId === id);
           const newTombs: Tombstone[] = [
             { id, type: "customer", ts },
-            ...s.bookings
-              .filter((b) => b.customerId === id)
-              .map((b) => ({ id: b.id, type: "booking" as const, ts })),
-            ...s.payments
-              .filter((p) => p.customerId === id)
-              .map((p) => ({ id: p.id, type: "payment" as const, ts })),
+            ...relatedBookings.map((b) => ({ id: b.id, type: "booking" as const, ts })),
+            ...relatedPayments.map((p) => ({ id: p.id, type: "payment" as const, ts })),
           ];
+          const deletedCustomerEntry: DeletedCustomer = {
+            customer: c,
+            bookings: relatedBookings,
+            payments: relatedPayments,
+            deletedAt: ts,
+          };
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const deletedCustomers = [
+            deletedCustomerEntry,
+            ...s.deletedCustomers.filter((x) => new Date(x.deletedAt).getTime() > sevenDaysAgo),
+          ].slice(0, 50);
+
           return {
             customers: s.customers.filter((x) => x.id !== id),
             bookings: s.bookings.filter((b) => b.customerId !== id),
             payments: s.payments.filter((p) => p.customerId !== id),
+            deletedCustomers,
             tombstones: [...newTombs, ...s.tombstones].slice(0, 1000),
+          };
+        }),
+      restoreCustomer: (id) =>
+        set((s) => {
+          const t = s.deletedCustomers.find((x) => x.customer.id === id);
+          if (!t) return s;
+          const now = new Date().toISOString();
+          const restoredIds = new Set([
+            t.customer.id,
+            ...t.bookings.map((b) => b.id),
+            ...t.payments.map((p) => p.id),
+          ]);
+          return {
+            customers: [{ ...t.customer, updatedAt: now }, ...s.customers],
+            bookings: [...t.bookings.map((b) => ({ ...b, updatedAt: now })), ...s.bookings],
+            payments: [...t.payments.map((p) => ({ ...p, updatedAt: now })), ...s.payments],
+            deletedCustomers: s.deletedCustomers.filter((x) => x.customer.id !== id),
+            tombstones: s.tombstones.filter((tb) => !restoredIds.has(tb.id)),
           };
         }),
       getCustomer: (id) => get().customers.find((c) => c.id === id),
@@ -575,11 +640,44 @@ export const useStore = create<State>()(
             bookingId: pay.bookingId,
             summary: `removed payment ₹${pay.amount}`,
           };
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const deletedPayments = [
+            { payment: pay, deletedAt: now },
+            ...s.deletedPayments.filter((x) => new Date(x.deletedAt).getTime() > sevenDaysAgo),
+          ].slice(0, 50);
+
           return {
             payments: s.payments.filter((p) => p.id !== id),
             bookings,
+            deletedPayments,
             activity: [entry, ...s.activity].slice(0, 50),
             tombstones: [{ id, type: "payment" as const, ts: now }, ...s.tombstones].slice(0, 1000),
+          };
+        }),
+      restorePayment: (id) =>
+        set((s) => {
+          const t = s.deletedPayments.find((x) => x.payment.id === id);
+          if (!t) return s;
+          const now = new Date().toISOString();
+          const newPayment = { ...t.payment, updatedAt: now };
+          const updatedPayments = [newPayment, ...s.payments];
+          const bookings = s.bookings.map((b) => {
+            if (b.id !== t.payment.bookingId) return b;
+            const relatedPayments = updatedPayments.filter((p) => p.bookingId === b.id);
+            const totalPaid = relatedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+            const isFullyPaid = totalPaid >= b.totalAmount;
+            return {
+              ...b,
+              advancePaid: totalPaid,
+              status: isFullyPaid && b.status === "pending" ? "completed" : b.status,
+              updatedAt: now,
+            };
+          });
+          return {
+            payments: updatedPayments,
+            bookings,
+            deletedPayments: s.deletedPayments.filter((x) => x.payment.id !== id),
+            tombstones: s.tombstones.filter((tb) => tb.id !== id),
           };
         }),
 
@@ -595,7 +693,33 @@ export const useStore = create<State>()(
             e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e,
           ),
         })),
-      deleteExpense: (id) => set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+      deleteExpense: (id) =>
+        set((s) => {
+          const exp = s.expenses.find((e) => e.id === id);
+          if (!exp) return s;
+          const now = new Date().toISOString();
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const deletedExpenses = [
+            { expense: exp, deletedAt: now },
+            ...s.deletedExpenses.filter((x) => new Date(x.deletedAt).getTime() > sevenDaysAgo),
+          ].slice(0, 50);
+          return {
+            expenses: s.expenses.filter((e) => e.id !== id),
+            deletedExpenses,
+            tombstones: [{ id, type: "expense" as const, ts: now }, ...s.tombstones].slice(0, 1000),
+          };
+        }),
+      restoreExpense: (id) =>
+        set((s) => {
+          const t = s.deletedExpenses.find((x) => x.expense.id === id);
+          if (!t) return s;
+          const now = new Date().toISOString();
+          return {
+            expenses: [{ ...t.expense, updatedAt: now }, ...s.expenses],
+            deletedExpenses: s.deletedExpenses.filter((x) => x.expense.id !== id),
+            tombstones: s.tombstones.filter((tb) => tb.id !== id),
+          };
+        }),
 
       addExtraIncome: (e) => {
         const now = new Date().toISOString();
@@ -604,7 +728,32 @@ export const useStore = create<State>()(
         return item;
       },
       deleteExtraIncome: (id) =>
-        set((s) => ({ extraIncomes: s.extraIncomes.filter((e) => e.id !== id) })),
+        set((s) => {
+          const item = s.extraIncomes.find((e) => e.id === id);
+          if (!item) return s;
+          const now = new Date().toISOString();
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const deletedExtraIncomes = [
+            { extraIncome: item, deletedAt: now },
+            ...s.deletedExtraIncomes.filter((x) => new Date(x.deletedAt).getTime() > sevenDaysAgo),
+          ].slice(0, 50);
+          return {
+            extraIncomes: s.extraIncomes.filter((e) => e.id !== id),
+            deletedExtraIncomes,
+            tombstones: [{ id, type: "extraIncome" as const, ts: now }, ...s.tombstones].slice(0, 1000),
+          };
+        }),
+      restoreExtraIncome: (id) =>
+        set((s) => {
+          const t = s.deletedExtraIncomes.find((x) => x.extraIncome.id === id);
+          if (!t) return s;
+          const now = new Date().toISOString();
+          return {
+            extraIncomes: [{ ...t.extraIncome, updatedAt: now }, ...s.extraIncomes],
+            deletedExtraIncomes: s.deletedExtraIncomes.filter((x) => x.extraIncome.id !== id),
+            tombstones: s.tombstones.filter((tb) => tb.id !== id),
+          };
+        }),
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
 
@@ -616,6 +765,10 @@ export const useStore = create<State>()(
           expenses: [],
           extraIncomes: [],
           trash: [],
+          deletedCustomers: [],
+          deletedPayments: [],
+          deletedExpenses: [],
+          deletedExtraIncomes: [],
           activity: [],
           redoStack: [],
           tombstones: [],

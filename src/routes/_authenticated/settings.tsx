@@ -216,6 +216,14 @@ function SettingsPage() {
   const bookings = useStore((s) => s.bookings);
   const trash = useStore((s) => s.trash);
   const restoreBooking = useStore((s) => s.restoreBooking);
+  const deletedCustomers = useStore((s) => s.deletedCustomers || []);
+  const deletedPayments = useStore((s) => s.deletedPayments || []);
+  const deletedExpenses = useStore((s) => s.deletedExpenses || []);
+  const deletedExtraIncomes = useStore((s) => s.deletedExtraIncomes || []);
+  const restoreCustomer = useStore((s) => s.restoreCustomer);
+  const restorePayment = useStore((s) => s.restorePayment);
+  const restoreExpense = useStore((s) => s.restoreExpense);
+  const restoreExtraIncome = useStore((s) => s.restoreExtraIncome);
   const resetApp = useStore((s) => s.resetApp);
   const payments = useStore((s) => s.payments);
   const isHistoryImported = (payments ?? []).some((p: any) => p.note === "Imported Earning");
@@ -227,6 +235,7 @@ function SettingsPage() {
   const [incCatDraft, setIncCatDraft] = useState("");
   const [modeDraft, setModeDraft] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
+  const [binTab, setBinTab] = useState<"bookings" | "customers" | "payments" | "finance">("bookings");
   const [confirmAction, setConfirmAction] = useState<
     null | "resetTheme" | "resetPricing" | "clearData" | "undoImport"
   >(null);
@@ -1445,47 +1454,216 @@ function SettingsPage() {
                     <div className="flex flex-col text-left">
                       <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
                         <Trash2 className="size-4 text-primary" /> Recently Deleted Bin (
-                        {trash.length})
+                        {trash.length +
+                          deletedCustomers.length +
+                          deletedPayments.length +
+                          deletedExpenses.length +
+                          deletedExtraIncomes.length}
+                        )
                       </span>
                       <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                        Restore bookings deleted in the last 7 days
+                        Restore deleted bookings, customers, payments, and financial items
                       </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pt-2 pb-4">
-                    {trash.length === 0 ? (
-                      <p className="text-xs text-muted-foreground py-2 text-center">
-                        No deleted bookings in recycle bin.
-                      </p>
-                    ) : (
-                      <ul className="space-y-2 mt-2">
-                        {trash.map((t) => {
-                          const c = customers.find((x) => x.id === t.booking.customerId);
-                          return (
+                    <div className="flex gap-1.5 overflow-x-auto pb-2 border-b border-border mb-3 scrollbar-none">
+                      {[
+                        { id: "bookings", label: "Bookings", count: trash.length },
+                        { id: "customers", label: "Customers", count: deletedCustomers.length },
+                        { id: "payments", label: "Payments", count: deletedPayments.length },
+                        {
+                          id: "finance",
+                          label: "Finance",
+                          count: deletedExpenses.length + deletedExtraIncomes.length,
+                        },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setBinTab(t.id as any)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition ${
+                            binTab === t.id
+                              ? "bg-primary text-primary-foreground font-bold"
+                              : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                          }`}
+                        >
+                          {t.label} ({t.count})
+                        </button>
+                      ))}
+                    </div>
+
+                    {binTab === "bookings" && (
+                      trash.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-3 text-center">
+                          No deleted bookings in recycle bin.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 mt-2">
+                          {trash.map((t) => {
+                            const c = customers.find((x) => x.id === t.booking.customerId);
+                            return (
+                              <li
+                                key={t.booking.id}
+                                className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold truncate">
+                                    {c?.name ?? "Unknown"} · {t.booking.service}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    {t.booking.deliveryDate.slice(0, 10)} ·{" "}
+                                    {fmtTime12(t.booking.deliveryTime)} ·{" "}
+                                    {fmtINR(t.booking.totalAmount)}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => setRestoreId(t.booking.id)}
+                                  className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                                >
+                                  <RotateCw className="size-3" /> Restore
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )
+                    )}
+
+                    {binTab === "customers" && (
+                      deletedCustomers.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-3 text-center">
+                          No deleted customers in recycle bin.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 mt-2">
+                          {deletedCustomers.map((t) => (
                             <li
-                              key={t.booking.id}
+                              key={t.customer.id}
                               className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
                             >
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold truncate">
-                                  {c?.name ?? "Unknown"} · {t.booking.service}
+                                  {t.customer.name} ({t.customer.kind ?? "client"})
                                 </p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {t.booking.deliveryDate.slice(0, 10)} ·{" "}
-                                  {fmtTime12(t.booking.deliveryTime)} ·{" "}
-                                  {fmtINR(t.booking.totalAmount)}
+                                  {t.customer.phone} · Includes {t.bookings.length} bookings, {t.payments.length} payments
                                 </p>
                               </div>
                               <button
-                                onClick={() => setRestoreId(t.booking.id)}
+                                onClick={() => {
+                                  restoreCustomer(t.customer.id);
+                                  toast.success("Customer and all related data restored");
+                                }}
                                 className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
                               >
                                 <RotateCw className="size-3" /> Restore
                               </button>
                             </li>
-                          );
-                        })}
-                      </ul>
+                          ))}
+                        </ul>
+                      )
+                    )}
+
+                    {binTab === "payments" && (
+                      deletedPayments.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-3 text-center">
+                          No deleted payments in recycle bin.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 mt-2">
+                          {deletedPayments.map((t) => {
+                            const b = bookings.find((x) => x.id === t.payment.bookingId);
+                            const c = customers.find((x) => x.id === t.payment.customerId);
+                            return (
+                              <li
+                                key={t.payment.id}
+                                className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold truncate">
+                                    ₹{t.payment.amount} · {t.payment.mode ?? "gpay"}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    Customer: {c?.name ?? "Unknown"} · Booking: {b?.billNumber ?? b?.service ?? "Unknown"}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    restorePayment(t.payment.id);
+                                    toast.success("Payment restored");
+                                  }}
+                                  className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                                >
+                                  <RotateCw className="size-3" /> Restore
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )
+                    )}
+
+                    {binTab === "finance" && (
+                      (deletedExpenses.length === 0 && deletedExtraIncomes.length === 0) ? (
+                        <p className="text-xs text-muted-foreground py-3 text-center">
+                          No deleted finance records in recycle bin.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2 mt-2">
+                          {deletedExpenses.map((t) => (
+                            <li
+                              key={t.expense.id}
+                              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold truncate text-destructive">
+                                  Expense: ₹{t.expense.amount} · {t.expense.category}
+                                </p>
+                                {t.expense.note && (
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                    Note: {t.expense.note}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  restoreExpense(t.expense.id);
+                                  toast.success("Expense restored");
+                                }}
+                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                              >
+                                <RotateCw className="size-3" /> Restore
+                              </button>
+                            </li>
+                          ))}
+                          {deletedExtraIncomes.map((t) => (
+                            <li
+                              key={t.extraIncome.id}
+                              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold truncate text-success">
+                                  Income: ₹{t.extraIncome.amount} · {t.extraIncome.category}
+                                </p>
+                                {t.extraIncome.note && (
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                    Note: {t.extraIncome.note}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  restoreExtraIncome(t.extraIncome.id);
+                                  toast.success("Income entry restored");
+                                }}
+                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                              >
+                                <RotateCw className="size-3" /> Restore
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )
                     )}
                   </AccordionContent>
                 </AccordionItem>

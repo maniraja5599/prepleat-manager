@@ -87,8 +87,10 @@ function PaymentsPage() {
 
   const addExpense = useStore((s) => s.addExpense);
   const deleteExpense = useStore((s) => s.deleteExpense);
+  const restoreExpense = useStore((s) => s.restoreExpense);
   const addExtraIncome = useStore((s) => s.addExtraIncome);
   const deleteExtraIncome = useStore((s) => s.deleteExtraIncome);
+  const restoreExtraIncome = useStore((s) => s.restoreExtraIncome);
 
   const [tab, setTab] = useState<TabId>("summary");
   const [exportOpen, setExportOpen] = useState(false);
@@ -835,12 +837,31 @@ function PaymentsPage() {
         tone="danger"
         onConfirm={() => {
           if (!pendingDelete) return;
+          const id = pendingDelete.id;
           if (pendingDelete.type === "income") {
-            deleteExtraIncome(pendingDelete.id);
-            toast.success("Income removed");
+            deleteExtraIncome(id);
+            toast.success("Income removed", {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  restoreExtraIncome(id);
+                  toast.success("Income restored");
+                },
+              },
+              duration: 6000,
+            });
           } else {
-            deleteExpense(pendingDelete.id);
-            toast.success("Expense removed");
+            deleteExpense(id);
+            toast.success("Expense removed", {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  restoreExpense(id);
+                  toast.success("Expense restored");
+                },
+              },
+              duration: 6000,
+            });
           }
           setPendingDelete(null);
         }}

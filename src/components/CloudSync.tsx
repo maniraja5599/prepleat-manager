@@ -10,6 +10,10 @@ type Snapshot = {
   expenses?: ReturnType<typeof useStore.getState>["expenses"];
   extraIncomes?: ReturnType<typeof useStore.getState>["extraIncomes"];
   trash?: ReturnType<typeof useStore.getState>["trash"];
+  deletedCustomers?: ReturnType<typeof useStore.getState>["deletedCustomers"];
+  deletedPayments?: ReturnType<typeof useStore.getState>["deletedPayments"];
+  deletedExpenses?: ReturnType<typeof useStore.getState>["deletedExpenses"];
+  deletedExtraIncomes?: ReturnType<typeof useStore.getState>["deletedExtraIncomes"];
   activity?: ReturnType<typeof useStore.getState>["activity"];
   settings?: Partial<ReturnType<typeof useStore.getState>["settings"]>;
   tombstones?: Tombstone[];
@@ -67,9 +71,18 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
     return false;
   };
 
+  let expenses = mergeById(local.expenses, cloud.expenses, (x, y) =>
+    genericTs(y) > genericTs(x) ? y : x,
+  );
+  let extraIncomes = mergeById(local.extraIncomes, cloud.extraIncomes, (x, y) =>
+    genericTs(y) > genericTs(x) ? y : x,
+  );
+
   customers = customers.filter((c) => alive("customer", c.id, customerTs(c)));
   bookings = bookings.filter((b) => alive("booking", b.id, bookingTs(b)));
   payments = payments.filter((p) => alive("payment", p.id, paymentTs(p)));
+  expenses = expenses.filter((e) => alive("expense", e.id, genericTs(e)));
+  extraIncomes = extraIncomes.filter((i) => alive("extraIncome", i.id, genericTs(i)));
 
   const paidByBooking = new Map<string, number>();
   for (const p of payments) {
@@ -87,6 +100,30 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
     (x, y) => ((y.deletedAt ?? "") > (x.deletedAt ?? "") ? y : x),
   ).map(({ id: _id, ...rest }) => rest);
 
+  const deletedCustomers = mergeById(
+    (local.deletedCustomers ?? []).map((t) => ({ ...t, id: t.customer.id })),
+    (cloud.deletedCustomers ?? []).map((t) => ({ ...t, id: t.customer.id })),
+    (x, y) => ((y.deletedAt ?? "") > (x.deletedAt ?? "") ? y : x),
+  ).map(({ id: _id, ...rest }) => rest);
+
+  const deletedPayments = mergeById(
+    (local.deletedPayments ?? []).map((t) => ({ ...t, id: t.payment.id })),
+    (cloud.deletedPayments ?? []).map((t) => ({ ...t, id: t.payment.id })),
+    (x, y) => ((y.deletedAt ?? "") > (x.deletedAt ?? "") ? y : x),
+  ).map(({ id: _id, ...rest }) => rest);
+
+  const deletedExpenses = mergeById(
+    (local.deletedExpenses ?? []).map((t) => ({ ...t, id: t.expense.id })),
+    (cloud.deletedExpenses ?? []).map((t) => ({ ...t, id: t.expense.id })),
+    (x, y) => ((y.deletedAt ?? "") > (x.deletedAt ?? "") ? y : x),
+  ).map(({ id: _id, ...rest }) => rest);
+
+  const deletedExtraIncomes = mergeById(
+    (local.deletedExtraIncomes ?? []).map((t) => ({ ...t, id: t.extraIncome.id })),
+    (cloud.deletedExtraIncomes ?? []).map((t) => ({ ...t, id: t.extraIncome.id })),
+    (x, y) => ((y.deletedAt ?? "") > (x.deletedAt ?? "") ? y : x),
+  ).map(({ id: _id, ...rest }) => rest);
+
   const activity = mergeById(local.activity ?? [], cloud.activity ?? [], (x, y) =>
     (y.ts ?? "") > (x.ts ?? "") ? y : x,
   )
@@ -97,13 +134,13 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
     customers,
     bookings,
     payments,
-    expenses: mergeById(local.expenses, cloud.expenses, (x, y) =>
-      genericTs(y) > genericTs(x) ? y : x,
-    ),
-    extraIncomes: mergeById(local.extraIncomes, cloud.extraIncomes, (x, y) =>
-      genericTs(y) > genericTs(x) ? y : x,
-    ),
+    expenses,
+    extraIncomes,
     trash,
+    deletedCustomers,
+    deletedPayments,
+    deletedExpenses,
+    deletedExtraIncomes,
     activity,
     settings: { ...(local.settings ?? {}), ...(cloud.settings ?? {}) },
     tombstones: Array.from(tombMap.values())
@@ -122,6 +159,10 @@ function makeSnapshot(): Snapshot {
       expenses: state.expenses,
       extraIncomes: state.extraIncomes,
       trash: state.trash,
+      deletedCustomers: state.deletedCustomers,
+      deletedPayments: state.deletedPayments,
+      deletedExpenses: state.deletedExpenses,
+      deletedExtraIncomes: state.deletedExtraIncomes,
       activity: state.activity,
       settings: state.settings,
       tombstones: state.tombstones,
@@ -211,6 +252,10 @@ export function CloudSync() {
           expenses: merged.expenses,
           extraIncomes: merged.extraIncomes,
           trash: merged.trash,
+          deletedCustomers: merged.deletedCustomers,
+          deletedPayments: merged.deletedPayments,
+          deletedExpenses: merged.deletedExpenses,
+          deletedExtraIncomes: merged.deletedExtraIncomes,
           activity: merged.activity,
           tombstones: merged.tombstones,
           settings: { ...state.settings, ...(merged.settings ?? {}) },
@@ -293,6 +338,10 @@ export function CloudSync() {
             expenses: merged.expenses,
             extraIncomes: merged.extraIncomes,
             trash: merged.trash,
+            deletedCustomers: merged.deletedCustomers,
+            deletedPayments: merged.deletedPayments,
+            deletedExpenses: merged.deletedExpenses,
+            deletedExtraIncomes: merged.deletedExtraIncomes,
             activity: merged.activity,
             tombstones: merged.tombstones,
             settings: { ...state.settings, ...(merged.settings ?? {}) },

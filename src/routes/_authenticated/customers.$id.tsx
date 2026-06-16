@@ -30,6 +30,7 @@ function CustomerDetail() {
   const customer = useStore((s) => s.customers.find((c) => c.id === id));
   const bookings = useStore((s) => s.bookings);
   const deleteCustomer = useStore((s) => s.deleteCustomer);
+  const restoreCustomer = useStore((s) => s.restoreCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
   const settings = useStore((s) => s.settings);
   const businessName = settings.businessName || "Eyas Drapist";
@@ -324,8 +325,19 @@ function CustomerDetail() {
           )}
           <button
             onClick={() => {
-              if (confirm("Delete customer and all their bookings?")) {
-                deleteCustomer(customer.id);
+              if (customer && confirm("Delete customer and all their bookings?")) {
+                const cid = customer.id;
+                deleteCustomer(cid);
+                toast.success("Customer deleted", {
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      restoreCustomer(cid);
+                      toast.success("Customer restored");
+                    },
+                  },
+                  duration: 6000,
+                });
                 navigate({ to: "/customers" });
               }
             }}
