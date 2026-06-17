@@ -32,6 +32,7 @@ import {
   Clock,
   RefreshCw,
   Map,
+  MapPin,
   Send,
 } from "lucide-react";
 import { useState } from "react";
