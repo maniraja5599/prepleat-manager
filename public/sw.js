@@ -42,31 +42,45 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Navigation requests (HTML) -> Network First, fallback to Cache
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) return cachedResponse;
+          return caches.match("/"); // Fallback to root HTML
+        })
+    );
+    return;
+  }
+
+  // Assets (JS, CSS, Images) -> Cache First, fallback to Network
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Cache the new response
-        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(async () => {
-        // If network fetch fails (offline), try the cache
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        // If it's a navigation request and we don't have it, we could return the root
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-        
-        throw new Error("Network error and no cache available");
-      })
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse; // Instantly load from cache to prevent blank screens!
+      }
+
+      return fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Silent fallback for missing assets
+          return new Response("", { status: 408, statusText: "Offline" });
+        });
+    })
   );
 });
