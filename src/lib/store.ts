@@ -1119,7 +1119,7 @@ export const useStore = create<State>()(
           const dateParts = dateStr.split("-");
           if (dateParts.length !== 3) continue;
           const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-          const timestamp = new Date(isoDate + "T12:00:00").toISOString();
+          const timestamp = new Date().toISOString();
 
           let mode = "other";
           if (modeRaw.toLowerCase() === "gpay") mode = "gpay";
