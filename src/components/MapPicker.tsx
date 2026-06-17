@@ -174,7 +174,7 @@ export function MapPicker({
             Cancel
           </Button>
           <Button className="flex-1 sm:flex-none" disabled={!position} onClick={handleConfirm}>
-            <MapPin className="size-4 mr-2" /> Confirm Location
+            <MapPin className="size-4" /> Confirm Location
           </Button>
         </DialogFooter>
       </DialogContent>

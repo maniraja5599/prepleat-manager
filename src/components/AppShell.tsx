@@ -233,34 +233,36 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     const items = [];
 
     // 1. Connection / Sync item
-    if (sync.syncStatus === "syncing") {
-      items.push({
-        type: "sync",
-        text: "Syncing...",
-        icon: "syncing",
-        color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      });
-    } else if (sync.syncStatus === "offline") {
-      items.push({
-        type: "sync",
-        text: "Offline Mode",
-        icon: "offline",
-        color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      });
-    } else if (sync.syncStatus === "error") {
-      items.push({
-        type: "sync",
-        text: "Sync Error",
-        icon: "error",
-        color: "text-red-500 bg-red-500/15 border-red-500/30",
-      });
-    } else {
-      items.push({
-        type: "sync",
-        text: isGuest ? "Local Synced" : "Cloud Synced",
-        icon: "synced",
-        color: "text-success bg-[oklch(0.55_0.13_150)]/[0.08] border-[oklch(0.55_0.13_150)]/20",
-      });
+    if (sync.showStatus || sync.syncStatus === "error") {
+      if (sync.syncStatus === "syncing") {
+        items.push({
+          type: "sync",
+          text: "Syncing...",
+          icon: "syncing",
+          color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+        });
+      } else if (sync.syncStatus === "offline") {
+        items.push({
+          type: "sync",
+          text: "Offline Mode",
+          icon: "offline",
+          color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+        });
+      } else if (sync.syncStatus === "error") {
+        items.push({
+          type: "sync",
+          text: sync.errorMessage || "Sync Error",
+          icon: "error",
+          color: "text-red-500 bg-red-500/15 border-red-500/30",
+        });
+      } else {
+        items.push({
+          type: "sync",
+          text: isGuest ? "Local Synced" : "Cloud Synced",
+          icon: "synced",
+          color: "text-success bg-[oklch(0.55_0.13_150)]/[0.08] border-[oklch(0.55_0.13_150)]/20",
+        });
+      }
     }
 
     // 2. Today's Bookings
@@ -316,9 +318,10 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     if (timerRef.current) clearTimeout(timerRef.current);
     setCurrentNotification(item);
     setShowPill(true);
+    const duration = (item?.text.length || 0) > 20 ? 8000 : durationMs;
     timerRef.current = setTimeout(() => {
       setShowPill(false);
-    }, durationMs);
+    }, duration);
   };
 
   // 1. Listen for sync changes to show instant feedback
@@ -356,70 +359,9 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     };
   }, [bookings, sync.syncStatus, customers]);
 
-  // Split logic for long notifications to cycle vertically
+  // Logic for long notifications
   const currentText = currentNotification?.text || "";
-  
-  const slides = useMemo(() => {
-    if (!currentText) return [];
-    
-    // 1. Initial split based on separators
-    let segments: string[] = [];
-    let textToSplit = currentText;
-    if (textToSplit.includes(" @ ")) {
-      textToSplit = textToSplit.replace(" @ ", " · @ ");
-    }
-    
-    if (textToSplit.includes(" · ")) {
-      segments = textToSplit.split(" · ");
-    } else {
-      segments = [textToSplit];
-    }
-
-    // 2. Further split any segments that are still too long (> 16 chars)
-    const finalSlides: string[] = [];
-    for (const seg of segments) {
-      if (seg.length <= 16) {
-        finalSlides.push(seg);
-      } else {
-        const mid = Math.floor(seg.length / 2);
-        const spaceBefore = seg.lastIndexOf(" ", mid);
-        const spaceAfter = seg.indexOf(" ", mid);
-        let splitIdx = -1;
-        if (spaceBefore !== -1 && spaceAfter !== -1) {
-          splitIdx = (mid - spaceBefore < spaceAfter - mid) ? spaceBefore : spaceAfter;
-        } else {
-          splitIdx = spaceBefore !== -1 ? spaceBefore : spaceAfter;
-        }
-
-        if (splitIdx !== -1) {
-          finalSlides.push(seg.slice(0, splitIdx).trim());
-          finalSlides.push(seg.slice(splitIdx + 1).trim());
-        } else {
-          finalSlides.push(seg);
-        }
-      }
-    }
-
-    return finalSlides;
-  }, [currentText]);
-
-  const [slideIndex, setSlideIndex] = useState(0);
-
-  // Reset slide index when notification updates
-  useEffect(() => {
-    setSlideIndex(0);
-  }, [currentText]);
-
-  // Cycle slideIndex if there are multiple slides inside an active pill display
-  useEffect(() => {
-    if (slides.length <= 1 || !showPill) return;
-    
-    const interval = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % slides.length);
-    }, 2200);
-
-    return () => clearInterval(interval);
-  }, [slides, showPill]);
+  const isLongText = currentText.length > 20;
 
   return (
     <div className="min-h-[100dvh] bg-background pb-28">
@@ -474,15 +416,22 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
               {currentNotification?.icon === "wallet" && (
                 <Wallet className="size-2.5 text-rose-500 shrink-0" />
               )}
-              <span 
-                key={`${currentText}-${slideIndex}`} 
-                className={cn(
-                  "truncate whitespace-nowrap inline-block",
-                  slides.length > 1 ? "animate-slide-up-cycle" : "animate-slide-up-single"
-                )}
-              >
-                {slides[slideIndex]}
-              </span>
+              {isLongText ? (
+                <div className="flex-1 overflow-hidden h-8.5 relative min-w-[120px]">
+                  <div className="absolute inset-x-0 w-full animate-scroll-up-continuous flex flex-col justify-start">
+                    <span className="whitespace-normal leading-tight text-[9px] pt-[34px] pb-1 font-medium">
+                      {currentText}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span 
+                  key={currentText} 
+                  className="truncate whitespace-nowrap inline-block animate-slide-up-single"
+                >
+                  {currentText}
+                </span>
+              )}
             </div>
 
             {/* Global Search Button */}
@@ -555,6 +504,13 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
             }
             .animate-slide-up-single {
               animation: slide-up-single 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            @keyframes scroll-up-continuous {
+              0% { transform: translateY(0); }
+              100% { transform: translateY(-100%); }
+            }
+            .animate-scroll-up-continuous {
+              animation: scroll-up-continuous 7s linear forwards;
             }
           `}</style>
         </div>
