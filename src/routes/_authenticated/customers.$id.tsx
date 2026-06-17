@@ -13,12 +13,14 @@ import {
   MessageSquare,
   Send,
   Eye,
+  Map,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollNumber } from "@/components/ScrollNumber";
+import { MapPicker } from "@/components/MapPicker";
 
 export const Route = createFileRoute("/_authenticated/customers/$id")({
   component: CustomerDetail,
@@ -39,6 +41,8 @@ function CustomerDetail() {
   const [name, setName] = useState(customer?.name ?? "");
   const [phone, setPhone] = useState(customer?.phone ?? "");
   const [address, setAddress] = useState(customer?.address ?? "");
+  const [locationUrl, setLocationUrl] = useState(customer?.locationUrl ?? "");
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [reference, setReference] = useState(customer?.reference ?? "");
 
   // Message preview modal state
@@ -285,6 +289,7 @@ function CustomerDetail() {
                   name: name.trim() || customer.name,
                   phone: phone.trim() || customer.phone,
                   address: address.trim() || undefined,
+                  locationUrl: locationUrl.trim() || undefined,
                   reference: reference.trim() || undefined,
                   measurements:
                     customer.kind === "client" && showMeasure ? measurements : undefined,
@@ -294,6 +299,7 @@ function CustomerDetail() {
                 setName(customer.name);
                 setPhone(customer.phone);
                 setAddress(customer.address ?? "");
+                setLocationUrl(customer.locationUrl ?? "");
                 setReference(customer.reference ?? "");
                 setMeasurements(
                   customer.measurements && customer.measurements.length > 0
@@ -371,6 +377,17 @@ function CustomerDetail() {
               className="w-full bg-white/15 placeholder-white/60 rounded-xl px-3 py-2 text-sm focus:outline-none resize-none"
               placeholder="Address"
             />
+            <div className="flex items-center gap-2">
+              <input
+                value={locationUrl}
+                onChange={(e) => setLocationUrl(e.target.value)}
+                className="w-full bg-white/15 placeholder-white/60 rounded-xl px-3 py-2 text-sm focus:outline-none"
+                placeholder="Google Maps URL"
+              />
+              <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-white/15 hover:bg-white/25 rounded-full shrink-0 transition-colors">
+                <Map className="size-4" />
+              </button>
+            </div>
             <input
               value={reference}
               onChange={(e) => setReference(e.target.value)}
@@ -393,6 +410,18 @@ function CustomerDetail() {
                 <MapPin className="size-3.5 mt-0.5 shrink-0" />
                 {customer.address}
               </p>
+            )}
+            {customer.locationUrl && (
+              <div className="mt-2">
+                <a
+                  href={customer.locationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-full text-xs font-semibold transition-colors"
+                >
+                  <Map className="size-3.5" /> Get Directions
+                </a>
+              </div>
             )}
             {customer.reference && (
               <p className="text-[11px] opacity-80 mt-1">ref: {customer.reference}</p>
@@ -632,6 +661,11 @@ function CustomerDetail() {
           ))}
         </ul>
       )}
+      <MapPicker
+        open={showMapPicker}
+        onOpenChange={setShowMapPicker}
+        onConfirm={(url) => setLocationUrl(url)}
+      />
     </AppShell>
   );
 }

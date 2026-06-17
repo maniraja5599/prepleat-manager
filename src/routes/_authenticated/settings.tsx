@@ -1375,46 +1375,41 @@ function SettingsPage() {
                   <button
                     onClick={() => {
                       if (isHistoryImported) {
-                        setConfirmAction("undoImport");
+                        useStore.getState().undoImportHistoricalCsv();
+                        toast.success("Old history hidden", { duration: 1500 });
                       } else {
                         useStore.getState().importHistoricalCsv();
-                        toast.success("Historical data imported successfully", { duration: 2000 });
+                        toast.success("Old history shown", { duration: 1500 });
                       }
                     }}
-                    className={`px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={cn(
+                      "px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-between gap-3 cursor-pointer transition-colors border",
                       isHistoryImported
-                        ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-                        : "bg-secondary hover:bg-secondary/80"
-                    }`}
-                  >
-                    {isHistoryImported ? (
-                      <>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="size-3.5"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                          <path d="M3 3v5h5" />
-                        </svg>
-                        Undo
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="size-3.5" /> Import History
-                      </>
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary text-secondary-foreground border-transparent hover:bg-secondary/80"
                     )}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Database className="size-3.5" />
+                      <span>Old History</span>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-7 h-4 rounded-full relative transition-colors",
+                        isHistoryImported ? "bg-primary-foreground/30" : "bg-muted-foreground/30"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform shadow-sm",
+                          isHistoryImported && "translate-x-3"
+                        )}
+                      />
+                    </div>
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {isHistoryImported
-                    ? '✓ History already imported. Click "Undo" to remove it.'
-                    : "Import your previous earnings history into payments."}
+                  Turn this ON to show your preloaded history earnings. Turn OFF to hide them.
                 </p>
                 <input
                   type="file"

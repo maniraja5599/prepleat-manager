@@ -91,13 +91,18 @@ function PaymentsPage() {
   const addExtraIncome = useStore((s) => s.addExtraIncome);
   const deleteExtraIncome = useStore((s) => s.deleteExtraIncome);
   const restoreExtraIncome = useStore((s) => s.restoreExtraIncome);
+  const updateExpense = useStore((s) => s.updateExpense);
+  const updateExtraIncome = useStore((s) => s.updateExtraIncome);
+  const updatePayment = useStore((s) => s.updatePayment);
+  const deletePayment = useStore((s) => s.deletePayment);
 
   const [tab, setTab] = useState<TabId>("summary");
   const [exportOpen, setExportOpen] = useState(false);
   const [addTransactionOpen, setAddTransactionOpen] = useState(false);
   const [addTransactionType, setAddTransactionType] = useState<"income" | "expense">("income");
+  const [editingTx, setEditingTx] = useState<any>(null);
   const [pendingDelete, setPendingDelete] = useState<{
-    type: "expense" | "income";
+    type: "expense" | "income" | "extra_income" | "booking_payment";
     id: string;
   } | null>(null);
 
@@ -294,6 +299,7 @@ function PaymentsPage() {
     const list: Array<{
       id: string;
       type: "income" | "expense";
+      sourceType: "booking_payment" | "extra_income" | "expense";
       amount: number;
       category: string;
       note?: string;
@@ -308,6 +314,7 @@ function PaymentsPage() {
       list.push({
         id: p.id,
         type: "income",
+        sourceType: "booking_payment",
         amount: p.amount,
         category: b?.service ?? "Booking Payment",
         note: p.note,
@@ -321,6 +328,7 @@ function PaymentsPage() {
       list.push({
         id: e.id,
         type: "income",
+        sourceType: "extra_income",
         amount: e.amount,
         category: e.category,
         note: e.note,
@@ -333,6 +341,7 @@ function PaymentsPage() {
       list.push({
         id: e.id,
         type: "expense",
+        sourceType: "expense",
         amount: e.amount,
         category: e.category,
         note: e.note,
@@ -757,6 +766,7 @@ function PaymentsPage() {
           incomeByCategory={incomeByCategory}
           unifiedRecentTransactions={unifiedRecentTransactions}
           allTimeTrend={allTimeTrend}
+          onEditTx={setEditingTx}
         />
       )}
 
@@ -826,42 +836,46 @@ function PaymentsPage() {
         />
       )}
 
+      {editingTx && (
+        <EditTransactionSheet
+          tx={editingTx}
+          incomeCategories={incomeCats}
+          expenseCategories={categories}
+          modes={settings.paymentModes ?? ["gpay", "cash", "other"]}
+          onClose={() => setEditingTx(null)}
+          onSave={(updates) => {
+            if (editingTx.sourceType === "expense") updateExpense(editingTx.id, updates);
+            else if (editingTx.sourceType === "extra_income") updateExtraIncome(editingTx.id, updates);
+            else if (editingTx.sourceType === "booking_payment") updatePayment(editingTx.id, updates);
+            toast.success("Transaction updated", { duration: 2000 });
+            setEditingTx(null);
+          }}
+          onDelete={() => {
+            setPendingDelete({ type: editingTx.sourceType, id: editingTx.id });
+            setEditingTx(null);
+          }}
+        />
+      )}
+
       <ConfirmDialog
         open={!!pendingDelete}
         onOpenChange={(v) => !v && setPendingDelete(null)}
-        title={
-          pendingDelete?.type === "income" ? "Delete this income entry?" : "Delete this expense?"
-        }
+        title="Delete Transaction?"
         description="This cannot be undone."
         confirmLabel="Delete"
         tone="danger"
         onConfirm={() => {
           if (!pendingDelete) return;
-          const id = pendingDelete.id;
-          if (pendingDelete.type === "income") {
+          const { id, type } = pendingDelete;
+          if (type === "income" || type === "extra_income") {
             deleteExtraIncome(id);
-            toast.success("Income removed", {
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  restoreExtraIncome(id);
-                  toast.success("Income restored");
-                },
-              },
-              duration: 6000,
-            });
-          } else {
+            toast.success("Income removed", { action: { label: "Undo", onClick: () => restoreExtraIncome(id) }, duration: 6000 });
+          } else if (type === "expense") {
             deleteExpense(id);
-            toast.success("Expense removed", {
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  restoreExpense(id);
-                  toast.success("Expense restored");
-                },
-              },
-              duration: 6000,
-            });
+            toast.success("Expense removed", { action: { label: "Undo", onClick: () => restoreExpense(id) }, duration: 6000 });
+          } else if (type === "booking_payment") {
+            deletePayment(id);
+            toast.success("Payment removed");
           }
           setPendingDelete(null);
         }}
@@ -1414,6 +1428,7 @@ function SummaryView(p: {
   unifiedRecentTransactions: Array<{
     id: string;
     type: "income" | "expense";
+    sourceType?: string;
     amount: number;
     category: string;
     note?: string;
@@ -1421,6 +1436,7 @@ function SummaryView(p: {
     mode?: PaymentMode;
     customerName?: string;
   }>;
+  onEditTx: (tx: any) => void;
   allTimeTrend: Array<{
     month: string;
     amount: number;
@@ -1817,7 +1833,7 @@ function SummaryView(p: {
                           isInc ? "border-success bg-success" : "border-destructive bg-destructive",
                         )}
                       />
-                      <div className="flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200">
+                      <button type="button" onClick={() => p.onEditTx(tx)} className="w-full text-left flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200 cursor-pointer">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <span
@@ -1856,7 +1872,7 @@ function SummaryView(p: {
                             </span>
                           )}
                         </div>
-                      </div>
+                      </button>
                     </li>
                   );
                 })}
@@ -1864,6 +1880,133 @@ function SummaryView(p: {
             </div>
           );
         })()}
+      </div>
+    </>
+  );
+}
+
+// === Edit Transaction Sheet ===
+function EditTransactionSheet({
+  tx,
+  incomeCategories,
+  expenseCategories,
+  modes,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  tx: any;
+  incomeCategories: string[];
+  expenseCategories: string[];
+  modes: string[];
+  onClose: () => void;
+  onSave: (p: { amount: number; category: string; note?: string; date: string; mode: PaymentMode }) => void;
+  onDelete: () => void;
+}) {
+  const isIncome = tx.type === "income";
+  const [amount, setAmount] = useState<string>(String(tx.amount || ""));
+  
+  const categories = isIncome ? incomeCategories : expenseCategories;
+  const [category, setCategory] = useState<string>(
+    tx.category && categories.includes(tx.category) 
+      ? tx.category 
+      : tx.sourceType === "booking_payment" 
+        ? tx.category 
+        : (categories[0] ?? "Other")
+  );
+  
+  const [note, setNote] = useState(tx.note || "");
+  const [mode, setMode] = useState<PaymentMode>(tx.mode || "gpay");
+  const [date, setDate] = useState<string>(tx.date ? tx.date.slice(0, 10) : new Date().toISOString().slice(0, 10));
+
+  const submit = () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+    if (!category && tx.sourceType !== "booking_payment") return toast.error("Pick a category");
+    
+    let timeStr = new Date().toTimeString().slice(0, 8);
+    if (tx.date && tx.date.length > 10) {
+      timeStr = tx.date.slice(11, 19);
+    }
+    const iso = `${date}T${timeStr}Z`;
+
+    onSave({ amount: amt, category, note: note.trim() || undefined, date: iso, mode });
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3
+            className={cn(
+              "font-display font-bold text-lg transition-colors duration-300",
+              isIncome ? "text-success" : "text-destructive",
+            )}
+          >
+            Edit {tx.sourceType === "booking_payment" ? "Booking Payment" : isIncome ? "Income" : "Expense"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Amount Input */}
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
+        <div className={cn("relative mt-1 mb-3 transition-colors duration-300 border-2 rounded-2xl flex items-center px-3 py-2 bg-secondary", isIncome ? "focus-within:border-success/50 border-transparent" : "focus-within:border-destructive/50 border-transparent")}>
+          <IndianRupee className="size-5 text-muted-foreground" />
+          <input type="number" inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="bg-transparent flex-1 pl-1 text-2xl font-bold tabular-nums focus:outline-none" />
+        </div>
+
+        {/* Category Selection */}
+        {tx.sourceType !== "booking_payment" && (
+          <div className="mb-3">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {categories.map((c) => (
+                <button key={c} onClick={() => setCategory(c)} className={cn("px-3 py-1.5 rounded-full text-xs font-semibold transition border cursor-pointer", category === c ? (isIncome ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30") : "bg-secondary text-foreground border-transparent hover:bg-secondary/80")}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Date and Mode */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full text-sm font-semibold bg-secondary border border-border rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Mode</label>
+            <select value={mode} onChange={(e) => setMode(e.target.value as PaymentMode)} className="w-full text-sm font-semibold bg-secondary border border-border rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition capitalize cursor-pointer">
+              {modes.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Note */}
+        <div className="mb-6">
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Note (Optional)</label>
+          <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="E.g., advance, tips..." className="w-full text-sm font-semibold bg-secondary border border-border rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition" />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <button onClick={submit} className={cn("flex-1 py-3.5 rounded-xl text-white font-bold text-sm shadow-md active:scale-[0.98] transition cursor-pointer", isIncome ? "bg-success hover:bg-success/90 shadow-success/20" : "bg-destructive hover:bg-destructive/90 shadow-destructive/20")}>
+            Save Changes
+          </button>
+          <button onClick={onDelete} className="p-3.5 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition cursor-pointer" title="Delete Transaction">
+            <Trash2 className="size-5" />
+          </button>
+        </div>
       </div>
     </>
   );

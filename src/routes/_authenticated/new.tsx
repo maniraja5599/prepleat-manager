@@ -29,6 +29,7 @@ import {
   X,
   Phone,
   Clipboard,
+  Map,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ import { ScrollNumber } from "@/components/ScrollNumber";
 import { HorizontalPicker } from "@/components/HorizontalPicker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { MapPicker } from "@/components/MapPicker";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -99,6 +101,8 @@ function NewBooking() {
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newAddress, setNewAddress] = useState("");
+  const [newLocationUrl, setNewLocationUrl] = useState("");
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [nameFocus, setNameFocus] = useState(false);
   const [showExisting, setShowExisting] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
@@ -188,6 +192,7 @@ function NewBooking() {
     setNewName("");
     setNewPhone("");
     setNewAddress("");
+    setNewLocationUrl("");
     setNameFocus(false);
 
     if (c.measurements && c.measurements.length > 0) {
@@ -290,15 +295,17 @@ function NewBooking() {
         const existing = existingByPhone ?? existingByName;
         if (existing) {
           cid = existing.id;
-          if (newAddress.trim() && !existing.address) {
-            updateCustomer(existing.id, { address: newAddress.trim() });
-          }
+          const updates: Partial<typeof existing> = {};
+          if (newAddress.trim() && !existing.address) updates.address = newAddress.trim();
+          if (newLocationUrl.trim() && !existing.locationUrl) updates.locationUrl = newLocationUrl.trim();
+          if (Object.keys(updates).length > 0) updateCustomer(existing.id, updates);
         } else {
           const c = addCustomer({
             kind: "client",
             name: newName.trim() || "Walk-in",
             phone: phoneDigits.length === 10 ? "+91" + newPhone : newPhone.trim(),
             address: newAddress.trim() || undefined,
+            locationUrl: newLocationUrl.trim() || undefined,
           });
           cid = c.id;
         }
@@ -306,8 +313,11 @@ function NewBooking() {
         // No customer captured — record the booking under the artist.
         cid = artistId;
       }
-    } else if (newAddress.trim() && selectedCust && !selectedCust.address) {
-      updateCustomer(cid, { address: newAddress.trim() });
+    } else if (selectedCust) {
+      const updates: Partial<typeof selectedCust> = {};
+      if (newAddress.trim() && !selectedCust.address) updates.address = newAddress.trim();
+      if (newLocationUrl.trim() && !selectedCust.locationUrl) updates.locationUrl = newLocationUrl.trim();
+      if (Object.keys(updates).length > 0) updateCustomer(cid, updates);
     }
     if (!cid) return toast.error("Customer required");
 
@@ -585,6 +595,11 @@ function NewBooking() {
                       {selectedCust.address}
                     </p>
                   )}
+                  {selectedCust.locationUrl && (
+                    <a href={selectedCust.locationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-500 mt-1 hover:underline">
+                      <Map className="size-3" /> View Map
+                    </a>
+                  )}
                   {quotedLastPrice && (
                     <p className="text-xs text-gold mt-1">
                       Last {service}: {fmtINR(quotedLastPrice)}
@@ -602,16 +617,33 @@ function NewBooking() {
                   Change
                 </button>
               </div>
-              {!selectedCust.address && (
-                <div className="relative mt-3">
-                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                  <textarea
-                    value={newAddress}
-                    onChange={(e) => setNewAddress(e.target.value)}
-                    rows={2}
-                    placeholder="Add address"
-                    className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  />
+              {(!selectedCust.address || !selectedCust.locationUrl) && (
+                <div className="space-y-2 mt-3">
+                  {!selectedCust.address && (
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                      <textarea
+                        value={newAddress}
+                        onChange={(e) => setNewAddress(e.target.value)}
+                        rows={2}
+                        placeholder="Add address"
+                        className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      />
+                    </div>
+                  )}
+                  {!selectedCust.locationUrl && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={newLocationUrl}
+                        onChange={(e) => setNewLocationUrl(e.target.value)}
+                        placeholder="Paste Maps URL"
+                        className="flex-1 bg-secondary rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
+                        <Map className="size-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -736,26 +768,40 @@ function NewBooking() {
                 </div>
               )}
               {showAddress && (
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                  <textarea
-                    value={newAddress}
-                    onChange={(e) => setNewAddress(e.target.value)}
-                    rows={2}
-                    autoFocus
-                    placeholder="Address"
-                    className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddress(false);
-                      setNewAddress("");
-                    }}
-                    className="absolute right-3 top-2.5 text-muted-foreground"
-                  >
-                    ×
-                  </button>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <textarea
+                      value={newAddress}
+                      onChange={(e) => setNewAddress(e.target.value)}
+                      rows={2}
+                      autoFocus
+                      placeholder="Address"
+                      className="w-full bg-secondary rounded-2xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddress(false);
+                        setNewAddress("");
+                        setNewLocationUrl("");
+                      }}
+                      className="absolute right-3 top-2.5 text-muted-foreground"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={newLocationUrl}
+                      onChange={(e) => setNewLocationUrl(e.target.value)}
+                      placeholder="Paste Maps URL"
+                      className="flex-1 bg-secondary rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
+                      <Map className="size-4" />
+                    </button>
+                  </div>
                 </div>
               )}
               {(!showPhone || !showAddress) && (
@@ -1274,6 +1320,11 @@ function NewBooking() {
           </div>
         </div>
       )}
+      <MapPicker
+        open={showMapPicker}
+        onOpenChange={setShowMapPicker}
+        onConfirm={(url) => setNewLocationUrl(url)}
+      />
     </AppShell>
   );
 }

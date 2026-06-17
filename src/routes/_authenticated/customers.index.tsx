@@ -18,12 +18,14 @@ import {
   ArrowUpDown,
   TrendingUp,
   CalendarPlus,
+  Map,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollNumber } from "@/components/ScrollNumber";
+import { MapPicker } from "@/components/MapPicker";
 import {
   Accordion,
   AccordionItem,
@@ -54,6 +56,8 @@ function CustomersPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [locationUrl, setLocationUrl] = useState("");
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const settings = useStore((s) => s.settings);
@@ -478,6 +482,17 @@ function CustomersPage() {
             placeholder="Address (optional)"
             className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none resize-none"
           />
+          <div className="flex items-center gap-2">
+            <input
+              value={locationUrl}
+              onChange={(e) => setLocationUrl(e.target.value)}
+              placeholder="Paste Maps URL"
+              className="flex-1 bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none"
+            />
+            <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
+              <Map className="size-4" />
+            </button>
+          </div>
           {tab === "client" && (
             <div className="bg-secondary/40 rounded-xl p-3.5 border border-border/20 space-y-3">
               <div className="flex items-center justify-between">
@@ -592,11 +607,13 @@ function CustomersPage() {
                 name: name.trim(),
                 phone: phone.trim(),
                 address: address.trim() || undefined,
+                locationUrl: locationUrl.trim() || undefined,
                 measurements: tab === "client" && showMeasure ? measurements : undefined,
               });
               setName("");
               setPhone("");
               setAddress("");
+              setLocationUrl("");
               setShowMeasure(false);
               if (settings?.defaultMeasurements) {
                 setMeasurements(
@@ -764,6 +781,13 @@ function CustomersPage() {
             duration: 6000,
           });
         }}
+        confirmText="Yes, delete it"
+        cancelText="Cancel"
+      />
+      <MapPicker
+        open={showMapPicker}
+        onOpenChange={setShowMapPicker}
+        onConfirm={(url) => setLocationUrl(url)}
       />
     </AppShell>
   );

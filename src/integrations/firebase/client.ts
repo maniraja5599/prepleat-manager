@@ -10,7 +10,7 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,7 +30,11 @@ const app = isFirebaseConfigured
   : null;
 
 export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
+export const db = app 
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    }) 
+  : null;
 
 export type AppUser = {
   id: string;
@@ -71,6 +75,14 @@ export function waitForAppUser(timeoutMs = 1200): Promise<AppUser | null> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       unsubscribe();
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("last_known_user");
+        if (stored) {
+          try {
+            return resolve(JSON.parse(stored));
+          } catch (e) {}
+        }
+      }
       resolve(getLocalGuestUser());
     }, timeoutMs);
     const unsubscribe = onAuthStateChanged(auth, (user) => {

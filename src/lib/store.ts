@@ -73,6 +73,7 @@ export interface Customer {
   name: string;
   phone: string;
   address?: string;
+  locationUrl?: string;
   reference?: string;
   notes?: string;
   measurements?: Measurement[];
@@ -1103,7 +1104,8 @@ export const useStore = create<State>()(
           }
         }
 
-        for (const line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
           const parts = line.split(",");
           if (parts.length < 3) continue;
           const dateStr = parts[0].trim();
@@ -1137,7 +1139,7 @@ export const useStore = create<State>()(
           if (!c) {
             const isArtist = name.toLowerCase().includes("artist");
             c = {
-              id: uid(),
+              id: `imp-c-${name.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
               kind: isArtist ? "artist" : "client",
               name,
               phone: "",
@@ -1158,7 +1160,7 @@ export const useStore = create<State>()(
           monthCounters.set(ym, n);
           const billNumber = `${prefix}${String(n).padStart(4, "0")}`;
 
-          const bId = uid();
+          const bId = `imp-b-${ym}-${i}`;
           const booking: Booking = {
             id: bId,
             billNumber,
@@ -1181,7 +1183,7 @@ export const useStore = create<State>()(
           };
           bookings.push(booking);
 
-          const pId = uid();
+          const pId = `imp-p-${ym}-${i}`;
           const payment = {
             id: pId,
             bookingId: bId,
@@ -1217,7 +1219,27 @@ export const useStore = create<State>()(
           return true; // keep artists
         });
 
-        set({ customers, bookings, payments });
+        // Add tombstones for deleted records so CloudSync propagates the deletions
+        const deletedPayments = importedPayments;
+        const deletedBookings = (get().bookings ?? []).filter((b: any) => importedBookingIds.has(b.id));
+        const deletedCustomers = (get().customers ?? []).filter((c: any) => {
+          if (c.kind === "client") return !remainingCustomerIds.has(c.id);
+          return false;
+        });
+
+        const now = new Date().toISOString();
+        const newTombs: Tombstone[] = [
+          ...deletedBookings.map((b) => ({ id: b.id, type: "booking" as const, ts: now })),
+          ...deletedPayments.map((p) => ({ id: p.id, type: "payment" as const, ts: now })),
+          ...deletedCustomers.map((c) => ({ id: c.id, type: "customer" as const, ts: now })),
+        ];
+
+        set((s) => ({ 
+          customers, 
+          bookings, 
+          payments,
+          tombstones: [...newTombs, ...(s.tombstones || [])].slice(0, 5000)
+        }));
       },
     }),
     {

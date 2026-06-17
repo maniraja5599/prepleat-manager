@@ -7,12 +7,29 @@ import { onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrati
 let cachedUser: AppUser | null = null;
 
 if (typeof window !== "undefined") {
+  const storedUser = localStorage.getItem("last_known_user");
+  if (storedUser) {
+    try {
+      cachedUser = JSON.parse(storedUser);
+    } catch (e) {}
+  }
+
   onAppAuthStateChanged((user) => {
     cachedUser = user;
+    if (user) {
+      localStorage.setItem("last_known_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("last_known_user");
+    }
   });
   window.addEventListener("local-auth-change", () => {
     void waitForAppUser(50).then((user) => {
       cachedUser = user;
+      if (user) {
+        localStorage.setItem("last_known_user", JSON.stringify(user));
+      } else {
+        localStorage.removeItem("last_known_user");
+      }
     });
   });
 }

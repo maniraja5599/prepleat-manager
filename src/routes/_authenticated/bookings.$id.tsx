@@ -30,6 +30,8 @@ import {
   Phone,
   Calendar,
   Clock,
+  RefreshCw,
+  Map,
   Send,
 } from "lucide-react";
 import { useState } from "react";
@@ -498,7 +500,22 @@ function BookingDetail() {
         </div>
 
         {customer?.address && (
-          <p className="text-xs opacity-80 mt-1.5 line-clamp-2 italic">{customer.address}</p>
+          <p className="text-xs opacity-80 mt-1.5 line-clamp-2 italic flex items-start gap-1">
+            <MapPin className="size-3 mt-0.5 shrink-0" />
+            {customer.address}
+          </p>
+        )}
+        {customer?.locationUrl && (
+          <div className="mt-2">
+            <a
+              href={customer.locationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-full text-xs font-semibold transition-colors"
+            >
+              <Map className="size-3.5" /> Get Directions
+            </a>
+          </div>
         )}
 
         {artist && (
@@ -1224,7 +1241,7 @@ function EditPanel({
             type="date"
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
-            className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full min-w-0 bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -1237,7 +1254,7 @@ function EditPanel({
             step={900}
             value={deliveryTime}
             onChange={(e) => setDeliveryTime(e.target.value)}
-            className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full min-w-0 bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>
