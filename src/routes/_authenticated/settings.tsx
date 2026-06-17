@@ -1375,8 +1375,7 @@ function SettingsPage() {
                   <button
                     onClick={() => {
                       if (isHistoryImported) {
-                        useStore.getState().undoImportHistoricalCsv();
-                        toast.success("Old history hidden", { duration: 1500 });
+                        setConfirmAction("undoImport");
                       } else {
                         useStore.getState().importHistoricalCsv();
                         toast.success("Old history shown", { duration: 1500 });
@@ -1809,9 +1808,9 @@ function SettingsPage() {
       <ConfirmDialog
         open={confirmAction === "undoImport"}
         onOpenChange={(v) => !v && setConfirmAction(null)}
-        title="Remove imported history?"
+        title="Hide old history?"
         tone="danger"
-        confirmLabel="Yes, Remove"
+        confirmLabel="Yes, Hide"
         description={(() => {
           const importedPmts = (payments ?? []).filter((p: any) => p.note === "Imported Earning");
           const importedBookingIds = new Set(
@@ -1833,7 +1832,7 @@ function SettingsPage() {
           return (
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground">
-                The following imported data will be permanently deleted:
+                The following preloaded data will be hidden from your app:
               </p>
               <div className="bg-destructive/10 rounded-xl p-3 space-y-2">
                 <div className="flex justify-between">
@@ -1854,14 +1853,14 @@ function SettingsPage() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                This cannot be undone. You can re-import anytime.
+                You can turn it back ON anytime to see them again.
               </p>
             </div>
           );
         })()}
         onConfirm={() => {
           useStore.getState().undoImportHistoricalCsv();
-          toast.success("Import history removed", { duration: 2000 });
+          toast.success("Old history hidden", { duration: 2000 });
           setConfirmAction(null);
         }}
       />
