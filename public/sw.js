@@ -32,10 +32,12 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   
   const url = new URL(event.request.url);
-  // Exclude Firebase, Google APIs, and chrome extensions from SW cache
+  const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
+  
+  // Exclude Firebase, Google Maps APIs, and chrome extensions from SW cache
+  // BUT make sure we DO cache Google Fonts so they work offline!
   if (
-    url.origin.includes("googleapis.com") || 
-    url.origin.includes("gstatic.com") || 
+    (!isFont && (url.origin.includes("googleapis.com") || url.origin.includes("gstatic.com"))) || 
     url.protocol === 'chrome-extension:' ||
     url.pathname.includes('/api/')
   ) {
