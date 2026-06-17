@@ -297,7 +297,7 @@ export const useStore = create<State>()(
           { label: "Hip", value: 38 },
         ],
         showPaymentOnCalendar: false,
-        calendarAmountDisplay: "none",
+        calendarAmountDisplay: "pending",
         businessName: "Eyas Saree Drapist",
         theme: "royal",
         defaultPaymentMode: "gpay",
@@ -784,7 +784,7 @@ export const useStore = create<State>()(
               { label: "Hip", value: 38 },
             ],
             showPaymentOnCalendar: false,
-            calendarAmountDisplay: "none",
+            calendarAmountDisplay: "pending",
             businessName: "Eyas Saree Drapist",
             theme: "royal",
             defaultPaymentMode: "gpay",
@@ -1252,7 +1252,7 @@ export const useStore = create<State>()(
           s.theme = "royal";
         }
         if (s.calendarAmountDisplay === undefined) {
-          s.calendarAmountDisplay = s.showPaymentOnCalendar ? "pending" : "none";
+          s.calendarAmountDisplay = "pending";
         }
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";
         if (s.prepleatPrice === 150) s.prepleatPrice = 350;

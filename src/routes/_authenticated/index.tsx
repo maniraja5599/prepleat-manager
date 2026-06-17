@@ -57,8 +57,7 @@ function CalendarPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const settings = useStore((s) => s.settings);
-  const calendarAmountDisplay =
-    settings.calendarAmountDisplay ?? (settings.showPaymentOnCalendar ? "pending" : "none");
+  const calendarAmountDisplay = settings.calendarAmountDisplay ?? "pending";
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });

@@ -593,7 +593,7 @@ function SettingsPage() {
                         onClick={() => update({ calendarAmountDisplay: opt.id })}
                         className={cn(
                           "py-2 px-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition cursor-pointer active:scale-95 text-center",
-                          (settings.calendarAmountDisplay ?? "none") === opt.id
+                          (settings.calendarAmountDisplay ?? "pending") === opt.id
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "bg-secondary hover:bg-secondary/80 text-foreground",
                         )}
