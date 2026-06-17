@@ -1378,7 +1378,7 @@ function SettingsPage() {
                         setConfirmAction("undoImport");
                       } else {
                         useStore.getState().importHistoricalCsv();
-                        toast.success("Old history shown", { duration: 1500 });
+                        toast.success("Preloaded data shown", { duration: 1500 });
                       }
                     }}
                     className={cn(
@@ -1390,7 +1390,7 @@ function SettingsPage() {
                   >
                     <div className="flex items-center gap-1.5">
                       <Database className="size-3.5" />
-                      <span>Old History</span>
+                      <span>Preloaded Data</span>
                     </div>
                     <div
                       className={cn(
@@ -1408,7 +1408,7 @@ function SettingsPage() {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Turn this ON to show your preloaded history earnings. Turn OFF to hide them.
+                  Turn this ON to show your preloaded earnings. Turn OFF to hide them.
                 </p>
                 <input
                   type="file"
@@ -1808,7 +1808,7 @@ function SettingsPage() {
       <ConfirmDialog
         open={confirmAction === "undoImport"}
         onOpenChange={(v) => !v && setConfirmAction(null)}
-        title="Hide old history?"
+        title="Hide preloaded data?"
         tone="danger"
         confirmLabel="Yes, Hide"
         description={(() => {
@@ -1860,7 +1860,7 @@ function SettingsPage() {
         })()}
         onConfirm={() => {
           useStore.getState().undoImportHistoricalCsv();
-          toast.success("Old history hidden", { duration: 2000 });
+          toast.success("Preloaded data hidden", { duration: 2000 });
           setConfirmAction(null);
         }}
       />
