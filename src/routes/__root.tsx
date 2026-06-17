@@ -158,6 +158,30 @@ function RootComponent() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("App came online! Re-fetching fonts just in case...");
+      const fontUrl = "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap";
+      
+      // Force the browser to re-download the fonts
+      const newLink = document.createElement("link");
+      newLink.rel = "stylesheet";
+      newLink.href = fontUrl;
+      document.head.appendChild(newLink);
+      
+      // Clean up old links after a short delay
+      setTimeout(() => {
+        const links = document.querySelectorAll(`link[href^="https://fonts.googleapis.com/css2"]`);
+        if (links.length > 1) {
+          links[0].parentNode?.removeChild(links[0]);
+        }
+      }, 2000);
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeApplier />
