@@ -1388,13 +1388,13 @@ function SettingsPage() {
                         : "bg-secondary text-secondary-foreground border-transparent hover:bg-secondary/80"
                     )}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Database className="size-3.5" />
-                      <span>Preloaded Data</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Database className="size-3.5 shrink-0" />
+                      <span className="truncate">Preloaded</span>
                     </div>
                     <div
                       className={cn(
-                        "w-7 h-4 rounded-full relative transition-colors",
+                        "w-7 h-4 shrink-0 rounded-full relative transition-colors",
                         isHistoryImported ? "bg-primary-foreground/30" : "bg-muted-foreground/30"
                       )}
                     >
