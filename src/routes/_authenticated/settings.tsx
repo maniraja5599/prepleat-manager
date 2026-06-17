@@ -1170,17 +1170,17 @@ function SettingsPage() {
                       <div className="flex gap-1 justify-center">
                         <span
                           className="size-2 rounded-full shadow-xs"
-                          style={{ background: settings.prepleatDotColor ?? "#e11d48" }}
+                          style={{ background: settings.prepleatDotColor ?? "#06b6d4" }}
                           title="PrePleat"
                         />
                         <span
                           className="size-2 rounded-full shadow-xs"
-                          style={{ background: settings.directDrapeDotColor ?? "#6366f1" }}
+                          style={{ background: settings.directDrapeDotColor ?? "#d946ef" }}
                           title="Direct Drape"
                         />
                         <span
                           className="size-2 rounded-full shadow-xs"
-                          style={{ background: settings.artistDotColor ?? "#f59e0b" }}
+                          style={{ background: settings.artistDotColor ?? "#84cc16" }}
                           title="Artist"
                         />
                       </div>
