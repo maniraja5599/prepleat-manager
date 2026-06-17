@@ -324,9 +324,9 @@ export const useStore = create<State>()(
         ],
         incomeCategories: ["Tips", "Sale", "Other Income"],
         paymentModes: ["gpay", "cash", "other"],
-        prepleatDotColor: "#ffa029",
-        directDrapeDotColor: "#10b981",
-        artistDotColor: "#d4af37",
+        prepleatDotColor: "#e11d48", // Vibrant Rose
+        directDrapeDotColor: "#6366f1", // Vibrant Indigo
+        artistDotColor: "#f59e0b", // Rich Amber
         dateFormat: "DD-MM-YYYY",
         timeFormat: "12",
       },

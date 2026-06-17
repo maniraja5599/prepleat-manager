@@ -439,10 +439,10 @@ function CalendarPage() {
                         const c = customers.find((x) => x.id === b.customerId);
                         const isArtist = !!b.artistId || c?.kind === "artist";
                         const dotColor = isArtist
-                          ? (settings.artistDotColor ?? "#d4af37")
+                          ? (settings.artistDotColor ?? "#f59e0b")
                           : b.service === "prepleat"
-                            ? (settings.prepleatDotColor ?? "#ffa029")
-                            : (settings.directDrapeDotColor ?? "#10b981");
+                            ? (settings.prepleatDotColor ?? "#e11d48")
+                            : (settings.directDrapeDotColor ?? "#6366f1");
                         return (
                           <span
                             key={b.id}
@@ -618,8 +618,8 @@ const BookingRow = memo(function BookingRow({
   const isArtistBooking = !!b.artistId || c?.kind === "artist";
   const tagColor =
     b.service === "prepleat"
-      ? (settings.prepleatDotColor ?? "#ffa029")
-      : (settings.directDrapeDotColor ?? "#10b981");
+      ? (settings.prepleatDotColor ?? "#e11d48")
+      : (settings.directDrapeDotColor ?? "#6366f1");
 
   const cardCls = cn(
     "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
