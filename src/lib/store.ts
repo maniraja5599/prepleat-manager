@@ -1130,12 +1130,12 @@ export const useStore = create<State>()(
               p.amount === amount &&
               p.date === isoDate &&
               p.mode === mode &&
-              customers.find((c) => c.id === p.customerId)?.name.toLowerCase() ===
+              customers.find((c) => c.id === p.customerId)?.name?.toLowerCase() ===
                 name.toLowerCase(),
           );
           if (isDuplicate) continue;
 
-          let c = customers.find((x: any) => x.name.toLowerCase() === name.toLowerCase());
+          let c = customers.find((x: any) => x.name?.toLowerCase() === name.toLowerCase());
           if (!c) {
             const isArtist = name.toLowerCase().includes("artist");
             c = {
