@@ -23,10 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   IndianRupee,
-  List,
   Plus,
-  Users,
-  Wallet,
   X,
   Phone,
   MessageCircle,
@@ -393,35 +390,7 @@ function CalendarPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <Link
-            to="/bookings"
-            className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
-          >
-            <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-              <List className="size-4" />
-            </span>
-            <span className="text-[11px] font-semibold">Bookings</span>
-          </Link>
-          <Link
-            to="/payments"
-            className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
-          >
-            <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-              <Wallet className="size-4" />
-            </span>
-            <span className="text-[11px] font-semibold">Payments</span>
-          </Link>
-          <Link
-            to="/customers"
-            className="bg-card card-shadow rounded-2xl active:scale-[0.97] transition flex flex-col items-center justify-center gap-1 py-3"
-          >
-            <span className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-              <Users className="size-4" />
-            </span>
-            <span className="text-[11px] font-semibold">Customers</span>
-          </Link>
-        </div>
+
 
         {guide === "book" && (
           <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-2xl text-xs text-primary font-medium flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">

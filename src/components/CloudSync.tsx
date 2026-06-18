@@ -237,7 +237,6 @@ export function CloudSync() {
     clearHideTimer();
     setSyncStatus("syncing");
     setErrorMessage("");
-    setShowStatus(true);
     try {
       const snap = await getDoc(ref);
       const cloud = (snap.data()?.data ?? {}) as Snapshot;
@@ -264,7 +263,7 @@ export function CloudSync() {
       }
       pulledOnce.current = true;
       setSyncStatus("synced");
-      fadeSynced();
+      setShowStatus(false);
     } catch (error) {
       isApplyingRemote.current = false;
       setError(error instanceof Error ? error.message : "Failed to download cloud data");
