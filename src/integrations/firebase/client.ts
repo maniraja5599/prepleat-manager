@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
   type User,
 } from "firebase/auth";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
@@ -138,4 +139,9 @@ export async function signOut() {
   localStorage.removeItem("local_guest_session");
   if (auth?.currentUser) await firebaseSignOut(auth);
   window.dispatchEvent(new Event("local-auth-change"));
+}
+
+export async function resetPassword(email: string) {
+  if (!auth) throw new Error("Firebase is not configured. Add VITE_FIREBASE_* values in .env.");
+  return sendPasswordResetEmail(auth, email);
 }

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import logoAsset from "@/assets/eyas-logo.png";
@@ -41,6 +42,10 @@ function PublicBookPage() {
   const submit = async () => {
     if (!recipient) return toast.error("Missing booking link recipient");
     if (!name.trim() || !phone.trim()) return toast.error("Name and phone are required");
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      return toast.error("Please enter a valid 10-digit WhatsApp number");
+    }
     setSubmitting(true);
     try {
       if (!db) {
@@ -103,6 +108,7 @@ function PublicBookPage() {
               setDone(false);
               setName("");
               setPhone("");
+              setService("prepleat");
               setSareeCount(1);
               setDeliveryDate("");
               setDeliveryTime("");
@@ -190,6 +196,7 @@ function PublicBookPage() {
                 type="date"
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
+                min={new Date().toLocaleDateString('en-CA')}
                 className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <input
@@ -227,7 +234,7 @@ function PublicBookPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <label className="text-[11px] uppercase tracking-wider text-muted-foreground block mb-1.5">

@@ -28,13 +28,10 @@ interface Props {
   title?: string;
   subtitle?: string;
   children: ReactNode;
-  /** @deprecated brand strip now renders on every page automatically */
-  showBrand?: boolean;
   wide?: boolean;
-  showFloatingSearch?: boolean;
 }
 
-export function AppShell({ title, subtitle, children, wide, showFloatingSearch }: Props) {
+export function AppShell({ title, subtitle, children, wide }: Props) {
   const settings = useStore((s) => s.settings);
   const logo = settings.logoDataUrl || logoAsset;
   const bookings = useStore((s) => s.bookings);
@@ -80,28 +77,6 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     });
   }, []);
 
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const currentDateTimeStr = useMemo(() => {
-    const dateFmt = settings.dateFormat || "DD-MM-YYYY";
-    const timeFmt = settings.timeFormat || "12";
-    
-    let dFmt = dateFmt;
-    if (dFmt === "DD-MM-YYYY") dFmt = "dd-MM-yyyy";
-    if (dFmt === "YYYY-MM-DD") dFmt = "yyyy-MM-dd";
-    if (dFmt === "MM/DD/YYYY") dFmt = "MM/dd/yyyy";
-
-    const datePart = format(currentDateTime, dFmt);
-    const timePart = format(currentDateTime, timeFmt === "12" ? "hh:mm:ss a" : "HH:mm:ss");
-    return `${datePart} · ${timePart}`;
-  }, [currentDateTime, settings.dateFormat, settings.timeFormat]);
 
   useEffect(() => {
     const handleUpdate = (e: Event) => {
@@ -194,6 +169,10 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
       payments: filteredPayments,
     };
   };
+
+  const searchResults = useMemo(() => {
+    return getSearchResults();
+  }, [searchQuery, customers, bookings, payments]);
 
   // Selectors for Notification Hub Dashboard
   const todayBookings = bookings.filter(
@@ -392,9 +371,10 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
               <p className="text-[13px] font-display font-semibold tracking-tight truncate">
                 {settings.businessName}
               </p>
-              <p className="text-[8.5px] text-muted-foreground/90 font-mono font-medium tracking-tight mt-0.5 leading-none shrink-0">
-                {currentDateTimeStr}
-              </p>
+              <HeaderClock
+                dateFormat={settings.dateFormat || "DD-MM-YYYY"}
+                timeFormat={settings.timeFormat || "12"}
+              />
             </div>
           </div>
 
@@ -841,14 +821,14 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                     </div>
                   )}
                 </div>
-              ) : (getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length) === 0 ? (
+              ) : (searchResults.customers.length + searchResults.bookings.length + searchResults.payments.length) === 0 ? (
                 <div className="text-center py-12 text-sm text-muted-foreground">
                   No matches found for "{searchQuery}"
                 </div>
               ) : (
                 <div className="space-y-4 pb-20">
                   {/* Category: Customers */}
-                  {(activeTab === "all" || activeTab === "customers") && getSearchResults().customers.length > 0 && (
+                  {(activeTab === "all" || activeTab === "customers") && searchResults.customers.length > 0 && (
                     <div>
                       {activeTab === "all" && (
                         <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
@@ -856,7 +836,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                         </h4>
                       )}
                       <div className="space-y-2">
-                        {getSearchResults().customers.map((c) => (
+                        {searchResults.customers.map((c) => (
                           <button
                             key={c.id}
                             onClick={() => {
@@ -904,7 +884,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                   )}
 
                   {/* Category: Bookings */}
-                  {(activeTab === "all" || activeTab === "bookings") && getSearchResults().bookings.length > 0 && (
+                  {(activeTab === "all" || activeTab === "bookings") && searchResults.bookings.length > 0 && (
                     <div>
                       {activeTab === "all" && (
                         <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
@@ -912,7 +892,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                         </h4>
                       )}
                       <div className="space-y-2">
-                        {getSearchResults().bookings.map((b) => {
+                        {searchResults.bookings.map((b) => {
                           const cust = customers.find((c) => c.id === b.customerId);
                           const due = totalDue(b);
                           return (
@@ -981,7 +961,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                   )}
 
                   {/* Category: Payments */}
-                  {(activeTab === "all" || activeTab === "payments") && getSearchResults().payments.length > 0 && (
+                  {(activeTab === "all" || activeTab === "payments") && searchResults.payments.length > 0 && (
                     <div>
                       {activeTab === "all" && (
                         <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 mt-2 flex items-center gap-1.5">
@@ -989,7 +969,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
                         </h4>
                       )}
                       <div className="space-y-2">
-                        {getSearchResults().payments.map((p) => {
+                        {searchResults.payments.map((p) => {
                           const b = bookings.find((bk) => bk.id === p.bookingId);
                           const cust = b ? customers.find((c) => c.id === b.customerId) : null;
                           return (
@@ -1042,5 +1022,33 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
         </div>
       )}
     </div>
+  );
+}
+
+function HeaderClock({ dateFormat, timeFormat }: { dateFormat: string; timeFormat: string }) {
+  const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentDateTimeStr = useMemo(() => {
+    let dFmt = dateFormat || "DD-MM-YYYY";
+    if (dFmt === "DD-MM-YYYY") dFmt = "dd-MM-yyyy";
+    if (dFmt === "YYYY-MM-DD") dFmt = "yyyy-MM-dd";
+    if (dFmt === "MM/DD/YYYY") dFmt = "MM/dd/yyyy";
+
+    const datePart = format(currentDateTime, dFmt);
+    const timePart = format(currentDateTime, timeFormat === "24" ? "HH:mm:ss" : "hh:mm:ss a");
+    return `${datePart} · ${timePart}`;
+  }, [currentDateTime, dateFormat, timeFormat]);
+
+  return (
+    <p className="text-[8.5px] text-muted-foreground/90 font-mono font-medium tracking-tight mt-0.5 leading-none shrink-0">
+      {currentDateTimeStr}
+    </p>
   );
 }

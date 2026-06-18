@@ -327,9 +327,16 @@ function SettingsPage() {
           customers: parsed.customers || [],
           bookings: parsed.bookings || [],
           payments: parsed.payments || [],
+          expenses: parsed.expenses || [],
+          extraIncomes: parsed.extraIncomes || [],
           settings: { ...useStore.getState().settings, ...(parsed.settings || {}) },
-          trash: parsed.trash || [],
+          trash: parsed.trash || parsed.deletedBookings || [],
+          deletedCustomers: parsed.deletedCustomers || [],
+          deletedPayments: parsed.deletedPayments || [],
+          deletedExpenses: parsed.deletedExpenses || [],
+          deletedExtraIncomes: parsed.deletedExtraIncomes || [],
           activity: parsed.activity || [],
+          redoStack: parsed.redoStack || [],
           tombstones: parsed.tombstones || [],
         });
 
@@ -1297,12 +1304,23 @@ function SettingsPage() {
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   <button
                     onClick={() => {
+                      const state = useStore.getState();
                       const data = {
                         exportedAt: new Date().toISOString(),
-                        customers,
-                        bookings,
-                        payments: useStore.getState().payments,
-                        settings,
+                        customers: state.customers,
+                        bookings: state.bookings,
+                        payments: state.payments,
+                        expenses: state.expenses || [],
+                        extraIncomes: state.extraIncomes || [],
+                        settings: state.settings,
+                        trash: state.trash || [],
+                        deletedCustomers: state.deletedCustomers || [],
+                        deletedPayments: state.deletedPayments || [],
+                        deletedExpenses: state.deletedExpenses || [],
+                        deletedExtraIncomes: state.deletedExtraIncomes || [],
+                        activity: state.activity || [],
+                        redoStack: state.redoStack || [],
+                        tombstones: state.tombstones || [],
                       };
                       const blob = new Blob([JSON.stringify(data, null, 2)], {
                         type: "application/json",

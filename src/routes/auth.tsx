@@ -9,6 +9,7 @@ import {
   signInWithEmail,
   signInWithGoogle,
   waitForAppUser,
+  resetPassword,
 } from "@/integrations/firebase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -63,6 +64,23 @@ function AuthPage() {
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      toast.error("Please enter your email address first");
+      return;
+    }
+    setBusy("email");
+    try {
+      await resetPassword(email.trim());
+      toast.success("Password reset email sent! Check your inbox.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send reset email");
+    } finally {
       setBusy(null);
     }
   }
@@ -83,21 +101,11 @@ function AuthPage() {
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div
-            className="size-16 rounded-full overflow-hidden ring-2 ring-primary/30 mb-3"
-            style={{ width: 64, height: 64, overflow: "hidden" }}
-          >
+          <div className="size-16 rounded-full overflow-hidden ring-2 ring-primary/30 mb-3">
             <img
               src={logoAsset}
               alt=""
-              className="size-full rounded-full object-cover"
-              style={{
-                display: "block",
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                transform: "scale(1.18)",
-              }}
+              className="size-full rounded-full object-cover scale-[1.18]"
             />
           </div>
           <h1 className="text-2xl font-display font-semibold tracking-tight">Eyas Saree Drapist</h1>
@@ -153,6 +161,17 @@ function AuthPage() {
                 />
               </div>
             </label>
+            {mode === "signin" && (
+              <div className="flex justify-end pr-1">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs text-primary hover:underline font-medium focus:outline-none"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
             <button
               type="submit"
               disabled={busy !== null}
