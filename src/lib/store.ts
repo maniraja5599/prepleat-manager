@@ -813,7 +813,6 @@ export const useStore = create<State>()(
             paymentModes: ["gpay", "cash", "other"],
             dateFormat: "DD-MM-YYYY",
             timeFormat: "12",
-            voiceFeedbackEnabled: true,
           },
         }),
 

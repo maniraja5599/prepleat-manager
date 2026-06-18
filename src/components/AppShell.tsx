@@ -39,6 +39,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
   const logo = settings.logoDataUrl || logoAsset;
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
+  const payments = useStore((s) => s.payments);
 
   const navigate = useNavigate();
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -166,7 +167,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     });
 
     // 3. Search Payments
-    const allPayments = useStore.getState().payments;
+    const allPayments = payments;
     const filteredPayments = allPayments.filter((p) => {
       const b = bookings.find((bk) => bk.id === p.bookingId);
       const billNum = b?.billNumber?.toLowerCase() || "";
@@ -304,7 +305,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
       const due = totalDue(b);
       if (due <= 0) continue;
       const c = customers.find((x) => x.id === b.customerId);
-      const name = c?.name || b.customerName || "Unknown";
+      const name = c?.name || "Unknown";
       const key = b.customerId || b.id;
       const existing = dueMap.get(key);
       if (existing) {

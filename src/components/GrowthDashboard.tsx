@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useStore, fmtINR } from "@/lib/store";
+import { useStore, fmtINR, totalDue } from "@/lib/store";
 import { parseISO, isWithinInterval, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { IndianRupee, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -37,8 +37,8 @@ export function GrowthDashboard() {
 
     // 3. Outstanding Pending Due (Lifetime active bookings)
     const pendingDue = bookings
-      .filter((b) => b.status !== "cancelled")
-      .reduce((s, b) => s + Math.max(0, b.totalAmount - b.advancePaid), 0);
+      .filter((b) => b.status !== "cancelled" && b.status !== "delivered")
+      .reduce((s, b) => s + totalDue(b), 0);
 
     // 4. Trend percentages
     const revenueDiff = monthRevenue - prevMonthRevenue;
