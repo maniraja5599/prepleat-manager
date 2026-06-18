@@ -298,14 +298,28 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
     }
 
     // 4. Outstanding Dues
-    const dueCount = bookings.filter(
-      (b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0,
-    ).length;
+    const dueMap = new Map<string, { name: string; totalDue: number }>();
+    for (const b of bookings) {
+      if (b.status === "cancelled" || b.status === "delivered") continue;
+      const due = totalDue(b);
+      if (due <= 0) continue;
+      const c = customers.find((x) => x.id === b.customerId);
+      const name = c?.name || b.customerName || "Unknown";
+      const key = b.customerId || b.id;
+      const existing = dueMap.get(key);
+      if (existing) {
+        existing.totalDue += due;
+      } else {
+        dueMap.set(key, { name, totalDue: due });
+      }
+    }
+    const sortedDues = Array.from(dueMap.values()).sort((a, b) => b.totalDue - a.totalDue);
     
-    if (dueCount > 0) {
+    if (sortedDues.length > 0) {
+      const namesStr = sortedDues.map((item) => `${item.name} (${fmtINR(item.totalDue)})`).join(" · ");
       items.push({
         type: "due",
-        text: `${dueCount} Pending Dues`,
+        text: `Dues: ${namesStr}`,
         icon: "wallet",
         color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
       });

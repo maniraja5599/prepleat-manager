@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, totalDue, formatAppDate, formatAppTime, formatAppDateTime, type PaymentMode } from "@/lib/store";
 import { useMemo, useState, useEffect } from "react";
@@ -34,6 +34,8 @@ import {
   PieChart,
   Tag,
   X,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -58,6 +60,11 @@ import autoTable from "jspdf-autotable";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_authenticated/payments")({
+  validateSearch: (search: Record<string, unknown>): { filter?: "collected" | "pending" } => {
+    return {
+      filter: (search.filter as "collected" | "pending") || undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Payments — Eyas Saree Drapist" },
@@ -95,6 +102,24 @@ function PaymentsPage() {
   const updateExtraIncome = useStore((s) => s.updateExtraIncome);
   const updatePayment = useStore((s) => s.updatePayment);
   const deletePayment = useStore((s) => s.deletePayment);
+
+  const { filter } = Route.useSearch();
+  const [subFilter, setSubFilter] = useState<"collected" | "pending">(filter || "collected");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (filter) {
+      setSubFilter(filter);
+      setTab("income");
+    }
+  }, [filter]);
+
+  const handleSubFilterChange = (val: "collected" | "pending") => {
+    setSubFilter(val);
+    navigate({
+      search: (prev) => ({ ...prev, filter: val }),
+    });
+  };
 
   const [tab, setTab] = useState<TabId>("summary");
   const [exportOpen, setExportOpen] = useState(false);
@@ -734,6 +759,10 @@ function PaymentsPage() {
           extraByCategory={extraByCategory}
           recentExtra={recentExtra}
           onDeleteExtra={(id) => setPendingDelete({ type: "income", id })}
+          subFilter={subFilter}
+          onSubFilterChange={handleSubFilterChange}
+          bookings={bookings}
+          customers={customers}
         />
       )}
 
@@ -911,65 +940,31 @@ function IncomeView(p: {
     mode?: PaymentMode;
   }[];
   onDeleteExtra: (id: string) => void;
+  subFilter: "collected" | "pending";
+  onSubFilterChange: (val: "collected" | "pending") => void;
+  bookings: any[];
+  customers: any[];
 }) {
+  const pendingList = useMemo(() => {
+    return p.bookings
+      .filter((b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0)
+      .map((b) => {
+        const c = p.customers.find((x) => x.id === b.customerId);
+        return {
+          bookingId: b.id,
+          name: c?.name || b.customerName || "Unknown",
+          phone: c?.phone || b.customerPhone || "",
+          due: totalDue(b),
+          totalAmount: b.totalAmount,
+          service: b.service || "Saree PrePleat",
+          dateStr: formatAppDate(b.deliveryDate),
+        };
+      })
+      .sort((a, b) => b.due - a.due);
+  }, [p.bookings, p.customers]);
+
   return (
     <>
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Earnings trend
-            </p>
-            <p className="text-[10px] text-muted-foreground">Last 12 months</p>
-          </div>
-          <p className="text-sm font-bold tabular-nums">
-            {fmtINR(p.trend12.reduce((s, m) => s + m.amount, 0))}
-          </p>
-        </div>
-        <div className="h-44 -mx-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={p.trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.45} />
-                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                vertical={false}
-                stroke="var(--color-border)"
-                strokeDasharray="3 3"
-                opacity={0.4}
-              />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-              />
-              <YAxis hide />
-              <Tooltip
-                cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
-                contentStyle={{
-                  background: "var(--color-card)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 12,
-                  fontSize: 12,
-                }}
-                formatter={(v: number) => [fmtINR(v), "Earned"]}
-              />
-              <Area
-                type="monotone"
-                dataKey="amount"
-                stroke="var(--color-primary)"
-                strokeWidth={2.5}
-                fill="url(#earnGrad)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
       <div className="grid grid-cols-2 gap-2 mb-3">
         <Stat
           tint="success"
@@ -997,238 +992,386 @@ function IncomeView(p: {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <KpiCard
-          icon={<CalendarCheck className="size-3.5" />}
-          label="Payments"
-          value={String(p.kpis.count)}
-          sub={`avg ${fmtINR(p.kpis.avg)}`}
-          tint="primary"
-        />
-        <KpiCard
-          icon={<Users className="size-3.5" />}
-          label="Unique customers"
-          value={String(p.kpis.uniqueCustomers)}
-          sub="all time"
-          tint="accent"
-        />
-        <KpiCard
-          icon={<TrendingUp className="size-3.5" />}
-          label="Best month"
-          value={p.kpis.bestMonth ? fmtINR(p.kpis.bestMonth.amount) : "—"}
-          sub={p.kpis.bestMonth?.month ?? "—"}
-          tint="success"
-        />
-        <KpiCard
-          icon={<Crown className="size-3.5" />}
-          label="Top customer"
-          value={p.topCustomers[0] ? fmtINR(p.topCustomers[0].amount) : "—"}
-          sub={p.topCustomers[0]?.c?.name ?? "—"}
-          tint="gold"
-        />
+      {/* Segmented Filter Toggle Button */}
+      <div className="flex bg-secondary p-1 rounded-xl gap-1 mb-4">
+        <button
+          onClick={() => p.onSubFilterChange("collected")}
+          className={cn(
+            "flex-grow py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition cursor-pointer text-center",
+            p.subFilter === "collected"
+              ? "bg-card text-foreground shadow-xs border border-border/10"
+              : "text-muted-foreground hover:bg-secondary/40"
+          )}
+        >
+          Collected Payments
+        </button>
+        <button
+          onClick={() => p.onSubFilterChange("pending")}
+          className={cn(
+            "flex-grow py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition cursor-pointer text-center",
+            p.subFilter === "pending"
+              ? "bg-card text-foreground shadow-xs border border-border/10"
+              : "text-muted-foreground hover:bg-secondary/40"
+          )}
+        >
+          Pending Payments ({pendingList.length})
+        </button>
       </div>
 
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-          Payment mode split
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {(["gpay", "cash", "other"] as const).map((m) => {
-            const pct = p.lifetime > 0 ? Math.round((p.modeSplit[m] / p.lifetime) * 100) : 0;
-            return (
-              <div key={m} className="bg-secondary rounded-xl p-2 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  {m}
+      {p.subFilter === "collected" ? (
+        <>
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Earnings trend
                 </p>
-                <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(p.modeSplit[m])}</p>
-                <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
+                <p className="text-[10px] text-muted-foreground">Last 12 months</p>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <p className="text-sm font-bold tabular-nums">
+                {fmtINR(p.trend12.reduce((s, m) => s + m.amount, 0))}
+              </p>
+            </div>
+            <div className="h-44 -mx-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={p.trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="var(--color-border)"
+                    strokeDasharray="3 3"
+                    opacity={0.4}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                  />
+                  <YAxis hide />
+                  <Tooltip
+                    cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
+                    contentStyle={{
+                      background: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                    }}
+                    formatter={(v: number) => [fmtINR(v), "Earned"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="var(--color-primary)"
+                    strokeWidth={2.5}
+                    fill="url(#earnGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Top customers
-          </p>
-          <Crown className="size-3.5 text-gold" />
-        </div>
-        {p.topCustomers.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
-        ) : (
-          <ul className="space-y-1.5">
-            {p.topCustomers.map((r, i) => (
-              <li key={r.c!.id}>
-                <Link
-                  to="/customers/$id"
-                  params={{ id: r.c!.id }}
-                  className="flex items-center gap-2 p-2 -mx-1 rounded-xl active:bg-secondary"
-                >
-                  <div
-                    className={cn(
-                      "size-7 rounded-full flex items-center justify-center text-[11px] font-bold",
-                      i === 0
-                        ? "bg-gold/20 text-gold"
-                        : i === 1
-                          ? "bg-secondary text-foreground"
-                          : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {i + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm truncate">{r.c!.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{r.c!.phone}</p>
-                  </div>
-                  <p className="font-bold text-sm tabular-nums text-success">{fmtINR(r.amount)}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <KpiCard
+              icon={<CalendarCheck className="size-3.5" />}
+              label="Payments"
+              value={String(p.kpis.count)}
+              sub={`avg ${fmtINR(p.kpis.avg)}`}
+              tint="primary"
+            />
+            <KpiCard
+              icon={<Users className="size-3.5" />}
+              label="Unique customers"
+              value={String(p.kpis.uniqueCustomers)}
+              sub="all time"
+              tint="accent"
+            />
+            <KpiCard
+              icon={<TrendingUp className="size-3.5" />}
+              label="Best month"
+              value={p.kpis.bestMonth ? fmtINR(p.kpis.bestMonth.amount) : "—"}
+              sub={p.kpis.bestMonth?.month ?? "—"}
+              tint="success"
+            />
+            <KpiCard
+              icon={<Crown className="size-3.5" />}
+              label="Top customer"
+              value={p.topCustomers[0] ? fmtINR(p.topCustomers[0].amount) : "—"}
+              sub={p.topCustomers[0]?.c?.name ?? "—"}
+              tint="gold"
+            />
+          </div>
 
-      <div className="bg-card card-shadow rounded-2xl p-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Recent payments
-          </p>
-          <span className="text-[10px] text-muted-foreground">last {p.recent.length}</span>
-        </div>
-        {p.recent.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
-        ) : (
-          <div className="max-h-[250px] overflow-y-auto pr-1">
-            <ul className="space-y-1.5">
-              {p.recent.map(({ p: pay, c, b }) => (
-                <li
-                  key={pay.id}
-                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
-                >
-                  <div
-                    className={cn(
-                      "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
-                      pay.mode === "gpay"
-                        ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
-                        : pay.mode === "cash"
-                          ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
-                          : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {(pay.mode ?? "other").slice(0, 4)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
-                      <p className="font-bold tabular-nums text-sm text-success">
-                        {fmtINR(pay.amount)}
-                      </p>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {formatAppDateTime(pay.date)}
-                      {b ? ` · ${b.service}` : ""}
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Payment mode split
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["gpay", "cash", "other"] as const).map((m) => {
+                const pct = p.lifetime > 0 ? Math.round((p.modeSplit[m] / p.lifetime) * 100) : 0;
+                return (
+                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      {m}
                     </p>
+                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(p.modeSplit[m])}</p>
+                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
                   </div>
-                  {b && (
-                    <Link
-                      to="/bookings/$id"
-                      params={{ id: b.id }}
-                      className="shrink-0 text-primary"
-                    >
-                      <ArrowRight className="size-4" />
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Extra income */}
-      <div className="bg-card card-shadow rounded-2xl p-3 mt-3 mb-20">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Extra income
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              Not tied to bookings · tap + below to add
-            </p>
-          </div>
-          <p className="text-sm font-bold tabular-nums text-success">{fmtINR(p.extraTotal)}</p>
-        </div>
-        {p.extraByCategory.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-3">No extra income yet</p>
-        ) : (
-          <>
-            <ul className="space-y-1.5 mb-3">
-              {p.extraByCategory.map((row, i) => (
-                <li key={row.cat}>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-semibold flex items-center gap-1.5">
-                      <span
-                        className={cn(
-                          "size-2 rounded-full",
-                          i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
-                        )}
-                      />
-                      {row.cat}
-                    </span>
-                    <span className="tabular-nums font-bold">
-                      {fmtINR(row.amount)}{" "}
-                      <span className="text-muted-foreground font-normal">· {row.pct}%</span>
-                    </span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full",
-                        i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
-                      )}
-                      style={{ width: `${row.pct}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="max-h-[250px] overflow-y-auto pr-1 border-t border-border pt-2">
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Top customers
+              </p>
+              <Crown className="size-3.5 text-gold" />
+            </div>
+            {p.topCustomers.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
+            ) : (
               <ul className="space-y-1.5">
-                {p.recentExtra.map((e) => (
-                  <li
-                    key={e.id}
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
-                  >
-                    <div className="shrink-0 size-9 rounded-xl bg-success/15 text-success flex items-center justify-center">
-                      <Plus className="size-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold text-sm truncate">{e.category}</p>
-                        <p className="font-bold tabular-nums text-sm text-success">
-                          +{fmtINR(e.amount)}
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {formatAppDateTime(e.date)}
-                        {e.note ? ` · ${e.note}` : ""}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => p.onDeleteExtra(e.id)}
-                      className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer"
+                {p.topCustomers.map((r, i) => (
+                  <li key={r.c!.id}>
+                    <Link
+                      to="/customers/$id"
+                      params={{ id: r.c!.id }}
+                      className="flex items-center gap-2 p-2 -mx-1 rounded-xl active:bg-secondary"
                     >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                      <div
+                        className={cn(
+                          "size-7 rounded-full flex items-center justify-center text-[11px] font-bold",
+                          i === 0
+                            ? "bg-gold/20 text-gold"
+                            : i === 1
+                              ? "bg-secondary text-foreground"
+                              : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm truncate">{r.c!.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{r.c!.phone}</p>
+                      </div>
+                      <p className="font-bold text-sm tabular-nums text-success">{fmtINR(r.amount)}</p>
+                    </Link>
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+
+          <div className="bg-card card-shadow rounded-2xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Recent payments
+              </p>
+              <span className="text-[10px] text-muted-foreground">last {p.recent.length}</span>
             </div>
-          </>
-        )}
-      </div>
+            {p.recent.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
+            ) : (
+              <div className="max-h-[250px] overflow-y-auto pr-1">
+                <ul className="space-y-1.5">
+                  {p.recent.map(({ p: pay, c, b }) => (
+                    <li
+                      key={pay.id}
+                      className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
+                    >
+                      <div
+                        className={cn(
+                          "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
+                          pay.mode === "gpay"
+                            ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
+                            : pay.mode === "cash"
+                              ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
+                              : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {(pay.mode ?? "other").slice(0, 4)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
+                          <p className="font-bold tabular-nums text-sm text-success">
+                            {fmtINR(pay.amount)}
+                          </p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {formatAppDateTime(pay.date)}
+                          {b ? ` · ${b.service}` : ""}
+                        </p>
+                      </div>
+                      {b && (
+                        <Link
+                          to="/bookings/$id"
+                          params={{ id: b.id }}
+                          className="shrink-0 text-primary"
+                        >
+                          <ArrowRight className="size-4" />
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Extra income */}
+          <div className="bg-card card-shadow rounded-2xl p-3 mt-3 mb-20">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Extra income
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Not tied to bookings · tap + below to add
+                </p>
+              </div>
+              <p className="text-sm font-bold tabular-nums text-success">{fmtINR(p.extraTotal)}</p>
+            </div>
+            {p.extraByCategory.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-3">No extra income yet</p>
+            ) : (
+              <>
+                <ul className="space-y-1.5 mb-3">
+                  {p.extraByCategory.map((row, i) => (
+                    <li key={row.cat}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-semibold flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              "size-2 rounded-full",
+                              i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                            )}
+                          />
+                          {row.cat}
+                        </span>
+                        <span className="tabular-nums font-bold">
+                          {fmtINR(row.amount)}{" "}
+                          <span className="text-muted-foreground font-normal">· {row.pct}%</span>
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full",
+                            i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                          )}
+                          style={{ width: `${row.pct}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="max-h-[250px] overflow-y-auto pr-1 border-t border-border pt-2">
+                  <ul className="space-y-1.5">
+                    {p.recentExtra.map((e) => (
+                      <li
+                        key={e.id}
+                        className="flex items-center justify-between gap-3 p-1.5 rounded-xl hover:bg-secondary/40 transition"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="font-semibold text-sm truncate">{e.category}</span>
+                            <p className="font-bold tabular-nums text-sm text-success">
+                              +{fmtINR(e.amount)}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {formatAppDateTime(e.date)}
+                            {e.note ? ` · ${e.note}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => p.onDeleteExtra(e.id)}
+                          className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Pending Payments List */
+        <div className="bg-card card-shadow rounded-2xl p-4 mb-20">
+          <div className="flex items-center justify-between mb-4 border-b border-border/40 pb-2">
+            <div>
+              <p className="text-xs font-bold text-foreground">Outstanding Bookings</p>
+              <p className="text-[10px] text-muted-foreground">{pendingList.length} client{pendingList.length > 1 ? "s" : ""} pending</p>
+            </div>
+            <span className="text-xs font-bold text-destructive">Total Due: {fmtINR(p.totalPending)}</span>
+          </div>
+
+          {pendingList.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">No pending payments! All cleared ✅</p>
+          ) : (
+            <ul className="divide-y divide-border/40">
+              {pendingList.map((item) => (
+                <li key={item.bookingId} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <span className="size-9 rounded-full bg-destructive/10 text-destructive text-sm font-bold flex items-center justify-center shrink-0">
+                      {item.name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-1">
+                        <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
+                        <p className="text-sm font-bold text-destructive tabular-nums">{fmtINR(item.due)}</p>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {item.dateStr} · {item.service} (Total: {fmtINR(item.totalAmount)})
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/20">
+                    <Link
+                      to="/bookings/$id"
+                      params={{ id: item.bookingId }}
+                      className="text-[10px] font-semibold text-primary px-2.5 py-1 rounded-md bg-primary/10 active:scale-95 transition"
+                    >
+                      View Booking
+                    </Link>
+                    {item.phone && (
+                      <div className="flex gap-2">
+                        <a
+                          href={`tel:${item.phone.replace(/\D/g, "")}`}
+                          className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground px-2 py-1 rounded-md bg-secondary active:scale-95 transition"
+                        >
+                          <Phone className="size-3" /> Call
+                        </a>
+                        <a
+                          href={`https://wa.me/${item.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                            `Hi ${item.name}, this is a gentle reminder regarding the pending payment of ${fmtINR(item.due)} for your ${item.service} booking on ${item.dateStr}.`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-[10px] font-semibold text-[oklch(0.45_0.18_150)] px-2 py-1 rounded-md bg-[oklch(0.55_0.18_150)]/10 active:scale-95 transition"
+                        >
+                          <MessageCircle className="size-3" /> WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </>
   );
 }

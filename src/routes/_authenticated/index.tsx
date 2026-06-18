@@ -332,7 +332,11 @@ function CalendarPage() {
                   <p className="text-[10px] text-muted-foreground">{pendingDues.length} customer{pendingDues.length > 1 ? "s" : ""} · {fmtINR(pendingDues.reduce((s, x) => s + x.totalDue, 0))} total due</p>
                 </div>
               </div>
-              <Link to="/payments" className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 active:scale-95 transition">
+              <Link
+                to="/payments"
+                search={{ filter: "pending" }}
+                className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 active:scale-95 transition"
+              >
                 View All
               </Link>
             </div>
