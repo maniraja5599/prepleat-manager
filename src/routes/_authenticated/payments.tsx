@@ -1999,11 +1999,11 @@ function EditTransactionSheet({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-stretch gap-3">
+        <div className="flex gap-3">
           <button onClick={submit} className={cn("flex-1 py-3.5 rounded-xl text-white font-bold text-sm shadow-md active:scale-[0.98] transition cursor-pointer", isIncome ? "bg-success hover:bg-success/90 shadow-success/20" : "bg-destructive hover:bg-destructive/90 shadow-destructive/20")}>
             Save Changes
           </button>
-          <button onClick={onDelete} className="px-4 flex items-center justify-center rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition cursor-pointer" title="Delete Transaction">
+          <button onClick={onDelete} className="w-12 h-[50px] flex items-center justify-center rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition cursor-pointer shrink-0" title="Delete Transaction">
             <Trash2 className="size-5" />
           </button>
         </div>
