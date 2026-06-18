@@ -374,6 +374,7 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
   }, [bookings, sync.syncStatus, customers]);
 
   const currentText = currentNotification?.text || "";
+  const isLongText = currentText.length > 20;
 
   return (
     <div className="min-h-[100dvh] bg-background pb-28">
@@ -428,12 +429,22 @@ export function AppShell({ title, subtitle, children, wide, showFloatingSearch }
               {currentNotification?.icon === "wallet" && (
                 <Wallet className="size-2.5 text-rose-500 shrink-0" />
               )}
-              <span 
-                key={currentText} 
-                className="truncate whitespace-nowrap inline-block animate-slide-up-single"
-              >
-                {currentText}
-              </span>
+              {isLongText ? (
+                <div key={currentText} className="w-[110px] xs:w-[135px] overflow-hidden h-8.5 relative shrink-0">
+                  <div className="absolute inset-x-0 w-full animate-scroll-up-continuous flex flex-col justify-start">
+                    <span className="whitespace-normal leading-tight text-[9px] pt-[34px] pb-1 font-medium">
+                      {currentText}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span 
+                  key={currentText} 
+                  className="truncate whitespace-nowrap inline-block animate-slide-up-single"
+                >
+                  {currentText}
+                </span>
+              )}
             </div>
 
             {/* Global Search Button */}
