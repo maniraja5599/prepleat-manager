@@ -129,9 +129,8 @@ export interface Settings {
   prepleatDotColor?: string;
   directDrapeDotColor?: string;
   artistDotColor?: string;
-  dateFormat?: string;
-  timeFormat?: string;
-  voiceFeedbackEnabled?: boolean;
+  dateFormat: string;
+  timeFormat: string;
 }
 
 export interface DeletedBooking {
@@ -330,7 +329,6 @@ export const useStore = create<State>()(
         artistDotColor: "#84cc16", // Lime
         dateFormat: "DD-MM-YYYY",
         timeFormat: "12",
-        voiceFeedbackEnabled: true,
       },
 
       addCustomer: (c) => {

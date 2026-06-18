@@ -604,37 +604,6 @@ function SettingsPage() {
                   </div>
                 </div>
               </Section>
-
-              <Section title="Voice Booking Assistant">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Enable spoken feedback for the hands-free Voice Booking Assistant. If off, the assistant will run silently with text prompts.
-                </p>
-                <div className="flex items-center justify-between bg-secondary/30 p-3.5 rounded-2xl border border-border/40">
-                  <div>
-                    <p className="text-xs font-bold text-foreground leading-tight">Spoken Voice Feedback</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Let the assistant speak questions out loud</p>
-                  </div>
-                  <button
-                    onClick={() => update({ voiceFeedbackEnabled: !(settings.voiceFeedbackEnabled ?? true) })}
-                    className={cn(
-                      "w-12 h-6.5 rounded-full p-1 transition-all duration-300 relative cursor-pointer",
-                      (settings.voiceFeedbackEnabled ?? true)
-                        ? "bg-primary"
-                        : "bg-secondary-foreground/20"
-                    )}
-                    type="button"
-                  >
-                    <span
-                      className={cn(
-                        "block size-4.5 rounded-full bg-white shadow-sm transition-all duration-300",
-                        (settings.voiceFeedbackEnabled ?? true)
-                          ? "translate-x-5.5"
-                          : "translate-x-0"
-                      )}
-                    />
-                  </button>
-                </div>
-              </Section>
             </>
           )}
 
