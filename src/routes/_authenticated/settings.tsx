@@ -2588,6 +2588,58 @@ function AboutBlock() {
         </div>
       </div>
 
+      {/* Developer System Reference Card */}
+      <div className="rounded-2xl bg-card border border-border/40 p-5 card-shadow space-y-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Database className="size-3.5 text-primary" /> Developer System Reference
+        </h4>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Technical configuration details for developers troubleshooting live database schemas or integration errors.
+        </p>
+
+        <div className="space-y-2.5">
+          {/* Website Name / URL */}
+          <div className="bg-secondary/20 rounded-xl p-3 border border-border/10 flex flex-col gap-1">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Web App Url / Host</span>
+            <span className="text-xs font-mono break-all text-foreground select-all font-semibold">
+              {typeof window !== "undefined" ? window.location.origin : "https://prepleat-manager.vercel.app"}
+            </span>
+          </div>
+
+          {/* Database & Cloud Providers */}
+          <div className="bg-secondary/20 rounded-xl p-3 border border-border/10 space-y-2">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">Database & Storage Slices</span>
+            <div className="grid grid-cols-2 gap-2 font-mono text-[10px] text-muted-foreground">
+              <div className="bg-background/50 rounded p-1.5 border border-border/5">
+                <p className="text-foreground font-bold font-sans">Firebase Firestore</p>
+                <p className="mt-1">· bookings</p>
+                <p>· customers</p>
+                <p>· payments</p>
+                <p>· expenses</p>
+                <p>· extraIncomes</p>
+                <p>· settings</p>
+              </div>
+              <div className="bg-background/50 rounded p-1.5 border border-border/5">
+                <p className="text-foreground font-bold font-sans">Local Persistence</p>
+                <p className="mt-1">Zustand Store with Persist Middleware (Syncs to LocalStorage / IndexedDB fallback)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Technology Details */}
+          <div className="bg-secondary/20 rounded-xl p-3 border border-border/10 space-y-1.5 text-[11px] text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block mb-1">Architecture & Tech Stack</span>
+            <div className="flex flex-wrap gap-1">
+              {["React 18", "TypeScript", "Vite", "Tailwind CSS", "Firebase SDK v10", "TanStack Router", "Zustand State", "Recharts", "jsPDF", "date-fns"].map((tech) => (
+                <span key={tech} className="bg-background border border-border/10 px-2 py-0.5 rounded text-[10px] font-semibold text-foreground font-sans">
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* App Features Grid */}
       <div className="rounded-2xl bg-card border border-border/40 p-5 card-shadow space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
