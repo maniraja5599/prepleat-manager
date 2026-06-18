@@ -77,7 +77,7 @@ function BookingDetail() {
     channel: "whatsapp" | "sms";
     kind: "reminder" | "bill" | "balance" | "status";
   }>(null);
-  const [includeLink, setIncludeLink] = useState(true);
+  const [includeLink, setIncludeLink] = useState(false);
 
   if (!booking) {
     return (
@@ -107,53 +107,38 @@ function BookingDetail() {
 
   const buildWhatsAppMessage = (
     kind: "reminder" | "bill" | "balance" | "status",
-    withLink = true,
+    withLink = false,
   ) => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
     const dateStr = formatAppDate(booking.deliveryDate);
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
+    const name = customer?.name || "Customer";
     let parts: string[] = [];
 
     if (kind === "status") {
-      const head = `🧵 *${businessName}*`;
-      const greet = `Hi ${customer?.name || "Customer"} ✨`;
       if (currentStage === "received") {
         parts = [
-          head,
-          "",
-          greet,
-          `We've *received your saree* for ${booking.service.toUpperCase()} 🪡`,
-          `Sarees: ${booking.sareeCount}`,
-          `Delivery: 📅 ${dateStr}, ${timeStr}`,
-          due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully paid`,
+          `Hi ${name} 🙏`,
+          `We've received your saree${booking.sareeCount > 1 ? "s" : ""} (${booking.sareeCount}) for *${booking.service === "prepleat" ? "PrePleat" : "Draping"}*.`,
+          `📅 Delivery: ${dateStr}, ${timeStr}`,
+          due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully paid`,
         ];
       } else if (currentStage === "ready") {
-        const label = booking.service === "prepleat" ? "PrePleat is ready" : "Drape is ready";
+        const label = booking.service === "prepleat" ? "PrePleat" : "Draping";
         parts = [
-          head,
-          "",
-          greet,
-          `Good news — your *${label}* 💛`,
-          `Pickup / Delivery: 📅 ${dateStr}, ${timeStr}`,
-          due > 0
-            ? `Balance to pay: ${fmtINR(due)} (GPay / Cash)`
-            : `Already fully paid — thank you!`,
+          `Hi ${name} 😊`,
+          `Your *${label} is ready!* ✅`,
+          `📅 Pickup: ${dateStr}, ${timeStr}`,
+          due > 0 ? `💰 Balance: *${fmtINR(due)}* (GPay / Cash)` : `✅ Fully paid — thank you!`,
         ];
       } else if (currentStage === "delivered") {
         parts = [
-          head,
-          "",
-          greet,
-          `Your order has been *delivered* ✅ Thank you for trusting us 💛`,
-          ``,
-          `🧾 *Bill:* ${booking.billNumber ?? booking.id.slice(0, 6).toUpperCase()}`,
-          `Sarees: ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
-          `Total: ${fmtINR(booking.totalAmount)}`,
-          `Paid: ${fmtINR(paid)}`,
-          due > 0 ? `Balance: ${fmtINR(due)}` : `Status: ✅ Fully Paid`,
-          "",
-          `Hope to drape for you again ✨`,
+          `Hi ${name},`,
+          `Your order is *delivered* ✅ Thank you for trusting us 💛`,
+          `🧾 Bill: ${booking.billNumber ?? booking.id.slice(0, 6).toUpperCase()} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+          `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
+          due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully Paid`,
         ];
       } else {
         kind = "bill";
@@ -162,41 +147,29 @@ function BookingDetail() {
     
     if (kind === "balance") {
       parts = [
-        `💛 *${businessName}*`,
-        ``,
-        `Hi ${customer?.name || "Customer"} 🙏`,
-        `A gentle reminder — your saree order has a remaining balance.`,
-        ``,
-        `🧾 *Total:* ${fmtINR(booking.totalAmount)}`,
-        `✅ *Paid:* ${fmtINR(paid)}`,
-        `💰 *Balance due:* ${fmtINR(due)}`,
-        ``,
+        `Hi ${name} 🙏`,
+        `Gentle reminder — balance pending for your saree order.`,
+        `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
+        `💰 *Due: ${fmtINR(due)}*`,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
-        ``,
-        `You can pay via GPay / Cash on delivery. Thank you ✨`,
+        `Pay via GPay / Cash. Thank you! 🙏`,
       ];
     }
     
     if (kind === "bill") {
       parts = [
-        `🧾 *${businessName}* — Bill`,
-        ``,
-        `Hi ${customer?.name || "Customer"} ✨`,
-        `Thank you for choosing us 💛 Here are your order details:`,
-        ``,
-        `📌 *Service:* ${booking.service.toUpperCase()}`,
-        `🪡 *Sarees:* ${booking.sareeCount} × ${fmtINR(booking.pricePerSaree)}`,
-        `📅 *Delivery:* ${dateStr}, ${timeStr}`,
-        ``,
-        `*Total:* ${fmtINR(booking.totalAmount)}`,
-        `*Paid:* ${fmtINR(paid)}`,
-        due > 0 ? `*Balance:* ${fmtINR(due)}` : `*Status:* ✅ Fully Paid`,
+        `Hi ${name},`,
+        `Here are your order details 📋`,
+        `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+        `📅 Delivery: ${dateStr}, ${timeStr}`,
+        `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
+        due > 0 ? `💰 *Balance: ${fmtINR(due)}*` : `✅ Fully Paid`,
       ];
     }
 
     if (withLink) {
       parts.push("");
-      parts.push(`🌐 ${site}`);
+      parts.push(`🔗 ${site}`);
     }
 
     return parts.join("\n");
@@ -204,7 +177,7 @@ function BookingDetail() {
 
   const sendWhatsApp = (
     kind: "reminder" | "bill" | "balance" | "status" = "reminder",
-    withLink = true,
+    withLink = false,
   ) => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
@@ -224,13 +197,13 @@ function BookingDetail() {
 
   const sendSMS = (
     kind: "reminder" | "bill" | "balance" | "status" = "status",
-    withLink = true,
+    withLink = false,
   ) => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = customer.phone.replace(/\D/g, "");
     const msg = buildWhatsAppMessage(kind, withLink)
       .replace(/\*/g, "")
-      .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏]/g, "")
+      .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏😊😁]/g, "")
       .replace(/\n{2,}/g, "\n")
       .trim();
     window.location.href = `sms:${phone}?&body=${encodeURIComponent(msg)}`;

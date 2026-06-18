@@ -91,30 +91,21 @@ function CustomerDetail() {
   const buildWhatsAppMessage = (withLink = includeLink) => {
     const lines: string[] = [];
 
-    lines.push(`🌸 *${businessName}*`);
-    lines.push("");
     lines.push(`Hi *${customer.name}* 🙏`);
-    lines.push("");
 
     if (pendingOrders.length > 0) {
       lines.push(
-        `A gentle reminder about your ${pendingOrders.length > 1 ? `*${pendingOrders.length} pending orders*` : "*pending order*"} with us.`,
+        `Reminder: ${pendingOrders.length > 1 ? `*${pendingOrders.length} pending orders*` : "*1 pending order*"} with us.`,
       );
-      lines.push("");
-      lines.push(`💰 *Balance Due:* ${fmtINR(totalDueAll)}`);
+      lines.push(`💰 *Balance Due: ${fmtINR(totalDueAll)}*`);
       if (nextDelivery) {
-        lines.push(
-          `📅 *Delivery Date:* ${formatAppDate(nextDelivery.deliveryDate)}`,
-        );
+        lines.push(`📅 Delivery: ${formatAppDate(nextDelivery.deliveryDate)}`);
       }
-      lines.push("");
-      lines.push(`Please settle the balance on or before delivery. You can pay via *GPay / Cash*.`);
+      lines.push(`Pay via GPay / Cash. Thank you! 🙏`);
     } else if (cb.length > 0) {
-      lines.push(`Thank you for trusting us with your special occasion! 💛`);
-      lines.push(`It was a pleasure draping for you. Hope to see you again soon! ✨`);
+      lines.push(`Thank you for trusting us! 💛 Hope to see you again soon ✨`);
     } else {
-      lines.push(`We'd love to have you visit us for your next special occasion! ✨`);
-      lines.push(`Feel free to reach out to book your appointment.`);
+      lines.push(`We'd love to have you for your next occasion! Feel free to book anytime 😊`);
     }
 
     if (withLink) {
@@ -128,28 +119,21 @@ function CustomerDetail() {
   // Build a plain SMS-friendly message (no markdown, shorter)
   const buildSmsMessage = (withLink = includeLink) => {
     const lines: string[] = [];
-
-    lines.push(`${businessName}`);
     lines.push(`Hi ${customer.name},`);
-
     if (pendingOrders.length > 0) {
-      lines.push(
-        `Reminder: You have ${pendingOrders.length} pending order(s). Balance due: ${fmtINR(totalDueAll)}.`,
-      );
+      lines.push(`Balance due: ${fmtINR(totalDueAll)} for ${pendingOrders.length} order(s).`);
       if (nextDelivery) {
         lines.push(`Delivery: ${formatAppDate(nextDelivery.deliveryDate)}.`);
       }
-      lines.push(`Please settle before delivery. Pay via GPay/Cash.`);
+      lines.push(`Pay via GPay/Cash. Thanks.`);
     } else if (cb.length > 0) {
-      lines.push(`Thank you for choosing us! Hope to see you again soon.`);
+      lines.push(`Thank you! Hope to see you again soon.`);
     } else {
       lines.push(`We'd love to have you for your next occasion. Feel free to reach out!`);
     }
-
     if (withLink) {
       lines.push(websiteUrl);
     }
-
     return lines.join("\n");
   };
 
