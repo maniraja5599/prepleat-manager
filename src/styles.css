@@ -602,3 +602,9 @@ body:has(.sonner-toast-center-override [data-sonner-toast])::before {
   pointer-events: none;
   z-index: 0;
 }
+
+/* Fix Google Maps Autocomplete dropdown being unclickable inside Radix Dialog */
+.pac-container {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
