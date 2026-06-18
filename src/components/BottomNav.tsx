@@ -32,7 +32,11 @@ export function BottomNav() {
     } else {
       clickTimeoutRef.current = setTimeout(() => {
         clickTimeoutRef.current = null;
-        navigate({ to: "/" });
+        if (pathname === "/") {
+          window.dispatchEvent(new Event("reset-calendar-today"));
+        } else {
+          navigate({ to: "/" });
+        }
       }, 250);
     }
   };

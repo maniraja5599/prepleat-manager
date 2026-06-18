@@ -2115,6 +2115,14 @@ const HELP_DOCS: { title: string; body: string }[] = [
     title: "Install as app",
     body: "Open the published site in Chrome or Safari → Menu → Install / Add to Home Screen. Uses your business logo as the app icon.",
   },
+  {
+    title: "Pick Location Map",
+    body: "When booking, tap 'Pick Location' to open a Google Maps interface. You can search, drag the pin, or tap 'Current Location' to drop a pin. Confirming generates a precise Google Maps URL.",
+  },
+  {
+    title: "WhatsApp & Call Integration",
+    body: "In the Bookings and Customers list, tap the Phone or WhatsApp icon next to a customer's name to instantly call them or open a direct WhatsApp chat.",
+  },
 ];
 
 function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {

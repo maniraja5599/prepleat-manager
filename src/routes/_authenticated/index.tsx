@@ -281,6 +281,16 @@ function CalendarPage() {
 
   const peekBookings = peek ? (byDay.get(peek) ?? []) : [];
 
+  useEffect(() => {
+    const handleReset = () => {
+      setCursor(new Date());
+      setSelected(new Date());
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    window.addEventListener("reset-calendar-today", handleReset);
+    return () => window.removeEventListener("reset-calendar-today", handleReset);
+  }, []);
+
   return (
     <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
