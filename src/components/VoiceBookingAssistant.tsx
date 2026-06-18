@@ -29,6 +29,7 @@ type Step =
   | "SERVICE"      // Select service
   | "COUNT"        // Select saree count
   | "DATE"         // Select delivery date
+  | "TIME"         // Select delivery time
   | "CONFIRM"      // Confirm booking details
   | "DONE";        // Finished
 
@@ -60,6 +61,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
   const [service, setService] = useState<"prepleat" | "drape" | null>(null);
   const [sareeCount, setSareeCount] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState<string | null>(initialDate || null);
+  const [deliveryTime, setDeliveryTime] = useState<string | null>(null);
   const [advancePaid, setAdvancePaid] = useState<number>(0);
 
   // New Customer creation flow in conversation
@@ -248,7 +250,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
         recognitionRef.current.abort();
       }
     };
-  }, [language, step, selectedCustomer, similarCustomers, service, sareeCount, deliveryDate, newCustomerName, waitingForPhone]);
+  }, [language, step, selectedCustomer, similarCustomers, service, sareeCount, deliveryDate, deliveryTime, newCustomerName, waitingForPhone]);
 
   // Start Speech Recognition
   const startListening = () => {
@@ -312,6 +314,11 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
           ? "டெலிவரி தேதி எப்போது வேண்டும்?"
           : "What is the delivery date?";
         break;
+      case "TIME":
+        promptText = language === "ta-IN"
+          ? "டெலிவரி நேரம் என்ன?"
+          : "What is the delivery time?";
+        break;
       case "CONFIRM":
         const svcLabel = service === "prepleat" ? (language === "ta-IN" ? "Prepleating" : "Prepleat") : (language === "ta-IN" ? "Draping" : "Drape");
         const rate = service === "prepleat" 
@@ -320,8 +327,8 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
         const total = (sareeCount ?? 1) * rate;
         
         promptText = language === "ta-IN"
-          ? `${selectedCustomer?.name}-க்கு ${sareeCount} புடவைகள் ${svcLabel}, மொத்த தொகை ${fmtINR(total)}. புக்கிங்கை உறுதி செய்யவா?`
-          : `Booking ${svcLabel} for ${selectedCustomer?.name} with ${sareeCount} sarees. Total is ${fmtINR(total)}. Should I confirm this booking?`;
+          ? `${selectedCustomer?.name}-க்கு ${sareeCount} புடவைகள் ${svcLabel}, மொத்த தொகை ${fmtINR(total)}. புக்கிங் விவரங்களை சரிபார்த்து உறுதி செய்யவா?`
+          : `I have compiled the booking for ${selectedCustomer?.name}. Total is ${fmtINR(total)}. Please review details on screen and confirm.`;
         break;
       case "DONE":
         promptText = language === "ta-IN"
@@ -450,6 +457,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       setService(null);
       setSareeCount(null);
       setDeliveryDate(initialDate || null);
+      setDeliveryTime(null);
       setNewCustomerName(null);
       setWaitingForPhone(false);
       playBeep("success");
@@ -482,11 +490,14 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       const dateVal = parseDateText(lower);
       let detectedDate: string | null = dateVal ? format(dateVal, "yyyy-MM-dd") : null;
 
-      // 4. Customer detection - lookup first word/part of sentence
+      // 4. Time detection
+      const detectedTime = parseTimeText(lower);
+
+      // 5. Customer detection - lookup first word/part of sentence
       // Exclude keywords from name parsing
       const cleanWords = lower
-        .replace(/(prepleat|pleat|drape|draping|saree|sarees|sari|delivery|tomorrow|today|day after|booking|book)/g, "")
-        .replace(/(மடிப்பு|மடிக்க|கட்ட|உடுத்த|புடவை|தேதி|நாளை|இன்னைக்கு|புக்கிங்)/g, "")
+        .replace(/(prepleat|pleat|drape|draping|saree|sarees|sari|delivery|tomorrow|today|day after|booking|book|at|@)/g, "")
+        .replace(/(மடிப்பு|மடிக்க|கட்ட|உடுத்த|புடவை|தேதி|நாளை|இன்னைக்கு|புக்கிங்|மணி|மணிக்கு)/g, "")
         .trim()
         .split(/\s+/);
 
@@ -504,11 +515,12 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       if (detectedSvc) setService(detectedSvc);
       if (detectedCount) setSareeCount(detectedCount);
       if (detectedDate) setDeliveryDate(detectedDate);
+      if (detectedTime) setDeliveryTime(detectedTime);
 
       // Determine next conversational step
       if (detectedCust) {
         setSelectedCustomer(detectedCust);
-        const next = getNextMissingStep(detectedCust, detectedSvc, detectedCount, detectedDate);
+        const next = getNextMissingStep(detectedCust, detectedSvc, detectedCount, detectedDate, detectedTime);
         setStep(next);
         askNextQuestion(next);
       } else if (matchesList.length > 0) {
@@ -538,13 +550,12 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
     if (step === "CUSTOMER") {
       // Handling multiple matches list selection
       if (similarCustomers.length > 0) {
-        // User could say name or number (e.g. "one", "first", "two")
         const num = parseNumber(lower);
         if (num && num >= 1 && num <= similarCustomers.length) {
           const selected = similarCustomers[num - 1];
           setSelectedCustomer(selected);
           setSimilarCustomers([]);
-          const next = getNextMissingStep(selected, service, sareeCount, deliveryDate);
+          const next = getNextMissingStep(selected, service, sareeCount, deliveryDate, deliveryTime);
           setStep(next);
           askNextQuestion(next);
         } else {
@@ -553,7 +564,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
           if (match) {
             setSelectedCustomer(match);
             setSimilarCustomers([]);
-            const next = getNextMissingStep(match, service, sareeCount, deliveryDate);
+            const next = getNextMissingStep(match, service, sareeCount, deliveryDate, deliveryTime);
             setStep(next);
             askNextQuestion(next);
           } else {
@@ -567,7 +578,6 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
 
       // Handling new customer phone confirmation
       if (waitingForPhone) {
-        // Extract 10 digit number
         const digits = lower.replace(/\D/g, "");
         if (digits.length === 10) {
           // Save new customer
@@ -582,7 +592,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
           playBeep("success");
           toast.success("New customer added");
           
-          const next = getNextMissingStep(newCust, service, sareeCount, deliveryDate);
+          const next = getNextMissingStep(newCust, service, sareeCount, deliveryDate, deliveryTime);
           setStep(next);
           askNextQuestion(next);
         } else {
@@ -599,7 +609,6 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
           setWaitingForPhone(true);
           askNextQuestion("CUSTOMER");
         } else {
-          // Reject new customer, try asking name again
           setNewCustomerName(null);
           speakText(language === "ta-IN" ? "சரி, புக்கிங் செய்ய கஸ்டமர் பெயரை மீண்டும் சொல்லுங்கள்." : "Alright, please say the customer name again.", () => {
             setTimeout(startListening, 300);
@@ -612,14 +621,13 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       const res = matchCustomerName(lower);
       if (res.match) {
         setSelectedCustomer(res.match);
-        const next = getNextMissingStep(res.match, service, sareeCount, deliveryDate);
+        const next = getNextMissingStep(res.match, service, sareeCount, deliveryDate, deliveryTime);
         setStep(next);
         askNextQuestion(next);
       } else if (res.list.length > 0) {
         setSimilarCustomers(res.list);
         askNextQuestion("CUSTOMER");
       } else {
-        // Prompt to add new customer
         setNewCustomerName(text);
         const promptText = language === "ta-IN"
           ? `"${text}" என்ற பெயர் இல்லை. புதிய கஸ்டமராக சேர்க்கவா?`
@@ -642,7 +650,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
 
       if (selectedSvc) {
         setService(selectedSvc);
-        const next = getNextMissingStep(selectedCustomer, selectedSvc, sareeCount, deliveryDate);
+        const next = getNextMissingStep(selectedCustomer, selectedSvc, sareeCount, deliveryDate, deliveryTime);
         setStep(next);
         askNextQuestion(next);
       } else {
@@ -657,7 +665,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       const num = parseNumber(lower);
       if (num && num >= 1 && num <= 50) {
         setSareeCount(num);
-        const next = getNextMissingStep(selectedCustomer, service, num, deliveryDate);
+        const next = getNextMissingStep(selectedCustomer, service, num, deliveryDate, deliveryTime);
         setStep(next);
         askNextQuestion(next);
       } else {
@@ -673,7 +681,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       if (dateVal) {
         const dateStr = format(dateVal, "yyyy-MM-dd");
         setDeliveryDate(dateStr);
-        const next = getNextMissingStep(selectedCustomer, service, sareeCount, dateStr);
+        const next = getNextMissingStep(selectedCustomer, service, sareeCount, dateStr, deliveryTime);
         setStep(next);
         askNextQuestion(next);
       } else {
@@ -684,8 +692,23 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       return;
     }
 
+    if (step === "TIME") {
+      const timeVal = parseTimeText(lower);
+      if (timeVal) {
+        setDeliveryTime(timeVal);
+        const next = getNextMissingStep(selectedCustomer, service, sareeCount, deliveryDate, timeVal);
+        setStep(next);
+        askNextQuestion(next);
+      } else {
+        speakText(language === "ta-IN" ? "டெலிவரி நேரத்தை தெளிவாகக் கூறுங்கள்." : "Please speak the delivery time clearly.", () => {
+          setTimeout(startListening, 300);
+        });
+      }
+      return;
+    }
+
     if (step === "CONFIRM") {
-      if (lower.includes("yes") || lower.includes("confirm") || lower.includes("ok") || lower.includes("ஆமாம்") || lower.includes("பண்ணு") || lower.includes("கன்பர்ம்")) {
+      if (lower.includes("yes") || lower.includes("confirm") || lower.includes("ok") || lower.includes("ஆমাம்") || lower.includes("பண்ணு") || lower.includes("கன்பர்ம்")) {
         confirmAndSaveBooking();
       } else if (lower.includes("no") || lower.includes("cancel") || lower.includes("இல்லை") || lower.includes("வேண்டாம்")) {
         speakText(language === "ta-IN" ? "புக்கிங் ரத்து செய்யப்பட்டது." : "Booking cancelled.", () => {
@@ -705,18 +728,20 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
     cust: Customer | null,
     svc: typeof service,
     cnt: number | null,
-    dt: string | null
+    dt: string | null,
+    tm: string | null
   ): Step => {
     if (!cust) return "CUSTOMER";
     if (!svc) return "SERVICE";
     if (cnt === null) return "COUNT";
     if (!dt) return "DATE";
+    if (!tm) return "TIME";
     return "CONFIRM";
   };
 
   // Create booking object and save in store
   const confirmAndSaveBooking = () => {
-    if (!selectedCustomer || !service || !sareeCount || !deliveryDate) {
+    if (!selectedCustomer || !service || !sareeCount || !deliveryDate || !deliveryTime) {
       playBeep("error");
       toast.error("Missing booking fields");
       return;
@@ -736,7 +761,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
         totalAmount,
         advancePaid: 0,
         deliveryDate,
-        deliveryTime: "10:00", // Default
+        deliveryTime,
         status: "pending",
       });
       
@@ -851,6 +876,56 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
     return null;
   };
 
+  // Helper time parser
+  const parseTimeText = (text: string): string | null => {
+    const clean = text.toLowerCase().trim();
+    
+    let isPM = false;
+    let isAMExplicit = false;
+    let isPMExplicit = false;
+
+    if (clean.includes("pm") || clean.includes("மாலை") || clean.includes("மதியம்") || clean.includes("night") || clean.includes("evening") || clean.includes("iravu") || clean.includes("madhiyam") || clean.includes("maalai")) {
+      isPM = true;
+      isPMExplicit = true;
+    }
+    if (clean.includes("am") || clean.includes("காலை") || clean.includes("morning") || clean.includes("kaalai")) {
+      isPM = false;
+      isAMExplicit = true;
+    }
+
+    // 1. Matches "10:30" or "10.30"
+    const colonMatch = clean.match(/(\d{1,2})[:.](\d{2})/);
+    if (colonMatch) {
+      let hr = Number(colonMatch[1]);
+      const min = colonMatch[2];
+      if (isPM && hr < 12) hr += 12;
+      if (!isPM && hr === 12) hr = 0;
+      return `${String(hr).padStart(2, "0")}:${min}`;
+    }
+
+    // 2. Matches "at 4", "@ 5", "5மணி", "5 மணிக்கு" (specific hour formats)
+    const hrMatch = clean.match(/(?:at|@)\s*(\d{1,2})/) || 
+                    clean.match(/(\d{1,2})\s*(?:pm|am|o'clock|மணி|மணிக்கு|o clock)/);
+    if (hrMatch) {
+      let hr = Number(hrMatch[1]);
+      if (hr >= 1 && hr <= 24) {
+        // Heuristic: if no explicit AM/PM: 1-7 is PM (e.g. 4 PM), 8-12 is AM (e.g. 10 AM)
+        if (!isAMExplicit && !isPMExplicit) {
+          if (hr >= 1 && hr <= 7) {
+            isPM = true;
+          } else if (hr >= 8 && hr <= 12) {
+            isPM = false;
+          }
+        }
+        if (isPM && hr < 12) hr += 12;
+        if (!isPM && hr === 12) hr = 0;
+        return `${String(hr).padStart(2, "0")}:00`;
+      }
+    }
+
+    return null;
+  };
+
   // Close and clean synthesis
   const handleClose = () => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -939,7 +1014,37 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       {/* Dynamic Voice Wave Indicator & Action Controls */}
       <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center shrink-0">
         
-        {/* Dynamic visual options (Manual override chips) */}
+        {/* 1. CUSTOMER MANUALLY SELECTED OVERRIDE */}
+        {step === "CUSTOMER" && (
+          <div className="w-full mb-3 flex flex-col gap-2 bg-card border border-border/40 p-3.5 rounded-2xl text-left">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+              Select Customer Manually
+            </span>
+            <select
+              value={selectedCustomer?.id || ""}
+              onChange={(e) => {
+                const cust = customers.find((c) => c.id === e.target.value);
+                if (cust) {
+                  setSelectedCustomer(cust);
+                  setSimilarCustomers([]);
+                  const next = getNextMissingStep(cust, service, sareeCount, deliveryDate, deliveryTime);
+                  setStep(next);
+                  askNextQuestion(next);
+                }
+              }}
+              className="w-full bg-secondary text-foreground border border-border/40 text-xs rounded-xl py-2 px-2.5 focus:outline-none"
+            >
+              <option value="">-- Choose Customer --</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.phone})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Similar customers list selection */}
         {similarCustomers.length > 0 && (
           <div className="w-full mb-3 flex flex-wrap gap-1.5 justify-center">
             {similarCustomers.map((cust) => (
@@ -948,7 +1053,7 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
                 onClick={() => {
                   setSelectedCustomer(cust);
                   setSimilarCustomers([]);
-                  const next = getNextMissingStep(cust, service, sareeCount, deliveryDate);
+                  const next = getNextMissingStep(cust, service, sareeCount, deliveryDate, deliveryTime);
                   setStep(next);
                   askNextQuestion(next);
                 }}
@@ -961,52 +1066,285 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
           </div>
         )}
 
-        {/* Suggestion presets when waiting for input */}
-        {step === "SERVICE" && !service && (
-          <div className="mb-3 flex gap-2">
-            <button
-              onClick={() => {
-                setService("prepleat");
-                const next = getNextMissingStep(selectedCustomer, "prepleat", sareeCount, deliveryDate);
-                setStep(next);
-                askNextQuestion(next);
-              }}
-              className="bg-primary/10 text-primary border border-primary/20 px-4 py-1.5 rounded-full text-xs font-bold active:scale-95 transition cursor-pointer"
-            >
-              ✂️ Prepleating
-            </button>
-            <button
-              onClick={() => {
-                setService("drape");
-                const next = getNextMissingStep(selectedCustomer, "drape", sareeCount, deliveryDate);
-                setStep(next);
-                askNextQuestion(next);
-              }}
-              className="bg-primary/10 text-primary border border-primary/20 px-4 py-1.5 rounded-full text-xs font-bold active:scale-95 transition cursor-pointer"
-            >
-              🥻 Draping
-            </button>
+        {/* 2. SERVICE SELECT OVERRIDE */}
+        {step === "SERVICE" && (
+          <div className="w-full mb-3 flex flex-col gap-2 bg-card border border-border/40 p-3.5 rounded-2xl text-left items-center">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1 align-self-start">
+              Select Service
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setService("prepleat");
+                  const next = getNextMissingStep(selectedCustomer, "prepleat", sareeCount, deliveryDate, deliveryTime);
+                  setStep(next);
+                  askNextQuestion(next);
+                }}
+                className={cn(
+                  "border px-5 py-2 rounded-full text-xs font-bold active:scale-95 transition cursor-pointer",
+                  service === "prepleat"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary text-foreground border-border/40"
+                )}
+              >
+                ✂️ Prepleating
+              </button>
+              <button
+                onClick={() => {
+                  setService("drape");
+                  const next = getNextMissingStep(selectedCustomer, "drape", sareeCount, deliveryDate, deliveryTime);
+                  setStep(next);
+                  askNextQuestion(next);
+                }}
+                className={cn(
+                  "border px-5 py-2 rounded-full text-xs font-bold active:scale-95 transition cursor-pointer",
+                  service === "drape"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary text-foreground border-border/40"
+                )}
+              >
+                🥻 Draping
+              </button>
+            </div>
           </div>
         )}
 
-        {step === "CONFIRM" && (
-          <div className="mb-3 flex gap-2">
-            <button
-              onClick={confirmAndSaveBooking}
-              className="bg-success text-white border border-success/20 px-5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 active:scale-95 transition cursor-pointer"
-            >
-              <Check className="size-3.5" /> Confirm
-            </button>
-            <button
-              onClick={() => {
-                speakText(language === "ta-IN" ? "புக்கிங் ரத்து செய்யப்பட்டது." : "Booking cancelled.", () => {
-                  onClose();
-                });
+        {/* 3. SAREE COUNT OVERRIDE */}
+        {step === "COUNT" && (
+          <div className="w-full mb-3 flex flex-col gap-2.5 bg-card border border-border/40 p-3.5 rounded-2xl text-left items-center">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground align-self-start">
+              Select Saree Count
+            </span>
+            <div className="flex gap-1.5 flex-wrap justify-center">
+              {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => {
+                    setSareeCount(num);
+                    const next = getNextMissingStep(selectedCustomer, service, num, deliveryDate, deliveryTime);
+                    setStep(next);
+                    askNextQuestion(next);
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold active:scale-95 transition cursor-pointer border",
+                    sareeCount === num
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-secondary text-foreground border-border/40"
+                  )}
+                >
+                  {num} {num === 1 ? "Saree" : "Sarees"}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-1 self-start pl-1">
+              <span className="text-[11px] text-muted-foreground font-semibold">Custom Count:</span>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={sareeCount || ""}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val > 0) {
+                    setSareeCount(val);
+                    const next = getNextMissingStep(selectedCustomer, service, val, deliveryDate, deliveryTime);
+                    setStep(next);
+                    askNextQuestion(next);
+                  }
+                }}
+                className="w-16 bg-secondary text-center text-xs font-semibold border border-border/40 rounded-xl py-1 focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 4. DATE SELECT OVERRIDE */}
+        {step === "DATE" && (
+          <div className="w-full mb-3 flex flex-col gap-2.5 bg-card border border-border/40 p-3.5 rounded-2xl text-left items-center">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground align-self-start">
+              Select Delivery Date
+            </span>
+            <div className="flex gap-2 mb-1">
+              <button
+                onClick={() => {
+                  const dt = format(new Date(), "yyyy-MM-dd");
+                  setDeliveryDate(dt);
+                  const next = getNextMissingStep(selectedCustomer, service, sareeCount, dt, deliveryTime);
+                  setStep(next);
+                  askNextQuestion(next);
+                }}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-xs font-semibold active:scale-95 transition cursor-pointer border",
+                  deliveryDate === format(new Date(), "yyyy-MM-dd")
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary text-foreground border-border/40"
+                )}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => {
+                  const dt = format(addDays(new Date(), 1), "yyyy-MM-dd");
+                  setDeliveryDate(dt);
+                  const next = getNextMissingStep(selectedCustomer, service, sareeCount, dt, deliveryTime);
+                  setStep(next);
+                  askNextQuestion(next);
+                }}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-xs font-semibold active:scale-95 transition cursor-pointer border",
+                  deliveryDate === format(addDays(new Date(), 1), "yyyy-MM-dd")
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary text-foreground border-border/40"
+                )}
+              >
+                Tomorrow
+              </button>
+            </div>
+            <input
+              type="date"
+              value={deliveryDate || ""}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setDeliveryDate(e.target.value);
+                  const next = getNextMissingStep(selectedCustomer, service, sareeCount, e.target.value, deliveryTime);
+                  setStep(next);
+                  askNextQuestion(next);
+                }
               }}
-              className="bg-destructive/15 text-destructive border border-destructive/20 px-5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 active:scale-95 transition cursor-pointer"
-            >
-              <X className="size-3.5" /> Cancel
-            </button>
+              className="w-full bg-secondary border border-border/40 text-xs rounded-xl py-2 px-3 focus:outline-none"
+            />
+          </div>
+        )}
+
+        {/* 5. TIME SELECT OVERRIDE */}
+        {step === "TIME" && (
+          <div className="w-full mb-3 flex flex-col gap-2.5 bg-card border border-border/40 p-3.5 rounded-2xl text-left items-center">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground align-self-start">
+              Select Delivery Time
+            </span>
+            <div className="flex gap-1.5 flex-wrap justify-center mb-1">
+              {["08:00", "10:00", "12:00", "15:00", "17:00", "19:00"].map((tStr) => {
+                const isSelected = deliveryTime === tStr;
+                const displayT = tStr === "12:00" ? "12:00 PM" : tStr === "15:00" ? "03:00 PM" : tStr === "17:00" ? "05:00 PM" : tStr === "19:00" ? "07:00 PM" : tStr === "08:00" ? "08:00 AM" : "10:00 AM";
+                return (
+                  <button
+                    key={tStr}
+                    onClick={() => {
+                      setDeliveryTime(tStr);
+                      const next = getNextMissingStep(selectedCustomer, service, sareeCount, deliveryDate, tStr);
+                      setStep(next);
+                      askNextQuestion(next);
+                    }}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-semibold active:scale-95 transition cursor-pointer border",
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary text-foreground border-border/40"
+                    )}
+                  >
+                    {displayT}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="time"
+              value={deliveryTime || "10:00"}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setDeliveryTime(e.target.value);
+                  const next = getNextMissingStep(selectedCustomer, service, sareeCount, deliveryDate, e.target.value);
+                  setStep(next);
+                  askNextQuestion(next);
+                }
+              }}
+              className="w-full bg-secondary border border-border/40 text-xs rounded-xl py-2 px-3 focus:outline-none"
+            />
+          </div>
+        )}
+
+        {/* 6. BOOKING CONFIRMATION & FULL REVIEW PREVIEW CARD */}
+        {step === "CONFIRM" && (
+          <div className="w-full mb-3 flex flex-col gap-3 bg-card border border-border/40 p-4 rounded-3xl card-shadow text-left">
+            <div className="flex items-center gap-1.5 pb-2 border-b border-border/30">
+              <Sparkles className="size-4 text-gold animate-pulse" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                {language === "ta-IN" ? "புக்கிங் விவரங்கள்" : "Review Booking Details"}
+              </h4>
+            </div>
+            
+            <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-2 text-xs leading-relaxed">
+              <span className="text-muted-foreground font-medium">Customer:</span>
+              <div className="flex items-center justify-between min-w-0">
+                <span className="font-semibold text-foreground truncate">{selectedCustomer?.name}</span>
+                <button onClick={() => { setStep("CUSTOMER"); stopListening(); }} className="text-[10px] text-primary hover:underline font-bold">Change</button>
+              </div>
+              
+              <span className="text-muted-foreground font-medium">Service:</span>
+              <div className="flex items-center justify-between min-w-0">
+                <span className="font-semibold text-foreground capitalize">
+                  {service === "prepleat" ? "Prepleating" : "Draping"}
+                </span>
+                <button onClick={() => { setStep("SERVICE"); stopListening(); }} className="text-[10px] text-primary hover:underline font-bold">Change</button>
+              </div>
+              
+              <span className="text-muted-foreground font-medium">Saree Count:</span>
+              <div className="flex items-center justify-between min-w-0">
+                <span className="font-semibold text-foreground">{sareeCount} saree{sareeCount && sareeCount > 1 ? "s" : ""}</span>
+                <button onClick={() => { setStep("COUNT"); stopListening(); }} className="text-[10px] text-primary hover:underline font-bold">Change</button>
+              </div>
+              
+              <span className="text-muted-foreground font-medium">Date:</span>
+              <div className="flex items-center justify-between min-w-0">
+                <span className="font-semibold text-foreground">
+                  {deliveryDate ? format(parseISO(deliveryDate), "dd-MM-yyyy") : ""}
+                </span>
+                <button onClick={() => { setStep("DATE"); stopListening(); }} className="text-[10px] text-primary hover:underline font-bold">Change</button>
+              </div>
+              
+              <span className="text-muted-foreground font-medium">Time:</span>
+              <div className="flex items-center justify-between min-w-0">
+                <span className="font-semibold text-foreground">
+                  {deliveryTime ? (deliveryTime.localeCompare("12:00") >= 0 ? `${deliveryTime} PM` : `${deliveryTime} AM`) : ""}
+                </span>
+                <button onClick={() => { setStep("TIME"); stopListening(); }} className="text-[10px] text-primary hover:underline font-bold">Change</button>
+              </div>
+              
+              {(() => {
+                const rate = service === "prepleat"
+                  ? (selectedCustomer?.kind === "artist" ? (settings.artistPrepleatPrice ?? 300) : (settings.prepleatPrice ?? 350))
+                  : (selectedCustomer?.kind === "artist" ? (settings.artistDrapePrice ?? 700) : (settings.drapePrice ?? 800));
+                const total = (sareeCount ?? 1) * rate;
+                return (
+                  <>
+                    <span className="text-muted-foreground font-medium">Rate:</span>
+                    <span className="font-semibold text-foreground">{fmtINR(rate)} / saree</span>
+                    
+                    <span className="text-primary font-bold">Total Price:</span>
+                    <span className="font-bold text-primary text-sm">{fmtINR(total)}</span>
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="flex gap-2 mt-2 pt-2.5 border-t border-border/30">
+              <button
+                onClick={confirmAndSaveBooking}
+                className="flex-1 bg-success text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer shadow-sm"
+              >
+                <Check className="size-3.5" /> Confirm
+              </button>
+              <button
+                onClick={() => {
+                  speakText(language === "ta-IN" ? "புக்கிங் ரத்து செய்யப்பட்டது." : "Booking cancelled.", () => {
+                    onClose();
+                  });
+                }}
+                className="bg-secondary text-foreground hover:bg-secondary/80 px-4 py-2 rounded-xl text-xs font-semibold active:scale-95 transition cursor-pointer border border-border/40"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 

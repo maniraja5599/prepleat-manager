@@ -691,7 +691,7 @@ function CalendarPage() {
         {/* Floating Voice Booking FAB */}
         <button
           onClick={() => setIsVoiceAssistantOpen(true)}
-          className="fixed bottom-24 right-4 z-30 size-12 rounded-full saree-gradient text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-primary/10 animate-bounce-slow"
+          className="fixed bottom-44 right-4 z-30 size-12 rounded-full saree-gradient text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-primary/10 animate-bounce-slow"
           title="Voice Booking Assistant"
         >
           <Mic className="size-5" />
