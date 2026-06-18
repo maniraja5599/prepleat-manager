@@ -114,11 +114,16 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
     }
   };
 
-  // Text-To-Speech (Speech Synthesis)
+  // Text-To-Speech (Speech Synthesis) with Premium Voice Selector & Safety Recoveries
   const speakText = (text: string, callback?: () => void) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       if (callback) callback();
       return;
+    }
+
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
     }
 
     window.speechSynthesis.cancel(); // Cancel active speech
@@ -129,26 +134,68 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    // Try to find matching language voice
+    
+    // Premium Voice Selector (Prioritizes Google and Natural Neural voices)
     const voices = window.speechSynthesis.getVoices();
     const desiredLang = language === "ta-IN" ? "ta" : "en";
-    const voice = voices.find((v) => v.lang.startsWith(desiredLang));
-    if (voice) {
-      utterance.voice = voice;
+    
+    const matchingVoices = voices.filter((v) => 
+      v.lang.toLowerCase().replace("_", "-").startsWith(desiredLang)
+    );
+
+    if (matchingVoices.length > 0) {
+      // Prioritize Google voices, then Natural/Neural, then Online voices
+      const sortedVoices = matchingVoices.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        const aGoogle = aName.includes("google");
+        const bGoogle = bName.includes("google");
+        if (aGoogle && !bGoogle) return -1;
+        if (!aGoogle && bGoogle) return 1;
+
+        const aNeural = aName.includes("natural") || aName.includes("neural");
+        const bNeural = bName.includes("natural") || bName.includes("neural");
+        if (aNeural && !bNeural) return -1;
+        if (!aNeural && bNeural) return 1;
+
+        const aOnline = aName.includes("online") || a.localService === false;
+        const bOnline = bName.includes("online") || b.localService === false;
+        if (aOnline && !bOnline) return -1;
+        if (!aOnline && bOnline) return 1;
+
+        return 0;
+      });
+      utterance.voice = sortedVoices[0];
+      console.log("Selected premium voice:", sortedVoices[0].name);
     }
     
-    // Adjust rate for natural speed
-    utterance.rate = language === "ta-IN" ? 0.95 : 1.0;
+    // Adjust rate for natural, fluent speed (slightly slower makes Tamil sound much better)
+    utterance.rate = language === "ta-IN" ? 0.9 : 1.0;
+    utterance.pitch = 1.0;
+
+    let completed = false;
+    const handleSpeechEnd = () => {
+      if (completed) return;
+      completed = true;
+      isSpeakingRef.current = false;
+      if (speechTimeoutRef.current) {
+        clearTimeout(speechTimeoutRef.current);
+        speechTimeoutRef.current = null;
+      }
+      if (callback) callback();
+    };
 
     isSpeakingRef.current = true;
-    utterance.onend = () => {
-      isSpeakingRef.current = false;
-      if (callback) callback();
-    };
-    utterance.onerror = () => {
-      isSpeakingRef.current = false;
-      if (callback) callback();
-    };
+    utterance.onend = handleSpeechEnd;
+    utterance.onerror = handleSpeechEnd;
+
+    // Safety timeout: if speech takes more than 10 seconds, force recover
+    speechTimeoutRef.current = setTimeout(() => {
+      console.warn("Speech Synthesis safety timeout fired - recovering state");
+      window.speechSynthesis.cancel();
+      handleSpeechEnd();
+    }, 10000);
 
     window.speechSynthesis.speak(utterance);
   };
@@ -308,6 +355,16 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       setNewCustomerName(null);
       setWaitingForPhone(false);
       
+      // Reset speech engine state
+      isSpeakingRef.current = false;
+      if (speechTimeoutRef.current) {
+        clearTimeout(speechTimeoutRef.current);
+        speechTimeoutRef.current = null;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      
       // Delay start to allow overlay animation
       const t = setTimeout(() => {
         askNextQuestion("INIT");
@@ -315,6 +372,20 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
       return () => clearTimeout(t);
     }
   }, [isOpen]);
+
+  // Pre-load voices for Speech Synthesis
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const handleVoicesChanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+    window.speechSynthesis.addEventListener("voiceschanged", handleVoicesChanged);
+    // Trigger once to cache
+    window.speechSynthesis.getVoices();
+    return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", handleVoicesChanged);
+    };
+  }, []);
 
   // Fuzzy Name Matcher
   const matchCustomerName = (spokenName: string) => {
@@ -785,6 +856,11 @@ export function VoiceBookingAssistant({ isOpen, onClose, initialDate }: Props) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
+    }
+    isSpeakingRef.current = false;
     stopListening();
     onClose();
   };
