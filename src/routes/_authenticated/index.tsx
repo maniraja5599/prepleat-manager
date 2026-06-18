@@ -28,10 +28,12 @@ import {
   Phone,
   MessageCircle,
   AlertCircle,
+  Mic,
 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { VoiceBookingAssistant } from "@/components/VoiceBookingAssistant";
 
 export const Route = createFileRoute("/_authenticated/")({
   validateSearch: (s: Record<string, unknown>): { guide?: string } => ({
@@ -52,6 +54,7 @@ function CalendarPage() {
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date>(new Date());
   const [peek, setPeek] = useState<string | null>(null);
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const settings = useStore((s) => s.settings);
@@ -593,6 +596,13 @@ function CalendarPage() {
                 >
                   <ChevronRight className="size-4" />
                 </button>
+                <button
+                  onClick={() => setIsVoiceAssistantOpen(true)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold shrink-0 active:scale-95 transition cursor-pointer"
+                  title="Voice Booking Assistant"
+                >
+                  <Mic className="size-3.5" /> Voice
+                </button>
                 <Link
                   to="/new"
                   search={{ date: format(selected, "yyyy-MM-dd") }}
@@ -677,6 +687,22 @@ function CalendarPage() {
             </div>
           </div>
         )}
+        
+        {/* Floating Voice Booking FAB */}
+        <button
+          onClick={() => setIsVoiceAssistantOpen(true)}
+          className="fixed bottom-24 right-4 z-30 size-12 rounded-full saree-gradient text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-primary/10 animate-bounce-slow"
+          title="Voice Booking Assistant"
+        >
+          <Mic className="size-5" />
+        </button>
+
+        {/* Voice Booking Assistant Modal */}
+        <VoiceBookingAssistant
+          isOpen={isVoiceAssistantOpen}
+          onClose={() => setIsVoiceAssistantOpen(false)}
+          initialDate={format(selected, "yyyy-MM-dd")}
+        />
       </div>
     </AppShell>
   );

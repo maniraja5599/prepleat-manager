@@ -131,6 +131,7 @@ export interface Settings {
   artistDotColor?: string;
   dateFormat?: string;
   timeFormat?: string;
+  voiceFeedbackEnabled?: boolean;
 }
 
 export interface DeletedBooking {
@@ -329,6 +330,7 @@ export const useStore = create<State>()(
         artistDotColor: "#84cc16", // Lime
         dateFormat: "DD-MM-YYYY",
         timeFormat: "12",
+        voiceFeedbackEnabled: true,
       },
 
       addCustomer: (c) => {
@@ -813,6 +815,7 @@ export const useStore = create<State>()(
             paymentModes: ["gpay", "cash", "other"],
             dateFormat: "DD-MM-YYYY",
             timeFormat: "12",
+            voiceFeedbackEnabled: true,
           },
         }),
 
