@@ -30,6 +30,7 @@ import {
   X,
   Phone,
   MessageCircle,
+  AlertCircle,
 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,31 @@ function CalendarPage() {
           a.deliveryTime.localeCompare(b.deliveryTime),
       );
   }, [bookings]);
+
+  // Pending dues list — unique customers with balance > 0, sorted by highest due
+  const pendingDues = useMemo(() => {
+    const map = new Map<string, { customerId: string; name: string; phone: string; totalDue: number; bookingId: string }>();
+    for (const b of bookings) {
+      if (b.status === "cancelled" || b.status === "delivered") continue;
+      const due = totalDue(b);
+      if (due <= 0) continue;
+      const c = customers.find((x) => x.id === b.customerId);
+      const key = b.customerId || b.id;
+      const existing = map.get(key);
+      if (existing) {
+        existing.totalDue += due;
+      } else {
+        map.set(key, {
+          customerId: b.customerId,
+          name: c?.name || "Unknown",
+          phone: c?.phone || "",
+          totalDue: due,
+          bookingId: b.id,
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.totalDue - a.totalDue);
+  }, [bookings, customers]);
 
   const [upFilter, setUpFilter] = useState<"all" | "prepleat" | "drape" | "artist">("all");
 
@@ -295,6 +321,78 @@ function CalendarPage() {
     <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
         <GrowthDashboard />
+
+        {/* Pending Dues Card */}
+        {pendingDues.length > 0 && (
+          <div className="mb-4 bg-card card-shadow rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="size-7 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                  <AlertCircle className="size-4 text-destructive" />
+                </span>
+                <div>
+                  <p className="text-xs font-bold text-foreground leading-tight">Pending Payments</p>
+                  <p className="text-[10px] text-muted-foreground">{pendingDues.length} customer{pendingDues.length > 1 ? "s" : ""} · {fmtINR(pendingDues.reduce((s, x) => s + x.totalDue, 0))} total due</p>
+                </div>
+              </div>
+              <Link to="/payments" className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 active:scale-95 transition">
+                View All
+              </Link>
+            </div>
+            <ul className="divide-y divide-border/40">
+              {pendingDues.slice(0, 5).map((item) => (
+                <li key={item.customerId || item.bookingId}>
+                  <Link
+                    to="/bookings/$id"
+                    params={{ id: item.bookingId }}
+                    className="flex items-center gap-3 px-4 py-2.5 active:bg-secondary/60 transition"
+                  >
+                    {/* Avatar */}
+                    <span className="size-8 rounded-full bg-destructive/10 text-destructive text-xs font-bold flex items-center justify-center shrink-0">
+                      {item.name.charAt(0).toUpperCase()}
+                    </span>
+                    {/* Name + due */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{item.name}</p>
+                      <p className="text-[11px] text-destructive font-semibold">{fmtINR(item.totalDue)} due</p>
+                    </div>
+                    {/* Quick actions */}
+                    {item.phone && (
+                      <span className="flex gap-1.5 shrink-0" onClick={(e) => e.preventDefault()}>
+                        <a
+                          href={`tel:${item.phone.replace(/\D/g, "")}`}
+                          className="size-7 rounded-full bg-secondary flex items-center justify-center active:scale-90 transition"
+                          title="Call"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Phone className="size-3.5 text-muted-foreground" />
+                        </a>
+                        <a
+                          href={`https://wa.me/${item.phone.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="size-7 rounded-full bg-[oklch(0.55_0.18_150)]/10 flex items-center justify-center active:scale-90 transition"
+                          title="WhatsApp"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MessageCircle className="size-3.5 text-[oklch(0.45_0.18_150)]" />
+                        </a>
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {pendingDues.length > 5 && (
+              <div className="px-4 py-2.5 border-t border-border/40">
+                <Link to="/bookings" className="text-[11px] text-muted-foreground font-medium">
+                  +{pendingDues.length - 5} more customers with pending payment →
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-2 mb-4">
           <Link
             to="/bookings"
