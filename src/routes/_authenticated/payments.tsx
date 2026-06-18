@@ -1980,11 +1980,11 @@ function EditTransactionSheet({
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full text-sm font-semibold bg-secondary border border-border rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition" />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full h-11 text-sm font-semibold bg-secondary border border-border rounded-xl px-3 outline-none focus:border-foreground/30 transition" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Mode</label>
-            <select value={mode} onChange={(e) => setMode(e.target.value as PaymentMode)} className="w-full text-sm font-semibold bg-secondary border border-border rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition capitalize cursor-pointer">
+            <select value={mode} onChange={(e) => setMode(e.target.value as PaymentMode)} className="w-full h-11 text-sm font-semibold bg-secondary border border-border rounded-xl px-3 outline-none focus:border-foreground/30 transition capitalize cursor-pointer">
               {modes.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
