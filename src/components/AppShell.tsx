@@ -564,8 +564,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
       {/* Global Search Popup Modal */}
       {showSearchModal && (
         <div
-          className="fixed inset-x-0 top-0 z-50 bg-background flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left"
-          style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
+          className="fixed inset-x-0 top-0 z-[9999] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left"
+          style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh", backgroundColor: "var(--background)" }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className={cn("w-full flex-1 flex flex-col mx-auto", wide ? "max-w-3xl" : "max-w-md")}>
