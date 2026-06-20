@@ -71,12 +71,34 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
 
   const [isGuest, setIsGuest] = useState(false);
 
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!showSearchModal) {
+      setViewportHeight(null);
+      return;
+    }
+    const updateHeight = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      }
+    };
+    updateHeight();
+    window.visualViewport?.addEventListener("resize", updateHeight);
+    window.visualViewport?.addEventListener("scroll", updateHeight);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateHeight);
+      window.visualViewport?.removeEventListener("scroll", updateHeight);
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [showSearchModal]);
+
   useEffect(() => {
     waitForAppUser(300).then((user) => {
       setIsGuest(!!user?.isAnonymous);
     });
   }, []);
-
 
   useEffect(() => {
     const handleUpdate = (e: Event) => {
@@ -112,6 +134,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     const digitsOnlyQ = q.replace(/\D/g, "");
 
     // 1. Search Customers
+    const seenCustomers = new Set<string>();
     const filteredCustomers = customers.filter((c) => {
       const nameMatch = c.name.toLowerCase().includes(q);
       const digitsOnlyPhone = c.phone.replace(/\D/g, "");
@@ -119,7 +142,13 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
       const addressMatch = c.address ? c.address.toLowerCase().includes(q) : false;
       const refMatch = c.reference ? c.reference.toLowerCase().includes(q) : false;
       
-      return nameMatch || phoneMatch || addressMatch || refMatch;
+      const isMatched = nameMatch || phoneMatch || addressMatch || refMatch;
+      if (!isMatched) return false;
+      
+      const key = `${c.name.toLowerCase()}_${c.phone || ""}`;
+      if (seenCustomers.has(key)) return false;
+      seenCustomers.add(key);
+      return true;
     });
 
     // 2. Search Bookings
@@ -535,7 +564,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
       {/* Global Search Popup Modal */}
       {showSearchModal && (
         <div
-          className="fixed inset-0 z-50 bg-background flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left"
+          className="fixed inset-x-0 top-0 z-50 bg-background flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left"
+          style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className={cn("w-full flex-1 flex flex-col mx-auto", wide ? "max-w-3xl" : "max-w-md")}>
@@ -583,7 +613,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                       : "bg-secondary text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  All ({getSearchResults().customers.length + getSearchResults().bookings.length + getSearchResults().payments.length})
+                  All ({searchResults.customers.length + searchResults.bookings.length + searchResults.payments.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("customers")}
@@ -594,7 +624,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                       : "bg-secondary text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  Customers ({getSearchResults().customers.length})
+                  Customers ({searchResults.customers.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("bookings")}
@@ -605,7 +635,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                       : "bg-secondary text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  Bookings ({getSearchResults().bookings.length})
+                  Bookings ({searchResults.bookings.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("payments")}
@@ -616,7 +646,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                       : "bg-secondary text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  Payments ({getSearchResults().payments.length})
+                  Payments ({searchResults.payments.length})
                 </button>
               </div>
             )}
