@@ -2078,8 +2078,8 @@ function EditTransactionSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
+      <div className="fixed inset-0 z-[19999] bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-[20000] bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3
@@ -2208,8 +2208,8 @@ function AddTransactionSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
+      <div className="fixed inset-0 z-[19999] bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-[20000] bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3

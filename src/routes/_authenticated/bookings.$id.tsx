@@ -267,7 +267,7 @@ function BookingDetail() {
     <AppShell>
       {/* Message Preview Modal */}
       {previewMode && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left">
+        <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left">
           <div className="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
             {/* Modal Header */}
             <div
@@ -969,7 +969,7 @@ function BookingDetail() {
 
       {activePayment && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-[20000] bg-black/50 flex items-end sm:items-center justify-center"
           onClick={() => setActivePayment(null)}
         >
           <div

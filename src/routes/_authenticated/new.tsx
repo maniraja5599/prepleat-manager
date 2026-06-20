@@ -1239,7 +1239,7 @@ function NewBooking() {
 
       {reviewOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-[20000] bg-black/50 flex items-end sm:items-center justify-center"
           onClick={() => setReviewOpen(false)}
         >
           <div
