@@ -32,6 +32,7 @@ export function BottomNav() {
     } else {
       clickTimeoutRef.current = setTimeout(() => {
         clickTimeoutRef.current = null;
+        window.dispatchEvent(new Event("close-global-search"));
         if (pathname === "/") {
           window.dispatchEvent(new Event("reset-calendar-today"));
         } else {
@@ -42,7 +43,7 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t border-border safe-pb">
+    <nav className="fixed bottom-0 inset-x-0 z-[10000] bg-background/95 backdrop-blur border-t border-border safe-pb">
       <ul className="grid grid-cols-5 max-w-md mx-auto">
         {tabs.map((t) => {
           const active = t.to === "/" ? pathname === "/" : pathname.startsWith(t.to);

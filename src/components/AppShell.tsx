@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
@@ -39,6 +39,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const payments = useStore((s) => s.payments);
 
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
@@ -52,15 +53,29 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     }
   }, [searchQuery, activeTab]);
 
-  // Listen for open-global-search event
+  // Listen for open-global-search and close-global-search events
   useEffect(() => {
     const handleOpenSearch = () => {
       setShowSearchModal(true);
       setActiveTab("all");
     };
+    const handleCloseSearch = () => {
+      setShowSearchModal(false);
+      setSearchQuery("");
+    };
     window.addEventListener("open-global-search", handleOpenSearch);
-    return () => window.removeEventListener("open-global-search", handleOpenSearch);
+    window.addEventListener("close-global-search", handleCloseSearch);
+    return () => {
+      window.removeEventListener("open-global-search", handleOpenSearch);
+      window.removeEventListener("close-global-search", handleCloseSearch);
+    };
   }, []);
+
+  // Close search modal on route change
+  useEffect(() => {
+    setShowSearchModal(false);
+    setSearchQuery("");
+  }, [pathname]);
 
   const [sync, setSync] = useState(() => {
     if (typeof window !== "undefined" && (window as any).__syncStatus) {
