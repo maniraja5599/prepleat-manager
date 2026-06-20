@@ -76,8 +76,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   useEffect(() => {
     if (!showSearchModal) {
       setViewportHeight(null);
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
       return;
     }
+    
+    // Lock body scrolling
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    
     const updateHeight = () => {
       if (window.visualViewport) {
         setViewportHeight(window.visualViewport.height);
@@ -91,6 +98,10 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
       window.visualViewport?.removeEventListener("resize", updateHeight);
       window.visualViewport?.removeEventListener("scroll", updateHeight);
       window.removeEventListener("resize", updateHeight);
+      
+      // Restore body scrolling
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
     };
   }, [showSearchModal]);
 
@@ -564,13 +575,13 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
       {/* Global Search Popup Modal */}
       {showSearchModal && (
         <div
-          className="fixed inset-x-0 top-0 z-[9999] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left"
+          className="fixed inset-x-0 top-0 z-[9999] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)] animate-in fade-in duration-200 text-left overflow-hidden"
           style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh", backgroundColor: "var(--background)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={cn("w-full flex-1 flex flex-col mx-auto", wide ? "max-w-3xl" : "max-w-md")}>
+          <div className={cn("w-full flex-1 flex flex-col mx-auto min-h-0", wide ? "max-w-3xl" : "max-w-md")}>
             {/* Modal Header */}
-            <div className="px-4 py-3 border-b border-border/10 flex items-center gap-3 bg-card shrink-0">
+            <div className="px-4 py-3 border-b border-border/10 flex items-center gap-3 bg-card shrink-0 touch-none">
               <div className="relative flex-1">
                 <input
                   type="text"
@@ -603,7 +614,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
 
             {/* Tabs */}
             {searchQuery && (
-              <div className="px-4 py-2 border-b border-border/10 bg-card flex gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+              <div className="px-4 py-2 border-b border-border/10 bg-card flex gap-1.5 overflow-x-auto no-scrollbar shrink-0 touch-pan-x">
                 <button
                   onClick={() => setActiveTab("all")}
                   className={cn(
@@ -652,7 +663,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             )}
 
             {/* Results Area */}
-            <div ref={resultsRef} className="px-4 py-4 overflow-y-auto flex-1 bg-background/30">
+            <div ref={resultsRef} className="px-4 py-4 overflow-y-auto flex-1 min-h-0 bg-background/30 overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: "touch" }}>
               {!searchQuery ? (
                 <div className="space-y-5 pb-20">
                   {/* Dashboard / Notification Hub inside Search */}
