@@ -142,12 +142,12 @@ function Stat({
         <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
           <p className="text-lg font-display font-semibold leading-tight tabular-nums">{value}</p>
           {isPositive && (
-            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/15 text-success select-none">
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/5 text-success select-none">
               ↑ {trendPercent}%
             </span>
           )}
           {isNegative && (
-            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-destructive/15 text-destructive select-none">
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-destructive/5 text-destructive select-none">
               ↓ {Math.abs(trendPercent)}%
             </span>
           )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   X,
   Sparkles,
@@ -10,10 +10,43 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 
 export function AppTour() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [user, setUser] = useState<AppUser | null>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("last_known_user");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {}
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    // Resolve user asynchronously
+    waitForAppUser(200).then((u) => {
+      if (u) {
+        setUser(u);
+      }
+    });
+  }, []);
+
+  const welcomeTitle = useMemo(() => {
+    if (!user) return "Welcome to Eyas!";
+    if (user.isAnonymous) return "Welcome, Guest User!";
+    return `Welcome, ${user.displayName || user.email?.split("@")[0] || "User"}!`;
+  }, [user]);
+
+  const welcomeSubtitle = useMemo(() => {
+    if (!user) return "App Gestures & Shortcuts Tour";
+    if (user.isAnonymous) return "Guest Account · Gestures Tour";
+    return `${user.email}`;
+  }, [user]);
 
   useEffect(() => {
     // Check if the user has already completed the tour
@@ -41,8 +74,8 @@ export function AppTour() {
 
   const steps = [
     {
-      title: "Welcome to Eyas!",
-      subtitle: "App Gestures & Shortcuts Tour",
+      title: welcomeTitle,
+      subtitle: welcomeSubtitle,
       desc: "Let's take a quick 1-minute visual tour of the swipe gestures and touch shortcuts that make managing your saree draping bookings incredibly fast.",
       icon: Sparkles,
       color: "text-primary bg-primary/10",
