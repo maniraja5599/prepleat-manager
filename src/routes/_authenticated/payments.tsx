@@ -27,6 +27,7 @@ import {
   Users,
   Crown,
   CalendarCheck,
+  Calendar,
   ArrowRight,
   Plus,
   Trash2,
@@ -138,10 +139,8 @@ function PaymentsPage() {
   const totalExpense = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
   const netProfit = lifetime - totalExpense;
   const totalPending = useMemo(() => {
-    const today = startOfDay(new Date());
     return bookings.reduce((s, b) => {
-      if (b.status === "cancelled") return s;
-      if (b.status !== "completed" && new Date(b.deliveryDate) >= today) return s;
+      if (b.status !== "completed") return s;
       return s + totalDue(b);
     }, 0);
   }, [bookings]);
@@ -1012,11 +1011,9 @@ function IncomeView(p: {
   monthlyYearlyReport: { year: string; total: number; months: { label: string; amount: number }[] }[];
 }) {
   const pendingList = useMemo(() => {
-    const today = startOfDay(new Date());
     return p.bookings
       .filter((b) => {
-        if (b.status === "cancelled") return false;
-        if (b.status !== "completed" && new Date(b.deliveryDate) >= today) return false;
+        if (b.status !== "completed") return false;
         return totalDue(b) > 0;
       })
       .map((b) => {

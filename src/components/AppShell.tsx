@@ -340,8 +340,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     for (const b of bookings) {
-      if (b.status === "cancelled") continue;
-      if (b.status !== "completed" && new Date(b.deliveryDate) >= today) continue;
+      if (b.status !== "completed") continue;
       const due = totalDue(b);
       if (due <= 0) continue;
       const c = customers.find((x) => x.id === b.customerId);
