@@ -241,15 +241,12 @@ interface State {
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
 const generateBillNumber = (existing: Booking[]): string => {
-  const now = new Date();
-  const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const prefix = `EYAS-${ym}-`;
   const usedNumbers = existing
     .map((b) => b.billNumber)
-    .filter((n): n is string => !!n && n.startsWith(prefix))
-    .map((n) => Number(n.slice(prefix.length)) || 0);
+    .filter((n): n is string => !!n)
+    .map((n) => Number(n.replace(/\D/g, "")) || 0);
   const next = (usedNumbers.length ? Math.max(...usedNumbers) : 0) + 1;
-  return `${prefix}${String(next).padStart(4, "0")}`;
+  return String(next).padStart(4, "0");
 };
 
 const describeDiff = (prev: Booking, next: Booking): string => {
@@ -1350,15 +1347,18 @@ export const useStore = create<State>()(
           const sorted = [...persisted.bookings].sort((a: any, b: any) =>
             (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
           );
+          // Find the max used bill number so far
+          let counter = persisted.bookings
+            .map((b: any) => b.billNumber)
+            .filter((n: any): n is string => !!n)
+            .map((n: string) => Number(n.replace(/\D/g, "")) || 0)
+            .reduce((max: number, n: number) => Math.max(max, n), 0);
           for (const b of sorted) {
             if (b.billNumber) continue;
-            const d = new Date(b.createdAt || Date.now());
-            const ym = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
-            const prefix = `EYAS-${ym}-`;
-            const n = (monthCounters.get(ym) ?? 0) + 1;
-            monthCounters.set(ym, n);
-            b.billNumber = `${prefix}${String(n).padStart(4, "0")}`;
+            counter += 1;
+            b.billNumber = String(counter).padStart(4, "0");
           }
+          // Existing EYAS- prefixed bill numbers are kept as-is (display strips prefix)
           // Backfill workflow timestamps
           for (const b of persisted.bookings) {
             if (!b.receivedAt) b.receivedAt = b.createdAt;

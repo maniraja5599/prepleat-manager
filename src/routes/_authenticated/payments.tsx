@@ -313,8 +313,8 @@ function PaymentsPage() {
   }, [payments, customers]);
 
   const monthlyYearlyReport = useMemo(() => {
-    const years = new Map<string, Map<string, number>>();
-    const addAmount = (dateStr: string, amount: number) => {
+    const years = new Map<string, Map<string, { collected: number; booked: number }>>();
+    const addCollected = (dateStr: string, amount: number) => {
       if (!dateStr) return;
       try {
         const d = parseISO(dateStr);
@@ -323,25 +323,41 @@ function PaymentsPage() {
         const mStr = format(d, "MM-MMM");
         if (!years.has(y)) years.set(y, new Map());
         const yMap = years.get(y)!;
-        yMap.set(mStr, (yMap.get(mStr) ?? 0) + amount);
+        const prev = yMap.get(mStr) ?? { collected: 0, booked: 0 };
+        yMap.set(mStr, { ...prev, collected: prev.collected + amount });
       } catch (err) {}
     };
-    payments.forEach((p) => addAmount(p.date, p.amount));
-    extraIncomes.forEach((p) => addAmount(p.date, p.amount));
+    const addBooked = (dateStr: string, amount: number) => {
+      if (!dateStr) return;
+      try {
+        const d = parseISO(dateStr);
+        if (isNaN(d.getTime())) return;
+        const y = format(d, "yyyy");
+        const mStr = format(d, "MM-MMM");
+        if (!years.has(y)) years.set(y, new Map());
+        const yMap = years.get(y)!;
+        const prev = yMap.get(mStr) ?? { collected: 0, booked: 0 };
+        yMap.set(mStr, { ...prev, booked: prev.booked + amount });
+      } catch (err) {}
+    };
+    payments.forEach((p) => addCollected(p.date, p.amount));
+    extraIncomes.forEach((p) => addCollected(p.date, p.amount));
+    bookings.forEach((b) => addBooked(b.deliveryDate, b.totalAmount));
 
     return Array.from(years.entries())
       .sort((a, b) => b[0].localeCompare(a[0]))
       .map(([year, monthsMap]) => {
         const months = Array.from(monthsMap.entries())
           .sort((a, b) => b[0].localeCompare(a[0]))
-          .map(([k, v]) => ({ label: k.split("-")[1] || "Unknown", amount: v }));
+          .map(([k, v]) => ({ label: k.split("-")[1] || "Unknown", collected: v.collected, booked: v.booked }));
         return {
           year,
-          total: months.reduce((s, m) => s + m.amount, 0),
+          totalCollected: months.reduce((s, m) => s + m.collected, 0),
+          totalBooked: months.reduce((s, m) => s + m.booked, 0),
           months,
         };
       });
-  }, [payments, extraIncomes]);
+  }, [payments, extraIncomes, bookings]);
 
   const recent = useMemo(() => {
     return [...payments]
@@ -1008,7 +1024,7 @@ function IncomeView(p: {
   customers: any[];
   serviceSplit: { drape: number; prepleat: number };
   customerKindSplit: { artist: number; client: number };
-  monthlyYearlyReport: { year: string; total: number; months: { label: string; amount: number }[] }[];
+  monthlyYearlyReport: { year: string; totalCollected: number; totalBooked: number; months: { label: string; collected: number; booked: number }[] }[];
 }) {
   const pendingList = useMemo(() => {
     return p.bookings
@@ -1252,15 +1268,33 @@ function IncomeView(p: {
               <div className="space-y-4">
                 {p.monthlyYearlyReport.map((y) => (
                   <div key={y.year}>
-                    <div className="flex items-center justify-between mb-1.5 border-b border-border/40 pb-1">
+                    <div className="flex items-center justify-between mb-2 border-b border-border/40 pb-1">
                       <p className="font-bold text-sm">{y.year}</p>
-                      <p className="font-bold text-sm text-success">{fmtINR(y.total)}</p>
+                      <div className="flex gap-3 text-right">
+                        <div>
+                          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Booked</p>
+                          <p className="font-bold text-xs text-primary tabular-nums">{fmtINR(y.totalBooked)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
+                          <p className="font-bold text-xs text-success tabular-nums">{fmtINR(y.totalCollected)}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-1">
+                    <div className="space-y-1">
                       {y.months.map((m) => (
-                        <div key={m.label} className="flex flex-col bg-secondary/50 rounded-lg p-1.5 text-center">
-                          <span className="text-[10px] text-muted-foreground font-medium">{m.label}</span>
-                          <span className="text-xs font-semibold tabular-nums">{fmtINR(m.amount)}</span>
+                        <div key={m.label} className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
+                          <span className="text-xs font-semibold text-muted-foreground w-10">{m.label}</span>
+                          <div className="flex gap-4 text-right">
+                            <div>
+                              <p className="text-[9px] text-muted-foreground">Booked</p>
+                              <p className="text-xs font-semibold tabular-nums text-primary">{fmtINR(m.booked)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-muted-foreground">Collected</p>
+                              <p className="text-xs font-semibold tabular-nums text-success">{fmtINR(m.collected)}</p>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

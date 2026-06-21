@@ -699,7 +699,7 @@ function BookingsPage() {
                       </span>
                       {b.billNumber && (
                         <span className="text-[8px] font-mono text-muted-foreground/70 shrink-0 bg-secondary/80 px-1 py-0.5 rounded">
-                          #{b.billNumber.split("-").pop()}
+                          #{b.billNumber.includes("-") ? b.billNumber.split("-").pop() : b.billNumber}
                         </span>
                       )}
                       {b.status === "delivered" && (
