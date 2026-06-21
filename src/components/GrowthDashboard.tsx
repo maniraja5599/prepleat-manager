@@ -38,7 +38,7 @@ export function GrowthDashboard() {
     // 3. Outstanding Pending Due (Lifetime active bookings)
     const pendingDue = bookings
       .filter((b) => b.status !== "cancelled" && b.status !== "delivered")
-      .reduce((s, b) => s + totalDue(b), 0);
+      .reduce((s, b) => s + (b.status === "completed" ? totalDue(b) : 0), 0);
 
     // 4. Trend percentages
     const revenueDiff = monthRevenue - prevMonthRevenue;

@@ -168,8 +168,8 @@ function BookingsPage() {
       });
     }
 
-    if (pay === "paid") arr = arr.filter((b) => totalDue(b) === 0);
-    if (pay === "due") arr = arr.filter((b) => totalDue(b) > 0);
+    if (pay === "paid") arr = arr.filter((b) => b.status === "completed" && totalDue(b) === 0);
+    if (pay === "due") arr = arr.filter((b) => b.status === "completed" && totalDue(b) > 0);
     if (dateBounds.start || dateBounds.end) {
       arr = arr.filter((b) => {
         const d = parseISO(b.deliveryDate);
@@ -192,7 +192,7 @@ function BookingsPage() {
           a.deliveryTime.localeCompare(b.deliveryTime)
         );
       if (sort === "recent") return b.createdAt.localeCompare(a.createdAt);
-      return totalDue(b) - totalDue(a);
+      return (b.status === "completed" ? totalDue(b) : 0) - (a.status === "completed" ? totalDue(a) : 0);
     });
     return arr;
   }, [bookings, mainFilter, showPast, pay, sort, q, customers, dateBounds]);
@@ -218,7 +218,7 @@ function BookingsPage() {
   }, [bookings, customers, showPast]);
 
   const collected = list.reduce((s, b) => s + b.advancePaid, 0);
-  const pending = list.reduce((s, b) => s + totalDue(b), 0);
+  const pending = list.reduce((s, b) => s + (b.status === "completed" ? totalDue(b) : 0), 0);
 
   const tickerItems = useMemo(() => {
     return [
@@ -629,7 +629,7 @@ function BookingsPage() {
           {list.map((b) => {
             const c = customers.find((x) => x.id === b.customerId);
             const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
-            const due = totalDue(b);
+            const due = b.status === "completed" ? totalDue(b) : 0;
             const isArtistBooking = !!b.artistId || c?.kind === "artist";
             const tagColor =
               b.service === "prepleat"

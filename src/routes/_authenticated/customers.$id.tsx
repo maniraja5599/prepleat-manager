@@ -83,8 +83,8 @@ function CustomerDetail() {
 
   const cb = customerBookings(customer.id, bookings);
   const totalSpent = cb.reduce((s, b) => s + b.advancePaid, 0);
-  const totalDueAll = cb.reduce((s, b) => s + totalDue(b), 0);
-  const pendingOrders = cb.filter((b) => totalDue(b) > 0);
+  const totalDueAll = cb.reduce((s, b) => s + (b.status === "completed" ? totalDue(b) : 0), 0);
+  const pendingOrders = cb.filter((b) => b.status === "completed" && totalDue(b) > 0);
   const nextDelivery = pendingOrders[0];
 
   // Build a beautiful, client-friendly WhatsApp message
@@ -631,10 +631,10 @@ function CustomerDetail() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
-                    {totalDue(b) > 0 ? (
-                      <p className="text-xs text-destructive font-semibold">
+                    {b.status === "completed" && totalDue(b) > 0 ? (
+                      <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 ml-2">
                         {fmtINR(totalDue(b))} due
-                      </p>
+                      </span>
                     ) : (
                       <p className="text-xs text-success">Paid</p>
                     )}

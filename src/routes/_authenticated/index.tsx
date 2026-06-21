@@ -384,8 +384,8 @@ function CalendarPage() {
               const isSel = isSameDay(d, selected);
               const isCur = isSameMonth(d, cursor);
               const isToday = isSameDay(d, new Date());
-              const hasPending = list.some((b) => totalDue(b) > 0);
-              const dueSum = list.reduce((s, b) => s + totalDue(b), 0);
+              const hasPending = list.some((b) => b.status === "completed" && totalDue(b) > 0);
+              const dueSum = list.reduce((s, b) => s + (b.status === "completed" ? totalDue(b) : 0), 0);
               const totalSum = list.reduce((s, b) => s + b.totalAmount, 0);
               return (
                 <button
@@ -596,7 +596,7 @@ const BookingRow = memo(function BookingRow({
 }) {
   const c = customers.find((x) => x.id === b.customerId);
   const a = b.artistId ? customers.find((x) => x.id === b.artistId) : null;
-  const due = totalDue(b);
+  const due = b.status === "completed" ? totalDue(b) : 0;
   const settings = useStore((s) => s.settings);
   const isArtistBooking = !!b.artistId || c?.kind === "artist";
   const tagColor =
