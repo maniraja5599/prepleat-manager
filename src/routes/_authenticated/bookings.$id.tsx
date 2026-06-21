@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Plus,
   Check,
+  CheckCircle,
   Pencil,
   X,
   Receipt,
@@ -552,9 +553,9 @@ function BookingDetail() {
                   updateBooking(booking.id, patch);
                   toast.success("Booking Completed!");
                 }}
-                className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 active:scale-95 transition"
+                className="flex-1 py-3 rounded-xl bg-success text-success-foreground font-bold text-sm hover:opacity-90 active:scale-95 transition shadow-sm flex items-center justify-center gap-2 border border-success/20"
               >
-                Mark as Completed
+                <CheckCircle className="size-5" /> Mark as Completed
               </button>
             ) : (
               <button

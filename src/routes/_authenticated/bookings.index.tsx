@@ -747,7 +747,7 @@ function BookingsPage() {
               isSelected && "ring-2 ring-primary",
             );
             return (
-              <li key={b.id}>
+              <li key={b.id} className="relative touch-pan-y">
                 {selectMode ? (
                   <button
                     type="button"
@@ -764,9 +764,17 @@ function BookingsPage() {
                     {inner}
                   </button>
                 ) : (
-                  <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
-                    {inner}
-                  </Link>
+                  <SwipeToComplete 
+                    disabled={b.status === "completed" || b.status === "cancelled" || b.status === "delivered"}
+                    onComplete={() => {
+                      updateBooking(b.id, { status: "completed", completedAt: new Date().toISOString() });
+                      toast.success("Marked as completed!");
+                    }}
+                  >
+                    <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
+                      {inner}
+                    </Link>
+                  </SwipeToComplete>
                 )}
               </li>
             );
@@ -828,6 +836,68 @@ function StatChip({
     >
       <span className="text-[10px] uppercase tracking-wider opacity-80">{label}</span>
       <span className="text-xs font-bold tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function SwipeToComplete({ onComplete, disabled, children }: { onComplete: () => void, disabled: boolean, children: React.ReactNode }) {
+  const [offset, setOffset] = useState(0);
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+
+  return (
+    <div 
+      className="relative w-full rounded-2xl"
+      onTouchStart={(e) => {
+        if (disabled) return;
+        startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+      }}
+      onTouchMove={(e) => {
+        if (disabled || startX.current === null || startY.current === null) return;
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        const dx = x - startX.current;
+        const dy = y - startY.current;
+        
+        // If moving more vertically than horizontally, it's a scroll, so cancel swipe
+        if (Math.abs(dy) > Math.abs(dx)) {
+          setOffset(0);
+          startX.current = null;
+          startY.current = null;
+          return;
+        }
+        
+        if (dx > 0) {
+          setOffset(Math.min(dx, 80)); // cap at 80px
+        }
+      }}
+      onTouchEnd={() => {
+        if (disabled || startX.current === null) return;
+        startX.current = null;
+        startY.current = null;
+        if (offset > 50) {
+          onComplete();
+        }
+        setOffset(0);
+      }}
+    >
+      {!disabled && (
+        <div className="absolute inset-y-0 left-0 w-full bg-success flex items-center px-6 rounded-2xl" style={{ zIndex: 0 }}>
+          <CheckCircle2 className="text-success-foreground size-6" />
+        </div>
+      )}
+      <div 
+        style={{ 
+          transform: `translateX(${offset}px)`, 
+          transition: startX.current === null ? 'transform 0.2s ease-out' : 'none',
+          zIndex: 1,
+          position: 'relative'
+        }}
+        className="w-full h-full rounded-2xl bg-card"
+      >
+        {children}
+      </div>
     </div>
   );
 }
