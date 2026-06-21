@@ -141,10 +141,8 @@ function PaymentsPage() {
     const today = startOfDay(new Date());
     return bookings.reduce((s, b) => {
       if (b.status === "cancelled") return s;
-      if (b.status === "completed" || new Date(b.deliveryDate) >= today) {
-        return s + totalDue(b);
-      }
-      return s;
+      if (b.status !== "completed" && new Date(b.deliveryDate) >= today) return s;
+      return s + totalDue(b);
     }, 0);
   }, [bookings]);
   const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
@@ -292,6 +290,56 @@ function PaymentsPage() {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
   }, [payments, customers]);
+
+  const serviceSplit = useMemo(() => {
+    let drape = 0;
+    let prepleat = 0;
+    payments.forEach((p) => {
+      const b = bookings.find((x) => x.id === p.bookingId);
+      if (b?.service === "drape") drape += p.amount;
+      else if (b?.service === "prepleat") prepleat += p.amount;
+    });
+    return { drape, prepleat };
+  }, [payments, bookings]);
+
+  const customerKindSplit = useMemo(() => {
+    let artist = 0;
+    let client = 0;
+    payments.forEach((p) => {
+      const c = customers.find((x) => x.id === p.customerId);
+      if (c?.kind === "artist") artist += p.amount;
+      else client += p.amount;
+    });
+    return { artist, client };
+  }, [payments, customers]);
+
+  const monthlyYearlyReport = useMemo(() => {
+    const years = new Map<string, Map<string, number>>();
+    const addAmount = (dateStr: string, amount: number) => {
+      if (!dateStr) return;
+      const d = parseISO(dateStr);
+      const y = format(d, "yyyy");
+      const mStr = format(d, "MM-MMM");
+      if (!years.has(y)) years.set(y, new Map());
+      const yMap = years.get(y)!;
+      yMap.set(mStr, (yMap.get(mStr) ?? 0) + amount);
+    };
+    payments.forEach((p) => addAmount(p.date, p.amount));
+    extraIncomes.forEach((p) => addAmount(p.date, p.amount));
+
+    return Array.from(years.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([year, monthsMap]) => {
+        const months = Array.from(monthsMap.entries())
+          .sort((a, b) => b[0].localeCompare(a[0]))
+          .map(([k, v]) => ({ label: k.split("-")[1], amount: v }));
+        return {
+          year,
+          total: months.reduce((s, m) => s + m.amount, 0),
+          months,
+        };
+      });
+  }, [payments, extraIncomes]);
 
   const recent = useMemo(() => {
     return [...payments]
@@ -772,6 +820,9 @@ function PaymentsPage() {
           onSubFilterChange={handleSubFilterChange}
           bookings={bookings}
           customers={customers}
+          serviceSplit={serviceSplit}
+          customerKindSplit={customerKindSplit}
+          monthlyYearlyReport={monthlyYearlyReport}
         />
       )}
 
@@ -953,16 +1004,17 @@ function IncomeView(p: {
   onSubFilterChange: (val: "collected" | "pending") => void;
   bookings: any[];
   customers: any[];
+  serviceSplit: { drape: number; prepleat: number };
+  customerKindSplit: { artist: number; client: number };
+  monthlyYearlyReport: { year: string; total: number; months: { label: string; amount: number }[] }[];
 }) {
   const pendingList = useMemo(() => {
     const today = startOfDay(new Date());
     return p.bookings
       .filter((b) => {
         if (b.status === "cancelled") return false;
-        if (b.status === "completed" || new Date(b.deliveryDate) >= today) {
-          return totalDue(b) > 0;
-        }
-        return false;
+        if (b.status !== "completed" && new Date(b.deliveryDate) >= today) return false;
+        return totalDue(b) > 0;
       })
       .map((b) => {
         const c = p.customers.find((x) => x.id === b.customerId);
@@ -1141,6 +1193,81 @@ function IncomeView(p: {
                 );
               })}
             </div>
+          </div>
+
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Service Split
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {(["prepleat", "drape"] as const).map((m) => {
+                const amount = p.serviceSplit[m];
+                const total = p.serviceSplit.drape + p.serviceSplit.prepleat;
+                const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
+                return (
+                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      {m}
+                    </p>
+                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(amount)}</p>
+                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Client vs Artist Split
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {(["client", "artist"] as const).map((m) => {
+                const amount = p.customerKindSplit[m];
+                const total = p.customerKindSplit.client + p.customerKindSplit.artist;
+                const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
+                return (
+                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      {m}
+                    </p>
+                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(amount)}</p>
+                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Monthly & Yearly Report
+              </p>
+              <Calendar className="size-3.5 text-primary" />
+            </div>
+            {p.monthlyYearlyReport.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No data available</p>
+            ) : (
+              <div className="space-y-4">
+                {p.monthlyYearlyReport.map((y) => (
+                  <div key={y.year}>
+                    <div className="flex items-center justify-between mb-1.5 border-b border-border/40 pb-1">
+                      <p className="font-bold text-sm">{y.year}</p>
+                      <p className="font-bold text-sm text-success">{fmtINR(y.total)}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {y.months.map((m) => (
+                        <div key={m.label} className="flex flex-col bg-secondary/50 rounded-lg p-1.5 text-center">
+                          <span className="text-[10px] text-muted-foreground font-medium">{m.label}</span>
+                          <span className="text-xs font-semibold tabular-nums">{fmtINR(m.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-card card-shadow rounded-2xl p-3 mb-3">

@@ -312,16 +312,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
 
     // 3. Next Booking
     const nextB = bookings
-      .filter(
-        (b) =>
-          b.status !== "cancelled" &&
-          b.status !== "delivered" &&
-          new Date(b.deliveryDate) >= new Date(),
-      )
+      .filter((b) => {
+        if (b.status === "cancelled" || b.status === "completed") return false;
+        const d = new Date(`${b.deliveryDate}T${b.deliveryTime || "23:59"}:00`);
+        return d >= new Date();
+      })
       .sort((a, b) => {
-        const dateCmp = a.deliveryDate.localeCompare(b.deliveryDate);
-        if (dateCmp !== 0) return dateCmp;
-        return (a.deliveryTime || "23:59").localeCompare(b.deliveryTime || "23:59");
+        const dA = new Date(`${a.deliveryDate}T${a.deliveryTime || "23:59"}:00`);
+        const dB = new Date(`${b.deliveryDate}T${b.deliveryTime || "23:59"}:00`);
+        return dA.getTime() - dB.getTime();
       })[0];
       
     if (nextB) {
@@ -342,7 +341,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     today.setHours(0, 0, 0, 0);
     for (const b of bookings) {
       if (b.status === "cancelled") continue;
-      if (b.status !== "completed" && new Date(b.deliveryDate) < today) continue;
+      if (b.status !== "completed" && new Date(b.deliveryDate) >= today) continue;
       const due = totalDue(b);
       if (due <= 0) continue;
       const c = customers.find((x) => x.id === b.customerId);

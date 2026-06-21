@@ -594,17 +594,24 @@ function NewBooking() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-sm">{selectedCust.name}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-xs font-semibold text-muted-foreground">+91</span>
-                    <input
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
-                      className="bg-secondary rounded px-2 py-1 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-primary w-28"
-                      placeholder="Mobile number"
-                    />
+                  <div className="mt-3">
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        value={newPhone}
+                        onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                        placeholder="Mobile number"
+                        className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-3 py-3 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
                   </div>
                   {quotedLastPrice && (
-                    <p className="text-xs text-gold mt-1.5">
+                    <p className="text-xs text-gold mt-2">
                       Last {service}: {fmtINR(quotedLastPrice)}
                     </p>
                   )}
@@ -628,7 +635,7 @@ function NewBooking() {
                     onChange={(e) => setNewAddress(e.target.value)}
                     rows={2}
                     placeholder="Add/Edit address"
-                    className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -636,7 +643,7 @@ function NewBooking() {
                     value={newLocationUrl}
                     onChange={(e) => setNewLocationUrl(e.target.value)}
                     placeholder="Paste Maps URL"
-                    className="flex-1 bg-secondary rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="flex-1 bg-secondary rounded-2xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
                     <Map className="size-4" />
