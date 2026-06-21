@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import {
@@ -56,6 +56,7 @@ type Range = "all" | "thisMonth" | "lastMonth" | "custom";
 function BookingsPage() {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
+  const updateBooking = useStore((s) => s.updateBooking);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const restoreBooking = useStore((s) => s.restoreBooking);
   const settings = useStore((s) => s.settings);
