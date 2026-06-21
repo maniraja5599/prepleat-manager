@@ -111,8 +111,8 @@ function CustomersPage() {
         const cb = bookings.filter((b) =>
           tab === "artist" ? b.artistId === c.id : b.customerId === c.id,
         );
-        const due = cb.reduce((s, b) => s + (b.status === "completed" ? totalDue(b) : 0), 0);
-        const collected = cb.reduce((s, b) => s + b.advancePaid + (b.status === "completed" ? (b.totalAmount - b.advancePaid - totalDue(b)) : 0), 0);
+        const due = cb.reduce((s, b) => s + totalDue(b), 0);
+        const collected = cb.reduce((s, b) => s + (b.totalAmount - totalDue(b)), 0);
         return { ...c, count: cb.length, due, collected };
       })
       .filter(
