@@ -1248,7 +1248,8 @@ export const useStore = create<State>()(
         if (s.theme === "maroon" || s.theme === undefined) {
           s.theme = "royal";
         }
-        if (s.calendarAmountDisplay === undefined) {
+        // Always default to showing pending due; reset "none" to "pending"
+        if (!s.calendarAmountDisplay || s.calendarAmountDisplay === "none") {
           s.calendarAmountDisplay = "pending";
         }
         if (s.businessName === "Saree Studio") s.businessName = "Eyas Saree Drapist";

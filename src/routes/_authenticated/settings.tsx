@@ -586,10 +586,9 @@ function SettingsPage() {
                   <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                     Amount Display Mode
                   </label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {(
                       [
-                        { id: "none", label: "Hide" },
                         { id: "pending", label: "Due" },
                         { id: "total", label: "Total" },
                         { id: "both", label: "Both" },
