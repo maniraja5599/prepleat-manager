@@ -301,6 +301,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     }
 
     // 2. Today's Bookings
+
     if (todayBookings.length > 0) {
       items.push({
         type: "today",
@@ -314,13 +315,16 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     const nextB = bookings
       .filter((b) => {
         if (b.status === "cancelled" || b.status === "completed") return false;
-        const d = new Date(`${b.deliveryDate}T${b.deliveryTime || "23:59"}:00`);
-        return d >= new Date();
+        const d = new Date(b.deliveryDate.slice(0, 10));
+        d.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return d >= today;
       })
       .sort((a, b) => {
-        const dA = new Date(`${a.deliveryDate}T${a.deliveryTime || "23:59"}:00`);
-        const dB = new Date(`${b.deliveryDate}T${b.deliveryTime || "23:59"}:00`);
-        return dA.getTime() - dB.getTime();
+        const dateCmp = a.deliveryDate.slice(0, 10).localeCompare(b.deliveryDate.slice(0, 10));
+        if (dateCmp !== 0) return dateCmp;
+        return (a.deliveryTime || "23:59").localeCompare(b.deliveryTime || "23:59");
       })[0];
       
     if (nextB) {
