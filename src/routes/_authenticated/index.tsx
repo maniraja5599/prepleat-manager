@@ -441,35 +441,29 @@ function CalendarPage() {
                       })}
                     </div>
                   )}
-                  {calendarAmountDisplay !== "none" && (
-                    <>
-                      {/* Pending / Due amount — shown in "pending" and "both" modes */}
-                      {dueSum > 0 &&
-                        (calendarAmountDisplay === "pending" ||
-                          calendarAmountDisplay === "both") && (
-                          <span
-                            className={cn(
-                              "absolute top-0.5 right-1 text-[8px] font-bold leading-none",
-                              isSel ? "text-primary-foreground" : "text-destructive",
-                            )}
-                          >
-                            ₹{dueSum > 999 ? Math.round(dueSum / 1000) + "k" : dueSum}
-                          </span>
-                        )}
-                      {/* Total amount — shown in "total" and "both" modes */}
-                      {totalSum > 0 &&
-                        (calendarAmountDisplay === "total" || calendarAmountDisplay === "both") && (
-                          <span
-                            className={cn(
-                              "absolute top-0.5 left-1 text-[8px] font-bold leading-none",
-                              isSel ? "text-primary-foreground" : "text-muted-foreground/80",
-                            )}
-                          >
-                            ₹{totalSum > 999 ? Math.round(totalSum / 1000) + "k" : totalSum}
-                          </span>
-                        )}
-                    </>
+                  {/* Pending due — always visible for completed bookings with outstanding balance */}
+                  {dueSum > 0 && (
+                    <span
+                      className={cn(
+                        "absolute top-0.5 right-1 text-[8px] font-bold leading-none",
+                        isSel ? "text-primary-foreground" : "text-destructive",
+                      )}
+                    >
+                      ₹{dueSum > 999 ? Math.round(dueSum / 1000) + "k" : Math.round(dueSum)}
+                    </span>
                   )}
+                  {/* Total amount — shown in "total" and "both" modes */}
+                  {calendarAmountDisplay !== "none" && totalSum > 0 &&
+                    (calendarAmountDisplay === "total" || calendarAmountDisplay === "both") && (
+                      <span
+                        className={cn(
+                          "absolute top-0.5 left-1 text-[8px] font-bold leading-none",
+                          isSel ? "text-primary-foreground" : "text-muted-foreground/80",
+                        )}
+                      >
+                        ₹{totalSum > 999 ? Math.round(totalSum / 1000) + "k" : totalSum}
+                      </span>
+                    )}
                 </button>
               );
             })}
