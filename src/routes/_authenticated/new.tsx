@@ -583,6 +583,10 @@ function NewBooking() {
                     setShowMeasure(false);
                   }}
                   className="text-[10px] text-muted-foreground px-2 py-1"
+                >
+                  Hide
+                </button>
+              )}
             </div>
           </div>
           {customerId && selectedCust ? (

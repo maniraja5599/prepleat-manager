@@ -567,6 +567,7 @@ function BookingDetail() {
                 Revert to Booked
               </button>
             )}
+          </div>
         </div>
       )}
 
