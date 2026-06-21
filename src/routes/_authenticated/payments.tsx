@@ -137,7 +137,16 @@ function PaymentsPage() {
   const lifetime = paymentsTotal + extraTotal;
   const totalExpense = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
   const netProfit = lifetime - totalExpense;
-  const totalPending = useMemo(() => bookings.reduce((s, b) => s + totalDue(b), 0), [bookings]);
+  const totalPending = useMemo(() => {
+    const today = startOfDay(new Date());
+    return bookings.reduce((s, b) => {
+      if (b.status === "cancelled") return s;
+      if (b.status === "completed" || new Date(b.deliveryDate) >= today) {
+        return s + totalDue(b);
+      }
+      return s;
+    }, 0);
+  }, [bookings]);
   const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
   const collectionRate =
     totalBilled > 0 ? Math.min(100, Math.round((paymentsTotal / totalBilled) * 100)) : 0;
@@ -946,8 +955,15 @@ function IncomeView(p: {
   customers: any[];
 }) {
   const pendingList = useMemo(() => {
+    const today = startOfDay(new Date());
     return p.bookings
-      .filter((b) => b.status !== "cancelled" && b.status !== "delivered" && totalDue(b) > 0)
+      .filter((b) => {
+        if (b.status === "cancelled") return false;
+        if (b.status === "completed" || new Date(b.deliveryDate) >= today) {
+          return totalDue(b) > 0;
+        }
+        return false;
+      })
       .map((b) => {
         const c = p.customers.find((x) => x.id === b.customerId);
         return {

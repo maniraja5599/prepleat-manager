@@ -318,7 +318,11 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
           b.status !== "delivered" &&
           new Date(b.deliveryDate) >= new Date(),
       )
-      .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))[0];
+      .sort((a, b) => {
+        const dateCmp = a.deliveryDate.localeCompare(b.deliveryDate);
+        if (dateCmp !== 0) return dateCmp;
+        return (a.deliveryTime || "23:59").localeCompare(b.deliveryTime || "23:59");
+      })[0];
       
     if (nextB) {
       const cust = customers.find((c) => c.id === nextB.customerId);
@@ -334,8 +338,11 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
 
     // 4. Outstanding Dues
     const dueMap = new Map<string, { name: string; totalDue: number }>();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     for (const b of bookings) {
-      if (b.status === "cancelled" || b.status === "delivered") continue;
+      if (b.status === "cancelled") continue;
+      if (b.status !== "completed" && new Date(b.deliveryDate) < today) continue;
       const due = totalDue(b);
       if (due <= 0) continue;
       const c = customers.find((x) => x.id === b.customerId);

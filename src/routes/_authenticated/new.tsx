@@ -125,7 +125,9 @@ function NewBooking() {
   const [pricePerSaree, setPricePerSaree] = useState<number>(defaultPrice);
   const [priceTouched, setPriceTouched] = useState(false);
   const effPrice = priceTouched ? pricePerSaree : (quotedLastPrice ?? defaultPrice);
-  const total = sareeCount * effPrice;
+  
+  const [manualTotal, setManualTotal] = useState<number | null>(null);
+  const total = manualTotal !== null ? manualTotal : sareeCount * effPrice;
 
   const today = format(new Date(), "yyyy-MM-dd");
   const [deliveryDate, setDeliveryDate] = useState(presetDate || today);
@@ -315,8 +317,11 @@ function NewBooking() {
       }
     } else if (selectedCust) {
       const updates: Partial<typeof selectedCust> = {};
-      if (newAddress.trim() && !selectedCust.address) updates.address = newAddress.trim();
-      if (newLocationUrl.trim() && !selectedCust.locationUrl) updates.locationUrl = newLocationUrl.trim();
+      const newPhoneVal = newPhone.length === 10 ? "+91" + newPhone : newPhone.trim();
+      if (newName.trim() && newName !== selectedCust.name) updates.name = newName.trim();
+      if (newPhoneVal && newPhoneVal !== selectedCust.phone) updates.phone = newPhoneVal;
+      if (newAddress.trim() !== (selectedCust.address || "")) updates.address = newAddress.trim();
+      if (newLocationUrl.trim() !== (selectedCust.locationUrl || "")) updates.locationUrl = newLocationUrl.trim();
       if (Object.keys(updates).length > 0) updateCustomer(cid, updates);
     }
     if (!cid) return toast.error("Customer required");
@@ -578,30 +583,24 @@ function NewBooking() {
                     setShowMeasure(false);
                   }}
                   className="text-[10px] text-muted-foreground px-2 py-1"
-                >
-                  Hide
-                </button>
-              )}
             </div>
           </div>
-          {selectedCust ? (
+          {customerId && selectedCust ? (
             <div>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{selectedCust.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{selectedCust.phone}</p>
-                  {selectedCust.address && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                      {selectedCust.address}
-                    </p>
-                  )}
-                  {selectedCust.locationUrl && (
-                    <a href={selectedCust.locationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-500 mt-1 hover:underline">
-                      <Map className="size-3" /> View Map
-                    </a>
-                  )}
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold text-sm">{selectedCust.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-xs font-semibold text-muted-foreground">+91</span>
+                    <input
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                      className="bg-secondary rounded px-2 py-1 text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-primary w-28"
+                      placeholder="Mobile number"
+                    />
+                  </div>
                   {quotedLastPrice && (
-                    <p className="text-xs text-gold mt-1">
+                    <p className="text-xs text-gold mt-1.5">
                       Last {service}: {fmtINR(quotedLastPrice)}
                     </p>
                   )}
@@ -617,35 +616,29 @@ function NewBooking() {
                   Change
                 </button>
               </div>
-              {(!selectedCust.address || !selectedCust.locationUrl) && (
-                <div className="space-y-2 mt-3">
-                  {!selectedCust.address && (
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                      <textarea
-                        value={newAddress}
-                        onChange={(e) => setNewAddress(e.target.value)}
-                        rows={2}
-                        placeholder="Add address"
-                        className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                      />
-                    </div>
-                  )}
-                  {!selectedCust.locationUrl && (
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={newLocationUrl}
-                        onChange={(e) => setNewLocationUrl(e.target.value)}
-                        placeholder="Paste Maps URL"
-                        className="flex-1 bg-secondary rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                      <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
-                        <Map className="size-4" />
-                      </button>
-                    </div>
-                  )}
+              <div className="space-y-2 mt-4">
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <textarea
+                    value={newAddress}
+                    onChange={(e) => setNewAddress(e.target.value)}
+                    rows={2}
+                    placeholder="Add/Edit address"
+                    className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
                 </div>
-              )}
+                <div className="flex items-center gap-2">
+                  <input
+                    value={newLocationUrl}
+                    onChange={(e) => setNewLocationUrl(e.target.value)}
+                    placeholder="Paste Maps URL"
+                    className="flex-1 bg-secondary rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
+                    <Map className="size-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
@@ -899,9 +892,17 @@ function NewBooking() {
             <span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
           </div>
         )}
-        <div className="mt-3 pt-3 border-t border-border flex justify-between items-baseline">
-          <span className="text-sm text-muted-foreground">Total</span>
-          <span className="text-2xl font-display font-bold text-primary">{fmtINR(total)}</span>
+        <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">Total Amount</span>
+          <div className="relative w-28">
+            <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-primary" />
+            <input
+              type="number"
+              value={manualTotal !== null ? manualTotal : (sareeCount * effPrice)}
+              onChange={(e) => setManualTotal(e.target.value ? Number(e.target.value) : null)}
+              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xl font-display font-bold text-primary text-right focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
         </div>
       </section>
 

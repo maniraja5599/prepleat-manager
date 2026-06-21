@@ -94,17 +94,6 @@ function BookingDetail() {
 
   const due = totalDue(booking);
 
-  // Workflow-aware messages: the content adapts to whichever step the booking
-  // is in (received / ready / delivered) so the customer always gets the
-  // right update at the right time.
-  const currentStage: "received" | "ready" | "delivered" | "new" = booking.deliveredAt
-    ? "delivered"
-    : booking.workDoneAt
-      ? "ready"
-      : booking.receivedAt
-        ? "received"
-        : "new";
-
   const buildWhatsAppMessage = (
     kind: "reminder" | "bill" | "balance" | "status",
     withLink = false,
@@ -117,31 +106,21 @@ function BookingDetail() {
     let parts: string[] = [];
 
     if (kind === "status") {
-      if (currentStage === "received") {
-        parts = [
-          `Hi ${name} 🙏`,
-          `We've received your saree${booking.sareeCount > 1 ? "s" : ""} (${booking.sareeCount}) for *${booking.service === "prepleat" ? "PrePleat" : "Draping"}*.`,
-          `📅 Delivery: ${dateStr}, ${timeStr}`,
-          due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully paid`,
-        ];
-      } else if (currentStage === "ready") {
-        const label = booking.service === "prepleat" ? "PrePleat" : "Draping";
-        parts = [
-          `Hi ${name} 😊`,
-          `Your *${label} is ready!* ✅`,
-          `📅 Pickup: ${dateStr}, ${timeStr}`,
-          due > 0 ? `💰 Balance: *${fmtINR(due)}* (GPay / Cash)` : `✅ Fully paid — thank you!`,
-        ];
-      } else if (currentStage === "delivered") {
+      if (booking.status === "completed") {
         parts = [
           `Hi ${name},`,
-          `Your order is *delivered* ✅ Thank you for trusting us 💛`,
+          `Your order is *completed* ✅ Thank you for trusting us 💛`,
           `🧾 Bill: ${booking.billNumber ?? booking.id.slice(0, 6).toUpperCase()} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
           `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
           due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully Paid`,
         ];
       } else {
-        kind = "bill";
+        parts = [
+          `Hi ${name} 🙏`,
+          `Your order is booked for *${booking.service === "prepleat" ? "PrePleat" : "Draping"}*.`,
+          `📅 Delivery: ${dateStr}, ${timeStr}`,
+          due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully paid`,
+        ];
       }
     }
     
@@ -541,129 +520,53 @@ function BookingDetail() {
         />
       )}
 
-      {/* Interactive horizontal stepper timeline */}
       {booking.status !== "cancelled" && (
         <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-            Workflow Status
-          </h2>
-          <div className="relative flex items-center justify-between mt-2 px-1">
-            {/* Stepper connecting line */}
-            <div className="absolute top-[18px] left-[15%] right-[15%] h-0.5 bg-border -z-10" />
-
-            {/* Active track color */}
-            <div
-              className="absolute top-[18px] left-[15%] h-0.5 bg-success transition-all duration-300 -z-10"
-              style={{
-                width: booking.deliveredAt ? "70%" : booking.workDoneAt ? "35%" : "0%",
-              }}
-            />
-
-            {[
-              { key: "receivedAt" as const, label: "Received", fullLabel: "Saree Received" },
-              {
-                key: "workDoneAt" as const,
-                label: booking.service === "prepleat" ? "PrePleat Done" : "Drape Done",
-                fullLabel: "Work Done",
-              },
-              { key: "deliveredAt" as const, label: "Delivered", fullLabel: "Order Delivered" },
-            ].map((step, i, arr) => {
-              const ts = booking[step.key];
-              const prevDone = i === 0 ? true : !!booking[arr[i - 1].key];
-              const isDone = !!ts;
-
-              const handleStepClick = () => {
-                if (isDone) {
-                  const patch: Partial<typeof booking> = {};
-                  for (let j = i; j < arr.length; j++)
-                    (patch as Record<string, undefined>)[arr[j].key] = undefined;
-                  if (booking.status === "delivered") patch.status = "pending";
-                  updateBooking(booking.id, patch);
-                  toast.success("Workflow reverted");
-                  return;
-                }
-                if (step.key === "deliveredAt" && due > 0) {
-                  const ok = window.confirm(
-                    `Balance ${fmtINR(due)} pending. Mark as paid (${(settings.defaultPaymentMode ?? "gpay").toUpperCase()}) and deliver?`,
-                  );
-                  if (ok) {
-                    addPayment({
-                      bookingId: booking.id,
-                      customerId: booking.customerId,
-                      amount: due,
-                      date: new Date().toISOString(),
-                      mode: settings.defaultPaymentMode ?? "gpay",
-                      note: "On delivery",
-                    });
-                  }
-                }
-                const patch: Partial<typeof booking> = {
-                  [step.key]: new Date().toISOString(),
-                } as Partial<typeof booking>;
-                if (step.key === "deliveredAt") {
-                  patch.status = "delivered";
-                  patch.completedAt = new Date().toISOString();
-                  if (!booking.workDoneAt) patch.workDoneAt = new Date().toISOString();
-                  if (!booking.receivedAt) patch.receivedAt = new Date().toISOString();
-                }
-                updateBooking(booking.id, patch);
-                toast.success(`${step.fullLabel} ✓`);
-              };
-
-              return (
-                <button
-                  key={step.key}
-                  disabled={!prevDone && !isDone}
-                  onClick={handleStepClick}
-                  className="flex flex-col items-center flex-1 focus:outline-none disabled:opacity-50"
-                >
-                  <div
-                    className={cn(
-                      "size-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition active:scale-95 cursor-pointer shadow-sm",
-                      isDone
-                        ? "bg-success border-success text-success-foreground"
-                        : prevDone
-                          ? "bg-background border-primary text-primary"
-                          : "bg-background border-border text-muted-foreground/40",
-                    )}
-                  >
-                    {isDone ? <Check className="size-4 stroke-[3]" /> : i + 1}
-                  </div>
-                  <span className="text-[10px] font-bold mt-1.5 leading-tight text-center">
-                    {step.label}
-                  </span>
-                  {ts && (
-                    <span className="text-[8px] text-muted-foreground/80 mt-0.5 leading-none">
-                      {formatAppDate(ts)}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Booking Status
+            </h2>
+            <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", booking.status === "completed" ? "bg-success/10 text-success" : "bg-primary/10 text-primary")}>
+              {booking.status === "completed" ? "Completed" : "Booked"}
+            </span>
           </div>
-
-          {/* Stage aware notification prompt */}
-          {currentStage !== "new" && (
-            <div className="mt-4 pt-3.5 border-t border-border/40 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[9px] uppercase font-bold tracking-wider text-primary">
-                  Recommend stage update
-                </p>
-                <p className="text-xs font-semibold text-foreground mt-0.5 truncate">
-                  {currentStage === "received" && "Saree Received Update"}
-                  {currentStage === "ready" &&
-                    (booking.service === "prepleat" ? "PrePleat Done Notice" : "Drape Done Notice")}
-                  {currentStage === "delivered" && "Delivered Invoice Receipt"}
-                </p>
-              </div>
+          
+          <div className="mt-4 flex gap-3">
+            {booking.status !== "completed" ? (
               <button
-                onClick={() => setPreviewMode({ channel: "whatsapp", kind: "status" })}
-                className="px-4 py-2 saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-primary/20"
+                onClick={() => {
+                  const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
+                  if (due > 0) {
+                    const ok = window.confirm(`Balance ${fmtINR(due)} pending. Mark as paid (${(settings.defaultPaymentMode ?? "gpay").toUpperCase()}) and complete?`);
+                    if (ok) {
+                      addPayment({
+                        bookingId: booking.id,
+                        customerId: booking.customerId,
+                        amount: due,
+                        date: new Date().toISOString(),
+                        mode: settings.defaultPaymentMode ?? "gpay",
+                        note: "On completion",
+                      });
+                    }
+                  }
+                  updateBooking(booking.id, patch);
+                  toast.success("Booking Completed!");
+                }}
+                className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 active:scale-95 transition"
               >
-                <MessageCircle className="size-4" /> Send Update
+                Mark as Completed
               </button>
-            </div>
-          )}
+            ) : (
+              <button
+                onClick={() => {
+                  updateBooking(booking.id, { status: "pending", completedAt: undefined });
+                  toast.success("Reverted to Booked");
+                }}
+                className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-bold text-sm border border-border/40 hover:bg-secondary/80 active:scale-95 transition"
+              >
+                Revert to Booked
+              </button>
+            )}
         </div>
       )}
 
