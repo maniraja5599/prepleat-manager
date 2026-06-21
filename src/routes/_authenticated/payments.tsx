@@ -317,12 +317,15 @@ function PaymentsPage() {
     const years = new Map<string, Map<string, number>>();
     const addAmount = (dateStr: string, amount: number) => {
       if (!dateStr) return;
-      const d = parseISO(dateStr);
-      const y = format(d, "yyyy");
-      const mStr = format(d, "MM-MMM");
-      if (!years.has(y)) years.set(y, new Map());
-      const yMap = years.get(y)!;
-      yMap.set(mStr, (yMap.get(mStr) ?? 0) + amount);
+      try {
+        const d = parseISO(dateStr);
+        if (isNaN(d.getTime())) return;
+        const y = format(d, "yyyy");
+        const mStr = format(d, "MM-MMM");
+        if (!years.has(y)) years.set(y, new Map());
+        const yMap = years.get(y)!;
+        yMap.set(mStr, (yMap.get(mStr) ?? 0) + amount);
+      } catch (err) {}
     };
     payments.forEach((p) => addAmount(p.date, p.amount));
     extraIncomes.forEach((p) => addAmount(p.date, p.amount));
@@ -332,7 +335,7 @@ function PaymentsPage() {
       .map(([year, monthsMap]) => {
         const months = Array.from(monthsMap.entries())
           .sort((a, b) => b[0].localeCompare(a[0]))
-          .map(([k, v]) => ({ label: k.split("-")[1], amount: v }));
+          .map(([k, v]) => ({ label: k.split("-")[1] || "Unknown", amount: v }));
         return {
           year,
           total: months.reduce((s, m) => s + m.amount, 0),
@@ -1201,8 +1204,8 @@ function IncomeView(p: {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {(["prepleat", "drape"] as const).map((m) => {
-                const amount = p.serviceSplit[m];
-                const total = p.serviceSplit.drape + p.serviceSplit.prepleat;
+                const amount = p.serviceSplit?.[m] || 0;
+                const total = (p.serviceSplit?.drape || 0) + (p.serviceSplit?.prepleat || 0);
                 const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
                 return (
                   <div key={m} className="bg-secondary rounded-xl p-2 text-center">
@@ -1223,8 +1226,8 @@ function IncomeView(p: {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {(["client", "artist"] as const).map((m) => {
-                const amount = p.customerKindSplit[m];
-                const total = p.customerKindSplit.client + p.customerKindSplit.artist;
+                const amount = p.customerKindSplit?.[m] || 0;
+                const total = (p.customerKindSplit?.client || 0) + (p.customerKindSplit?.artist || 0);
                 const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
                 return (
                   <div key={m} className="bg-secondary rounded-xl p-2 text-center">
@@ -1246,7 +1249,7 @@ function IncomeView(p: {
               </p>
               <Calendar className="size-3.5 text-primary" />
             </div>
-            {p.monthlyYearlyReport.length === 0 ? (
+            {!p.monthlyYearlyReport || p.monthlyYearlyReport.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">No data available</p>
             ) : (
               <div className="space-y-4">
