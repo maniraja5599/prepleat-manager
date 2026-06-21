@@ -386,8 +386,8 @@ function CalendarPage() {
               const isToday = isSameDay(d, new Date());
               const today = new Date();
               today.setHours(23, 59, 59, 999);
-              const hasPending = list.some((b) => totalDue(b) > 0 && parseISO(b.deliveryDate) <= today);
-              const dueSum = list.reduce((s, b) => s + (parseISO(b.deliveryDate) <= today ? totalDue(b) : 0), 0);
+              const hasPending = list.some((b) => b.status === "completed" && totalDue(b) > 0);
+              const dueSum = list.reduce((s, b) => s + (b.status === "completed" ? totalDue(b) : 0), 0);
               const totalSum = list.reduce((s, b) => s + b.totalAmount, 0);
               return (
                 <button
