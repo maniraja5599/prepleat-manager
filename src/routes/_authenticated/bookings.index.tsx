@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import {
   Search,
@@ -23,6 +24,8 @@ import {
   AlertCircle,
   Phone,
   MessageCircle,
+  AlertTriangle,
+  ChevronRight,
 } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -73,6 +76,9 @@ function BookingsPage() {
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  // Pending complete warning (payment check before completing)
+  const [pendingComplete, setPendingComplete] = useState<{ id: string; due: number; name: string } | null>(null);
 
   // Ticker Index and interval for scrolling stats ticker in header
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -145,11 +151,12 @@ function BookingsPage() {
   const list = useMemo(() => {
     let arr = bookings.slice();
 
-    // Filter by status (active vs past) based on showPast
+    // Filter by status (active vs past)
+    // Past = completed or delivered; Active = everything else
     if (showPast) {
-      arr = arr.filter((b) => b.status === "delivered");
+      arr = arr.filter((b) => b.status === "completed" || b.status === "delivered");
     } else {
-      arr = arr.filter((b) => b.status !== "delivered");
+      arr = arr.filter((b) => b.status !== "completed" && b.status !== "delivered");
     }
 
     // Filter by service type (mainFilter)
@@ -199,10 +206,14 @@ function BookingsPage() {
   }, [bookings, mainFilter, showPast, pay, sort, q, customers, dateBounds]);
 
   const counts = useMemo(() => {
+    // Active = not completed and not delivered
     const statusFilter = (b: any) =>
-      showPast ? b.status === "delivered" : b.status !== "delivered";
+      showPast
+        ? b.status === "completed" || b.status === "delivered"
+        : b.status !== "completed" && b.status !== "delivered";
     return {
       active: bookings.filter((b) => statusFilter(b)).length,
+
       prepleat: bookings.filter((b) => b.service === "prepleat" && statusFilter(b)).length,
       drape: bookings.filter((b) => {
         const c = customers.find((x) => x.id === b.customerId);
@@ -768,8 +779,14 @@ function BookingsPage() {
                   <SwipeToComplete 
                     disabled={b.status === "completed" || b.status === "cancelled" || b.status === "delivered"}
                     onComplete={() => {
-                      updateBooking(b.id, { status: "completed", completedAt: new Date().toISOString() });
-                      toast.success("Marked as completed!");
+                      const due = totalDue(b);
+                      if (due > 0) {
+                        // Show payment warning before completing
+                        setPendingComplete({ id: b.id, due, name: c?.name ?? "Customer" });
+                      } else {
+                        updateBooking(b.id, { status: "completed", completedAt: new Date().toISOString() });
+                        toast.success("Marked as completed!");
+                      }
                     }}
                   >
                     <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
@@ -781,6 +798,41 @@ function BookingsPage() {
             );
           })}
         </ul>
+      )}
+
+      {/* ── PAYMENT PENDING COMPLETE WARNING MODAL ── */}
+      {pendingComplete && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-5" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}>
+          <div className="bg-card rounded-3xl p-7 w-full max-w-sm border border-border shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+            <div className="flex flex-col items-center text-center mb-5">
+              <div className="size-14 rounded-full bg-destructive/15 flex items-center justify-center mb-3">
+                <AlertTriangle className="size-7 text-destructive" />
+              </div>
+              <h2 className="text-lg font-bold mb-1">Payment Pending!</h2>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{pendingComplete.name}</span> still has
+              </p>
+              <p className="text-3xl font-extrabold text-destructive my-2 tabular-nums">
+                {fmtINR(pendingComplete.due)}
+              </p>
+              <p className="text-sm text-muted-foreground">pending. Mark as completed anyway?</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPendingComplete(null)}
+                className="flex-1 py-3 rounded-2xl bg-secondary text-sm font-semibold border border-border cursor-pointer active:scale-95 transition"
+              >Cancel</button>
+              <button
+                onClick={() => {
+                  updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
+                  toast.success("Marked as completed!");
+                  setPendingComplete(null);
+                }}
+                className="flex-1 py-3 rounded-2xl bg-destructive text-destructive-foreground text-sm font-bold cursor-pointer active:scale-95 transition"
+              >Complete Anyway</button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ConfirmDialog
@@ -841,14 +893,33 @@ function StatChip({
   );
 }
 
-function SwipeToComplete({ onComplete, disabled, children }: { onComplete: () => void, disabled: boolean, children: React.ReactNode }) {
+function SwipeToComplete({
+  onComplete,
+  disabled,
+  children,
+}: {
+  onComplete: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  // swipeDir: null = idle, 'right' = confirming (right swipe), 'left' = complete action (left swipe)
+  const [swipeDir, setSwipeDir] = useState<null | 'right' | 'left'>(null);
   const [offset, setOffset] = useState(0);
+  const [confirming, setConfirming] = useState(false); // after first right swipe
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
+  const THRESHOLD = 60;
+
+  const reset = () => {
+    setOffset(0);
+    setSwipeDir(null);
+    startX.current = null;
+    startY.current = null;
+  };
 
   return (
-    <div 
-      className="relative w-full rounded-2xl"
+    <div
+      className="relative w-full rounded-2xl overflow-hidden"
       onTouchStart={(e) => {
         if (disabled) return;
         startX.current = e.touches[0].clientX;
@@ -856,46 +927,99 @@ function SwipeToComplete({ onComplete, disabled, children }: { onComplete: () =>
       }}
       onTouchMove={(e) => {
         if (disabled || startX.current === null || startY.current === null) return;
-        const x = e.touches[0].clientX;
-        const y = e.touches[0].clientY;
-        const dx = x - startX.current;
-        const dy = y - startY.current;
-        
-        // If moving more vertically than horizontally, it's a scroll, so cancel swipe
-        if (Math.abs(dy) > Math.abs(dx)) {
-          setOffset(0);
-          startX.current = null;
-          startY.current = null;
-          return;
-        }
-        
+        const dx = e.touches[0].clientX - startX.current;
+        const dy = e.touches[0].clientY - startY.current;
+        // Vertical scroll takes priority
+        if (Math.abs(dy) > Math.abs(dx)) { reset(); return; }
         if (dx > 0) {
-          setOffset(Math.min(dx, 80)); // cap at 80px
+          setOffset(Math.min(dx, 90));
+          setSwipeDir('right');
+        } else if (dx < 0) {
+          setOffset(Math.max(dx, -90));
+          setSwipeDir('left');
         }
       }}
       onTouchEnd={() => {
         if (disabled || startX.current === null) return;
-        startX.current = null;
-        startY.current = null;
-        if (offset > 50) {
+        if (swipeDir === 'right' && offset >= THRESHOLD) {
+          if (confirming) {
+            // Second right swipe confirms
+            onComplete();
+            setConfirming(false);
+          } else {
+            // First right swipe → show confirm strip
+            setConfirming(true);
+          }
+          reset();
+        } else if (swipeDir === 'left' && offset <= -THRESHOLD) {
+          // Left swipe → also complete (same as confirm)
           onComplete();
+          setConfirming(false);
+          reset();
+        } else {
+          reset();
         }
-        setOffset(0);
       }}
     >
-      {!disabled && (
-        <div className="absolute inset-y-0 left-0 w-full bg-success flex items-center px-6 rounded-2xl" style={{ zIndex: 0 }}>
-          <CheckCircle2 className="text-success-foreground size-6" />
+      {/* RIGHT background — blue confirm */}
+      <div
+        className="absolute inset-y-0 left-0 w-full flex items-center px-6 rounded-2xl"
+        style={{
+          zIndex: 0,
+          background: 'oklch(0.55 0.15 250)',
+          opacity: swipeDir === 'right' ? Math.min(1, offset / THRESHOLD) : 0,
+          transition: 'opacity 0.1s'
+        }}
+      >
+        <CheckCircle2 className="text-white size-6" />
+        <span className="text-white font-bold text-sm ml-2">Confirm?</span>
+      </div>
+
+      {/* LEFT background — green complete */}
+      <div
+        className="absolute inset-y-0 right-0 w-full flex items-center justify-end px-6 rounded-2xl"
+        style={{
+          zIndex: 0,
+          background: 'oklch(0.55 0.15 150)',
+          opacity: swipeDir === 'left' ? Math.min(1, Math.abs(offset) / THRESHOLD) : 0,
+          transition: 'opacity 0.1s'
+        }}
+      >
+        <span className="text-white font-bold text-sm mr-2">Complete</span>
+        <CheckCircle2 className="text-white size-6" />
+      </div>
+
+      {/* CONFIRM STRIP — shown after first right swipe */}
+      {confirming && (
+        <div
+          className="absolute inset-0 z-20 flex items-center justify-between px-4 rounded-2xl"
+          style={{ background: 'oklch(0.45 0.15 250 / 0.97)' }}
+        >
+          <span className="text-white font-bold text-sm flex items-center gap-2">
+            <ChevronRight className="size-4" /> Swipe again or tap Confirm
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirming(false); }}
+              className="px-3 py-1.5 rounded-xl bg-white/20 text-white text-xs font-semibold"
+            >Cancel</button>
+            <button
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onComplete(); setConfirming(false); }}
+              className="px-3 py-1.5 rounded-xl bg-white text-[oklch(0.45_0.15_250)] text-xs font-bold"
+            >✓ Confirm</button>
+          </div>
         </div>
       )}
-      <div 
-        style={{ 
-          transform: `translateX(${offset}px)`, 
-          transition: startX.current === null ? 'transform 0.2s ease-out' : 'none',
+
+      {/* Card itself */}
+      <div
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: startX.current === null ? 'transform 0.25s cubic-bezier(0.25,0.8,0.25,1)' : 'none',
           zIndex: 1,
-          position: 'relative'
+          position: 'relative',
         }}
-        className="w-full h-full rounded-2xl bg-card"
+        className="w-full rounded-2xl bg-card"
       >
         {children}
       </div>
