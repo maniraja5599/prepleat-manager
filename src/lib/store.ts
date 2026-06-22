@@ -1762,7 +1762,10 @@ export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - b.advancePai
 export const customerBookings = (cid: string, bookings: Booking[]) =>
   bookings
     .filter((b) => b.customerId === cid)
-    .sort((a, b) => (a.deliveryDate < b.deliveryDate ? 1 : -1));
+    .sort((a, b) =>
+      b.deliveryDate.localeCompare(a.deliveryDate) ||
+      (b.deliveryTime || "").localeCompare(a.deliveryTime || "")
+    );
 
 export const lastPriceFor = (cid: string, service: ServiceType, bookings: Booking[]) => {
   const past = bookings

@@ -195,11 +195,18 @@ function BookingsPage() {
       });
     }
     arr.sort((a, b) => {
-      if (sort === "delivery")
+      if (sort === "delivery") {
+        if (showPast) {
+          return (
+            b.deliveryDate.localeCompare(a.deliveryDate) ||
+            b.deliveryTime.localeCompare(a.deliveryTime)
+          );
+        }
         return (
           a.deliveryDate.localeCompare(b.deliveryDate) ||
           a.deliveryTime.localeCompare(b.deliveryTime)
         );
+      }
       if (sort === "recent") return b.createdAt.localeCompare(a.createdAt);
       return totalDue(b) - totalDue(a);
     });
