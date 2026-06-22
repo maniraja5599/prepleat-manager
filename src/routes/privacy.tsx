@@ -67,7 +67,7 @@ function PrivacyPolicyPage() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             If you have any questions regarding this Privacy Policy, please contact us at:  
             <br />
-            <span className="font-semibold text-foreground mt-1 block">Email: eyassareedrapist@gmail.com</span>
+            <span className="font-semibold text-foreground mt-1 block">Email: eyasdrapist@gmail.com</span>
           </p>
         </section>
       </div>
