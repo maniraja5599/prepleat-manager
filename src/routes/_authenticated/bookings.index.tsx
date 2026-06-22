@@ -62,6 +62,7 @@ function BookingsPage() {
   const updateBooking = useStore((s) => s.updateBooking);
   const deleteBooking = useStore((s) => s.deleteBooking);
   const restoreBooking = useStore((s) => s.restoreBooking);
+  const addPayment = useStore((s) => s.addPayment);
   const settings = useStore((s) => s.settings);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -778,9 +779,21 @@ function BookingsPage() {
                 ) : (
                   <SwipeToComplete 
                     disabled={b.status === "completed" || b.status === "cancelled" || b.status === "delivered"}
-                    onComplete={() => {
+                    due={totalDue(b)}
+                    onComplete={(markPaid) => {
                       const due = totalDue(b);
-                      if (due > 0) {
+                      if (markPaid && due > 0) {
+                        addPayment({
+                          bookingId: b.id,
+                          customerId: b.customerId,
+                          amount: due,
+                          date: new Date().toISOString(),
+                          mode: settings.defaultPaymentMode ?? "gpay",
+                          note: "On completion (swipe)",
+                        });
+                        updateBooking(b.id, { status: "completed", completedAt: new Date().toISOString() });
+                        toast.success("Paid and Marked as completed!");
+                      } else if (due > 0) {
                         // Show payment warning before completing
                         setPendingComplete({ id: b.id, due, name: c?.name ?? "Customer" });
                       } else {
@@ -817,19 +830,42 @@ function BookingsPage() {
               </p>
               <p className="text-sm text-muted-foreground">pending. Mark as completed anyway?</p>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setPendingComplete(null)}
-                className="flex-1 py-3 rounded-2xl bg-secondary text-sm font-semibold border border-border cursor-pointer active:scale-95 transition"
-              >Cancel</button>
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
+                  const b = bookings.find((x) => x.id === pendingComplete.id);
+                  if (b) {
+                    addPayment({
+                      bookingId: b.id,
+                      customerId: b.customerId,
+                      amount: pendingComplete.due,
+                      date: new Date().toISOString(),
+                      mode: settings.defaultPaymentMode ?? "gpay",
+                      note: "On completion",
+                    });
+                  }
                   updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
-                  toast.success("Marked as completed!");
+                  toast.success("Paid and Marked as completed!");
                   setPendingComplete(null);
                 }}
-                className="flex-1 py-3 rounded-2xl bg-destructive text-destructive-foreground text-sm font-bold cursor-pointer active:scale-95 transition"
-              >Complete Anyway</button>
+                className="w-full py-3 rounded-2xl bg-success text-success-foreground text-sm font-bold cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="size-4" /> Mark Paid & Complete
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPendingComplete(null)}
+                  className="flex-1 py-3 rounded-2xl bg-secondary text-sm font-semibold border border-border cursor-pointer active:scale-95 transition"
+                >Cancel</button>
+                <button
+                  onClick={() => {
+                    updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
+                    toast.success("Marked as completed!");
+                    setPendingComplete(null);
+                  }}
+                  className="flex-1 py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-semibold border border-destructive/20 cursor-pointer active:scale-95 transition"
+                >Complete Anyway</button>
+              </div>
             </div>
           </div>
         </div>
@@ -896,16 +932,19 @@ function StatChip({
 function SwipeToComplete({
   onComplete,
   disabled,
+  due,
   children,
 }: {
-  onComplete: () => void;
+  onComplete: (markPaid: boolean) => void;
   disabled: boolean;
+  due: number;
   children: React.ReactNode;
 }) {
-  // swipeDir: null = idle, 'right' = confirming (right swipe), 'left' = complete action (left swipe)
-  const [swipeDir, setSwipeDir] = useState<null | 'right' | 'left'>(null);
+  // swipeDir: null = idle, 'right' = confirming (right swipe)
+  const [swipeDir, setSwipeDir] = useState<null | 'right'>(null);
   const [offset, setOffset] = useState(0);
   const [confirming, setConfirming] = useState(false); // after first right swipe
+  const [markPaid, setMarkPaid] = useState(false);
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
   const THRESHOLD = 60;
@@ -934,9 +973,9 @@ function SwipeToComplete({
         if (dx > 0) {
           setOffset(Math.min(dx, 90));
           setSwipeDir('right');
-        } else if (dx < 0) {
-          setOffset(Math.max(dx, -90));
-          setSwipeDir('left');
+        } else {
+          setOffset(0);
+          setSwipeDir(null);
         }
       }}
       onTouchEnd={() => {
@@ -944,17 +983,13 @@ function SwipeToComplete({
         if (swipeDir === 'right' && offset >= THRESHOLD) {
           if (confirming) {
             // Second right swipe confirms
-            onComplete();
+            onComplete(markPaid);
             setConfirming(false);
+            setMarkPaid(false);
           } else {
             // First right swipe → show confirm strip
             setConfirming(true);
           }
-          reset();
-        } else if (swipeDir === 'left' && offset <= -THRESHOLD) {
-          // Left swipe → also complete (same as confirm)
-          onComplete();
-          setConfirming(false);
           reset();
         } else {
           reset();
@@ -975,36 +1010,51 @@ function SwipeToComplete({
         <span className="text-white font-bold text-sm ml-2">Confirm?</span>
       </div>
 
-      {/* LEFT background — green complete */}
-      <div
-        className="absolute inset-y-0 right-0 w-full flex items-center justify-end px-6 rounded-2xl"
-        style={{
-          zIndex: 0,
-          background: 'oklch(0.55 0.15 150)',
-          opacity: swipeDir === 'left' ? Math.min(1, Math.abs(offset) / THRESHOLD) : 0,
-          transition: 'opacity 0.1s'
-        }}
-      >
-        <span className="text-white font-bold text-sm mr-2">Complete</span>
-        <CheckCircle2 className="text-white size-6" />
-      </div>
-
       {/* CONFIRM STRIP — shown after first right swipe */}
       {confirming && (
         <div
-          className="absolute inset-0 z-20 flex items-center justify-between px-4 rounded-2xl"
-          style={{ background: 'oklch(0.45 0.15 250 / 0.97)' }}
+          className="absolute inset-0 z-20 flex items-center justify-between px-4 rounded-2xl animate-in fade-in duration-200 transition-colors"
+          style={{ 
+            background: (due > 0 && markPaid)
+              ? 'oklch(0.45 0.15 150 / 0.97)' // Green for paid complete
+              : 'oklch(0.45 0.15 250 / 0.97)' // Blue for normal complete
+          }}
         >
-          <span className="text-white font-bold text-sm flex items-center gap-2">
-            <ChevronRight className="size-4" /> Swipe again or tap Confirm
-          </span>
+          {due > 0 ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setMarkPaid(!markPaid);
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition duration-150 select-none",
+                markPaid 
+                  ? "bg-success border-success-foreground/15 text-white" 
+                  : "bg-white/10 border-white/20 text-white/80"
+              )}
+            >
+              <CheckCircle2 className={cn("size-3.5 shrink-0", markPaid ? "opacity-100" : "opacity-40")} />
+              <span>{markPaid ? "Paid & Complete" : "Mark Paid?"}</span>
+            </button>
+          ) : (
+            <span className="text-white font-bold text-xs flex items-center gap-1">
+              <ChevronRight className="size-4 shrink-0" /> Swipe again to confirm
+            </span>
+          )}
           <div className="flex gap-2">
             <button
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirming(false); }}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirming(false); setMarkPaid(false); }}
               className="px-3 py-1.5 rounded-xl bg-white/20 text-white text-xs font-semibold"
             >Cancel</button>
             <button
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onComplete(); setConfirming(false); }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                e.preventDefault(); 
+                onComplete(markPaid); 
+                setConfirming(false); 
+                setMarkPaid(false);
+              }}
               className="px-3 py-1.5 rounded-xl bg-white text-[oklch(0.45_0.15_250)] text-xs font-bold"
             >✓ Confirm</button>
           </div>

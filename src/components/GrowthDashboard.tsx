@@ -2,9 +2,12 @@ import { useMemo } from "react";
 import { useStore, fmtINR, totalDue } from "@/lib/store";
 import { parseISO, isWithinInterval, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { IndianRupee, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 
 export function GrowthDashboard() {
   const bookings = useStore((s) => s.bookings);
+  const navigate = useNavigate();
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -82,6 +85,7 @@ export function GrowthDashboard() {
           value={fmtINR(stats.pendingDue)}
           subtext="Outstanding balance"
           tint="destructive"
+          onClick={() => navigate({ to: "/payments", search: { filter: "pending" } })}
         />
         <Stat
           icon={<Calendar className="size-3.5" />}
@@ -110,6 +114,7 @@ function Stat({
   subtext,
   tint,
   trendPercent,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -117,6 +122,7 @@ function Stat({
   subtext?: string;
   tint: "primary" | "destructive" | "accent" | "success";
   trendPercent?: number;
+  onClick?: () => void;
 }) {
   const tintCls =
     tint === "primary"
@@ -131,7 +137,13 @@ function Stat({
   const isNegative = trendPercent !== undefined && trendPercent < 0;
 
   return (
-    <div className="bg-card card-shadow rounded-2xl p-3 flex flex-col justify-between min-h-[72px]">
+    <div 
+      onClick={onClick}
+      className={cn(
+        "bg-card card-shadow rounded-2xl p-3 flex flex-col justify-between min-h-[72px] transition duration-150 select-none",
+        onClick && "cursor-pointer hover:bg-secondary/40 active:scale-[0.98] active:bg-secondary/60"
+      )}
+    >
       <div>
         <div
           className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}
