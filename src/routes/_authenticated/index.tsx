@@ -30,7 +30,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -635,14 +635,14 @@ const BookingRow = memo(function BookingRow({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <a
-                    href={`tel:${c.phone.replace(/\D/g, "")}`}
+                    href={`tel:${cleanPhoneForDialing(c.phone)}`}
                     className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
                     title="Call Customer"
                   >
                     <Phone className="size-3 text-muted-foreground" />
                   </a>
                   <a
-                    href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
+                    href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"

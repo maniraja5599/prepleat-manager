@@ -2,8 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
-
+import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import {
   Search,
@@ -693,14 +692,14 @@ function BookingsPage() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <a
-                            href={`tel:${c.phone.replace(/\D/g, "")}`}
+                            href={`tel:${cleanPhoneForDialing(c.phone)}`}
                             className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
                             title="Call Customer"
                           >
                             <Phone className="size-3 text-muted-foreground" />
                           </a>
                           <a
-                            href={`https://wa.me/${c.phone.replace(/\D/g, "")}`}
+                            href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"

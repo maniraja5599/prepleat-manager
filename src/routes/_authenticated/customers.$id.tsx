@@ -18,7 +18,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { ScrollNumber } from "@/components/ScrollNumber";
 import { MapPicker } from "@/components/MapPicker";
 
@@ -139,15 +139,15 @@ function CustomerDetail() {
 
   const handleSendWhatsApp = () => {
     if (!customer.phone) return toast.error("No phone number saved for this customer");
-    const ph = customer.phone.replace(/\D/g, "");
+    const ph = cleanPhoneForWhatsApp(customer.phone);
     const text = buildWhatsAppMessage();
-    window.location.href = `https://wa.me/${ph.startsWith("91") ? ph : "91" + ph}?text=${encodeURIComponent(text)}`;
+    window.location.href = `https://wa.me/${ph}?text=${encodeURIComponent(text)}`;
     setPreviewMode(null);
   };
 
   const handleSendSMS = () => {
     if (!customer.phone) return toast.error("No phone number saved for this customer");
-    const ph = customer.phone.replace(/\D/g, "");
+    const ph = cleanPhoneForDialing(customer.phone);
     const msg = buildSmsMessage();
     window.location.href = `sms:${ph}&body=${encodeURIComponent(msg)}`;
     setPreviewMode(null);
@@ -383,7 +383,7 @@ function CustomerDetail() {
           <>
             <h1 className="text-2xl font-display font-semibold truncate">{customer.name}</h1>
             <a
-              href={`tel:${customer.phone}`}
+              href={`tel:${cleanPhoneForDialing(customer.phone)}`}
               className="text-sm opacity-90 hover:underline inline-flex items-center gap-1 mt-1 cursor-pointer"
             >
               <Phone className="size-3.5" />
@@ -591,7 +591,7 @@ function CustomerDetail() {
               SMS
             </button>
             <a
-              href={`tel:${customer.phone}`}
+              href={`tel:${cleanPhoneForDialing(customer.phone)}`}
               className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
             >
               <Phone className="size-4" />

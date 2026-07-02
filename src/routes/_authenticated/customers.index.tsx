@@ -20,7 +20,7 @@ import {
   CalendarPlus,
   Map,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, cleanPhoneForDialing } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -679,7 +679,7 @@ function CustomersPage() {
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Phone className="size-3" />
                     <a
-                      href={`tel:${c.phone}`}
+                      href={`tel:${cleanPhoneForDialing(c.phone)}`}
                       onClick={(e) => e.stopPropagation()}
                       className="hover:underline hover:text-primary transition inline-flex items-center gap-0.5 cursor-pointer font-medium"
                     >

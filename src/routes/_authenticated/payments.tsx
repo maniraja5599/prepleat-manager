@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, fmtINR, totalDue, formatAppDate, formatAppTime, formatAppDateTime, type PaymentMode } from "@/lib/store";
 import { useMemo, useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import {
   format,
   parseISO,
@@ -1525,13 +1525,13 @@ function IncomeView(p: {
                     {item.phone && (
                       <div className="flex gap-2">
                         <a
-                          href={`tel:${item.phone.replace(/\D/g, "")}`}
+                          href={`tel:${cleanPhoneForDialing(item.phone)}`}
                           className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground px-2 py-1 rounded-md bg-secondary active:scale-95 transition"
                         >
                           <Phone className="size-3" /> Call
                         </a>
                         <a
-                          href={`https://wa.me/${item.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                          href={`https://wa.me/${cleanPhoneForWhatsApp(item.phone)}?text=${encodeURIComponent(
                             `Hi ${item.name}, this is a gentle reminder regarding the pending payment of ${fmtINR(item.due)} for your ${item.service} booking on ${item.dateStr}.`
                           )}`}
                           target="_blank"

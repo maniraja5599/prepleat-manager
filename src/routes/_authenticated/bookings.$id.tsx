@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
 import { ScrollNumber } from "@/components/ScrollNumber";
 
@@ -160,7 +160,7 @@ function BookingDetail() {
     withLink = false,
   ) => {
     if (!customer?.phone) return toast.error("No phone number");
-    const phone = customer.phone.replace(/\D/g, "");
+    const phone = cleanPhoneForWhatsApp(customer.phone);
     const encoded = encodeURIComponent(buildWhatsAppMessage(kind, withLink));
     window.location.href = `https://wa.me/${phone}?text=${encoded}`;
   };
@@ -180,7 +180,7 @@ function BookingDetail() {
     withLink = false,
   ) => {
     if (!customer?.phone) return toast.error("No phone number");
-    const phone = customer.phone.replace(/\D/g, "");
+    const phone = cleanPhoneForDialing(customer.phone);
     const msg = buildWhatsAppMessage(kind, withLink)
       .replace(/\*/g, "")
       .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏😊😁]/g, "")
@@ -237,7 +237,8 @@ function BookingDetail() {
     return { label: "Pending", style: "bg-orange-500/10 border-orange-500/20 text-orange-500" };
   };
   const statusInfo = getStatusInfo();
-  const phoneClean = customer?.phone ? customer.phone.replace(/\D/g, "") : "";
+  const dialPhone = cleanPhoneForDialing(customer?.phone);
+  const whatsappPhone = cleanPhoneForWhatsApp(customer?.phone);
   const paidPercent =
     booking.totalAmount > 0
       ? Math.min(100, Math.round((booking.advancePaid / booking.totalAmount) * 100))
@@ -425,23 +426,23 @@ function BookingDetail() {
         <div className="mt-1 flex items-center gap-2">
           {customer?.phone && (
             <a
-              href={`tel:${phoneClean}`}
+              href={`tel:${dialPhone}`}
               className="text-xs opacity-90 hover:underline cursor-pointer"
             >
               {customer.phone}
             </a>
           )}
-          {phoneClean && (
+          {customer?.phone && (
             <div className="flex gap-1.5 ml-1">
               <a
-                href={`tel:${phoneClean}`}
+                href={`tel:${dialPhone}`}
                 className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
                 title="Call Customer"
               >
                 <Phone className="size-3 text-white" />
               </a>
               <a
-                href={`https://wa.me/${phoneClean}`}
+                href={`https://wa.me/${whatsappPhone}`}
                 target="_blank"
                 rel="noreferrer"
                 className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
