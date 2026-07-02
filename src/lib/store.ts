@@ -23,6 +23,7 @@ export interface Booking {
   deliveryTime: string;
   notes?: string;
   measurements?: Measurement[];
+  discount?: number;
   createdAt: string;
   updatedAt?: string;
   completedAt?: string;
@@ -588,7 +589,7 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) => {
             if (b.id !== p.bookingId) return b;
             const newPaid = b.advancePaid + p.amount;
-            const fullyPaid = newPaid >= b.totalAmount;
+            const fullyPaid = newPaid >= (b.totalAmount - (b.discount || 0));
             return {
               ...b,
               advancePaid: newPaid,
@@ -623,7 +624,7 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) => {
             if (b.id !== pay.bookingId) return b;
             const newPaid = Math.max(0, b.advancePaid - pay.amount);
-            const stillFullyPaid = newPaid >= b.totalAmount;
+            const stillFullyPaid = newPaid >= (b.totalAmount - (b.discount || 0));
             return {
               ...b,
               advancePaid: newPaid,
@@ -663,7 +664,7 @@ export const useStore = create<State>()(
             if (b.id !== t.payment.bookingId) return b;
             const relatedPayments = updatedPayments.filter((p) => p.bookingId === b.id);
             const totalPaid = relatedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-            const isFullyPaid = totalPaid >= b.totalAmount;
+            const isFullyPaid = totalPaid >= (b.totalAmount - (b.discount || 0));
             return {
               ...b,
               advancePaid: totalPaid,
@@ -1757,7 +1758,7 @@ export const formatAppDateTime = (isoString: string | undefined | null): string 
 
 export const fmtTime12 = (hhmm: string) => formatAppTime(hhmm);
 
-export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - b.advancePaid);
+export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - (b.discount || 0) - b.advancePaid);
 
 export const customerBookings = (cid: string, bookings: Booking[]) =>
   bookings

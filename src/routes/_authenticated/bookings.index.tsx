@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -38,6 +38,11 @@ import {
 } from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
+  validateSearch: (search: Record<string, unknown>): { past?: boolean } => {
+    return {
+      past: search.past === true || search.past === "true" || undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Bookings — Eyas Saree Drapist" },
@@ -56,6 +61,8 @@ type Sort = "delivery" | "recent" | "due";
 type Range = "all" | "thisMonth" | "lastMonth" | "custom";
 
 function BookingsPage() {
+  const { past } = Route.useSearch();
+  const navigate = useNavigate();
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const updateBooking = useStore((s) => s.updateBooking);
@@ -69,13 +76,23 @@ function BookingsPage() {
   const [mainFilter, setMainFilter] = useState<
     "active" | "prepleat" | "drape" | "artist" | "history"
   >("active");
-  const [showPast, setShowPast] = useState(false);
+  const [showPast, setShowPast] = useState(past || false);
   const [pay, setPay] = useState<PayFilter>("all");
   const [sort, setSort] = useState<Sort>("delivery");
   const [q, setQ] = useState("");
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  // Sync showPast with the query parameter
+  useEffect(() => {
+    if (past !== undefined) {
+      setShowPast(past);
+      if (past) {
+        setMainFilter("active");
+      }
+    }
+  }, [past]);
 
   // Pending complete warning (payment check before completing)
   const [pendingComplete, setPendingComplete] = useState<{ id: string; due: number; name: string } | null>(null);
@@ -232,7 +249,7 @@ function BookingsPage() {
         const isArtistBooking = !!b.artistId || c?.kind === "artist";
         return isArtistBooking && statusFilter(b);
       }).length,
-      history: bookings.filter((b) => b.status === "delivered").length,
+      history: bookings.filter((b) => b.status === "delivered" || b.status === "completed").length,
     };
   }, [bookings, customers, showPast]);
 
@@ -361,8 +378,14 @@ function BookingsPage() {
           {!selectMode && (
             <button
               onClick={() => {
-                setShowPast((prev) => !prev);
+                const nextPast = !showPast;
+                setShowPast(nextPast);
                 setMainFilter("active");
+                navigate({
+                  to: "/bookings",
+                  search: { past: nextPast || undefined },
+                  replace: true,
+                });
               }}
               className={cn(
                 "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
@@ -783,35 +806,9 @@ function BookingsPage() {
                     {inner}
                   </button>
                 ) : (
-                  <SwipeToComplete 
-                    disabled={b.status === "completed" || b.status === "cancelled" || b.status === "delivered"}
-                    due={totalDue(b)}
-                    onComplete={(markPaid) => {
-                      const due = totalDue(b);
-                      if (markPaid && due > 0) {
-                        addPayment({
-                          bookingId: b.id,
-                          customerId: b.customerId,
-                          amount: due,
-                          date: new Date().toISOString(),
-                          mode: settings.defaultPaymentMode ?? "gpay",
-                          note: "On completion (swipe)",
-                        });
-                        updateBooking(b.id, { status: "completed", completedAt: new Date().toISOString() });
-                        toast.success("Paid and Marked as completed!");
-                      } else if (due > 0) {
-                        // Show payment warning before completing
-                        setPendingComplete({ id: b.id, due, name: c?.name ?? "Customer" });
-                      } else {
-                        updateBooking(b.id, { status: "completed", completedAt: new Date().toISOString() });
-                        toast.success("Marked as completed!");
-                      }
-                    }}
-                  >
-                    <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
-                      {inner}
-                    </Link>
-                  </SwipeToComplete>
+                  <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
+                    {inner}
+                  </Link>
                 )}
               </li>
             );
@@ -935,150 +932,4 @@ function StatChip({
   );
 }
 
-function SwipeToComplete({
-  onComplete,
-  disabled,
-  due,
-  children,
-}: {
-  onComplete: (markPaid: boolean) => void;
-  disabled: boolean;
-  due: number;
-  children: React.ReactNode;
-}) {
-  // swipeDir: null = idle, 'right' = confirming (right swipe)
-  const [swipeDir, setSwipeDir] = useState<null | 'right'>(null);
-  const [offset, setOffset] = useState(0);
-  const [confirming, setConfirming] = useState(false); // after first right swipe
-  const [markPaid, setMarkPaid] = useState(false);
-  const startX = useRef<number | null>(null);
-  const startY = useRef<number | null>(null);
-  const THRESHOLD = 60;
 
-  const reset = () => {
-    setOffset(0);
-    setSwipeDir(null);
-    startX.current = null;
-    startY.current = null;
-  };
-
-  return (
-    <div
-      className="relative w-full rounded-2xl overflow-hidden"
-      onTouchStart={(e) => {
-        if (disabled) return;
-        startX.current = e.touches[0].clientX;
-        startY.current = e.touches[0].clientY;
-      }}
-      onTouchMove={(e) => {
-        if (disabled || startX.current === null || startY.current === null) return;
-        const dx = e.touches[0].clientX - startX.current;
-        const dy = e.touches[0].clientY - startY.current;
-        // Vertical scroll takes priority
-        if (Math.abs(dy) > Math.abs(dx)) { reset(); return; }
-        if (dx > 0) {
-          setOffset(Math.min(dx, 90));
-          setSwipeDir('right');
-        } else {
-          setOffset(0);
-          setSwipeDir(null);
-        }
-      }}
-      onTouchEnd={() => {
-        if (disabled || startX.current === null) return;
-        if (swipeDir === 'right' && offset >= THRESHOLD) {
-          if (confirming) {
-            // Second right swipe confirms
-            onComplete(markPaid);
-            setConfirming(false);
-            setMarkPaid(false);
-          } else {
-            // First right swipe → show confirm strip
-            setConfirming(true);
-          }
-          reset();
-        } else {
-          reset();
-        }
-      }}
-    >
-      {/* RIGHT background — blue confirm */}
-      <div
-        className="absolute inset-y-0 left-0 w-full flex items-center px-6 rounded-2xl"
-        style={{
-          zIndex: 0,
-          background: 'oklch(0.55 0.15 250)',
-          opacity: swipeDir === 'right' ? Math.min(1, offset / THRESHOLD) : 0,
-          transition: 'opacity 0.1s'
-        }}
-      >
-        <CheckCircle2 className="text-white size-6" />
-        <span className="text-white font-bold text-sm ml-2">Confirm?</span>
-      </div>
-
-      {/* CONFIRM STRIP — shown after first right swipe */}
-      {confirming && (
-        <div
-          className="absolute inset-0 z-20 flex items-center justify-between px-4 rounded-2xl animate-in fade-in duration-200 transition-colors"
-          style={{ 
-            background: (due > 0 && markPaid)
-              ? 'oklch(0.45 0.15 150 / 0.97)' // Green for paid complete
-              : 'oklch(0.45 0.15 250 / 0.97)' // Blue for normal complete
-          }}
-        >
-          {due > 0 ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setMarkPaid(!markPaid);
-              }}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition duration-150 select-none",
-                markPaid 
-                  ? "bg-success border-success-foreground/15 text-white" 
-                  : "bg-white/10 border-white/20 text-white/80"
-              )}
-            >
-              <CheckCircle2 className={cn("size-3.5 shrink-0", markPaid ? "opacity-100" : "opacity-40")} />
-              <span>{markPaid ? "Paid & Complete" : "Mark Paid?"}</span>
-            </button>
-          ) : (
-            <span className="text-white font-bold text-xs flex items-center gap-1">
-              <ChevronRight className="size-4 shrink-0" /> Swipe again to confirm
-            </span>
-          )}
-          <div className="flex gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirming(false); setMarkPaid(false); }}
-              className="px-3 py-1.5 rounded-xl bg-white/20 text-white text-xs font-semibold"
-            >Cancel</button>
-            <button
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                e.preventDefault(); 
-                onComplete(markPaid); 
-                setConfirming(false); 
-                setMarkPaid(false);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-white text-[oklch(0.45_0.15_250)] text-xs font-bold"
-            >✓ Confirm</button>
-          </div>
-        </div>
-      )}
-
-      {/* Card itself */}
-      <div
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: startX.current === null ? 'transform 0.25s cubic-bezier(0.25,0.8,0.25,1)' : 'none',
-          zIndex: 1,
-          position: 'relative',
-        }}
-        className="w-full rounded-2xl bg-card"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}

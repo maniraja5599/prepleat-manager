@@ -38,6 +38,7 @@ import { HorizontalPicker } from "@/components/HorizontalPicker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { MapPicker } from "@/components/MapPicker";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -147,6 +148,10 @@ function NewBooking() {
   const [notes, setNotes] = useState("");
   const [showMeasure, setShowMeasure] = useState(false);
   const [measurements, setMeasurements] = useState<Measurement[]>(settings.defaultMeasurements);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [isEditingMeasure, setIsEditingMeasure] = useState(true);
+  const [hasExistingMeasurements, setHasExistingMeasurements] = useState(false);
+  const [showNewCustConfirm, setShowNewCustConfirm] = useState(false);
 
   const [showAddField, setShowAddField] = useState(false);
   const [newFieldName, setNewFieldName] = useState("");
@@ -192,14 +197,17 @@ function NewBooking() {
   const pickCustomer = (c: (typeof customers)[number]) => {
     setCustomerId(c.id);
     setNewName("");
-    setNewPhone("");
-    setNewAddress("");
-    setNewLocationUrl("");
+    setNewPhone(c.phone ? c.phone.replace(/^\+91/, "") : "");
+    setIsEditingPhone(false);
+    setNewAddress(c.address || "");
+    setNewLocationUrl(c.locationUrl || "");
     setNameFocus(false);
 
     if (c.measurements && c.measurements.length > 0) {
       setMeasurements(c.measurements);
       setShowMeasure(true);
+      setHasExistingMeasurements(true);
+      setIsEditingMeasure(false);
     } else {
       // Auto-load measurements from their last booking if available
       const custBookings = bookings.filter((b) => b.customerId === c.id);
@@ -210,13 +218,19 @@ function NewBooking() {
         if (lastBooking.measurements && lastBooking.measurements.length > 0) {
           setMeasurements(lastBooking.measurements);
           setShowMeasure(true);
+          setHasExistingMeasurements(true);
+          setIsEditingMeasure(false);
         } else {
           setMeasurements(settings.defaultMeasurements);
           setShowMeasure(false);
+          setHasExistingMeasurements(false);
+          setIsEditingMeasure(true);
         }
       } else {
         setMeasurements(settings.defaultMeasurements);
         setShowMeasure(false);
+        setHasExistingMeasurements(false);
+        setIsEditingMeasure(true);
       }
     }
   };
@@ -594,22 +608,89 @@ function NewBooking() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-sm">{selectedCust.name}</p>
-                  <div className="mt-3">
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                      <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
-                        +91
-                      </span>
-                      <input
-                        type="tel"
-                        inputMode="numeric"
-                        value={newPhone}
-                        onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
-                        placeholder="Mobile number"
-                        className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-3 py-3 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
+                  {selectedCust.phone ? (
+                    !isEditingPhone ? (
+                      <div className="mt-2.5 flex items-center gap-2 bg-secondary/50 px-3.5 py-2.5 rounded-2xl border border-border/10">
+                        <Phone className="size-4 text-muted-foreground" />
+                        <span className="text-sm font-semibold tabular-nums">{selectedCust.phone}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
+                            setIsEditingPhone(true);
+                          }}
+                          className="ml-auto text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-2.5 relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          value={newPhone}
+                          onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                          placeholder="Mobile number"
+                          className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-3 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsEditingPhone(false);
+                            setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground font-semibold"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <div className="mt-2.5">
+                      {!isEditingPhone ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingPhone(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition active:scale-95 cursor-pointer"
+                          >
+                            <Plus className="size-3.5" /> Add Mobile Number
+                          </button>
+                          <span className="text-[11px] text-muted-foreground">No mobile number saved</span>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                          <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                            +91
+                          </span>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            value={newPhone}
+                            onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                            placeholder="Mobile number"
+                            className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-3 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsEditingPhone(false);
+                              setNewPhone("");
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground font-semibold"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
                   {quotedLastPrice && (
                     <p className="text-xs text-gold mt-2">
                       Last {service}: {fmtINR(quotedLastPrice)}
@@ -619,8 +700,14 @@ function NewBooking() {
                 <button
                   onClick={() => {
                     setCustomerId("");
+                    setNewPhone("");
+                    setNewAddress("");
+                    setNewLocationUrl("");
                     setMeasurements(settings.defaultMeasurements);
                     setShowMeasure(false);
+                    setHasExistingMeasurements(false);
+                    setIsEditingMeasure(true);
+                    setIsEditingPhone(false);
                   }}
                   className="text-xs text-primary font-semibold shrink-0"
                 >
@@ -1106,12 +1193,29 @@ function NewBooking() {
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold">
             <span>📐</span>Measurements
+            {showMeasure && hasExistingMeasurements && (
+              <button
+                type="button"
+                onClick={() => setIsEditingMeasure(!isEditingMeasure)}
+                className="ml-2 text-[10px] font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95"
+              >
+                {isEditingMeasure ? "Done" : "Edit"}
+              </button>
+            )}
           </span>
           <button
             type="button"
             role="switch"
             aria-checked={showMeasure}
-            onClick={() => setShowMeasure(!showMeasure)}
+            onClick={() => {
+              const next = !showMeasure;
+              setShowMeasure(next);
+              if (next && hasExistingMeasurements) {
+                setIsEditingMeasure(false);
+              } else {
+                setIsEditingMeasure(true);
+              }
+            }}
             className={cn(
               "relative inline-flex h-7 w-12 items-center rounded-full transition",
               showMeasure ? "saree-gradient" : "bg-secondary",
@@ -1128,80 +1232,98 @@ function NewBooking() {
         </div>
         {showMeasure ? (
           <>
-            <div className="flex justify-around items-start py-3 gap-2 flex-wrap mt-2 border-t border-border">
-              {measurements.map((m, i) => (
-                <div key={i} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMeasurements(measurements.filter((_, idx) => idx !== i));
-                    }}
-                    className="absolute -top-1.5 -right-1.5 z-30 size-4 rounded-full bg-destructive/95 text-white flex items-center justify-center cursor-pointer shadow active:scale-95 transition"
-                  >
-                    <X className="size-2.5" strokeWidth={3} />
-                  </button>
-                  <ScrollNumber
-                    label={m.label}
-                    value={m.value}
-                    onChange={(v) =>
-                      setMeasurements(
-                        measurements.map((x, j) => (i === j ? { ...x, value: v } : x)),
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-
-            {showAddField ? (
-              <div className="flex items-center gap-1.5 justify-center mt-1 border-t border-border/40 pt-3 max-w-[280px] mx-auto">
-                <input
-                  type="text"
-                  placeholder="Field name (e.g. Armhole)"
-                  value={newFieldName}
-                  onChange={(e) => setNewFieldName(e.target.value)}
-                  className="flex-1 text-[11px] h-7 px-3 border border-border rounded-full bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddField();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddField}
-                  className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddField(false);
-                    setNewFieldName("");
-                  }}
-                  className="h-7 px-3 rounded-full bg-secondary text-muted-foreground text-[10px] font-bold cursor-pointer hover:bg-secondary/80 active:scale-95"
-                >
-                  Cancel
-                </button>
+            {!isEditingMeasure ? (
+              <div className="grid grid-cols-3 gap-2.5 mt-3 pt-3 border-t border-border/40">
+                {measurements.map((m, i) => (
+                  <div key={i} className="bg-secondary/40 rounded-xl p-2.5 text-center border border-border/10">
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">
+                      {m.label}
+                    </p>
+                    <p className="text-base font-extrabold text-foreground mt-1 tabular-nums">
+                      {m.value}
+                      <span className="text-[10px] font-normal text-muted-foreground ml-0.5">in</span>
+                    </p>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center mt-1 border-t border-border/40 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddField(true)}
-                  className="text-[11px] font-semibold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
-                >
-                  + Add Custom Field
-                </button>
-              </div>
-            )}
+              <>
+                <div className="flex justify-around items-start py-3 gap-2 flex-wrap mt-2 border-t border-border">
+                  {measurements.map((m, i) => (
+                    <div key={i} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMeasurements(measurements.filter((_, idx) => idx !== i));
+                        }}
+                        className="absolute -top-1.5 -right-1.5 z-30 size-4 rounded-full bg-destructive/95 text-white flex items-center justify-center cursor-pointer shadow active:scale-95 transition"
+                      >
+                        <X className="size-2.5" strokeWidth={3} />
+                      </button>
+                      <ScrollNumber
+                        label={m.label}
+                        value={m.value}
+                        onChange={(v) =>
+                          setMeasurements(
+                            measurements.map((x, j) => (i === j ? { ...x, value: v } : x)),
+                          )
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
 
-            <p className="text-xs text-muted-foreground text-center mt-3">
-              Scroll inside each picker · all in inches
-            </p>
+                {showAddField ? (
+                  <div className="flex items-center gap-1.5 justify-center mt-1 border-t border-border/40 pt-3 max-w-[280px] mx-auto">
+                    <input
+                      type="text"
+                      placeholder="Field name (e.g. Armhole)"
+                      value={newFieldName}
+                      onChange={(e) => setNewFieldName(e.target.value)}
+                      className="flex-1 text-[11px] h-7 px-3 border border-border rounded-full bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddField();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddField}
+                      className="h-7 px-3 rounded-full bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer hover:brightness-95 active:scale-95"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddField(false);
+                        setNewFieldName("");
+                      }}
+                      className="h-7 px-3 rounded-full bg-secondary text-muted-foreground text-[10px] font-bold cursor-pointer hover:bg-secondary/80 active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center mt-1 border-t border-border/40 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddField(true)}
+                      className="text-[11px] font-semibold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
+                    >
+                      + Add Custom Field
+                    </button>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  Scroll inside each picker · all in inches
+                </p>
+              </>
+            )}
           </>
         ) : (
           <p className="text-xs text-muted-foreground mt-2">
@@ -1322,7 +1444,11 @@ function NewBooking() {
                 type="button"
                 onClick={() => {
                   setReviewOpen(false);
-                  confirmSave();
+                  if (!customerId) {
+                    setShowNewCustConfirm(true);
+                  } else {
+                    confirmSave();
+                  }
                 }}
                 className="py-2.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-sm shadow-primary/20"
               >
@@ -1332,6 +1458,18 @@ function NewBooking() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={showNewCustConfirm}
+        onOpenChange={setShowNewCustConfirm}
+        title="Create New Customer?"
+        description={`This will create a new customer record for "${newName.trim() || "Walk-in"}". Do you want to proceed?`}
+        confirmLabel="Yes, Create & Save"
+        cancelLabel="No, Cancel"
+        onConfirm={() => {
+          setShowNewCustConfirm(false);
+          confirmSave();
+        }}
+      />
       <MapPicker
         open={showMapPicker}
         onOpenChange={setShowMapPicker}

@@ -20,6 +20,7 @@ import {
   Receipt,
   IndianRupee,
   Phone,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -37,6 +38,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const payments = useStore((s) => s.payments);
+  const activity = useStore((s) => s.activity);
 
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -691,77 +693,89 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               {!searchQuery ? (
                 <div className="space-y-5 pb-20">
                   {/* Dashboard / Notification Hub inside Search */}
-                  <div>
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  <div className="flex items-center justify-between py-1 border-b border-border/20 mb-1 bg-secondary/15 px-3 py-2 rounded-xl">
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       System Sync Status
                     </h3>
-                    {/* Sync Status Card */}
-                    <div
-                      className={cn(
-                        "p-3 rounded-2xl border flex flex-col gap-2 transition-all",
-                        sync.syncStatus === "synced" &&
-                          "bg-[oklch(0.55_0.13_150)]/[0.04] border-[oklch(0.55_0.13_150)]/15 text-[oklch(0.55_0.13_150)]",
-                        sync.syncStatus === "syncing" &&
-                          "bg-blue-500/[0.04] border-blue-500/15 text-blue-500",
-                        sync.syncStatus === "offline" &&
-                          "bg-amber-500/[0.04] border-amber-500/15 text-amber-500",
-                        sync.syncStatus === "error" && "bg-red-500/[0.04] border-red-500/20 text-red-500",
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        {sync.syncStatus === "syncing" && <RefreshCw className="size-4 animate-spin" />}
-                        {sync.syncStatus === "offline" && (
-                          <CloudOff className="size-4 animate-bounce-slow" />
-                        )}
-                        {sync.syncStatus === "error" && (
-                          <AlertTriangle className="size-4 animate-shake-sm" />
-                        )}
-                        {sync.syncStatus === "synced" && <Check className="size-4 stroke-[3]" />}
-                        <span className="text-xs font-bold uppercase tracking-wider">
-                          {sync.syncStatus === "synced" &&
-                            (isGuest ? "Saved Locally" : "Database Synced")}
-                          {sync.syncStatus === "syncing" &&
-                            (isGuest ? "Saving Locally..." : "Syncing Data...")}
-                          {sync.syncStatus === "offline" && "Offline Mode Active"}
-                          {sync.syncStatus === "error" &&
-                            (isGuest ? "Local Save Error" : "Database Sync Error")}
-                        </span>
-                      </div>
-
-                      <p className="text-[10px] text-muted-foreground/90 leading-normal">
-                        {sync.syncStatus === "synced" &&
-                          (isGuest
-                            ? "All records are fully updated and saved securely on your device."
-                            : "All records are fully updated and saved securely to the cloud.")}
-                        {sync.syncStatus === "syncing" &&
-                          (isGuest
-                            ? "We are saving your changes locally."
-                            : "We are uploading your changes and pulling the latest updates.")}
-                        {sync.syncStatus === "offline" &&
-                          "No connection. You can keep editing; changes will auto-sync when online."}
-                        {sync.syncStatus === "error" &&
-                          (isGuest
-                            ? "Failed to save data locally. Check your device storage."
-                            : "Failed to connect to the cloud database. Tap retry to reconnect.")}
-                      </p>
-
-                      {sync.syncStatus === "error" && (
-                        <div className="mt-1 space-y-2">
-                          <p className="text-[9px] font-mono bg-destructive/5 text-destructive border border-destructive/10 rounded-lg p-2 max-h-16 overflow-y-auto whitespace-pre-wrap leading-tight">
-                            {sync.errorMessage || "Network connection interrupted or session expired."}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              window.dispatchEvent(new Event("sync-retry"));
-                            }}
-                            className="w-full py-1.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider hover:bg-red-600 active:scale-95 transition cursor-pointer"
-                          >
-                            Retry Connection
-                          </button>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-card border border-border/10">
+                      <span className={cn(
+                        "size-1.5 rounded-full",
+                        sync.syncStatus === "synced" && "bg-[oklch(0.55_0.13_150)] animate-pulse",
+                        sync.syncStatus === "syncing" && "bg-blue-500 animate-spin",
+                        sync.syncStatus === "offline" && "bg-amber-500",
+                        sync.syncStatus === "error" && "bg-red-500"
+                      )} />
+                      <span className="text-[9px] text-muted-foreground">
+                        {sync.syncStatus === "synced" && (isGuest ? "Saved Locally" : "Synced")}
+                        {sync.syncStatus === "syncing" && "Syncing..."}
+                        {sync.syncStatus === "offline" && "Offline"}
+                        {sync.syncStatus === "error" && "Sync Error"}
+                      </span>
                     </div>
+                  </div>
+
+                  {/* Recent Activity */}
+                  <div>
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Activity className="size-3 text-orange-500/80" /> Recent Activity
+                    </h3>
+                    {activity.length > 0 ? (
+                      <div className="space-y-2">
+                        {activity.slice(0, 5).map((act) => {
+                          const getIcon = () => {
+                            switch (act.kind) {
+                              case "create": return "➕";
+                              case "update": return "✏️";
+                              case "delete": return "🗑️";
+                              case "restore": return "♻️";
+                              case "payment-add": return "💰";
+                              case "payment-delete": return "💸";
+                              case "cancel": return "🚫";
+                              default: return "📝";
+                            }
+                          };
+                          let timeStr = "";
+                          try {
+                            timeStr = formatAppDateTime(act.ts);
+                          } catch {
+                            timeStr = act.ts.slice(11, 16);
+                          }
+                          return (
+                            <div
+                              key={act.id}
+                              className="flex items-start gap-2.5 p-3 rounded-2xl bg-secondary/30 border border-border/10 text-left w-full animate-in slide-in-from-bottom-1"
+                            >
+                              <span className="text-base shrink-0 select-none mt-0.5">{getIcon()}</span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold text-foreground leading-normal">
+                                  {act.summary}
+                                </p>
+                                <span className="text-[9px] text-muted-foreground/80 font-bold tracking-wide uppercase mt-1 inline-block">
+                                  {timeStr}
+                                </span>
+                              </div>
+                              {act.bookingId && (
+                                <Link
+                                  to="/bookings/$id"
+                                  params={{ id: act.bookingId }}
+                                  onClick={() => {
+                                    setShowSearchModal(false);
+                                    setSearchQuery("");
+                                  }}
+                                  className="text-[10px] text-primary font-bold hover:underline shrink-0 bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition active:scale-95"
+                                >
+                                  View
+                                </Link>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground pl-1 italic">
+                        No recent activity recorded.
+                      </p>
+                    )}
                   </div>
 
                   {/* Today's Bookings */}

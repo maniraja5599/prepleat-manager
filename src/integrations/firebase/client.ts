@@ -31,10 +31,14 @@ const app = isFirebaseConfigured
   : null;
 
 export const auth = app ? getAuth(app) : null;
+const globalForFirebase = globalThis as unknown as {
+  db: any;
+};
+
 export const db = app 
-  ? initializeFirestore(app, {
+  ? globalForFirebase.db || (globalForFirebase.db = initializeFirestore(app, {
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-    }) 
+    }))
   : null;
 
 export type AppUser = {
