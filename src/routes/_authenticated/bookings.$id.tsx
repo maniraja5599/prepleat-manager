@@ -561,13 +561,18 @@ function BookingDetail() {
             <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Booking Status
             </h2>
-            <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", booking.status === "completed" ? "bg-success/10 text-success" : "bg-primary/10 text-primary")}>
-              {booking.status === "completed" ? "Completed" : "Booked"}
+            <span className={cn(
+              "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+              booking.status === "completed" || booking.status === "delivered"
+                ? "bg-success/10 text-success"
+                : "bg-primary/10 text-primary"
+            )}>
+              {booking.status === "completed" ? "Completed" : booking.status === "delivered" ? "Delivered" : "Booked"}
             </span>
           </div>
           
           <div className="mt-4 flex gap-3">
-            {booking.status !== "completed" ? (
+            {booking.status !== "completed" && booking.status !== "delivered" ? (
               <button
                 onClick={() => {
                   if (due > 0) {
@@ -585,7 +590,8 @@ function BookingDetail() {
             ) : (
               <button
                 onClick={() => {
-                  updateBooking(booking.id, { status: "pending", completedAt: undefined });
+                  if (!confirm("Are you sure you want to revert this booking to Booked (Active)?")) return;
+                  updateBooking(booking.id, { status: "pending", completedAt: undefined, deliveredAt: undefined });
                   toast.success("Reverted to Booked");
                 }}
                 className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-bold text-sm border border-border/40 hover:bg-secondary/80 active:scale-95 transition"

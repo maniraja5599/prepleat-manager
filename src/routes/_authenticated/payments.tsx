@@ -19,6 +19,7 @@ import {
   IndianRupee,
   TrendingUp,
   AlertCircle,
+  AlertTriangle,
   Wallet,
   Download,
   FileText,
@@ -2317,6 +2318,19 @@ function EditTransactionSheet({
           <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Note (Optional)</label>
           <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="E.g., advance, tips..." className="w-full text-sm font-semibold bg-secondary border border-border rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition" />
         </div>
+
+        {/* Warning card for booking payment */}
+        {tx.sourceType === "booking_payment" && (
+          <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2 text-amber-500 animate-in fade-in duration-200">
+            <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+            <div className="text-left">
+              <p className="text-[10px] font-bold uppercase tracking-wider">Booking Payment Update</p>
+              <p className="text-[11px] leading-tight opacity-90 mt-0.5">
+                Saving changes will update the booking's paid amount & status. If you delete this payment, the booking will revert to pending.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-3">

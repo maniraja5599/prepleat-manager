@@ -611,11 +611,46 @@ export const useStore = create<State>()(
           };
         }),
       updatePayment: (id, patch) =>
-        set((s) => ({
-          payments: s.payments.map((p) =>
-            p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p,
-          ),
-        })),
+        set((s) => {
+          const oldPay = s.payments.find((p) => p.id === id);
+          if (!oldPay) return s;
+
+          const now = new Date().toISOString();
+          const payments = s.payments.map((p) =>
+            p.id === id ? { ...p, ...patch, updatedAt: now } : p,
+          );
+
+          // If the amount changed, we need to update the booking's advancePaid
+          let bookings = s.bookings;
+          if (patch.amount !== undefined && patch.amount !== oldPay.amount) {
+            const diff = patch.amount - oldPay.amount;
+            bookings = s.bookings.map((b) => {
+              if (b.id !== oldPay.bookingId) return b;
+              const newPaid = Math.max(0, b.advancePaid + diff);
+              const fullyPaid = newPaid >= (b.totalAmount - (b.discount || 0));
+              return {
+                ...b,
+                advancePaid: newPaid,
+                status: fullyPaid && b.status === "pending" ? "completed" : (!fullyPaid && b.status === "completed" ? "pending" : b.status),
+                updatedAt: now,
+              };
+            });
+          }
+
+          const entry: ActivityEntry = {
+            id: uid(),
+            ts: now,
+            kind: "update",
+            bookingId: oldPay.bookingId,
+            summary: `Updated payment of ₹${oldPay.amount} to ₹${patch.amount ?? oldPay.amount}`,
+          };
+
+          return {
+            payments,
+            bookings,
+            activity: [entry, ...s.activity].slice(0, 50),
+          };
+        }),
       deletePayment: (id) =>
         set((s) => {
           const pay = s.payments.find((p) => p.id === id);
