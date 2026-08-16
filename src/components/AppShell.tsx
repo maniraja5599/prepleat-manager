@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
-import { useStore, totalDue, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
+import {
+  useStore,
+  totalDue,
+  fmtINR,
+  formatAppDate,
+  formatAppTime,
+  formatAppDateTime,
+  shortBillNumber,
+} from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
 import { waitForAppUser } from "@/integrations/firebase/client";
 import {
@@ -990,7 +998,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                                     {cust?.name || "Client"}
                                   </span>
                                   <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
-                                    #{b.billNumber || b.id.slice(0, 6).toUpperCase()}
+                                    #{shortBillNumber(b.billNumber) || b.id.slice(0, 6).toUpperCase()}
                                   </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -1071,7 +1079,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                                   </span>
                                   {b?.billNumber && (
                                     <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
-                                      #{b.billNumber.split("-").pop()}
+                                      #{shortBillNumber(b.billNumber)}
                                     </span>
                                   )}
                                 </div>

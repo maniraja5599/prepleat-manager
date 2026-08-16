@@ -12,6 +12,7 @@ import {
   formatAppDate,
   formatAppTime,
   formatAppDateTime,
+  shortBillNumber,
 } from "@/lib/store";
 import { format, parseISO } from "date-fns";
 import {
@@ -123,7 +124,7 @@ function BookingDetail() {
         parts = [
           `Hi ${name},`,
           `Your order is *completed* ✅ Thank you for trusting us 💛`,
-          `🧾 Bill: ${booking.billNumber ?? booking.id.slice(0, 6).toUpperCase()} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+          `🧾 Bill: ${shortBillNumber(booking.billNumber) || booking.id.slice(0, 6).toUpperCase()} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
           `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
           due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully Paid`,
         ];
@@ -441,7 +442,7 @@ function BookingDetail() {
           <div className="flex items-center gap-1.5">
             {booking.billNumber && (
               <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
-                {booking.billNumber}
+                #{shortBillNumber(booking.billNumber)}
               </span>
             )}
             <span

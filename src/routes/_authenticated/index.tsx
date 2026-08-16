@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { GrowthDashboard } from "@/components/GrowthDashboard";
-import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate } from "@/lib/store";
+import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, shortBillNumber } from "@/lib/store";
 import {
   startOfMonth,
   endOfMonth,
@@ -660,7 +660,7 @@ const BookingRow = memo(function BookingRow({
               </span>
               {b.billNumber && (
                 <span className="text-[8px] font-mono text-muted-foreground/70 shrink-0 bg-secondary/80 px-1 py-0.5 rounded">
-                  #{b.billNumber.split("-").pop()}
+                  #{shortBillNumber(b.billNumber)}
                 </span>
               )}
               {b.status === "delivered" && (

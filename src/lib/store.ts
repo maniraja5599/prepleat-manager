@@ -241,13 +241,32 @@ interface State {
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
+const BILL_NUMBER_MIN_DIGITS = 3;
+const BILL_NUMBER_MAX_SEQUENCE = 999_999;
+
+const billNumberSequence = (billNumber?: string): number => {
+  if (!billNumber) return 0;
+
+  const trimmed = billNumber.trim();
+  const match = trimmed.match(/(?:^|\D)(\d{1,6})$/);
+  if (!match) return 0;
+
+  const sequence = Number(match[1]);
+  return Number.isSafeInteger(sequence) && sequence > 0 && sequence <= BILL_NUMBER_MAX_SEQUENCE
+    ? sequence
+    : 0;
+};
+
+export const shortBillNumber = (billNumber?: string): string => {
+  const sequence = billNumberSequence(billNumber);
+  if (!sequence) return billNumber?.trim() || "";
+  return String(sequence).padStart(BILL_NUMBER_MIN_DIGITS, "0");
+};
+
 const generateBillNumber = (existing: Booking[]): string => {
-  const usedNumbers = existing
-    .map((b) => b.billNumber)
-    .filter((n): n is string => !!n)
-    .map((n) => Number(n.replace(/\D/g, "")) || 0);
+  const usedNumbers = existing.map((b) => billNumberSequence(b.billNumber)).filter((n) => n > 0);
   const next = (usedNumbers.length ? Math.max(...usedNumbers) : 0) + 1;
-  return String(next).padStart(4, "0");
+  return shortBillNumber(String(next));
 };
 
 const describeDiff = (prev: Booking, next: Booking): string => {
@@ -1388,12 +1407,13 @@ export const useStore = create<State>()(
           let counter = persisted.bookings
             .map((b: any) => b.billNumber)
             .filter((n: any): n is string => !!n)
-            .map((n: string) => Number(n.replace(/\D/g, "")) || 0)
+            .map((n: string) => billNumberSequence(n))
+            .filter((n: number) => n > 0)
             .reduce((max: number, n: number) => Math.max(max, n), 0);
           for (const b of sorted) {
             if (b.billNumber) continue;
             counter += 1;
-            b.billNumber = String(counter).padStart(4, "0");
+            b.billNumber = shortBillNumber(String(counter));
           }
           // Existing EYAS- prefixed bill numbers are kept as-is (display strips prefix)
           // Backfill workflow timestamps

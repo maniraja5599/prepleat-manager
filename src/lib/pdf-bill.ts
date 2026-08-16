@@ -2,7 +2,14 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import type { Booking, Customer, Settings, Payment } from "./store";
-import { fmtTime12, totalDue, formatAppDate, formatAppTime, formatAppDateTime } from "./store";
+import {
+  fmtTime12,
+  totalDue,
+  formatAppDate,
+  formatAppTime,
+  formatAppDateTime,
+  shortBillNumber,
+} from "./store";
 import logoAsset from "@/assets/eyas-logo.png";
 
 // Helvetica (jsPDF default) lacks the ₹ glyph — it renders as ? or a box.
@@ -186,9 +193,14 @@ export async function generateBillPDF(opts: {
   doc.setTextColor(255, 248, 230);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text(`Bill # ${booking.billNumber || booking.id.slice(0, 8).toUpperCase()}`, W - 18, 36, {
-    align: "right",
-  });
+  doc.text(
+    `Bill # ${shortBillNumber(booking.billNumber) || booking.id.slice(0, 8).toUpperCase()}`,
+    W - 18,
+    36,
+    {
+      align: "right",
+    },
+  );
   doc.text(formatAppDate(new Date()), W - 18, 48, { align: "right" });
   doc.text(`Booked ${formatAppDate(booking.createdAt)}`, W - 18, 60, {
     align: "right",
@@ -376,6 +388,6 @@ export async function generateBillPDF(opts: {
   });
 
 
-  const fname = `bill-${booking.billNumber || booking.id.slice(0, 6)}-${(customer?.name || "customer").replace(/\s+/g, "_")}.pdf`;
+  const fname = `bill-${shortBillNumber(booking.billNumber) || booking.id.slice(0, 6)}-${(customer?.name || "customer").replace(/\s+/g, "_")}.pdf`;
   doc.save(fname);
 }
