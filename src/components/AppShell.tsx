@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
-import { useStore, totalDue, netBookingAmount, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
+import { useStore, totalDue, netBookingAmount, formatShortBillNumber, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
 import { waitForAppUser } from "@/integrations/firebase/client";
 import {
@@ -586,8 +586,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
           </header>
         )}
         <main className="px-5">{children}</main>
-        <p className="text-center text-[10px] text-muted-foreground/70 mt-8 pb-2">
-          Developed by{" "}
+        <p className="text-center text-[10px] text-muted-foreground/70 mt-8 pb-2 flex items-center justify-center gap-1.5 flex-wrap">
+          <span>Developed by</span>
           <a
             href="https://www.instagram.com/maniraja__/"
             target="_blank"
@@ -596,6 +596,14 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
           >
             ManiRaja
           </a>
+          <span>·</span>
+          <Link
+            to="/settings"
+            className="hover:underline opacity-80 font-mono font-medium"
+            title="View App Version & Changelog"
+          >
+            v1.2.0
+          </Link>
         </p>
       </div>
       <BottomNav />
@@ -991,9 +999,11 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                                   <span className="font-semibold text-sm text-foreground truncate">
                                     {cust?.name || "Client"}
                                   </span>
-                                  <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
-                                    #{b.billNumber || b.id.slice(0, 6).toUpperCase()}
-                                  </span>
+                                  {(b.billNumber || b.id) && (
+                                    <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono font-bold text-muted-foreground shrink-0">
+                                      {formatShortBillNumber(b.billNumber, b.id)}
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
                                   {b.service === "prepleat" ? "PrePleat Saree" : "Saree Drape"} · {b.sareeCount} saree{b.sareeCount !== 1 && "s"}
@@ -1071,9 +1081,9 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                                   <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded text-muted-foreground font-semibold">
                                     {(p.mode ?? "gpay").toUpperCase()}
                                   </span>
-                                  {b?.billNumber && (
-                                    <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono text-muted-foreground shrink-0">
-                                      #{b.billNumber.split("-").pop()}
+                                  {(b?.billNumber || b?.id) && (
+                                    <span className="text-[9px] bg-secondary/70 px-1.5 py-0.5 rounded font-mono font-bold text-muted-foreground shrink-0">
+                                      {formatShortBillNumber(b?.billNumber, b?.id)}
                                     </span>
                                   )}
                                 </div>

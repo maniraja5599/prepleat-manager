@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, netBookingAmount, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
+import { useStore, totalDue, netBookingAmount, formatShortBillNumber, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
@@ -738,9 +738,9 @@ function BookingsPage() {
                       >
                         {b.service === "prepleat" ? "PRE" : b.service}
                       </span>
-                      {b.billNumber && (
-                        <span className="text-[8px] font-mono text-muted-foreground/70 shrink-0 bg-secondary/80 px-1 py-0.5 rounded">
-                          #{b.billNumber.includes("-") ? b.billNumber.split("-").pop() : b.billNumber}
+                      {(b.billNumber || b.id) && (
+                        <span className="text-[8px] font-mono font-bold text-muted-foreground/80 shrink-0 bg-secondary/80 px-1.5 py-0.5 rounded">
+                          {formatShortBillNumber(b.billNumber, b.id)}
                         </span>
                       )}
                       {b.status === "delivered" && (

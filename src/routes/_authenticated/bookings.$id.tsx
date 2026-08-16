@@ -5,6 +5,7 @@ import {
   totalDue,
   netBookingTotal,
   netBookingAmount,
+  formatShortBillNumber,
   fmtINR,
   fmtTime12,
   type ServiceType,
@@ -142,7 +143,7 @@ function BookingDetail() {
         parts = [
           `Hi ${name},`,
           `Your order is *completed* ✅ Thank you for trusting us 💛`,
-          `🧾 Bill: ${booking.billNumber ?? booking.id.slice(0, 6).toUpperCase()} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+          `🧾 Bill: ${formatShortBillNumber(booking.billNumber, booking.id)} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
           extraLine,
           discLine,
           `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
@@ -480,9 +481,9 @@ function BookingDetail() {
             {booking.service === "prepleat" ? "PRE" : booking.service}
           </span>
           <div className="flex items-center gap-1.5">
-            {booking.billNumber && (
-              <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
-                {booking.billNumber}
+            {(booking.billNumber || booking.id) && (
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
+                {formatShortBillNumber(booking.billNumber, booking.id)}
               </span>
             )}
             <span

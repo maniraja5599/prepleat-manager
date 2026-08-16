@@ -442,12 +442,38 @@
   }
 }
 
+@layer components {
+  /* Unified Input Styles */
+  .input {
+    width: 100%;
+    border-radius: 1rem;
+    background-color: var(--color-secondary);
+    border: 1px solid color-mix(in oklch, var(--color-border) 60%, transparent);
+    padding: 0.65rem 0.85rem;
+    font-size: 0.875rem;
+    color: var(--color-foreground);
+    outline: none;
+    transition: all 0.15s ease-in-out;
+  }
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-primary) 20%, transparent);
+  }
+  .input::placeholder {
+    color: var(--color-muted-foreground);
+  }
+}
+
 @layer base {
   /* Keep focused inputs visible above the mobile keyboard */
   input,
   textarea,
   select {
     scroll-margin-block: 8rem;
+  }
+  button,
+  a[role="button"] {
+    touch-action: manipulation;
   }
 }
 

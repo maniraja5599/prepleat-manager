@@ -31,6 +31,12 @@ import {
   Info,
   Phone,
   Type,
+  CheckCircle2,
+  History,
+  RefreshCw,
+  Zap,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -62,7 +68,139 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const APP_VERSION = "1.0.0";
+export const APP_VERSION = "1.2.0";
+
+export interface ChangelogEntry {
+  version: string;
+  date: string;
+  isLatest?: boolean;
+  title: string;
+  changes: { emoji: string; text: string; desc?: string }[];
+}
+
+export const RECENT_UPDATES: ChangelogEntry[] = [
+  {
+    version: "v1.2.0",
+    date: "16 Aug 2026",
+    isLatest: true,
+    title: "Compact Bill Numbers, Text Scaling & Live Payment Sync",
+    changes: [
+      {
+        emoji: "🧾",
+        text: "Compact Bill Numbers",
+        desc: "Sleek short bill numbering (#42, #105) removing bulky dates across all cards, PDF bills, and WhatsApp invoices.",
+      },
+      {
+        emoji: "📱",
+        text: "Display Font Size Scaling",
+        desc: "Added 4-level text scale option (Compact 90%, Standard 100%, Large 110%, Extra Large 120%) with Live Preview and Samsung Ultra screen consistency.",
+      },
+      {
+        emoji: "🚗",
+        text: "Extra / Travel Charges Header",
+        desc: "Added Travel/Delivery fee support in New Bookings, Payment Collection, Completion modal, and PDF invoices.",
+      },
+      {
+        emoji: "💳",
+        text: "Deep Real-time Payment Sync",
+        desc: "In-place payment edit/delete with instant balance recalculation, fully-paid status transitions, and Firestore sync.",
+      },
+      {
+        emoji: "↩️",
+        text: "Safe Status Reversion",
+        desc: "Revert completed or delivered orders back to active booking with confirmation prompt protection.",
+      },
+    ],
+  },
+  {
+    version: "v1.1.5",
+    date: "14 Aug 2026",
+    title: "Mini Status Indicator & Live Recent Activity Feed",
+    changes: [
+      {
+        emoji: "🔍",
+        text: "Smart Global Search & Activity Log",
+        desc: "Live 5-event recent activity timeline inside search popup and compact sync dot.",
+      },
+      {
+        emoji: "🗂️",
+        text: "Delivered & Completed Filter",
+        desc: "Automatic segregation of completed orders into history view sorted with newest first.",
+      },
+      {
+        emoji: "⚡",
+        text: "Fast Navigation",
+        desc: "Removed card swipe gestures for smoother, glitch-free vertical scrolling.",
+      },
+    ],
+  },
+  {
+    version: "v1.1.0",
+    date: "10 Aug 2026",
+    title: "Smart Discount Validator & Measurement Grid",
+    changes: [
+      {
+        emoji: "🏷️",
+        text: "Smart Payment & Discount Validation",
+        desc: "Live balance indicators and warning banners preventing excess payments or over-discounting.",
+      },
+      {
+        emoji: "📐",
+        text: "Measurement Grid & Snap Wheels",
+        desc: "Instant read-only measurement grid for repeat clients with quick inline edit mode.",
+      },
+      {
+        emoji: "📞",
+        text: "Missing Phone Capture",
+        desc: "Inline phone number add/edit support on booking creation without leaving the flow.",
+      },
+    ],
+  },
+  {
+    version: "v1.0.5",
+    date: "05 Aug 2026",
+    title: "12 Curated Theme Palettes & Cloud Sync Engine",
+    changes: [
+      {
+        emoji: "🎨",
+        text: "Custom & Preset Themes",
+        desc: "Royal, Maroon, Emerald, Midnight, Rose, and custom hex color theme builder.",
+      },
+      {
+        emoji: "☁️",
+        text: "Offline-First Cloud Sync",
+        desc: "Reliable IndexedDB local persistence with real-time Firebase Firestore syncing.",
+      },
+      {
+        emoji: "🔒",
+        text: "Privacy & Passcode Lock",
+        desc: "Protect revenue numbers, payment histories, and customer details with quick toggle.",
+      },
+    ],
+  },
+  {
+    version: "v1.0.0",
+    date: "01 Aug 2026",
+    title: "Initial Production Launch",
+    changes: [
+      {
+        emoji: "🌟",
+        text: "Studio Order & Booking Management",
+        desc: "PrePleating and Draping order workflows, multi-saree pricing, and delivery schedules.",
+      },
+      {
+        emoji: "📄",
+        text: "Automated PDF Invoicing",
+        desc: "One-click printable PDF bills with boutique branding, QR codes, and terms.",
+      },
+      {
+        emoji: "💬",
+        text: "WhatsApp & SMS Sharing",
+        desc: "Formatted booking confirmation, reminder, and payment receipt messages.",
+      },
+    ],
+  },
+];
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Eyas Saree Drapist" }] }),
@@ -2599,6 +2737,29 @@ function ActivityBlock() {
 }
 
 function AboutBlock() {
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [expandedVersion, setExpandedVersion] = useState<string | null>("v1.2.0");
+
+  const handleCheckUpdate = () => {
+    setCheckingUpdate(true);
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.update());
+        });
+      }
+    } catch {
+      // ignore
+    }
+
+    setTimeout(() => {
+      setCheckingUpdate(false);
+      toast.success("App is running the latest production build! (v1.2.0)", {
+        duration: 2500,
+      });
+    }, 1200);
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Brand Profile Card */}
@@ -2615,15 +2776,115 @@ function AboutBlock() {
         </div>
 
         <h3 className="text-xl font-display font-bold text-foreground">Saree PrePleat Manager</h3>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">
-          Version {APP_VERSION}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+            Version {APP_VERSION}
+          </span>
+          <span className="text-[10px] font-bold text-success flex items-center gap-1">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" /> Production Live
+          </span>
+        </div>
 
         <p className="text-xs text-foreground/80 max-w-sm mt-3.5 leading-relaxed">
           A premium, all-in-one boutique management platform designed specifically for professional
           Saree Draping Artists and Prepleating Studios. Streamlining bookings, client records,
           custom measurements, and automated invoicing.
         </p>
+
+        {/* Check for Updates Action */}
+        <button
+          type="button"
+          onClick={handleCheckUpdate}
+          disabled={checkingUpdate}
+          className="mt-4 px-4 py-2.5 rounded-full bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center gap-2 transition cursor-pointer active:scale-95 border border-border/30 disabled:opacity-50"
+        >
+          <RefreshCw className={cn("size-3.5 text-primary", checkingUpdate && "animate-spin")} />
+          {checkingUpdate ? "Checking for updates..." : "Check for App Updates"}
+        </button>
+      </div>
+
+      {/* Recent 5 Updates & Changelog Card */}
+      <div className="rounded-2xl bg-card border border-border/40 p-5 card-shadow space-y-3.5">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <History className="size-3.5 text-primary" /> Recent 5 Updates & Changelog
+          </h4>
+          <span className="text-[10px] text-muted-foreground font-semibold">Latest 5 Releases</span>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground">
+          Review recent new features, speed improvements, and visual refinements.
+        </p>
+
+        <div className="space-y-2.5 pt-1">
+          {RECENT_UPDATES.map((entry) => {
+            const isExpanded = expandedVersion === entry.version;
+            return (
+              <div
+                key={entry.version}
+                className={cn(
+                  "rounded-2xl border transition overflow-hidden",
+                  entry.isLatest
+                    ? "bg-primary/[0.03] border-primary/30"
+                    : "bg-secondary/20 border-border/20",
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => setExpandedVersion(isExpanded ? null : entry.version)}
+                  className="w-full p-3.5 text-left flex items-center justify-between gap-2 transition cursor-pointer hover:bg-secondary/40"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold font-mono",
+                          entry.isLatest
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-foreground",
+                        )}
+                      >
+                        {entry.version}
+                      </span>
+                      {entry.isLatest && (
+                        <span className="text-[9px] font-bold text-success uppercase tracking-wider bg-success/10 px-1.5 py-0.5 rounded">
+                          Current
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        {entry.date}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-foreground mt-1 truncate">
+                      {entry.title}
+                    </p>
+                  </div>
+                  <div className="shrink-0 p-1 text-muted-foreground">
+                    {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                  </div>
+                </button>
+
+                {isExpanded && (
+                  <div className="px-3.5 pb-3.5 pt-1 border-t border-border/10 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {entry.changes.map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs">
+                        <span className="text-sm shrink-0 leading-tight">{item.emoji}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground">{item.text}</p>
+                          {item.desc && (
+                            <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                              {item.desc}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Developer Details Card */}

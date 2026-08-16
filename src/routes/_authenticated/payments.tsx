@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, totalDue, formatAppDate, formatAppTime, formatAppDateTime, type PaymentMode } from "@/lib/store";
+import { useStore, fmtINR, totalDue, formatShortBillNumber, formatAppDate, formatAppTime, formatAppDateTime, type PaymentMode } from "@/lib/store";
 import { useMemo, useState, useEffect } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import {
@@ -622,7 +622,7 @@ function PaymentsPage() {
           return [
             formatAppDateTime(p.date),
             c?.name ?? "Unknown",
-            (b?.billNumber ?? "").split("-").pop() || "—",
+            formatShortBillNumber(b?.billNumber, b?.id) || "—",
             (p.mode ?? "other").toUpperCase(),
             rs(p.amount),
           ];

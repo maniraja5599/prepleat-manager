@@ -247,13 +247,32 @@ interface State {
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
-const generateBillNumber = (existing: Booking[]): string => {
+export const formatShortBillNumber = (billNumber?: string, fallbackId?: string): string => {
+  if (!billNumber || !billNumber.trim()) {
+    return fallbackId ? `#${fallbackId.slice(0, 4).toUpperCase()}` : "";
+  }
+  let cleaned = billNumber.trim();
+  if (cleaned.includes("-")) {
+    cleaned = cleaned.split("-").pop() || cleaned;
+  }
+  const digits = cleaned.replace(/\D/g, "");
+  const num = parseInt(digits, 10);
+  if (!isNaN(num) && num > 0) {
+    return `#${num}`;
+  }
+  return `#${cleaned.replace(/^#+/, "")}`;
+};
+
+export const generateBillNumber = (existing: Booking[]): string => {
   const usedNumbers = existing
-    .map((b) => b.billNumber)
-    .filter((n): n is string => !!n)
-    .map((n) => Number(n.replace(/\D/g, "")) || 0);
+    .map((b) => {
+      if (!b.billNumber) return 0;
+      const lastPart = b.billNumber.includes("-") ? b.billNumber.split("-").pop()! : b.billNumber;
+      return Number(lastPart.replace(/\D/g, "")) || 0;
+    })
+    .filter((n) => n > 0);
   const next = (usedNumbers.length ? Math.max(...usedNumbers) : 0) + 1;
-  return String(next).padStart(4, "0");
+  return String(next).padStart(3, "0");
 };
 
 const describeDiff = (prev: Booking, next: Booking): string => {
