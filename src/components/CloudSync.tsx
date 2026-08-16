@@ -90,7 +90,8 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
   }
   bookings = bookings.map((b) => {
     const advancePaid = Math.max(b.advancePaid ?? 0, paidByBooking.get(b.id) ?? 0);
-    const status = advancePaid >= b.totalAmount && b.status === "pending" ? "completed" : b.status;
+    const netTotal = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
+    const status = advancePaid >= netTotal && b.status === "pending" ? "completed" : b.status;
     return { ...b, advancePaid, status };
   });
 

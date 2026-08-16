@@ -266,7 +266,7 @@ export function MapPicker({
                 <Marker
                   position={position}
                   draggable={true}
-                  animation={2} // DROP animation when pin is placed
+                  animation={typeof google !== "undefined" && google.maps ? google.maps.Animation.DROP : undefined}
                   onDragEnd={(e) => {
                     if (e.latLng) {
                       setPosition({ lat: e.latLng.lat(), lng: e.latLng.lng() });

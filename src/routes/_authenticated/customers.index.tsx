@@ -781,8 +781,6 @@ function CustomersPage() {
             duration: 6000,
           });
         }}
-        confirmText="Yes, delete it"
-        cancelText="Cancel"
       />
       <MapPicker
         open={showMapPicker}

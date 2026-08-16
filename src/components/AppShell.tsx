@@ -30,6 +30,8 @@ interface Props {
   subtitle?: string;
   children: ReactNode;
   wide?: boolean;
+  showBrand?: boolean;
+  showFloatingSearch?: boolean;
 }
 
 export function AppShell({ title, subtitle, children, wide }: Props) {

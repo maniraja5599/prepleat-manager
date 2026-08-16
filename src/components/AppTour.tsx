@@ -39,7 +39,7 @@ export function AppTour() {
   const welcomeTitle = useMemo(() => {
     if (!user) return "Welcome to Eyas!";
     if (user.isAnonymous) return "Welcome, Guest User!";
-    return `Welcome, ${user.displayName || user.email?.split("@")[0] || "User"}!`;
+    return `Welcome, ${(user as any).displayName || (user as any).name || user.email?.split("@")[0] || "User"}!`;
   }, [user]);
 
   const welcomeSubtitle = useMemo(() => {

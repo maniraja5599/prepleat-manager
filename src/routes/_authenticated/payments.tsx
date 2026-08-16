@@ -119,8 +119,8 @@ function PaymentsPage() {
   const handleSubFilterChange = (val: "collected" | "pending") => {
     setSubFilter(val);
     navigate({
-      search: (prev) => ({ ...prev, filter: val }),
-    });
+      search: (prev: any) => ({ ...prev, filter: val }),
+    } as any);
   };
 
   const [tab, setTab] = useState<TabId>("summary");
@@ -145,7 +145,14 @@ function PaymentsPage() {
       return s + totalDue(b);
     }, 0);
   }, [bookings]);
-  const totalBilled = useMemo(() => bookings.reduce((s, b) => s + b.totalAmount, 0), [bookings]);
+  const totalBilled = useMemo(
+    () =>
+      bookings.reduce(
+        (s, b) => s + ((b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0)),
+        0,
+      ),
+    [bookings],
+  );
   const collectionRate =
     totalBilled > 0 ? Math.min(100, Math.round((paymentsTotal / totalBilled) * 100)) : 0;
 
@@ -343,7 +350,12 @@ function PaymentsPage() {
     };
     payments.forEach((p) => addCollected(p.date, p.amount));
     extraIncomes.forEach((p) => addCollected(p.date, p.amount));
-    bookings.forEach((b) => addBooked(b.deliveryDate, b.totalAmount));
+    bookings.forEach((b) =>
+      addBooked(
+        b.deliveryDate,
+        (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0),
+      ),
+    );
 
     return Array.from(years.entries())
       .sort((a, b) => b[0].localeCompare(a[0]))
@@ -1040,7 +1052,7 @@ function IncomeView(p: {
           name: c?.name || b.customerName || "Unknown",
           phone: c?.phone || b.customerPhone || "",
           due: totalDue(b),
-          totalAmount: b.totalAmount,
+          totalAmount: (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0),
           service: b.service || "Saree PrePleat",
           dateStr: formatAppDate(b.deliveryDate),
         };

@@ -30,6 +30,7 @@ import {
   Phone,
   Clipboard,
   Map,
+  Car,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -128,7 +129,13 @@ function NewBooking() {
   const effPrice = priceTouched ? pricePerSaree : (quotedLastPrice ?? defaultPrice);
   
   const [manualTotal, setManualTotal] = useState<number | null>(null);
-  const total = manualTotal !== null ? manualTotal : sareeCount * effPrice;
+  const [extraCharges, setExtraCharges] = useState<string>("");
+  const extraNum = Number(extraCharges) || 0;
+  const [extraChargesNote, setExtraChargesNote] = useState<string>("Travel");
+  const [showExtraCharges, setShowExtraCharges] = useState(false);
+
+  const sareeSubtotal = manualTotal !== null ? manualTotal : sareeCount * effPrice;
+  const total = sareeSubtotal + extraNum;
 
   const today = format(new Date(), "yyyy-MM-dd");
   const [deliveryDate, setDeliveryDate] = useState(presetDate || today);
@@ -346,7 +353,9 @@ function NewBooking() {
       service,
       sareeCount,
       pricePerSaree: effPrice,
-      totalAmount: total,
+      totalAmount: sareeSubtotal,
+      extraCharges: extraNum > 0 ? extraNum : undefined,
+      extraChargesNote: extraNum > 0 ? (extraChargesNote.trim() || "Travel") : undefined,
       advancePaid: 0,
       deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
       deliveryTime,
@@ -990,13 +999,97 @@ function NewBooking() {
             <span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
           </div>
         )}
+        {/* Extra / Travel Charges toggle & inputs */}
+        {!showExtraCharges && extraNum === 0 ? (
+          <div className="mt-3 pt-2.5 border-t border-border/40 flex justify-between items-center">
+            <button
+              type="button"
+              onClick={() => setShowExtraCharges(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline cursor-pointer active:scale-95"
+            >
+              <Car className="size-3.5" /> + Add Travel / Extra Charge (optional)
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold flex items-center gap-1.5 text-foreground/90">
+                <Car className="size-3.5 text-primary" />
+                Extra / Travel Charge
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExtraCharges(false);
+                  setExtraCharges("");
+                }}
+                className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full bg-secondary/80 hover:bg-secondary cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
+
+            {/* Note selector / chips */}
+            <div className="flex flex-wrap gap-1.5">
+              {["Travel", "Delivery", "Urgent", "Other"].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setExtraChargesNote(tag)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-full text-[10px] font-bold transition cursor-pointer border",
+                    extraChargesNote === tag
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80",
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            {/* Amount input & presets */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="number"
+                  value={extraCharges}
+                  onChange={(e) => setExtraCharges(e.target.value)}
+                  placeholder="0 (Travel / Extra)"
+                  className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="flex gap-1">
+                {[100, 150, 200].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setExtraCharges(String(amt))}
+                    className="px-2 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-[10px] font-bold cursor-pointer active:scale-95 transition"
+                  >
+                    +₹{amt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Total Amount</span>
+          <div>
+            <span className="text-sm font-semibold text-foreground">Total Bill</span>
+            {extraNum > 0 && (
+              <p className="text-[10px] text-muted-foreground">
+                Sarees {fmtINR(sareeSubtotal)} + {extraChargesNote || "Extra"} {fmtINR(extraNum)}
+              </p>
+            )}
+          </div>
           <div className="relative w-28">
             <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-primary" />
             <input
               type="number"
-              value={manualTotal !== null ? manualTotal : (sareeCount * effPrice)}
+              value={manualTotal !== null ? manualTotal : total}
               onChange={(e) => setManualTotal(e.target.value ? Number(e.target.value) : null)}
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xl font-display font-bold text-primary text-right focus:outline-none focus:ring-2 focus:ring-primary"
             />

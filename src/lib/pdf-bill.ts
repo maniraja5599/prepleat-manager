@@ -230,17 +230,28 @@ export async function generateBillPDF(opts: {
   y += 70;
 
   // ===== Items =====
+  const itemRows: Array<[string, string, string, string]> = [
+    [
+      booking.service === "prepleat" ? "PrePleat Saree Service" : "Saree Drape Service",
+      String(booking.sareeCount),
+      rs(booking.pricePerSaree),
+      rs(booking.totalAmount),
+    ],
+  ];
+
+  if (booking.extraCharges && booking.extraCharges > 0) {
+    itemRows.push([
+      `Extra / ${booking.extraChargesNote || "Travel"} Charge`,
+      "1",
+      rs(booking.extraCharges),
+      rs(booking.extraCharges),
+    ]);
+  }
+
   autoTable(doc, {
     startY: y,
     head: [["Description", "Qty", "Rate", "Amount"]],
-    body: [
-      [
-        booking.service === "prepleat" ? "PrePleat Saree Service" : "Saree Drape Service",
-        String(booking.sareeCount),
-        rs(booking.pricePerSaree),
-        rs(booking.totalAmount),
-      ],
-    ],
+    body: itemRows,
     theme: "plain",
     margin: { left: 20, right: 20 },
     styles: { fontSize: 10, cellPadding: 8 },
@@ -256,12 +267,20 @@ export async function generateBillPDF(opts: {
 
   // ===== Totals =====
   const due = totalDue(booking);
+  const netTotal = Math.max(0, (booking.totalAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0));
   const labelX = W - 150;
   const valueX = W - 20;
   const rowH = 15;
 
   const totals: Array<[string, string, boolean?]> = [
     ["Subtotal", rs(booking.totalAmount)],
+    ...(booking.extraCharges && booking.extraCharges > 0
+      ? [[`Extra (${booking.extraChargesNote || "Travel"})`, `+${rs(booking.extraCharges)}`]] as Array<[string, string, boolean?]>
+      : []),
+    ...(booking.discount && booking.discount > 0
+      ? [["Discount", `-${rs(booking.discount)}`]] as Array<[string, string, boolean?]>
+      : []),
+    ["Net Total", rs(netTotal), true],
     ["Amount paid", rs(booking.advancePaid)],
     ["Balance due", rs(due), true],
   ];

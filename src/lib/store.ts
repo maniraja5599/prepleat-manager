@@ -24,6 +24,8 @@ export interface Booking {
   notes?: string;
   measurements?: Measurement[];
   discount?: number;
+  extraCharges?: number;
+  extraChargesNote?: string;
   createdAt: string;
   updatedAt?: string;
   completedAt?: string;
@@ -230,6 +232,7 @@ interface State {
   restoreExpense: (id: string) => void;
 
   addExtraIncome: (e: Omit<ExtraIncome, "id" | "updatedAt">) => ExtraIncome;
+  updateExtraIncome: (id: string, e: Partial<ExtraIncome>) => void;
   deleteExtraIncome: (id: string) => void;
   restoreExtraIncome: (id: string) => void;
 
@@ -589,7 +592,8 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) => {
             if (b.id !== p.bookingId) return b;
             const newPaid = b.advancePaid + p.amount;
-            const fullyPaid = newPaid >= (b.totalAmount - (b.discount || 0));
+            const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
+            const fullyPaid = newPaid >= netBill;
             return {
               ...b,
               advancePaid: newPaid,
@@ -627,7 +631,8 @@ export const useStore = create<State>()(
             bookings = s.bookings.map((b) => {
               if (b.id !== oldPay.bookingId) return b;
               const newPaid = Math.max(0, b.advancePaid + diff);
-              const fullyPaid = newPaid >= (b.totalAmount - (b.discount || 0));
+              const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
+              const fullyPaid = newPaid >= netBill;
               return {
                 ...b,
                 advancePaid: newPaid,
@@ -659,7 +664,8 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) => {
             if (b.id !== pay.bookingId) return b;
             const newPaid = Math.max(0, b.advancePaid - pay.amount);
-            const stillFullyPaid = newPaid >= (b.totalAmount - (b.discount || 0));
+            const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
+            const stillFullyPaid = newPaid >= netBill;
             return {
               ...b,
               advancePaid: newPaid,
@@ -699,7 +705,8 @@ export const useStore = create<State>()(
             if (b.id !== t.payment.bookingId) return b;
             const relatedPayments = updatedPayments.filter((p) => p.bookingId === b.id);
             const totalPaid = relatedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-            const isFullyPaid = totalPaid >= (b.totalAmount - (b.discount || 0));
+            const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
+            const isFullyPaid = totalPaid >= netBill;
             return {
               ...b,
               advancePaid: totalPaid,
@@ -761,6 +768,12 @@ export const useStore = create<State>()(
         set((s) => ({ extraIncomes: [item, ...s.extraIncomes] }));
         return item;
       },
+      updateExtraIncome: (id, patch) =>
+        set((s) => ({
+          extraIncomes: s.extraIncomes.map((item) =>
+            item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item,
+          ),
+        })),
       deleteExtraIncome: (id) =>
         set((s) => {
           const item = s.extraIncomes.find((e) => e.id === id);
@@ -1793,7 +1806,13 @@ export const formatAppDateTime = (isoString: string | undefined | null): string 
 
 export const fmtTime12 = (hhmm: string) => formatAppTime(hhmm);
 
-export const totalDue = (b: Booking) => Math.max(0, b.totalAmount - (b.discount || 0) - b.advancePaid);
+export const netBookingAmount = (b: Booking) => (b.totalAmount || 0) + (b.extraCharges || 0);
+
+export const netBookingTotal = (b: Booking) =>
+  Math.max(0, (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0));
+
+export const totalDue = (b: Booking) =>
+  Math.max(0, (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0) - (b.advancePaid || 0));
 
 export const customerBookings = (cid: string, bookings: Booking[]) =>
   bookings

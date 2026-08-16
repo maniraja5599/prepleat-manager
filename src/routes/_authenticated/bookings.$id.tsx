@@ -3,6 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import {
   useStore,
   totalDue,
+  netBookingTotal,
+  netBookingAmount,
   fmtINR,
   fmtTime12,
   type ServiceType,
@@ -37,6 +39,8 @@ import {
   Send,
   AlertCircle,
   Wallet,
+  Car,
+  Tag,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -71,6 +75,9 @@ function BookingDetail() {
   const businessName = settings.businessName;
   const [payAmt, setPayAmt] = useState("");
   const [discountAmt, setDiscountAmt] = useState("");
+  const [extraChargeAmt, setExtraChargeAmt] = useState("");
+  const [extraChargeNote, setExtraChargeNote] = useState("Travel");
+  const [showAddExtraCharge, setShowAddExtraCharge] = useState(false);
   const [payMode, setPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
   const [payNote, setPayNote] = useState("");
   const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -85,6 +92,8 @@ function BookingDetail() {
 
   const [completionOpen, setCompletionOpen] = useState(false);
   const [completionDiscount, setCompletionDiscount] = useState("");
+  const [completionExtraCharge, setCompletionExtraCharge] = useState("");
+  const [completionExtraNote, setCompletionExtraNote] = useState("Travel");
   const [completionPayMode, setCompletionPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
 
   if (!booking) {
@@ -103,9 +112,11 @@ function BookingDetail() {
   const due = totalDue(booking);
   const enteredPay = Number(payAmt) || 0;
   const enteredDisc = Number(discountAmt) || 0;
-  const remainingDue = Math.max(0, due - enteredPay - enteredDisc);
-  const isDiscountTooHigh = enteredDisc > due;
-  const isOverpaid = (enteredPay + enteredDisc) > due;
+  const enteredExtra = Number(extraChargeAmt) || 0;
+  const dynamicDue = due + enteredExtra;
+  const remainingDue = Math.max(0, dynamicDue - enteredPay - enteredDisc);
+  const isDiscountTooHigh = enteredDisc > dynamicDue;
+  const isOverpaid = (enteredPay + enteredDisc) > dynamicDue;
 
   const buildWhatsAppMessage = (
     kind: "reminder" | "bill" | "balance" | "status",
@@ -116,7 +127,15 @@ function BookingDetail() {
     const timeStr = fmtTime12(booking.deliveryTime);
     const paid = booking.advancePaid;
     const name = customer?.name || "Customer";
+    const netTotal = netBookingTotal(booking);
     let parts: string[] = [];
+
+    const extraLine = booking.extraCharges && booking.extraCharges > 0
+      ? `🚗 Extra / Travel: ${fmtINR(booking.extraCharges)} (${booking.extraChargesNote || "Travel"})`
+      : "";
+    const discLine = booking.discount && booking.discount > 0
+      ? `🏷️ Discount: -${fmtINR(booking.discount)}`
+      : "";
 
     if (kind === "status") {
       if (booking.status === "completed") {
@@ -124,16 +143,21 @@ function BookingDetail() {
           `Hi ${name},`,
           `Your order is *completed* ✅ Thank you for trusting us 💛`,
           `🧾 Bill: ${booking.billNumber ?? booking.id.slice(0, 6).toUpperCase()} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
-          `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
+          extraLine,
+          discLine,
+          `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
           due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully Paid`,
-        ];
+        ].filter(Boolean);
       } else {
         parts = [
           `Hi ${name} 🙏`,
           `Your order is booked for *${booking.service === "prepleat" ? "PrePleat" : "Draping"}*.`,
           `📅 Delivery: ${dateStr}, ${timeStr}`,
+          extraLine,
+          discLine,
+          `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
           due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully paid`,
-        ];
+        ].filter(Boolean);
       }
     }
     
@@ -141,11 +165,14 @@ function BookingDetail() {
       parts = [
         `Hi ${name} 🙏`,
         `Gentle reminder — balance pending for your saree order.`,
-        `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
+        `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
+        extraLine,
+        discLine,
+        `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
         `💰 *Due: ${fmtINR(due)}*`,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
         `Pay via GPay / Cash. Thank you! 🙏`,
-      ];
+      ].filter(Boolean);
     }
     
     if (kind === "bill") {
@@ -153,10 +180,12 @@ function BookingDetail() {
         `Hi ${name},`,
         `Here are your order details 📋`,
         `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+        extraLine,
+        discLine,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
-        `Total: ${fmtINR(booking.totalAmount)} | Paid: ${fmtINR(paid)}`,
+        `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
         due > 0 ? `💰 *Balance: ${fmtINR(due)}*` : `✅ Fully Paid`,
-      ];
+      ].filter(Boolean);
     }
 
     if (withLink) {
@@ -195,7 +224,7 @@ function BookingDetail() {
     const phone = cleanPhoneForDialing(customer.phone);
     const msg = buildWhatsAppMessage(kind, withLink)
       .replace(/\*/g, "")
-      .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏😊😁]/g, "")
+      .replace(/[💛🧵🌐🪡📅📌🧾✅💰✨🙏😊😁🚗🏷️]/g, "")
       .replace(/\n{2,}/g, "\n")
       .trim();
     window.location.href = `sms:${phone}?&body=${encodeURIComponent(msg)}`;
@@ -204,20 +233,31 @@ function BookingDetail() {
   const handlePay = () => {
     const n = Number(payAmt);
     const d = Number(discountAmt);
+    const e = Number(extraChargeAmt);
 
-    if ((!n || n <= 0) && (!d || d <= 0)) {
-      return toast.error("Enter a valid payment amount or discount");
+    if ((!n || n <= 0) && (!d || d <= 0) && (!e || e <= 0)) {
+      return toast.error("Enter a valid payment amount, discount, or extra charge");
     }
 
-    if (n > 0 && n > due - d) {
+    if (n > 0 && n > (due + e) - d) {
       const ok = window.confirm(
-        `Amount ${fmtINR(n)} exceeds pending ${fmtINR(due - d)}. Continue anyway?`,
+        `Amount ${fmtINR(n)} exceeds pending ${fmtINR((due + e) - d)}. Continue anyway?`,
       );
       if (!ok) return;
     }
 
+    const bookingPatch: Partial<typeof booking> = {};
+    if (e > 0) {
+      bookingPatch.extraCharges = (booking.extraCharges || 0) + e;
+      bookingPatch.extraChargesNote = booking.extraCharges
+        ? `${booking.extraChargesNote || "Extra"} + ${extraChargeNote || "Travel"}`
+        : (extraChargeNote || "Travel");
+    }
     if (d > 0) {
-      updateBooking(booking.id, { discount: (booking.discount || 0) + d });
+      bookingPatch.discount = (booking.discount || 0) + d;
+    }
+    if (Object.keys(bookingPatch).length > 0) {
+      updateBooking(booking.id, bookingPatch);
     }
 
     if (n > 0) {
@@ -237,17 +277,17 @@ function BookingDetail() {
 
     setPayAmt("");
     setDiscountAmt("");
+    setExtraChargeAmt("");
+    setShowAddExtraCharge(false);
     setPayNote("");
     setPayDate(new Date().toISOString().slice(0, 10));
     setShowAddPayment(false);
 
-    if (n > 0 && d > 0) {
-      toast.success(`Payment of ${fmtINR(n)} and discount of ${fmtINR(d)} added`);
-    } else if (n > 0) {
-      toast.success(`Payment of ${fmtINR(n)} added`);
-    } else if (d > 0) {
-      toast.success(`Discount of ${fmtINR(d)} applied`);
-    }
+    const msgs: string[] = [];
+    if (e > 0) msgs.push(`Extra charge of ${fmtINR(e)} added`);
+    if (d > 0) msgs.push(`Discount of ${fmtINR(d)} applied`);
+    if (n > 0) msgs.push(`Payment of ${fmtINR(n)} added`);
+    toast.success(msgs.join(" · "));
   };
 
   const getStatusInfo = () => {
@@ -670,27 +710,35 @@ function BookingDetail() {
           </div>
         </div>
 
+        {/* Detailed Breakdown Pill Row if Extra or Discount exists */}
+        {(Boolean(booking.extraCharges && booking.extraCharges > 0) || Boolean(booking.discount && booking.discount > 0)) && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3 pt-2 text-[11px]">
+            <span className="px-2.5 py-1 rounded-full bg-secondary/80 text-foreground/80 font-medium">
+              Sarees: <strong className="font-bold">{fmtINR(booking.totalAmount)}</strong>
+            </span>
+            {booking.extraCharges && booking.extraCharges > 0 && (
+              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium flex items-center gap-1">
+                <Car className="size-3" />
+                {booking.extraChargesNote || "Extra"}: <strong className="font-bold">+{fmtINR(booking.extraCharges)}</strong>
+              </span>
+            )}
+            {booking.discount && booking.discount > 0 && (
+              <span className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 font-medium flex items-center gap-1">
+                <Tag className="size-3" />
+                Discount: <strong className="font-bold">-{fmtINR(booking.discount)}</strong>
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Amount Row Stats */}
-        <div className={cn(
-          "grid gap-2 mt-4 pt-3.5 border-t border-border/40 text-center",
-          booking.discount && booking.discount > 0 ? "grid-cols-4" : "grid-cols-3"
-        )}>
+        <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3.5 border-t border-border/40 text-center">
           <div>
             <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground">
-              Total Bill
+              Net Bill
             </p>
-            <p className="text-sm font-bold mt-0.5">{fmtINR(booking.totalAmount)}</p>
+            <p className="text-sm font-bold mt-0.5">{fmtINR(netBookingTotal(booking))}</p>
           </div>
-          {booking.discount && booking.discount > 0 && (
-            <div className="border-l border-border/30">
-              <p className="text-[9px] uppercase font-bold tracking-wider text-rose-500">
-                Discount
-              </p>
-              <p className="text-sm font-bold text-rose-500 mt-0.5">
-                {fmtINR(booking.discount)}
-              </p>
-            </div>
-          )}
           <div className="border-l border-border/30">
             <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground">
               Total Paid
@@ -735,7 +783,11 @@ function BookingDetail() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowAddPayment(false)}
+                onClick={() => {
+                  setShowAddPayment(false);
+                  setExtraChargeAmt("");
+                  setShowAddExtraCharge(false);
+                }}
                 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition px-2.5 py-1 bg-secondary rounded-full cursor-pointer"
               >
                 Cancel
@@ -767,24 +819,97 @@ function BookingDetail() {
               </div>
             </div>
 
+            {/* Extra / Travel Charge section in Collect Payment */}
+            {!showAddExtraCharge && enteredExtra === 0 ? (
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowAddExtraCharge(true)}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline cursor-pointer active:scale-95"
+                >
+                  <Car className="size-3.5" /> + Add Travel / Extra Charge
+                </button>
+              </div>
+            ) : (
+              <div className="p-3 bg-secondary/40 rounded-2xl border border-border/20 space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Car className="size-3.5 text-primary" /> Extra / Travel Charge
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddExtraCharge(false);
+                      setExtraChargeAmt("");
+                    }}
+                    className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full bg-secondary cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Travel", "Delivery", "Urgent", "Other"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setExtraChargeNote(tag)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-[10px] font-bold transition cursor-pointer border",
+                        extraChargeNote === tag
+                          ? "bg-primary/10 text-primary border-primary/30"
+                          : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80",
+                      )}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">₹</span>
+                    <input
+                      type="number"
+                      value={extraChargeAmt}
+                      onChange={(e) => setExtraChargeAmt(e.target.value)}
+                      placeholder="Extra amount"
+                      className="w-full bg-secondary border border-border/30 rounded-xl pl-6 pr-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 tabular-nums"
+                    />
+                  </div>
+                  <div className="flex gap-1">
+                    {[100, 150, 200].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setExtraChargeAmt(String(amt))}
+                        className="px-2 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-[10px] font-bold cursor-pointer active:scale-95 transition"
+                      >
+                        +₹{amt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Quick shortcuts */}
             <div className="grid grid-cols-3 gap-2">
               <button
-                onClick={() => setPayAmt(String(Math.max(0, Math.round((due - enteredDisc) / 2))))}
+                onClick={() => setPayAmt(String(Math.max(0, Math.round((dynamicDue - enteredDisc) / 2))))}
                 className="py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-[10px] font-bold uppercase active:scale-95 transition cursor-pointer text-center"
               >
-                50% (₹{Math.max(0, Math.round((due - enteredDisc) / 2))})
+                50% (₹{Math.max(0, Math.round((dynamicDue - enteredDisc) / 2))})
               </button>
               <button
-                onClick={() => setPayAmt(String(Math.max(0, due - enteredDisc)))}
+                onClick={() => setPayAmt(String(Math.max(0, dynamicDue - enteredDisc)))}
                 className="py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-[10px] font-bold uppercase active:scale-95 transition cursor-pointer text-center"
               >
-                Full (₹{Math.max(0, due - enteredDisc)})
+                Full (₹{Math.max(0, dynamicDue - enteredDisc)})
               </button>
               <button
                 onClick={() => {
                   setPayAmt("");
                   setDiscountAmt("");
+                  setExtraChargeAmt("");
                 }}
                 className="py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-[10px] font-bold uppercase active:scale-95 transition cursor-pointer text-center"
               >
@@ -816,12 +941,20 @@ function BookingDetail() {
             </div>
 
             {/* Live Remaining Balance Summary */}
-            {(payAmt || discountAmt) && (
+            {(payAmt || discountAmt || extraChargeAmt) && (
               <div className="px-3.5 py-3 bg-secondary/30 rounded-2xl border border-border/10 flex flex-col gap-1.5 animate-in fade-in duration-200">
                 <div className="flex justify-between text-[11px]">
                   <span className="text-muted-foreground">Original Due:</span>
                   <span className="font-semibold tabular-nums">{fmtINR(due)}</span>
                 </div>
+                {enteredExtra > 0 && (
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-primary font-semibold flex items-center gap-1">
+                      <Car className="size-3" /> Extra ({extraChargeNote}):
+                    </span>
+                    <span className="font-semibold text-primary tabular-nums">+ {fmtINR(enteredExtra)}</span>
+                  </div>
+                )}
                 {enteredPay > 0 && (
                   <div className="flex justify-between text-[11px]">
                     <span className="text-muted-foreground">Entering Payment:</span>
@@ -830,7 +963,9 @@ function BookingDetail() {
                 )}
                 {enteredDisc > 0 && (
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-rose-500 font-semibold">Entering Discount:</span>
+                    <span className="text-rose-500 font-semibold flex items-center gap-1">
+                      <Tag className="size-3" /> Entering Discount:
+                    </span>
                     <span className="font-semibold text-rose-500 tabular-nums">- {fmtINR(enteredDisc)}</span>
                   </div>
                 )}
@@ -851,13 +986,13 @@ function BookingDetail() {
             {isDiscountTooHigh && (
               <div className="px-3 py-2 bg-rose-500/10 text-rose-500 text-[10px] font-semibold rounded-xl border border-rose-500/20 flex items-center gap-1.5 animate-in shake duration-200">
                 <AlertCircle className="size-3.5 shrink-0" />
-                <span>Discount cannot exceed the pending balance ({fmtINR(due)})</span>
+                <span>Discount cannot exceed pending balance ({fmtINR(dynamicDue)})</span>
               </div>
             )}
             {!isDiscountTooHigh && isOverpaid && (
               <div className="px-3 py-2 bg-rose-500/10 text-rose-500 text-[10px] font-semibold rounded-xl border border-rose-500/20 flex items-center gap-1.5 animate-in shake duration-200">
                 <AlertCircle className="size-3.5 shrink-0" />
-                <span>Total cannot exceed pending balance ({fmtINR(due)})</span>
+                <span>Total cannot exceed pending balance ({fmtINR(dynamicDue)})</span>
               </div>
             )}
 
@@ -906,20 +1041,24 @@ function BookingDetail() {
 
             {/* Full Action Button */}
             <button
-              disabled={isOverpaid || isDiscountTooHigh || ((enteredPay === 0) && (enteredDisc === 0))}
+              disabled={isOverpaid || isDiscountTooHigh || (enteredPay === 0 && enteredDisc === 0 && enteredExtra === 0)}
               onClick={handlePay}
               className={cn(
-                "w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm",
-                isOverpaid || isDiscountTooHigh || ((enteredPay === 0) && (enteredDisc === 0))
-                  ? "bg-muted text-muted-foreground cursor-not-allowed"
-                  : "saree-gradient text-white active:scale-95 cursor-pointer shadow-primary/10 hover:brightness-105"
+                "w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer",
+                isOverpaid || isDiscountTooHigh || (enteredPay === 0 && enteredDisc === 0 && enteredExtra === 0)
+                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                  : "saree-gradient text-white active:scale-95 shadow-primary/10 hover:brightness-105"
               )}
             >
               <Check className="size-4" />
-              {enteredPay > 0 && enteredDisc > 0
+              {enteredPay > 0 && enteredExtra > 0
+                ? `Record ${fmtINR(enteredPay)} Payment + ${fmtINR(enteredExtra)} ${extraChargeNote}`
+                : enteredPay > 0 && enteredDisc > 0
                 ? `Record ${fmtINR(enteredPay)} & Apply ${fmtINR(enteredDisc)} Discount`
                 : enteredPay > 0
                 ? `Record ${fmtINR(enteredPay)} Payment`
+                : enteredExtra > 0
+                ? `Add ${fmtINR(enteredExtra)} ${extraChargeNote}`
                 : enteredDisc > 0
                 ? `Apply ${fmtINR(enteredDisc)} Discount`
                 : "Submit"}
@@ -1024,75 +1163,34 @@ function BookingDetail() {
       </div>
 
       {activePayment && (
-        <div
-          className="fixed inset-0 z-[20000] bg-black/50 flex items-end sm:items-center justify-center"
-          onClick={() => setActivePayment(null)}
-        >
-          <div
-            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-semibold">Payment details</h3>
-              <button
-                onClick={() => setActivePayment(null)}
-                className="size-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="space-y-2 text-sm">
-              <Row label="Amount" value={fmtINR(activePayment.amount)} bold />
-              <Row label="Mode" value={(activePayment.mode ?? "gpay").toUpperCase()} />
-              <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border">
-                <span className="text-xs text-muted-foreground">Date</span>
-                <input
-                  type="date"
-                  value={activePayment.date.slice(0, 10)}
-                  onChange={(e) => {
-                    const ymd = e.target.value;
-                    if (!ymd) return;
-                    // Preserve existing time-of-day to keep chronological order.
-                    const old = parseISO(activePayment.date);
-                    const hh = String(old.getHours()).padStart(2, "0");
-                    const mm = String(old.getMinutes()).padStart(2, "0");
-                    const ss = String(old.getSeconds()).padStart(2, "0");
-                    const nextIso = new Date(`${ymd}T${hh}:${mm}:${ss}`).toISOString();
-                    updatePayment(activePayment.id, { date: nextIso });
-                    setActivePayment({ ...activePayment, date: nextIso });
-                    toast.success("Payment date updated");
-                  }}
-                  className="bg-secondary rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <Row label="Time" value={formatAppTime(format(parseISO(activePayment.date), "HH:mm"))} />
-              {activePayment.note && <Row label="Note" value={activePayment.note} />}
-            </div>
-            <button
-              onClick={() => {
-                if (activePayment && confirm("Delete this payment?")) {
-                  const pid = activePayment.id;
-                  deletePayment(pid);
-                  setActivePayment(null);
-                  toast.success("Payment removed", {
-                    action: {
-                      label: "Undo",
-                      onClick: () => {
-                        restorePayment(pid);
-                        toast.success("Payment restored");
-                      },
-                    },
-                    duration: 6000,
-                  });
-                }
-              }}
-              className="mt-4 w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-semibold flex items-center justify-center gap-2"
-            >
-              <Trash2 className="size-4" /> Delete payment
-            </button>
-          </div>
-        </div>
+        <EditPaymentModal
+          payment={activePayment}
+          onClose={() => setActivePayment(null)}
+          onSave={(patch) => {
+            updatePayment(activePayment.id, patch);
+            setActivePayment(null);
+            toast.success("Payment updated");
+          }}
+          onDelete={() => {
+            if (confirm("Delete this payment? The order dues will recalculate automatically.")) {
+              const pid = activePayment.id;
+              deletePayment(pid);
+              setActivePayment(null);
+              toast.success("Payment removed", {
+                action: {
+                  label: "Undo",
+                  onClick: () => {
+                    restorePayment(pid);
+                    toast.success("Payment restored");
+                  },
+                },
+                duration: 6000,
+              });
+            }
+          }}
+        />
       )}
+
       {completionOpen && (
         <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left animate-in fade-in duration-200">
           <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-5 overflow-hidden animate-in slide-in-from-bottom-4 duration-200 border border-border/40">
@@ -1100,7 +1198,7 @@ function BookingDetail() {
               <span>✅</span> Complete Booking
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-              Apply any final discount and record the balance payment to mark this booking as completed.
+              Apply any final extra charge/discount and record balance payment to mark this booking as completed.
             </p>
             
             <div className="space-y-3.5">
@@ -1108,10 +1206,41 @@ function BookingDetail() {
                 <span className="text-muted-foreground">Pending Balance:</span>
                 <span className="text-sm font-bold text-destructive">{fmtINR(due)}</span>
               </div>
+
+              {/* Extra Charge input in completion */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Car className="size-3 text-primary" /> Extra / Travel Charge (optional)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Extra / Travel amount"
+                    value={completionExtraCharge}
+                    onChange={(e) => setCompletionExtraCharge(e.target.value)}
+                    className="flex-1 bg-secondary border-0 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-semibold tabular-nums"
+                  />
+                  <div className="flex gap-1">
+                    {["Travel", "Delivery"].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setCompletionExtraNote(tag)}
+                        className={cn(
+                          "px-2 py-1 rounded-xl text-[10px] font-bold transition cursor-pointer border",
+                          completionExtraNote === tag ? "bg-primary/10 text-primary border-primary/30" : "bg-secondary text-muted-foreground border-transparent"
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Final Discount (optional)
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Tag className="size-3 text-rose-500" /> Final Discount (optional)
                 </label>
                 <input
                   type="number"
@@ -1145,18 +1274,20 @@ function BookingDetail() {
                 </div>
               </div>
 
-              {due - Number(completionDiscount || 0) > 0 && (
+              {((due + (Number(completionExtraCharge) || 0)) - Number(completionDiscount || 0)) > 0 && (
                 <div className="flex justify-between items-center text-xs font-semibold bg-success/10 text-success rounded-xl p-3 border border-success/20">
                   <span>Final Payment Received:</span>
-                  <span className="text-sm font-bold">{fmtINR(due - Number(completionDiscount || 0))}</span>
+                  <span className="text-sm font-bold">
+                    {fmtINR(Math.max(0, (due + (Number(completionExtraCharge) || 0)) - Number(completionDiscount || 0)))}
+                  </span>
                 </div>
               )}
             </div>
 
-            {Number(completionDiscount) > due && (
+            {Number(completionDiscount) > (due + (Number(completionExtraCharge) || 0)) && (
               <div className="mt-3 px-3 py-2 bg-rose-500/10 text-rose-500 text-[10px] font-semibold rounded-xl border border-rose-500/20 flex items-center gap-1.5 animate-in shake duration-200">
                 <AlertCircle className="size-3.5 shrink-0" />
-                <span>Discount cannot exceed the pending balance ({fmtINR(due)})</span>
+                <span>Discount cannot exceed the total balance ({fmtINR(due + (Number(completionExtraCharge) || 0))})</span>
               </div>
             )}
 
@@ -1166,25 +1297,36 @@ function BookingDetail() {
                 onClick={() => {
                   setCompletionOpen(false);
                   setCompletionDiscount("");
+                  setCompletionExtraCharge("");
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition active:scale-95"
+                className="flex-1 py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition active:scale-95 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={Number(completionDiscount) > due}
+                disabled={Number(completionDiscount) > (due + (Number(completionExtraCharge) || 0))}
                 onClick={() => {
                   const d = Number(completionDiscount) || 0;
-                  if (d > due) {
-                    return toast.error("Discount cannot exceed pending balance");
+                  const eAmt = Number(completionExtraCharge) || 0;
+                  const dynamicDueOnComplete = due + eAmt;
+
+                  if (d > dynamicDueOnComplete) {
+                    return toast.error("Discount cannot exceed balance");
                   }
                   
-                  const amt = due - d;
+                  const amt = dynamicDueOnComplete - d;
                   const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
                   
+                  if (eAmt > 0) {
+                    patch.extraCharges = (booking.extraCharges || 0) + eAmt;
+                    patch.extraChargesNote = booking.extraCharges
+                      ? `${booking.extraChargesNote || "Extra"} + ${completionExtraNote || "Travel"}`
+                      : (completionExtraNote || "Travel");
+                  }
+
                   if (d > 0) {
-                    updateBooking(booking.id, { discount: (booking.discount || 0) + d });
+                    patch.discount = (booking.discount || 0) + d;
                   }
                   
                   if (amt > 0) {
@@ -1201,11 +1343,12 @@ function BookingDetail() {
                   updateBooking(booking.id, patch);
                   setCompletionOpen(false);
                   setCompletionDiscount("");
+                  setCompletionExtraCharge("");
                   toast.success("Booking Completed!");
                 }}
                 className={cn(
-                  "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition",
-                  Number(completionDiscount) > due
+                  "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer",
+                  Number(completionDiscount) > (due + (Number(completionExtraCharge) || 0))
                     ? "bg-muted text-muted-foreground cursor-not-allowed"
                     : "saree-gradient text-white active:scale-95"
                 )}
@@ -1231,6 +1374,161 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
   );
 }
 
+function EditPaymentModal({
+  payment,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  payment: Payment;
+  onClose: () => void;
+  onSave: (patch: Partial<Payment>) => void;
+  onDelete: () => void;
+}) {
+  const [amount, setAmount] = useState(String(payment.amount));
+  const [mode, setMode] = useState<PaymentMode>(payment.mode ?? "gpay");
+  const [date, setDate] = useState(() => payment.date.slice(0, 10));
+  const [note, setNote] = useState(payment.note ?? "");
+
+  const handleSave = () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid payment amount");
+    const old = parseISO(payment.date);
+    const hh = String(old.getHours()).padStart(2, "0");
+    const mm = String(old.getMinutes()).padStart(2, "0");
+    const ss = String(old.getSeconds()).padStart(2, "0");
+    const nextIso = new Date(`${date}T${hh}:${mm}:${ss}`).toISOString();
+    onSave({
+      amount: amt,
+      mode,
+      date: nextIso,
+      note: note.trim() || undefined,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[20000] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-200 border border-border/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border/30 pb-3">
+          <h3 className="font-display font-bold text-base flex items-center gap-1.5">
+            <Wallet className="size-4 text-primary" /> Edit Payment
+          </h3>
+          <button
+            onClick={onClose}
+            className="size-8 rounded-full bg-secondary flex items-center justify-center cursor-pointer hover:bg-secondary/80 active:scale-95 transition"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Amount Input */}
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">
+            Payment Amount
+          </label>
+          <div className="relative bg-secondary rounded-2xl flex items-center px-3.5 py-2">
+            <IndianRupee className="size-4 text-muted-foreground" />
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="bg-transparent flex-1 pl-1 text-xl font-bold tabular-nums focus:outline-none"
+              placeholder="0"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        {/* Mode Selector */}
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1.5">
+            Payment Mode
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  "py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition cursor-pointer active:scale-95 text-center border border-transparent",
+                  mode === m
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    : "bg-secondary hover:bg-secondary/80 text-foreground/80",
+                )}
+              >
+                {m === "gpay" ? "📱 GPay" : m === "cash" ? "💵 Cash" : "💳 Other"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date and Time */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">
+              Date
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full h-10 text-xs font-semibold bg-secondary border border-border/30 rounded-xl px-3 outline-none focus:border-foreground/30 transition"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">
+              Recorded Time
+            </label>
+            <div className="w-full h-10 text-xs font-semibold bg-secondary/50 border border-border/20 rounded-xl px-3 flex items-center text-muted-foreground">
+              {formatAppTime(format(parseISO(payment.date), "HH:mm"))}
+            </div>
+          </div>
+        </div>
+
+        {/* Note */}
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">
+            Note (Optional)
+          </label>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="E.g. advance, final balance..."
+            className="w-full text-xs font-semibold bg-secondary border border-border/30 rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2.5 pt-2 border-t border-border/30">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="flex-1 py-3 rounded-xl saree-gradient text-white font-bold text-xs uppercase tracking-wider shadow-sm active:scale-95 transition cursor-pointer"
+          >
+            Save Changes
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="w-12 flex items-center justify-center rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition cursor-pointer shrink-0"
+            title="Delete Payment"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EditPanel({
   booking,
   onCancel,
@@ -1240,6 +1538,8 @@ function EditPanel({
     service: ServiceType;
     sareeCount: number;
     pricePerSaree: number;
+    extraCharges?: number;
+    extraChargesNote?: string;
     deliveryDate: string;
     deliveryTime: string;
     notes?: string;
@@ -1250,6 +1550,8 @@ function EditPanel({
     service: ServiceType;
     sareeCount: number;
     pricePerSaree: number;
+    extraCharges?: number;
+    extraChargesNote?: string;
     deliveryDate: string;
     deliveryTime: string;
     notes?: string;
@@ -1260,6 +1562,8 @@ function EditPanel({
   const [service, setService] = useState<ServiceType>(booking.service);
   const [sareeCount, setSareeCount] = useState(booking.sareeCount);
   const [pricePerSaree, setPricePerSaree] = useState(booking.pricePerSaree);
+  const [extraCharges, setExtraCharges] = useState(booking.extraCharges ? String(booking.extraCharges) : "");
+  const [extraChargesNote, setExtraChargesNote] = useState(booking.extraChargesNote || "Travel");
   const [deliveryDate, setDeliveryDate] = useState(
     format(parseISO(booking.deliveryDate), "yyyy-MM-dd"),
   );
@@ -1380,6 +1684,42 @@ function EditPanel({
             >
               +
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Extra / Travel Charge in EditPanel */}
+      <div className="space-y-1.5">
+        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+          <Car className="size-3 text-primary" /> Extra / Travel Charge (₹)
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              type="number"
+              value={extraCharges}
+              onChange={(e) => setExtraCharges(e.target.value)}
+              placeholder="0 (Travel / Extra)"
+              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {["Travel", "Delivery", "Urgent", "Other"].map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setExtraChargesNote(tag)}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition cursor-pointer border",
+                  extraChargesNote === tag
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80",
+                )}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -1548,10 +1888,13 @@ function EditPanel({
         <button
           type="button"
           onClick={() => {
+            const extra = Number(extraCharges) || 0;
             onSave({
               service,
               sareeCount,
               pricePerSaree,
+              extraCharges: extra > 0 ? extra : undefined,
+              extraChargesNote: extra > 0 ? (extraChargesNote || "Travel") : undefined,
               deliveryDate: new Date(deliveryDate).toISOString(),
               deliveryTime,
               notes: notes.trim() || undefined,
