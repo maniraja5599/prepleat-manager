@@ -134,7 +134,10 @@ export interface Settings {
   artistDotColor?: string;
   dateFormat: string;
   timeFormat: string;
+  fontSize?: AppFontSize;
 }
+
+export type AppFontSize = "compact" | "standard" | "large" | "xlarge";
 
 export interface DeletedBooking {
   booking: Booking;
@@ -330,6 +333,7 @@ export const useStore = create<State>()(
         artistDotColor: "#84cc16", // Lime
         dateFormat: "DD-MM-YYYY",
         timeFormat: "12",
+        fontSize: "standard",
       },
 
       addCustomer: (c) => {

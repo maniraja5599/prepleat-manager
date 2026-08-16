@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, type ThemeName, fmtTime12 } from "@/lib/store";
+import { useStore, fmtINR, type ThemeName, type AppFontSize, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
 import {
   IndianRupee,
@@ -30,6 +30,7 @@ import {
   Unlock,
   Info,
   Phone,
+  Type,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -855,6 +856,80 @@ function SettingsPage() {
                       >
                         24-Hour (e.g. 17:30)
                       </button>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+
+              {/* Text & Display Size Section */}
+              <Section title="Text & Display Size">
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Adjust font scaling for best visibility across small and large screens (e.g. Samsung Ultra, Tablets).
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: "compact" as const, label: "Compact", scale: "90%", desc: "Small & Dense" },
+                    { id: "standard" as const, label: "Standard", scale: "100%", desc: "Default" },
+                    { id: "large" as const, label: "Large", scale: "110%", desc: "Bigger text" },
+                    { id: "xlarge" as const, label: "Extra Large", scale: "120%", desc: "Max clarity" },
+                  ].map((item) => {
+                    const active = (settings.fontSize || "standard") === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          update({ fontSize: item.id });
+                          toast.success(`Font size: ${item.label} (${item.scale})`, { duration: 1200 });
+                        }}
+                        className={cn(
+                          "p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 flex flex-col justify-between",
+                          active
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-secondary/60 hover:bg-secondary border-border/20 text-foreground",
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={cn("text-xs font-bold", active ? "text-primary-foreground" : "text-foreground")}>
+                            {item.label}
+                          </span>
+                          <span className={cn("text-[10px] font-mono px-1.5 py-0.5 rounded", active ? "bg-white/20 text-white" : "bg-background text-muted-foreground")}>
+                            {item.scale}
+                          </span>
+                        </div>
+                        <p className={cn("text-[10px] mt-2", active ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                          {item.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Live Preview Box */}
+                <div className="mt-3.5 p-3.5 rounded-2xl bg-card border border-border/30 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Type className="size-3.5 text-primary" /> Live Text Size Preview
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                      {settings.fontSize === "compact"
+                        ? "Compact 90%"
+                        : settings.fontSize === "large"
+                        ? "Large 110%"
+                        : settings.fontSize === "xlarge"
+                        ? "Extra Large 120%"
+                        : "Standard 100%"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <p className="text-sm font-bold text-foreground">Saree PrePleating · Bridal Draping</p>
+                      <p className="text-xs text-muted-foreground">Delivery: 15 Jun 2026 · 2 Sarees</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-success tabular-nums">₹1,250</p>
+                      <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Paid in Full</span>
                     </div>
                   </div>
                 </div>

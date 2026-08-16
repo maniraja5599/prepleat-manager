@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, customerBookings, totalDue, fmtINR, formatAppDate, type Measurement } from "@/lib/store";
+import { useStore, customerBookings, totalDue, netBookingAmount, fmtINR, formatAppDate, type Measurement } from "@/lib/store";
 import {
   ArrowLeft,
   MessageCircle,
@@ -630,7 +630,7 @@ function CustomerDetail() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
+                    <p className="font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
                     {totalDue(b) > 0 ? (
                       <p className="text-xs text-destructive font-semibold">
                         {fmtINR(totalDue(b))} due

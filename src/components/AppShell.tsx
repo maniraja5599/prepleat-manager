@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
-import { useStore, totalDue, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
+import { useStore, totalDue, netBookingAmount, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import logoAsset from "@/assets/eyas-logo.png";
 import { waitForAppUser } from "@/integrations/firebase/client";
 import {
@@ -1024,7 +1024,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                                   {b.status}
                                 </span>
                                 <div className="text-xs font-semibold tabular-nums text-foreground">
-                                  {fmtINR(b.totalAmount)}
+                                  {fmtINR(netBookingAmount(b))}
                                 </div>
                                 {due > 0 ? (
                                   <div className="text-[10px] text-destructive font-bold">

@@ -31,10 +31,16 @@ export function ThemeApplier() {
   const theme = useStore((s) => s.settings.theme);
   const customPrimary = useStore((s) => s.settings.customPrimary);
   const customColors = useStore((s) => s.settings.customColors);
+  const fontSize = useStore((s) => s.settings.fontSize) || "standard";
 
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
+
+    // Apply font size scale
+    root.setAttribute("data-font-size", fontSize);
+
+    // Apply theme classes
     THEME_CLASSES.forEach((c) => root.classList.remove(c));
     if (theme && theme !== "maroon") root.classList.add(`theme-${theme}`);
 
@@ -50,6 +56,6 @@ export function ThemeApplier() {
       });
       if (colors.primary) root.style.setProperty("--ring", colors.primary);
     }
-  }, [theme, customPrimary, customColors]);
+  }, [theme, customPrimary, customColors, fontSize]);
   return null;
 }

@@ -358,6 +358,24 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-size: var(--app-font-scale, 16px);
+  }
+  html[data-font-size="compact"] {
+    --app-font-scale: 14.5px;
+  }
+  html[data-font-size="standard"] {
+    --app-font-scale: 16px;
+  }
+  html[data-font-size="large"] {
+    --app-font-scale: 17.5px;
+  }
+  html[data-font-size="xlarge"] {
+    --app-font-scale: 19px;
   }
   html,
   body {
@@ -365,9 +383,12 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   body {
     overscroll-behavior-y: none;
+    min-height: 100dvh;
   }
   h1,
   h2,

@@ -312,9 +312,10 @@ function BookingDetail() {
   const statusInfo = getStatusInfo();
   const dialPhone = cleanPhoneForDialing(customer?.phone);
   const whatsappPhone = cleanPhoneForWhatsApp(customer?.phone);
+  const netTotalVal = netBookingTotal(booking);
   const paidPercent =
-    booking.totalAmount > 0
-      ? Math.min(100, Math.round((booking.advancePaid / booking.totalAmount) * 100))
+    netTotalVal > 0
+      ? Math.min(100, Math.round(((booking.advancePaid || 0) / netTotalVal) * 100))
       : 0;
 
   return (

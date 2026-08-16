@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
+import { useStore, totalDue, netBookingAmount, fmtINR, fmtTime12, formatAppDate, type ServiceType } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
@@ -765,7 +765,7 @@ function BookingsPage() {
                     )}
                   </div>
                   <div className="text-right shrink-0 pt-1">
-                    <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
+                    <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
                     {due > 0 ? (
                       <p className="text-xs text-destructive font-semibold flex items-center justify-end">
                         <IndianRupee className="size-3" />

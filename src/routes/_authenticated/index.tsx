@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { GrowthDashboard } from "@/components/GrowthDashboard";
-import { useStore, totalDue, fmtINR, fmtTime12, formatAppDate } from "@/lib/store";
+import { useStore, totalDue, netBookingAmount, fmtINR, fmtTime12, formatAppDate } from "@/lib/store";
 import {
   startOfMonth,
   endOfMonth,
@@ -524,7 +524,7 @@ function CalendarPage() {
                   {monthEvents.length > 1 ? "s" : ""}
                 </h2>
                 <span className="text-[11px] text-muted-foreground tabular-nums">
-                  {fmtINR(monthEvents.reduce((s, b) => s + b.totalAmount, 0))}
+                  {fmtINR(monthEvents.reduce((s, b) => s + netBookingAmount(b), 0))}
                 </span>
               </div>
               <ul className="space-y-2">
@@ -683,7 +683,7 @@ const BookingRow = memo(function BookingRow({
             )}
           </div>
           <div className="text-right shrink-0 pt-1">
-            <p className="text-sm font-semibold tabular-nums">{fmtINR(b.totalAmount)}</p>
+            <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
             {due > 0 ? (
               <p className="text-xs text-destructive font-semibold flex items-center justify-end">
                 <IndianRupee className="size-3" />
