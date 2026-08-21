@@ -60,6 +60,37 @@ type PayFilter = "all" | "paid" | "due";
 type Sort = "delivery" | "recent" | "due";
 type Range = "all" | "thisMonth" | "lastMonth" | "custom";
 
+const MONTH_THEMES = [
+  {
+    bg: "bg-primary/[0.04]",
+    border: "border-primary/25",
+    badge: "saree-gradient text-white shadow-xs",
+    dot: "bg-primary text-primary",
+    dotPing: "bg-primary",
+  },
+  {
+    bg: "bg-[oklch(0.55_0.13_150)]/[0.04]",
+    border: "border-[oklch(0.55_0.13_150)]/25",
+    badge: "bg-[oklch(0.55_0.13_150)] text-white shadow-xs",
+    dot: "bg-[oklch(0.55_0.13_150)] text-[oklch(0.55_0.13_150)]",
+    dotPing: "bg-[oklch(0.55_0.13_150)]",
+  },
+  {
+    bg: "bg-[oklch(0.78_0.13_75)]/[0.05]",
+    border: "border-[oklch(0.78_0.13_75)]/30",
+    badge: "bg-[oklch(0.78_0.13_75)] text-white shadow-xs",
+    dot: "bg-[oklch(0.78_0.13_75)] text-[oklch(0.78_0.13_75)]",
+    dotPing: "bg-[oklch(0.78_0.13_75)]",
+  },
+  {
+    bg: "bg-indigo-500/[0.04]",
+    border: "border-indigo-500/25",
+    badge: "bg-indigo-600 text-white shadow-xs",
+    dot: "bg-indigo-500 text-indigo-500",
+    dotPing: "bg-indigo-500",
+  },
+];
+
 function BookingsPage() {
   const { past } = Route.useSearch();
   const navigate = useNavigate();
@@ -97,13 +128,15 @@ function BookingsPage() {
   // Pending complete warning (payment check before completing)
   const [pendingComplete, setPendingComplete] = useState<{ id: string; due: number; name: string } | null>(null);
 
-  // Ticker Index and interval for scrolling stats ticker in header
+  // Ticker Index and interval for scrolling stats ticker in header and month cards
   const [tickerIndex, setTickerIndex] = useState(0);
+  const [monthTickerIndex, setMonthTickerIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % 2);
-    }, 3000);
+      setMonthTickerIndex((prev) => (prev + 1) % 3);
+    }, 2800);
     return () => clearInterval(timer);
   }, []);
 
@@ -699,193 +732,238 @@ function BookingsPage() {
           No {showPast ? "past" : "active"} bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
         </div>
       ) : (
-        <div className="space-y-6">
-          {groupedByMonth.map((group) => {
+        <div className="relative pl-6 sm:pl-7 space-y-6 before:absolute before:left-2.5 sm:before:left-3 before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-border before:to-border/20">
+          {groupedByMonth.map((group, gIdx) => {
+            const theme = MONTH_THEMES[gIdx % MONTH_THEMES.length];
             const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
             const monthSarees = group.items.reduce((s, b) => s + (b.sareeCount || 1), 0);
             const monthDue = group.items.reduce((s, b) => s + totalDue(b), 0);
 
+            const tickerSlides = [
+              {
+                text: `${group.items.length} ${group.items.length === 1 ? "Order" : "Orders"} · ${monthSarees} Sarees`,
+                color: "text-foreground font-semibold",
+                icon: "📦",
+              },
+              {
+                text: `${fmtINR(monthTotal)} Total Billed`,
+                color: "text-primary font-bold",
+                icon: "💰",
+              },
+              {
+                text: monthDue > 0 ? `${fmtINR(monthDue)} Due Pending` : "100% Fully Paid ✨",
+                color: monthDue > 0 ? "text-destructive font-bold" : "text-success font-bold",
+                icon: monthDue > 0 ? "⚠️" : "✓",
+              },
+            ];
+
             return (
-              <section
-                key={group.monthKey}
-                className="bg-secondary/35 border border-border/60 rounded-3xl p-3 sm:p-4 space-y-3 shadow-xs"
-              >
-                {/* Month Section Header */}
-                <div className="flex items-center justify-between gap-2 px-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="size-2 rounded-full bg-primary shrink-0" />
-                    <span className="text-xs font-bold text-foreground tracking-wide font-display truncate">
-                      {group.monthLabel}
-                    </span>
-                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
-                      {group.items.length} {group.items.length === 1 ? "order" : "orders"} · {monthSarees} sarees
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-right text-[11px] shrink-0">
-                    <span className="font-bold text-foreground tabular-nums">{fmtINR(monthTotal)}</span>
-                    {monthDue > 0 && (
-                      <span className="text-[9px] font-bold text-destructive bg-destructive/15 px-1.5 py-0.5 rounded-md tabular-nums">
-                        {fmtINR(monthDue)} due
-                      </span>
-                    )}
-                  </div>
+              <div key={group.monthKey} className="relative">
+                {/* Timeline Milestone Node Pin */}
+                <div
+                  className={cn(
+                    "absolute -left-6 sm:-left-7 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
+                    theme.dot,
+                  )}
+                >
+                  <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
                 </div>
 
-                {/* Month's Cards */}
-                <ul className="space-y-2">
-                  {group.items.map((b) => {
-                    const c = customers.find((x) => x.id === b.customerId);
-                    const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
-                    const due = totalDue(b);
-                    const isArtistBooking = !!b.artistId || c?.kind === "artist";
-                    const tagColor =
-                      b.service === "prepleat"
-                        ? (settings.prepleatDotColor ?? "#ffa029")
-                        : (settings.directDrapeDotColor ?? "#10b981");
-                    const isSelected = selected.has(b.id);
-                    const inner = (
-                      <>
-                        {isArtistBooking && (
-                          <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
-                            ★ Artist
-                          </span>
+                {/* Month Container Box */}
+                <section
+                  className={cn(
+                    "border rounded-3xl p-3 sm:p-4 space-y-3 shadow-xs transition-all",
+                    theme.bg,
+                    theme.border,
+                  )}
+                >
+                  {/* Month Section Header with Highlighted Pill + Animated Scrolling Stats Ticker */}
+                  <div className="flex items-center justify-between gap-2 px-0.5">
+                    {/* Month Highlighted Badge Pill */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded-xl text-xs font-display font-extrabold tracking-wide flex items-center gap-1.5",
+                          theme.badge,
                         )}
-                        {!isArtistBooking && b.service === "drape" && (
-                          <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
-                            Direct Drape
-                          </span>
-                        )}
-                        {selectMode && (
-                          <input
-                            type="checkbox"
-                            readOnly
-                            checked={isSelected}
-                            className="absolute top-2 left-2 size-5 accent-primary z-10"
-                          />
-                        )}
-                        <div
-                          className={cn(
-                            "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3",
-                            selectMode && "pl-7",
+                      >
+                        <Calendar className="size-3.5" />
+                        <span>{group.monthLabel}</span>
+                      </span>
+                    </div>
+
+                    {/* Scrolling Detail Ticker */}
+                    <div className="h-6 overflow-hidden relative flex-1 min-w-0 max-w-[200px] text-right">
+                      <div
+                        className="transition-transform duration-500 ease-in-out"
+                        style={{ transform: `translateY(-${monthTickerIndex * 24}px)` }}
+                      >
+                        {tickerSlides.map((slide, sIdx) => (
+                          <div key={sIdx} className="h-6 flex items-center justify-end gap-1.5 text-[11px] truncate">
+                            <span className="text-[10px] select-none">{slide.icon}</span>
+                            <span className={cn("truncate", slide.color)}>{slide.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Month's Cards */}
+                  <ul className="space-y-2">
+                    {group.items.map((b) => {
+                      const c = customers.find((x) => x.id === b.customerId);
+                      const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
+                      const due = totalDue(b);
+                      const isArtistBooking = !!b.artistId || c?.kind === "artist";
+                      const tagColor =
+                        b.service === "prepleat"
+                          ? (settings.prepleatDotColor ?? "#ffa029")
+                          : (settings.directDrapeDotColor ?? "#10b981");
+                      const isSelected = selected.has(b.id);
+                      const inner = (
+                        <>
+                          {isArtistBooking && (
+                            <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
+                              ★ Artist
+                            </span>
                           )}
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                              <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
-                                {c?.name ?? "Unknown"}
-                              </span>
-                              {c?.phone && (
-                                <span
-                                  className="inline-flex gap-1.5 items-center shrink-0"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <a
-                                    href={`tel:${cleanPhoneForDialing(c.phone)}`}
-                                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
-                                    title="Call Customer"
-                                  >
-                                    <Phone className="size-3 text-muted-foreground" />
-                                  </a>
-                                  <a
-                                    href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
-                                    title="WhatsApp Chat"
-                                  >
-                                    <MessageCircle className="size-3 text-muted-foreground" />
-                                  </a>
-                                </span>
-                              )}
-                              <span
-                                style={{ backgroundColor: tagColor }}
-                                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
-                              >
-                                {b.service === "prepleat" ? "PRE" : b.service}
-                              </span>
-                              {(b.billNumber || b.id) && (
-                                <span className="text-[8px] font-mono font-bold text-muted-foreground/80 shrink-0 bg-secondary/80 px-1.5 py-0.5 rounded">
-                                  {formatShortBillNumber(b.billNumber, b.id)}
-                                </span>
-                              )}
-                              {b.status === "delivered" && (
-                                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                                  Delivered
-                                </span>
-                              )}
-                              {b.status === "cancelled" && (
-                                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
-                                  Cancelled
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
-                              <span>
-                                {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
-                              </span>
-                              {b.createdAt && (
-                                <span className="text-[9px] font-mono text-muted-foreground/75 bg-secondary/80 px-1.5 py-0.5 rounded shrink-0">
-                                  Booked {formatAppDate(b.createdAt)}
-                                </span>
-                              )}
-                            </div>
-                            {a && (
-                              <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
-                                via {a.name}
-                              </p>
+                          {!isArtistBooking && b.service === "drape" && (
+                            <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
+                              Direct Drape
+                            </span>
+                          )}
+                          {selectMode && (
+                            <input
+                              type="checkbox"
+                              readOnly
+                              checked={isSelected}
+                              className="absolute top-2 left-2 size-5 accent-primary z-10"
+                            />
+                          )}
+                          <div
+                            className={cn(
+                              "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3",
+                              selectMode && "pl-7",
                             )}
-                          </div>
-                          <div className="text-right shrink-0 pt-1">
-                            <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
-                            {due > 0 ? (
-                              <p className="text-xs text-destructive font-semibold flex items-center justify-end">
-                                <IndianRupee className="size-3" />
-                                {Math.round(due).toLocaleString("en-IN")} due
-                              </p>
-                            ) : (
-                              <p className="text-xs text-success font-semibold">Paid</p>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    );
-                    const cardCls = cn(
-                      "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
-                      isArtistBooking
-                        ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
-                        : b.service === "prepleat"
-                          ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
-                          : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
-                      b.status === "cancelled" && "opacity-60",
-                      isSelected && "ring-2 ring-primary",
-                    );
-                    return (
-                      <li key={b.id} className="relative touch-pan-y">
-                        {selectMode ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelected((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(b.id)) next.delete(b.id);
-                                else next.add(b.id);
-                                return next;
-                              });
-                            }}
-                            className={cardCls}
                           >
-                            {inner}
-                          </button>
-                        ) : (
-                          <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
-                            {inner}
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
+                                  {c?.name ?? "Unknown"}
+                                </span>
+                                {c?.phone && (
+                                  <span
+                                    className="inline-flex gap-1.5 items-center shrink-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <a
+                                      href={`tel:${cleanPhoneForDialing(c.phone)}`}
+                                      className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                                      title="Call Customer"
+                                    >
+                                      <Phone className="size-3 text-muted-foreground" />
+                                    </a>
+                                    <a
+                                      href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                                      title="WhatsApp Chat"
+                                    >
+                                      <MessageCircle className="size-3 text-muted-foreground" />
+                                    </a>
+                                  </span>
+                                )}
+                                <span
+                                  style={{ backgroundColor: tagColor }}
+                                  className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
+                                >
+                                  {b.service === "prepleat" ? "PRE" : b.service}
+                                </span>
+                                {(b.billNumber || b.id) && (
+                                  <span className="text-[8px] font-mono font-bold text-muted-foreground/80 shrink-0 bg-secondary/80 px-1.5 py-0.5 rounded">
+                                    {formatShortBillNumber(b.billNumber, b.id)}
+                                  </span>
+                                )}
+                                {b.status === "delivered" && (
+                                  <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                    Delivered
+                                  </span>
+                                )}
+                                {b.status === "cancelled" && (
+                                  <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
+                                    Cancelled
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span>
+                                  {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+                                </span>
+                                {b.createdAt && (
+                                  <span className="text-[9px] font-mono text-muted-foreground/75 bg-secondary/80 px-1.5 py-0.5 rounded shrink-0">
+                                    Booked {formatAppDate(b.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+                              {a && (
+                                <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
+                                  via {a.name}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0 pt-1">
+                              <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
+                              {due > 0 ? (
+                                <p className="text-xs text-destructive font-semibold flex items-center justify-end">
+                                  <IndianRupee className="size-3" />
+                                  {Math.round(due).toLocaleString("en-IN")} due
+                                </p>
+                              ) : (
+                                <p className="text-xs text-success font-semibold">Paid</p>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      );
+                      const cardCls = cn(
+                        "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
+                        isArtistBooking
+                          ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
+                          : b.service === "prepleat"
+                            ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
+                            : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
+                        b.status === "cancelled" && "opacity-60",
+                        isSelected && "ring-2 ring-primary",
+                      );
+                      return (
+                        <li key={b.id} className="relative touch-pan-y">
+                          {selectMode ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelected((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(b.id)) next.delete(b.id);
+                                  else next.add(b.id);
+                                  return next;
+                                });
+                              }}
+                              className={cardCls}
+                            >
+                              {inner}
+                            </button>
+                          ) : (
+                            <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
+                              {inner}
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              </div>
             );
           })}
         </div>

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.0";
+export const APP_VERSION = "1.3.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.0",
+    version: "v1.3.1",
     date: "21 Aug 2026",
     isLatest: true,
+    title: "Month Timeline, Scrolling Summary Tickers & 1-Day Advance Alerts",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "⏳",
+        text: "Chronological Month Timeline (மாத டைம்லைன்)",
+        desc: "Active மற்றும் Past புக்கிங்குகள் இடதுபக்க Timeline Line & Glowing Milestone Nodes வழியாக மாதவாரியாக அழகாக இணைக்கப்பட்டுள்ளன.",
+      },
+      {
+        emoji: "🔄",
+        text: "Scrolling Month Summary Tickers",
+        desc: "ஒவ்வொரு மாத Header-லும் Orders எண்ணிக்கை, Sarees எண்ணிக்கை, Total Billed மற்றும் Pending Due வினாடிக்கு ஒருமுறை சுழன்று மாறும் அனிமேஷன்.",
+      },
+      {
+        emoji: "🔔",
+        text: "1-Day-Before Event Delivery Alert",
+        desc: "நாளை டெலிவரி செய்ய வேண்டிய புக்கிங்குகள் இருந்தால் Top Header-ல் Amber நிறத்தில் 1 நாள் முன்கூட்டியே நினைவூட்டும் வசதி.",
+      },
+      {
+        emoji: "📊",
+        text: "Summary Business Analytics",
+        desc: "Payments Summary பக்கத்தில் PrePleat vs Direct Drape சதவீத பார், Top VIP வாடிக்கையாளர்கள், மற்றும் UPI vs Cash பிரிப்பு சேர்க்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.0",
+    date: "21 Aug 2026",
     title: "Continuous Activity Feed, Short Bill Numbers & Booked Date",
-    badge: "NEW UPDATE 🚀",
     changes: [
       {
         emoji: "⚡",
