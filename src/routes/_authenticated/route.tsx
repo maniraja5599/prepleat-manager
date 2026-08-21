@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { CloudSync } from "@/components/CloudSync";
 import { AppTour } from "@/components/AppTour";
 import { WhatsNewModal } from "@/components/WhatsNewModal";
+import { RecentBillsModal } from "@/components/RecentBillsModal";
 import logoAsset from "@/assets/eyas-logo.png";
 import { onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 import { useStore } from "@/lib/store";
@@ -73,6 +74,7 @@ function AuthenticatedRoot() {
       <CloudSync />
       <AppTour />
       <WhatsNewModal />
+      <RecentBillsModal />
       <Outlet />
     </>
   );

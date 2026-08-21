@@ -57,7 +57,7 @@ export const Route = createFileRoute("/_authenticated/bookings/")({
 
 type SvcFilter = "all" | ServiceType;
 type PayFilter = "all" | "paid" | "due";
-type Sort = "delivery" | "recent" | "due";
+type Sort = "delivery" | "recent" | "due" | "bill";
 type Range = "all" | "thisMonth" | "lastMonth" | "custom";
 
 const MONTH_THEMES = [
@@ -179,7 +179,7 @@ function BookingsPage() {
   };
 
   const getSortLabel = (s: Sort) =>
-    s === "delivery" ? "Delivery Date" : s === "recent" ? "Recently Booked" : "Balance Due";
+    s === "delivery" ? "Delivery Date" : s === "recent" ? "Recently Booked" : s === "bill" ? "Bill Number" : "Balance Due";
   const sortingSummary = `Sorted by ${getSortLabel(sort)}`;
 
   const dateBounds = useMemo<{ start?: Date; end?: Date }>(() => {
@@ -244,6 +244,11 @@ function BookingsPage() {
       });
     }
     arr.sort((a, b) => {
+      if (sort === "bill") {
+        const numA = parseInt((a.billNumber || "").replace(/\D/g, ""), 10) || 0;
+        const numB = parseInt((b.billNumber || "").replace(/\D/g, ""), 10) || 0;
+        return numB - numA;
+      }
       if (sort === "delivery") {
         if (showPast) {
           return (
@@ -697,10 +702,11 @@ function BookingsPage() {
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
                       Sort By
                     </span>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {[
                         { id: "delivery" as Sort, label: "Delivery Date" },
                         { id: "recent" as Sort, label: "Recently Booked" },
+                        { id: "bill" as Sort, label: "Bill Number (#)" },
                         { id: "due" as Sort, label: "Balance Due" },
                       ].map((sOpt) => (
                         <button

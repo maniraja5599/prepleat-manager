@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Calendar, ListChecks, Wallet, Users, Settings as SettingsIcon, History } from "lucide-react";
+import { Calendar, ListChecks, Wallet, Users, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRef, useEffect } from "react";
 
@@ -7,14 +7,13 @@ type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean
 const tabs: Tab[] = [
   { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/customers", label: "Customers", icon: Users },
-  { to: "/settings", label: "Settings", icon: SettingsIcon, primary: true },
+  { to: "/bills", label: "Bills", icon: Receipt, primary: true },
   { to: "/bookings", label: "Bookings", icon: ListChecks },
   { to: "/", label: "Calendar", icon: Calendar },
 ];
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const search = useRouterState({ select: (s) => s.location.search }) as { past?: boolean | string };
   const navigate = useNavigate();
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -23,12 +22,6 @@ export function BottomNav() {
       if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
     };
   }, []);
-
-  const isPastBookingsPage = pathname === "/bookings" && (search.past === true || search.past === "true");
-  const settingsTabDestination = isPastBookingsPage ? "/settings" : "/bookings";
-  const settingsTabSearch = isPastBookingsPage ? {} : { past: true };
-  const SettingsTabIcon = isPastBookingsPage ? SettingsIcon : History;
-  const settingsTabLabel = isPastBookingsPage ? "Settings" : "History";
 
   const handleCalendarClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,20 +49,18 @@ export function BottomNav() {
           const active = t.to === "/" ? pathname === "/" : pathname.startsWith(t.to);
           const Icon = t.icon;
           if (t.primary) {
-            const active = isPastBookingsPage || pathname === "/settings";
             return (
-              <li key="/settings" className="flex justify-center -mt-5">
-                <Link
-                  to={settingsTabDestination}
-                  search={settingsTabSearch}
-                  className={cn(
-                    "size-14 rounded-full saree-gradient text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 active:scale-95 transition",
-                    active && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
-                  )}
-                  title={settingsTabLabel}
+              <li key="/bills" className="flex justify-center -mt-5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new Event("open-recent-bills"));
+                  }}
+                  className="size-14 rounded-full saree-gradient text-white flex items-center justify-center shadow-lg shadow-primary/30 active:scale-90 transition cursor-pointer ring-2 ring-primary/20 ring-offset-2 ring-offset-background"
+                  title="Check Recent Bills by Order (#1, #2...)"
                 >
-                  <SettingsTabIcon className="size-7" strokeWidth={2.5} />
-                </Link>
+                  <Receipt className="size-7" strokeWidth={2.5} />
+                </button>
               </li>
             );
           }
