@@ -229,6 +229,27 @@ function BookingsPage() {
     return arr;
   }, [bookings, mainFilter, showPast, pay, sort, q, customers, dateBounds]);
 
+  const groupedByMonth = useMemo(() => {
+    const map = new Map<string, { monthKey: string; monthLabel: string; items: typeof list }>();
+
+    for (const b of list) {
+      let monthKey = "Unknown";
+      let monthLabel = "Other";
+      try {
+        const d = parseISO(b.deliveryDate);
+        monthKey = format(d, "yyyy-MM");
+        monthLabel = format(d, "MMMM yyyy");
+      } catch {}
+
+      if (!map.has(monthKey)) {
+        map.set(monthKey, { monthKey, monthLabel, items: [] });
+      }
+      map.get(monthKey)!.items.push(b);
+    }
+
+    return Array.from(map.values());
+  }, [list]);
+
   const counts = useMemo(() => {
     // Active = not completed and not delivered
     const statusFilter = (b: any) =>
@@ -269,7 +290,7 @@ function BookingsPage() {
 
   return (
     <AppShell showFloatingSearch={true}>
-      {/* Sticky Header block (Title + Ticker + Tab Bar) */}
+      {/* Sticky Header block (Title + Ticker + Primary Switcher + Tab Bar) */}
       <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
         <div className="flex items-center justify-between gap-4 h-9">
           <div>
@@ -277,7 +298,7 @@ function BookingsPage() {
               Bookings
             </h1>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              {counts.active} active · {counts.history} completed
+              {showPast ? `${counts.history} Completed Orders` : `${counts.active} Active Orders`}
             </p>
           </div>
 
@@ -306,10 +327,55 @@ function BookingsPage() {
           </div>
         </div>
 
+        {/* Primary View Toggle: Active Bookings vs Past / History */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-secondary/60 rounded-2xl mt-3 mb-2 border border-border/20">
+          <button
+            type="button"
+            onClick={() => {
+              setShowPast(false);
+              setMainFilter("active");
+              navigate({ to: "/bookings", search: { past: undefined }, replace: true });
+            }}
+            className={cn(
+              "py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              !showPast
+                ? "bg-card text-foreground shadow-sm border border-border/40"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span>🟢 Active Bookings</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-primary/10 text-primary font-extrabold">
+              {bookings.filter((b) => b.status !== "completed" && b.status !== "delivered").length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowPast(true);
+              setMainFilter("active");
+              navigate({ to: "/bookings", search: { past: true }, replace: true });
+            }}
+            className={cn(
+              "py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              showPast
+                ? "bg-card text-foreground shadow-sm border border-border/40"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="flex items-center gap-1">
+              <History className="size-3.5" /> Past / History
+            </span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary text-muted-foreground font-extrabold">
+              {counts.history}
+            </span>
+          </button>
+        </div>
+
         {/* Horizontal Scrollable Filter Row */}
-        <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar items-center pb-0.5">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center pb-0.5">
           {[
-            { id: "active" as const, label: showPast ? "All" : "Active", count: counts.active },
+            { id: "active" as const, label: showPast ? "All Past" : "All Active", count: counts.active },
             { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
             { id: "drape" as const, label: "Direct Drape", count: counts.drape },
             { id: "artist" as const, label: "Artist", count: counts.artist },
@@ -320,7 +386,7 @@ function BookingsPage() {
                 key={item.id}
                 onClick={() => setMainFilter(item.id)}
                 className={cn(
-                  "shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95",
+                  "shrink-0 rounded-full px-3.5 py-1 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95",
                   isActive
                     ? "bg-primary border-primary text-primary-foreground shadow-sm"
                     : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
@@ -346,7 +412,7 @@ function BookingsPage() {
       {/* Action Buttons Bar */}
       <div className="flex gap-1.5 mb-3 items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {list.length} matched
+          {list.length} {showPast ? "past" : "active"} orders matched
         </span>
 
         <div className="flex gap-1.5 items-center">
@@ -374,39 +440,6 @@ function BookingsPage() {
           >
             <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
           </button>
-
-          {!selectMode && (
-            <button
-              onClick={() => {
-                const nextPast = !showPast;
-                setShowPast(nextPast);
-                setMainFilter("active");
-                navigate({
-                  to: "/bookings",
-                  search: { past: nextPast || undefined },
-                  replace: true,
-                });
-              }}
-              className={cn(
-                "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
-                showPast
-                  ? "bg-primary text-primary-foreground border border-primary shadow-sm"
-                  : "bg-card border border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
-              )}
-            >
-              <History className="size-3.5" /> Past
-              <span
-                className={cn(
-                  "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-                  showPast
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {counts.history}
-              </span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -663,163 +696,196 @@ function BookingsPage() {
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
-          No bookings match. Tap <span className="font-semibold text-primary">+</span> to create
-          one.
+          No {showPast ? "past" : "active"} bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
         </div>
       ) : (
-        <ul className="space-y-2">
-          {list.map((b) => {
-            const c = customers.find((x) => x.id === b.customerId);
-            const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
-            const due = totalDue(b);
-            const isArtistBooking = !!b.artistId || c?.kind === "artist";
-            const tagColor =
-              b.service === "prepleat"
-                ? (settings.prepleatDotColor ?? "#ffa029")
-                : (settings.directDrapeDotColor ?? "#10b981");
-            const isSelected = selected.has(b.id);
-            const inner = (
-              <>
-                {isArtistBooking && (
-                  <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
-                    ★ Artist
-                  </span>
-                )}
-                {!isArtistBooking && b.service === "drape" && (
-                  <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
-                    Direct Drape
-                  </span>
-                )}
-                {selectMode && (
-                  <input
-                    type="checkbox"
-                    readOnly
-                    checked={isSelected}
-                    className="absolute top-2 left-2 size-5 accent-primary z-10"
-                  />
-                )}
-                <div
-                  className={cn(
-                    "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3",
-                    selectMode && "pl-7",
-                  )}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                      <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
-                        {c?.name ?? "Unknown"}
-                      </span>
-                      {c?.phone && (
-                        <span
-                          className="inline-flex gap-1.5 items-center shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <a
-                            href={`tel:${cleanPhoneForDialing(c.phone)}`}
-                            className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
-                            title="Call Customer"
-                          >
-                            <Phone className="size-3 text-muted-foreground" />
-                          </a>
-                          <a
-                            href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
-                            title="WhatsApp Chat"
-                          >
-                            <MessageCircle className="size-3 text-muted-foreground" />
-                          </a>
-                        </span>
-                      )}
-                      <span
-                        style={{ backgroundColor: tagColor }}
-                        className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
-                      >
-                        {b.service === "prepleat" ? "PRE" : b.service}
-                      </span>
-                      {(b.billNumber || b.id) && (
-                        <span className="text-[8px] font-mono font-bold text-muted-foreground/80 shrink-0 bg-secondary/80 px-1.5 py-0.5 rounded">
-                          {formatShortBillNumber(b.billNumber, b.id)}
-                        </span>
-                      )}
-                      {b.status === "delivered" && (
-                        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                          Delivered
-                        </span>
-                      )}
-                      {b.status === "cancelled" && (
-                        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
-                          Cancelled
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
-                      <span>
-                        {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
-                      </span>
-                      {b.createdAt && (
-                        <span className="text-[9px] font-mono text-muted-foreground/75 bg-secondary/80 px-1.5 py-0.5 rounded shrink-0">
-                          Booked {formatAppDate(b.createdAt)}
-                        </span>
-                      )}
-                    </div>
-                    {a && (
-                      <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
-                        via {a.name}
-                      </p>
-                    )}
+        <div className="space-y-6">
+          {groupedByMonth.map((group) => {
+            const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
+            const monthSarees = group.items.reduce((s, b) => s + (b.sareeCount || 1), 0);
+            const monthDue = group.items.reduce((s, b) => s + totalDue(b), 0);
+
+            return (
+              <section key={group.monthKey} className="space-y-2.5">
+                {/* Month Section Header */}
+                <div className="sticky top-[calc(env(safe-area-inset-top,0px)+9.8rem)] z-10 bg-background/95 backdrop-blur-md py-1.5 px-3 rounded-2xl flex items-center justify-between border border-border/20 shadow-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Calendar className="size-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-foreground tracking-tight truncate">
+                      {group.monthLabel}
+                    </span>
+                    <span className="text-[10px] bg-secondary px-2 py-0.5 rounded-full text-muted-foreground font-semibold shrink-0">
+                      {group.items.length} {group.items.length === 1 ? "order" : "orders"} · {monthSarees} sarees
+                    </span>
                   </div>
-                  <div className="text-right shrink-0 pt-1">
-                    <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
-                    {due > 0 ? (
-                      <p className="text-xs text-destructive font-semibold flex items-center justify-end">
-                        <IndianRupee className="size-3" />
-                        {Math.round(due).toLocaleString("en-IN")} due
-                      </p>
-                    ) : (
-                      <p className="text-xs text-success font-semibold">Paid</p>
+                  <div className="flex items-center gap-2 text-right text-[11px] shrink-0">
+                    <span className="font-bold text-foreground/90">{fmtINR(monthTotal)}</span>
+                    {monthDue > 0 && (
+                      <span className="text-[9px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                        {fmtINR(monthDue)} due
+                      </span>
                     )}
                   </div>
                 </div>
-              </>
-            );
-            const cardCls = cn(
-              "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
-              isArtistBooking
-                ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
-                : b.service === "prepleat"
-                  ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
-                  : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
-              b.status === "cancelled" && "opacity-60",
-              isSelected && "ring-2 ring-primary",
-            );
-            return (
-              <li key={b.id} className="relative touch-pan-y">
-                {selectMode ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelected((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(b.id)) next.delete(b.id);
-                        else next.add(b.id);
-                        return next;
-                      });
-                    }}
-                    className={cardCls}
-                  >
-                    {inner}
-                  </button>
-                ) : (
-                  <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
-                    {inner}
-                  </Link>
-                )}
-              </li>
+
+                {/* Month's Cards */}
+                <ul className="space-y-2">
+                  {group.items.map((b) => {
+                    const c = customers.find((x) => x.id === b.customerId);
+                    const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
+                    const due = totalDue(b);
+                    const isArtistBooking = !!b.artistId || c?.kind === "artist";
+                    const tagColor =
+                      b.service === "prepleat"
+                        ? (settings.prepleatDotColor ?? "#ffa029")
+                        : (settings.directDrapeDotColor ?? "#10b981");
+                    const isSelected = selected.has(b.id);
+                    const inner = (
+                      <>
+                        {isArtistBooking && (
+                          <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white">
+                            ★ Artist
+                          </span>
+                        )}
+                        {!isArtistBooking && b.service === "drape" && (
+                          <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
+                            Direct Drape
+                          </span>
+                        )}
+                        {selectMode && (
+                          <input
+                            type="checkbox"
+                            readOnly
+                            checked={isSelected}
+                            className="absolute top-2 left-2 size-5 accent-primary z-10"
+                          />
+                        )}
+                        <div
+                          className={cn(
+                            "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3",
+                            selectMode && "pl-7",
+                          )}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
+                                {c?.name ?? "Unknown"}
+                              </span>
+                              {c?.phone && (
+                                <span
+                                  className="inline-flex gap-1.5 items-center shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <a
+                                    href={`tel:${cleanPhoneForDialing(c.phone)}`}
+                                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                                    title="Call Customer"
+                                  >
+                                    <Phone className="size-3 text-muted-foreground" />
+                                  </a>
+                                  <a
+                                    href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                                    title="WhatsApp Chat"
+                                  >
+                                    <MessageCircle className="size-3 text-muted-foreground" />
+                                  </a>
+                                </span>
+                              )}
+                              <span
+                                style={{ backgroundColor: tagColor }}
+                                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
+                              >
+                                {b.service === "prepleat" ? "PRE" : b.service}
+                              </span>
+                              {(b.billNumber || b.id) && (
+                                <span className="text-[8px] font-mono font-bold text-muted-foreground/80 shrink-0 bg-secondary/80 px-1.5 py-0.5 rounded">
+                                  {formatShortBillNumber(b.billNumber, b.id)}
+                                </span>
+                              )}
+                              {b.status === "delivered" && (
+                                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                  Delivered
+                                </span>
+                              )}
+                              {b.status === "cancelled" && (
+                                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
+                                  Cancelled
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+                              <span>
+                                {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+                              </span>
+                              {b.createdAt && (
+                                <span className="text-[9px] font-mono text-muted-foreground/75 bg-secondary/80 px-1.5 py-0.5 rounded shrink-0">
+                                  Booked {formatAppDate(b.createdAt)}
+                                </span>
+                              )}
+                            </div>
+                            {a && (
+                              <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
+                                via {a.name}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0 pt-1">
+                            <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
+                            {due > 0 ? (
+                              <p className="text-xs text-destructive font-semibold flex items-center justify-end">
+                                <IndianRupee className="size-3" />
+                                {Math.round(due).toLocaleString("en-IN")} due
+                              </p>
+                            ) : (
+                              <p className="text-xs text-success font-semibold">Paid</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    );
+                    const cardCls = cn(
+                      "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
+                      isArtistBooking
+                        ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
+                        : b.service === "prepleat"
+                          ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
+                          : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
+                      b.status === "cancelled" && "opacity-60",
+                      isSelected && "ring-2 ring-primary",
+                    );
+                    return (
+                      <li key={b.id} className="relative touch-pan-y">
+                        {selectMode ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelected((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(b.id)) next.delete(b.id);
+                                else next.add(b.id);
+                                return next;
+                              });
+                            }}
+                            className={cardCls}
+                          >
+                            {inner}
+                          </button>
+                        ) : (
+                          <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
+                            {inner}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             );
           })}
-        </ul>
+        </div>
       )}
 
       {/* ── PAYMENT PENDING COMPLETE WARNING MODAL ── */}

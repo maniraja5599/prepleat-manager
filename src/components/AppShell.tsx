@@ -24,6 +24,7 @@ import {
   Activity,
   CreditCard,
   PackageCheck,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -581,6 +582,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 </span>
               )}
             </div>
+
+            {/* What's New Updates Button */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("trigger-whats-new"))}
+              className="size-9 rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-primary active:scale-95 transition cursor-pointer shrink-0 mr-1.5"
+              title="What's New (App Updates)"
+            >
+              <Sparkles className="size-4 text-primary" />
+            </button>
 
             {/* Global Search Button */}
             <button

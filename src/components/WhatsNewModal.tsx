@@ -9,9 +9,16 @@ export function WhatsNewModal() {
   const latestEntry = RECENT_UPDATES[0];
 
   useEffect(() => {
-    // 1. Check if the current user has already seen this version
-    const lastSeen = localStorage.getItem("eyas_last_seen_version");
-    if (lastSeen !== APP_VERSION) {
+    // 1. Check if the current user has already seen this version or if 7 days (weekly) have passed
+    const lastSeenVersion = localStorage.getItem("eyas_last_seen_version");
+    const lastSeenTime = localStorage.getItem("eyas_last_seen_version_time");
+    const now = Date.now();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+    const isNewVersion = lastSeenVersion !== APP_VERSION;
+    const isWeeklyTimeElapsed = lastSeenTime ? now - Number(lastSeenTime) > SEVEN_DAYS_MS : true;
+
+    if (isNewVersion || isWeeklyTimeElapsed) {
       // Delay slightly for smooth initial animation
       const timer = setTimeout(() => {
         setOpen(true);
@@ -31,6 +38,7 @@ export function WhatsNewModal() {
 
   const handleDismiss = () => {
     localStorage.setItem("eyas_last_seen_version", APP_VERSION);
+    localStorage.setItem("eyas_last_seen_version_time", String(Date.now()));
     setOpen(false);
   };
 
