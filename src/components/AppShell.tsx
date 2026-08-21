@@ -21,6 +21,8 @@ import {
   IndianRupee,
   Phone,
   Activity,
+  CreditCard,
+  PackageCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -255,6 +257,39 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     )
     .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
     .slice(0, 3);
+
+  const getPaymentCustomerName = (payment: (typeof payments)[0]) => {
+    if (payment.customerId) {
+      const cust = customers.find((c) => c.id === payment.customerId);
+      if (cust?.name) return cust.name;
+    }
+    const bk = bookings.find((b) => b.id === payment.bookingId);
+    if (bk) {
+      const cust = customers.find((c) => c.id === bk.customerId);
+      if (cust?.name) return cust.name;
+    }
+    return "Client";
+  };
+
+  const recentBookings = useMemo(() => {
+    return [...bookings]
+      .filter((b) => b.status !== "cancelled")
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+      .slice(0, 4);
+  }, [bookings]);
+
+  const recentPayments = useMemo(() => {
+    return [...payments]
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+      .slice(0, 4);
+  }, [payments]);
+
+  const readyForDeliveryBookings = useMemo(() => {
+    return bookings
+      .filter((b) => b.status === "completed")
+      .sort((a, b) => (b.deliveryDate || "").localeCompare(a.deliveryDate || ""))
+      .slice(0, 3);
+  }, [bookings]);
 
   // Expanding Status Pill states, refs & effects
   const [currentNotification, setCurrentNotification] = useState<{
@@ -724,69 +759,160 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                     </div>
                   </div>
 
-                  {/* Recent Activity */}
+                  {/* Recent Bookings */}
                   <div>
                     <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                      <Activity className="size-3 text-orange-500/80" /> Recent Activity
+                      <Calendar className="size-3 text-primary/80" /> Recent Bookings
                     </h3>
-                    {activity.length > 0 ? (
+                    {recentBookings.length > 0 ? (
                       <div className="space-y-2">
-                        {activity.slice(0, 5).map((act) => {
-                          const getIcon = () => {
-                            switch (act.kind) {
-                              case "create": return "➕";
-                              case "update": return "✏️";
-                              case "delete": return "🗑️";
-                              case "restore": return "♻️";
-                              case "payment-add": return "💰";
-                              case "payment-delete": return "💸";
-                              case "cancel": return "🚫";
-                              default: return "📝";
-                            }
-                          };
-                          let timeStr = "";
+                        {recentBookings.map((b) => {
+                          const custName = getCustomerName(b.customerId);
+                          let dateLabel = "";
                           try {
-                            timeStr = formatAppDateTime(act.ts);
+                            dateLabel = formatAppDate(b.createdAt || b.deliveryDate);
                           } catch {
-                            timeStr = act.ts.slice(11, 16);
+                            dateLabel = "";
                           }
                           return (
-                            <div
-                              key={act.id}
-                              className="flex items-start gap-2.5 p-3 rounded-2xl bg-secondary/30 border border-border/10 text-left w-full animate-in slide-in-from-bottom-1"
+                            <Link
+                              key={b.id}
+                              to="/bookings/$id"
+                              params={{ id: b.id }}
+                              onClick={() => {
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
                             >
-                              <span className="text-base shrink-0 select-none mt-0.5">{getIcon()}</span>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-semibold text-foreground leading-normal">
-                                  {act.summary}
+                              <div className="min-w-0 pr-2">
+                                <p className="text-xs font-bold text-foreground truncate">
+                                  {custName}
                                 </p>
-                                <span className="text-[9px] text-muted-foreground/80 font-bold tracking-wide uppercase mt-1 inline-block">
-                                  {timeStr}
-                                </span>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {b.sareeCount} {b.sareeCount === 1 ? "Saree" : "Sarees"} ({b.service === "prepleat" ? "PrePleat" : "Drape"}) · {fmtINR(b.totalAmount)}
+                                  {dateLabel ? ` · ${dateLabel}` : ""}
+                                </p>
                               </div>
-                              {act.bookingId && (
-                                <Link
-                                  to="/bookings/$id"
-                                  params={{ id: act.bookingId }}
-                                  onClick={() => {
-                                    setShowSearchModal(false);
-                                    setSearchQuery("");
-                                  }}
-                                  className="text-[10px] text-primary font-bold hover:underline shrink-0 bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition active:scale-95"
-                                >
-                                  View
-                                </Link>
-                              )}
-                            </div>
+                              <div className="text-right shrink-0 flex items-center gap-1.5">
+                                <span className={cn(
+                                  "text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                                  b.status === "completed" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+                                  b.status === "pending" && "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+                                  b.status === "delivered" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+                                  b.status === "cancelled" && "bg-destructive/10 text-destructive border border-destructive/20"
+                                )}>
+                                  {b.status === "completed" ? "Ready" : b.status}
+                                </span>
+                                <ChevronRight className="size-3 text-muted-foreground" />
+                              </div>
+                            </Link>
                           );
                         })}
                       </div>
                     ) : (
-                      <p className="text-[10px] text-muted-foreground pl-1 italic">
-                        No recent activity recorded.
-                      </p>
+                      <div className="p-3.5 bg-secondary/15 rounded-2xl border border-border/10 text-center">
+                        <p className="text-[10px] text-muted-foreground/80">No recent bookings recorded.</p>
+                      </div>
                     )}
                   </div>
+
+                  {/* Recent Payments */}
+                  <div>
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <CreditCard className="size-3 text-emerald-500/80" /> Recent Payments
+                    </h3>
+                    {recentPayments.length > 0 ? (
+                      <div className="space-y-2">
+                        {recentPayments.map((p) => {
+                          const custName = getPaymentCustomerName(p);
+                          const bk = bookings.find((b) => b.id === p.bookingId);
+                          let payDateStr = "";
+                          try {
+                            payDateStr = formatAppDate(p.date);
+                          } catch {
+                            payDateStr = "";
+                          }
+                          return (
+                            <Link
+                              key={p.id}
+                              to={bk ? "/bookings/$id" : "/payments"}
+                              params={bk ? { id: bk.id } : undefined}
+                              onClick={() => {
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="text-xs font-bold text-foreground truncate">
+                                  {custName}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Received {fmtINR(p.amount)} via {p.mode || "UPI"}
+                                  {p.note ? ` (${p.note})` : ""}
+                                  {bk?.billNumber ? ` · Bill ${formatShortBillNumber(bk.billNumber)}` : ""}
+                                  {payDateStr ? ` · ${payDateStr}` : ""}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0 flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                  +{fmtINR(p.amount)}
+                                </span>
+                                <ChevronRight className="size-3 text-muted-foreground" />
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-3.5 bg-secondary/15 rounded-2xl border border-border/10 text-center">
+                        <p className="text-[10px] text-muted-foreground/80">No recent payments recorded.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ready for Pickup / Delivery */}
+                  {readyForDeliveryBookings.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <PackageCheck className="size-3 text-amber-500/80" /> Ready for Pickup / Delivery
+                      </h3>
+                      <div className="space-y-2">
+                        {readyForDeliveryBookings.map((b) => {
+                          const custName = getCustomerName(b.customerId);
+                          const due = totalDue(b);
+                          return (
+                            <Link
+                              key={b.id}
+                              to="/bookings/$id"
+                              params={{ id: b.id }}
+                              onClick={() => {
+                                setShowSearchModal(false);
+                                setSearchQuery("");
+                              }}
+                              className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="text-xs font-bold text-foreground truncate">
+                                  {custName}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {b.sareeCount} {b.sareeCount === 1 ? "Saree" : "Sarees"} Ready · Due: {fmtINR(due)} · Delivery: {formatAppDate(b.deliveryDate)}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0 flex items-center gap-1.5">
+                                <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                  Ready
+                                </span>
+                                <ChevronRight className="size-3 text-muted-foreground" />
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Today's Bookings */}
                   <div>
