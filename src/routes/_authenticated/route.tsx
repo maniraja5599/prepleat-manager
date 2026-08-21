@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { CloudSync } from "@/components/CloudSync";
 import { AppTour } from "@/components/AppTour";
+import { WhatsNewModal } from "@/components/WhatsNewModal";
 import logoAsset from "@/assets/eyas-logo.png";
 import { onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 
@@ -56,6 +57,7 @@ export const Route = createFileRoute("/_authenticated")({
     <>
       <CloudSync />
       <AppTour />
+      <WhatsNewModal />
       <Outlet />
     </>
   ),

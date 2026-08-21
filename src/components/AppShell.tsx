@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, netBookingAmount, formatShortBillNumber, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
+import { APP_VERSION } from "@/lib/changelog";
 import logoAsset from "@/assets/eyas-logo.png";
 import { waitForAppUser } from "@/integrations/firebase/client";
 import {
@@ -682,13 +683,14 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             ManiRaja
           </a>
           <span>·</span>
-          <Link
-            to="/settings"
-            className="hover:underline opacity-80 font-mono font-medium"
-            title="View App Version & Changelog"
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("trigger-whats-new"))}
+            className="hover:underline opacity-80 font-mono font-medium cursor-pointer"
+            title="View What's New & Version Details"
           >
-            v1.2.0
-          </Link>
+            v{APP_VERSION}
+          </button>
         </p>
       </div>
       <BottomNav />
