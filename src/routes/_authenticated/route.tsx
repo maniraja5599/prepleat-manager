@@ -1,9 +1,12 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CloudSync } from "@/components/CloudSync";
 import { AppTour } from "@/components/AppTour";
 import { WhatsNewModal } from "@/components/WhatsNewModal";
 import logoAsset from "@/assets/eyas-logo.png";
 import { onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrations/firebase/client";
+import { useStore } from "@/lib/store";
+import { checkAndTriggerEventAlerts, checkAndTriggerUpdateAlert } from "@/lib/notifications";
 
 let cachedUser: AppUser | null = null;
 
@@ -53,15 +56,27 @@ export const Route = createFileRoute("/_authenticated")({
     cachedUser = user;
     return { user };
   },
-  component: () => (
+  component: AuthenticatedRoot,
+});
+
+function AuthenticatedRoot() {
+  const bookings = useStore((s) => s.bookings);
+
+  useEffect(() => {
+    // Check and trigger 1-day before or today alerts & update alert
+    void checkAndTriggerEventAlerts(bookings);
+    void checkAndTriggerUpdateAlert();
+  }, [bookings]);
+
+  return (
     <>
       <CloudSync />
       <AppTour />
       <WhatsNewModal />
       <Outlet />
     </>
-  ),
-});
+  );
+}
 
 function AuthSplash() {
   return (
