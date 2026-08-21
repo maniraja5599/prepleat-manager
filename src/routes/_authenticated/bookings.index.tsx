@@ -706,22 +706,25 @@ function BookingsPage() {
             const monthDue = group.items.reduce((s, b) => s + totalDue(b), 0);
 
             return (
-              <section key={group.monthKey} className="space-y-2.5">
+              <section
+                key={group.monthKey}
+                className="bg-secondary/35 border border-border/60 rounded-3xl p-3 sm:p-4 space-y-3 shadow-xs"
+              >
                 {/* Month Section Header */}
-                <div className="sticky top-[calc(env(safe-area-inset-top,0px)+9.8rem)] z-10 bg-background/95 backdrop-blur-md py-1.5 px-3 rounded-2xl flex items-center justify-between border border-border/20 shadow-xs">
+                <div className="flex items-center justify-between gap-2 px-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Calendar className="size-3.5 text-primary shrink-0" />
-                    <span className="text-xs font-bold text-foreground tracking-tight truncate">
+                    <span className="size-2 rounded-full bg-primary shrink-0" />
+                    <span className="text-xs font-bold text-foreground tracking-wide font-display truncate">
                       {group.monthLabel}
                     </span>
-                    <span className="text-[10px] bg-secondary px-2 py-0.5 rounded-full text-muted-foreground font-semibold shrink-0">
+                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
                       {group.items.length} {group.items.length === 1 ? "order" : "orders"} · {monthSarees} sarees
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-right text-[11px] shrink-0">
-                    <span className="font-bold text-foreground/90">{fmtINR(monthTotal)}</span>
+                  <div className="flex items-center gap-1.5 text-right text-[11px] shrink-0">
+                    <span className="font-bold text-foreground tabular-nums">{fmtINR(monthTotal)}</span>
                     {monthDue > 0 && (
-                      <span className="text-[9px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] font-bold text-destructive bg-destructive/15 px-1.5 py-0.5 rounded-md tabular-nums">
                         {fmtINR(monthDue)} due
                       </span>
                     )}

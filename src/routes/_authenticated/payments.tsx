@@ -1777,6 +1777,10 @@ function SummaryView(p: {
     net: number;
   }>;
 }) {
+  const bookings = useStore((s) => s.bookings);
+  const customers = useStore((s) => s.customers);
+  const payments = useStore((s) => s.payments);
+
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
 
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all" or "yyyy-MM"
@@ -2097,6 +2101,179 @@ function SummaryView(p: {
             </div>
           );
         })()}
+
+      {/* Saree Service Split & Demand */}
+      {(() => {
+        const prepleatBookings = bookings.filter((b) => b.service === "prepleat" && b.status !== "cancelled");
+        const drapeBookings = bookings.filter((b) => b.service === "drape" && b.status !== "cancelled");
+        const totalValidSarees = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.sareeCount || 1), 0);
+        const prepleatSarees = prepleatBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
+        const drapeSarees = drapeBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
+        const prepleatPct = totalValidSarees > 0 ? Math.round((prepleatSarees / totalValidSarees) * 100) : 0;
+        const drapePct = totalValidSarees > 0 ? Math.round((drapeSarees / totalValidSarees) * 100) : 0;
+        const avgSareePrice = totalValidSarees > 0 ? Math.round(p.totalBilled / totalValidSarees) : 0;
+
+        return (
+          <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Saree Service Volume & Split
+              </p>
+              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                {totalValidSarees} Total Sarees
+              </span>
+            </div>
+
+            {/* Visual split progress bar */}
+            <div className="h-2.5 rounded-full overflow-hidden bg-secondary flex mb-3">
+              <div
+                className="h-full bg-[oklch(0.78_0.13_75)]"
+                style={{ width: `${prepleatPct}%` }}
+                title={`PrePleat: ${prepleatPct}%`}
+              />
+              <div
+                className="h-full bg-[oklch(0.55_0.13_150)]"
+                style={{ width: `${drapePct}%` }}
+                title={`Direct Drape: ${drapePct}%`}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-secondary/40 rounded-xl p-2">
+                <span className="text-[9px] uppercase font-bold text-muted-foreground block">
+                  Pre-Pleat
+                </span>
+                <span className="text-xs font-extrabold text-foreground tabular-nums">
+                  {prepleatSarees} ({prepleatPct}%)
+                </span>
+              </div>
+              <div className="bg-secondary/40 rounded-xl p-2">
+                <span className="text-[9px] uppercase font-bold text-muted-foreground block">
+                  Direct Drape
+                </span>
+                <span className="text-xs font-extrabold text-foreground tabular-nums">
+                  {drapeSarees} ({drapePct}%)
+                </span>
+              </div>
+              <div className="bg-secondary/40 rounded-xl p-2">
+                <span className="text-[9px] uppercase font-bold text-muted-foreground block">
+                  Avg / Saree
+                </span>
+                <span className="text-xs font-extrabold text-primary tabular-nums">
+                  {fmtINR(avgSareePrice)}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Top Repeat / VIP Customers */}
+      {(() => {
+        const custStats = new Map<string, { name: string; phone?: string; sareeCount: number; spent: number }>();
+        for (const b of bookings) {
+          if (b.status === "cancelled") continue;
+          const c = customers.find((x) => x.id === b.customerId);
+          const name = c?.name || "Client";
+          const phone = c?.phone;
+          const key = b.customerId || name;
+          const ex = custStats.get(key) || { name, phone, sareeCount: 0, spent: 0 };
+          ex.sareeCount += b.sareeCount || 1;
+          ex.spent += b.totalAmount || 0;
+          custStats.set(key, ex);
+        }
+        const top3 = Array.from(custStats.values())
+          .sort((a, b) => b.spent - a.spent || b.sareeCount - a.sareeCount)
+          .slice(0, 3);
+
+        if (top3.length === 0) return null;
+
+        return (
+          <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                <Crown className="size-3.5 text-gold" /> Top Repeat / VIP Customers
+              </p>
+            </div>
+            <div className="space-y-2">
+              {top3.map((cust, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-secondary/30 border border-border/10"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className={cn(
+                        "size-5.5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0",
+                        idx === 0
+                          ? "bg-gold text-white"
+                          : idx === 1
+                          ? "bg-slate-300 text-slate-800"
+                          : "bg-amber-600/30 text-amber-900",
+                      )}
+                    >
+                      #{idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">{cust.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{cust.sareeCount} sarees draped</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-extrabold text-success tabular-nums">{fmtINR(cust.spent)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Payment Modes Distribution */}
+      {(() => {
+        let gpayTotal = 0;
+        let cashTotal = 0;
+        let otherTotal = 0;
+        for (const pmt of payments) {
+          if (pmt.mode === "gpay" || pmt.mode === "upi" || pmt.mode === "online") gpayTotal += pmt.amount;
+          else if (pmt.mode === "cash") cashTotal += pmt.amount;
+          else otherTotal += pmt.amount;
+        }
+        const totalCollected = gpayTotal + cashTotal + otherTotal;
+        if (totalCollected === 0) return null;
+
+        const gpayPct = Math.round((gpayTotal / totalCollected) * 100);
+        const cashPct = Math.round((cashTotal / totalCollected) * 100);
+
+        return (
+          <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Payment Collection Modes
+              </p>
+              <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
+                Total {fmtINR(totalCollected)}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-blue-600">📱 UPI / GPay</span>
+                <p className="text-sm font-extrabold text-blue-700 mt-1 tabular-nums">
+                  {fmtINR(gpayTotal)}{" "}
+                  <span className="text-[10px] font-medium opacity-80">({gpayPct}%)</span>
+                </p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-emerald-600">💵 Cash</span>
+                <p className="text-sm font-extrabold text-emerald-700 mt-1 tabular-nums">
+                  {fmtINR(cashTotal)}{" "}
+                  <span className="text-[10px] font-medium opacity-80">({cashPct}%)</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Unified Recent Cash Flow Timeline */}
       <div className="bg-card card-shadow rounded-2xl p-3 mb-20">

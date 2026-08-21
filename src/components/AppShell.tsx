@@ -392,20 +392,36 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     }
 
     // 2. Today's Bookings
-
     if (todayBookings.length > 0) {
       items.push({
         type: "today",
-        text: `${todayBookings.length} Bookings Today`,
+        text: `${todayBookings.length} ${todayBookings.length === 1 ? "Delivery" : "Deliveries"} Today!`,
         icon: "calendar",
-        color: "text-primary bg-primary/10 border-primary/20",
+        color: "text-primary bg-primary/10 border-primary/20 font-bold",
+      });
+    }
+
+    // 2b. Tomorrow's Deliveries (One Day Before Notification Alert!)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowIso = format(tomorrow, "yyyy-MM-dd");
+    const tomorrowBookings = bookings.filter((b) => {
+      if (b.status === "cancelled" || b.status === "completed" || b.status === "delivered") return false;
+      return b.deliveryDate === tomorrowIso;
+    });
+    if (tomorrowBookings.length > 0) {
+      items.push({
+        type: "tomorrow",
+        text: `Tomorrow: ${tomorrowBookings.length} ${tomorrowBookings.length === 1 ? "Saree Due" : "Sarees Due"}!`,
+        icon: "calendar",
+        color: "text-amber-600 bg-amber-500/10 border-amber-500/20 font-bold",
       });
     }
 
     // 3. Next Booking
     const nextB = bookings
       .filter((b) => {
-        if (b.status === "cancelled" || b.status === "completed") return false;
+        if (b.status === "cancelled" || b.status === "completed" || b.status === "delivered") return false;
         const d = new Date(b.deliveryDate.slice(0, 10));
         d.setHours(0, 0, 0, 0);
         const today = new Date();
@@ -583,10 +599,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               )}
             </div>
 
-            {/* What's New Updates Button */}
+            {/* What's New Updates Button - Hides smoothly when notification pill is active */}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("trigger-whats-new"))}
-              className="size-9 rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-primary active:scale-95 transition cursor-pointer shrink-0 mr-1.5"
+              className={cn(
+                "rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-primary active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
+                showPill && currentNotification
+                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
+                  : "size-9 opacity-100 mr-1.5 scale-100",
+              )}
               title="What's New (App Updates)"
             >
               <Sparkles className="size-4 text-primary" />
