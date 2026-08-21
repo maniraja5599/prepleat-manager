@@ -162,7 +162,6 @@ export function RecentBillsModal() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search Bill #, Customer name, Phone..."
-              autoFocus
               className="w-full bg-card border border-border/50 rounded-xl py-2 pl-9 pr-8 text-xs focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground text-foreground"
             />
             <Search className="size-3.5 text-muted-foreground absolute left-3 top-2.5" />

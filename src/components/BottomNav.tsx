@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Calendar, ListChecks, Wallet, Users, Receipt } from "lucide-react";
+import { Calendar, ListChecks, Wallet, Users, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRef, useEffect } from "react";
 
@@ -7,7 +7,7 @@ type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean
 const tabs: Tab[] = [
   { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/customers", label: "Customers", icon: Users },
-  { to: "/bills", label: "Bills", icon: Receipt, primary: true },
+  { to: "/bills", label: "Bills", icon: ReceiptText, primary: true },
   { to: "/bookings", label: "Bookings", icon: ListChecks },
   { to: "/", label: "Calendar", icon: Calendar },
 ];
@@ -59,7 +59,7 @@ export function BottomNav() {
                   className="size-14 rounded-full saree-gradient text-white flex items-center justify-center shadow-lg shadow-primary/30 active:scale-90 transition cursor-pointer ring-2 ring-primary/20 ring-offset-2 ring-offset-background"
                   title="Check Recent Bills by Order (#1, #2...)"
                 >
-                  <Receipt className="size-7" strokeWidth={2.5} />
+                  <ReceiptText className="size-7" strokeWidth={2.2} />
                 </button>
               </li>
             );
