@@ -25,6 +25,7 @@ import {
   CreditCard,
   PackageCheck,
   Sparkles,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -598,6 +599,21 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 </span>
               )}
             </div>
+
+            {/* Settings Button */}
+            <Link
+              to="/settings"
+              className={cn(
+                "rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
+                showPill && currentNotification
+                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
+                  : "size-9 opacity-100 mr-1.5 scale-100",
+                pathname === "/settings" && "text-primary bg-primary/10 border-primary/30",
+              )}
+              title="Settings & Business Profile"
+            >
+              <SettingsIcon className="size-4.5" />
+            </Link>
 
             {/* What's New Updates Button - Hides smoothly when notification pill is active */}
             <button
