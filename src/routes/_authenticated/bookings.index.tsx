@@ -754,10 +754,16 @@ function BookingsPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)}{" "}
-                      · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
-                    </p>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span>
+                        {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+                      </span>
+                      {b.createdAt && (
+                        <span className="text-[9px] font-mono text-muted-foreground/75 bg-secondary/80 px-1.5 py-0.5 rounded shrink-0">
+                          Booked {formatAppDate(b.createdAt)}
+                        </span>
+                      )}
+                    </div>
                     {a && (
                       <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
                         via {a.name}

@@ -271,18 +271,68 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     return "Client";
   };
 
-  const recentBookings = useMemo(() => {
-    return [...bookings]
-      .filter((b) => b.status !== "cancelled")
-      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
-      .slice(0, 4);
-  }, [bookings]);
+  const recentTimeline = useMemo(() => {
+    const items: Array<{
+      id: string;
+      kind: "booking" | "payment";
+      customerName: string;
+      summary: string;
+      badge: string;
+      badgeClass: string;
+      timeStr: string;
+      ts: string;
+      link: string;
+      linkParams?: Record<string, string>;
+    }> = [];
 
-  const recentPayments = useMemo(() => {
-    return [...payments]
-      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
-      .slice(0, 4);
-  }, [payments]);
+    for (const b of bookings) {
+      if (b.status === "cancelled") continue;
+      const ts = b.createdAt || b.deliveryDate || "";
+      const custName = getCustomerName(b.customerId);
+      const svc = b.service === "prepleat" ? "PrePleat" : "Drape";
+      const bill = b.billNumber || b.id ? ` · ${formatShortBillNumber(b.billNumber, b.id)}` : "";
+      items.push({
+        id: `bk-${b.id}`,
+        kind: "booking",
+        customerName: custName,
+        summary: `${b.sareeCount} ${b.sareeCount === 1 ? "Saree" : "Sarees"} (${svc})${bill} · Total ${fmtINR(b.totalAmount)}`,
+        badge: b.status === "completed" ? "Ready" : b.status === "delivered" ? "Delivered" : "Booked",
+        badgeClass:
+          b.status === "completed"
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+            : b.status === "delivered"
+            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+            : "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+        timeStr: formatAppDate(ts),
+        ts,
+        link: "/bookings/$id",
+        linkParams: { id: b.id },
+      });
+    }
+
+    for (const p of payments) {
+      const ts = p.date || p.updatedAt || "";
+      const custName = getPaymentCustomerName(p);
+      const bk = bookings.find((b) => b.id === p.bookingId);
+      const bill = bk?.billNumber || bk?.id ? ` · ${formatShortBillNumber(bk?.billNumber, bk?.id)}` : "";
+      items.push({
+        id: `pay-${p.id}`,
+        kind: "payment",
+        customerName: custName,
+        summary: `Received ${fmtINR(p.amount)} via ${p.mode || "UPI"}${p.note ? ` (${p.note})` : ""}${bill}`,
+        badge: `+${fmtINR(p.amount)}`,
+        badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold",
+        timeStr: formatAppDate(ts),
+        ts,
+        link: bk ? "/bookings/$id" : "/payments",
+        linkParams: bk ? { id: bk.id } : undefined,
+      });
+    }
+
+    return items
+      .sort((a, b) => (b.ts || "").localeCompare(a.ts || ""))
+      .slice(0, 8);
+  }, [bookings, payments, customers]);
 
   const readyForDeliveryBookings = useMemo(() => {
     return bookings
@@ -759,115 +809,45 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                     </div>
                   </div>
 
-                  {/* Recent Bookings */}
+                  {/* Continuous Recent Activity Stream */}
                   <div>
                     <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                      <Calendar className="size-3 text-primary/80" /> Recent Bookings
+                      <Activity className="size-3 text-orange-500/80" /> Recent Activity (சமீபத்திய நிகழ்வுகள்)
                     </h3>
-                    {recentBookings.length > 0 ? (
+                    {recentTimeline.length > 0 ? (
                       <div className="space-y-2">
-                        {recentBookings.map((b) => {
-                          const custName = getCustomerName(b.customerId);
-                          let dateLabel = "";
-                          try {
-                            dateLabel = formatAppDate(b.createdAt || b.deliveryDate);
-                          } catch {
-                            dateLabel = "";
-                          }
-                          return (
-                            <Link
-                              key={b.id}
-                              to="/bookings/$id"
-                              params={{ id: b.id }}
-                              onClick={() => {
-                                setShowSearchModal(false);
-                                setSearchQuery("");
-                              }}
-                              className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
-                            >
-                              <div className="min-w-0 pr-2">
-                                <p className="text-xs font-bold text-foreground truncate">
-                                  {custName}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {b.sareeCount} {b.sareeCount === 1 ? "Saree" : "Sarees"} ({b.service === "prepleat" ? "PrePleat" : "Drape"}) · {fmtINR(b.totalAmount)}
-                                  {dateLabel ? ` · ${dateLabel}` : ""}
-                                </p>
-                              </div>
-                              <div className="text-right shrink-0 flex items-center gap-1.5">
-                                <span className={cn(
-                                  "text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider",
-                                  b.status === "completed" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-                                  b.status === "pending" && "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
-                                  b.status === "delivered" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-                                  b.status === "cancelled" && "bg-destructive/10 text-destructive border border-destructive/20"
-                                )}>
-                                  {b.status === "completed" ? "Ready" : b.status}
-                                </span>
-                                <ChevronRight className="size-3 text-muted-foreground" />
-                              </div>
-                            </Link>
-                          );
-                        })}
+                        {recentTimeline.map((item) => (
+                          <Link
+                            key={item.id}
+                            to={item.link as any}
+                            params={item.linkParams as any}
+                            onClick={() => {
+                              setShowSearchModal(false);
+                              setSearchQuery("");
+                            }}
+                            className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="text-xs font-bold text-foreground truncate">
+                                {item.customerName}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {item.summary}
+                                {item.timeStr ? ` · ${item.timeStr}` : ""}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0 flex items-center gap-1.5">
+                              <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider", item.badgeClass)}>
+                                {item.badge}
+                              </span>
+                              <ChevronRight className="size-3 text-muted-foreground" />
+                            </div>
+                          </Link>
+                        ))}
                       </div>
                     ) : (
                       <div className="p-3.5 bg-secondary/15 rounded-2xl border border-border/10 text-center">
-                        <p className="text-[10px] text-muted-foreground/80">No recent bookings recorded.</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recent Payments */}
-                  <div>
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                      <CreditCard className="size-3 text-emerald-500/80" /> Recent Payments
-                    </h3>
-                    {recentPayments.length > 0 ? (
-                      <div className="space-y-2">
-                        {recentPayments.map((p) => {
-                          const custName = getPaymentCustomerName(p);
-                          const bk = bookings.find((b) => b.id === p.bookingId);
-                          let payDateStr = "";
-                          try {
-                            payDateStr = formatAppDate(p.date);
-                          } catch {
-                            payDateStr = "";
-                          }
-                          return (
-                            <Link
-                              key={p.id}
-                              to={bk ? "/bookings/$id" : "/payments"}
-                              params={bk ? { id: bk.id } : undefined}
-                              onClick={() => {
-                                setShowSearchModal(false);
-                                setSearchQuery("");
-                              }}
-                              className="flex justify-between items-center p-3 rounded-2xl bg-secondary/35 border border-border/15 hover:bg-secondary/65 transition cursor-pointer text-left w-full animate-in slide-in-from-bottom-1"
-                            >
-                              <div className="min-w-0 pr-2">
-                                <p className="text-xs font-bold text-foreground truncate">
-                                  {custName}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  Received {fmtINR(p.amount)} via {p.mode || "UPI"}
-                                  {p.note ? ` (${p.note})` : ""}
-                                  {bk?.billNumber ? ` · Bill ${formatShortBillNumber(bk.billNumber)}` : ""}
-                                  {payDateStr ? ` · ${payDateStr}` : ""}
-                                </p>
-                              </div>
-                              <div className="text-right shrink-0 flex items-center gap-1.5">
-                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                                  +{fmtINR(p.amount)}
-                                </span>
-                                <ChevronRight className="size-3 text-muted-foreground" />
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="p-3.5 bg-secondary/15 rounded-2xl border border-border/10 text-center">
-                        <p className="text-[10px] text-muted-foreground/80">No recent payments recorded.</p>
+                        <p className="text-[10px] text-muted-foreground/80">No recent activity recorded.</p>
                       </div>
                     )}
                   </div>

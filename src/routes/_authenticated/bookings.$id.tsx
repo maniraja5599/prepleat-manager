@@ -568,6 +568,11 @@ function BookingDetail() {
               <Clock className="size-3 shrink-0" />
               {fmtTime12(booking.deliveryTime)}
             </p>
+            {booking.createdAt && (
+              <p className="opacity-75 text-[10px] mt-1.5 font-mono">
+                Booked: {formatAppDate(booking.createdAt)}
+              </p>
+            )}
           </div>
           <div>
             <p className="opacity-70 text-[9px] uppercase font-bold tracking-wider">

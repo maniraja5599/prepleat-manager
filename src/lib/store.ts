@@ -257,22 +257,42 @@ export const formatShortBillNumber = (billNumber?: string, fallbackId?: string):
   }
   const digits = cleaned.replace(/\D/g, "");
   const num = parseInt(digits, 10);
-  if (!isNaN(num) && num > 0) {
+  if (!isNaN(num) && num > 0 && num < 100000) {
     return `#${num}`;
+  }
+  if (!isNaN(num) && num >= 100000) {
+    const lastDigits = digits.slice(-3);
+    const shortNum = parseInt(lastDigits, 10);
+    if (!isNaN(shortNum) && shortNum > 0) {
+      return `#${shortNum}`;
+    }
   }
   return `#${cleaned.replace(/^#+/, "")}`;
 };
 
 export const generateBillNumber = (existing: Booking[]): string => {
-  const usedNumbers = existing
+  const shortNumbers = existing
     .map((b) => {
       if (!b.billNumber) return 0;
-      const lastPart = b.billNumber.includes("-") ? b.billNumber.split("-").pop()! : b.billNumber;
-      return Number(lastPart.replace(/\D/g, "")) || 0;
+      let cleaned = b.billNumber.trim();
+      if (cleaned.includes("-")) {
+        cleaned = cleaned.split("-").pop() || cleaned;
+      }
+      const digits = cleaned.replace(/\D/g, "");
+      const num = parseInt(digits, 10);
+      if (!isNaN(num) && num > 0 && num < 100000) {
+        return num;
+      }
+      return 0;
     })
     .filter((n) => n > 0);
-  const next = (usedNumbers.length ? Math.max(...usedNumbers) : 0) + 1;
-  return String(next).padStart(3, "0");
+
+  if (shortNumbers.length > 0) {
+    const next = Math.max(...shortNumbers) + 1;
+    return String(next);
+  }
+  const next = existing.length + 1;
+  return String(next);
 };
 
 const describeDiff = (prev: Booking, next: Booking): string => {
