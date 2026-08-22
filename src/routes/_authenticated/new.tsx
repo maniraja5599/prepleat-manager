@@ -429,6 +429,11 @@ function NewBooking() {
 
   const confirmSave = () => {
     let cid = customerId;
+    const formattedPhone = newPhone.trim()
+      ? newPhone.replace(/\D/g, "").length === 10
+        ? "+91" + newPhone.trim()
+        : newPhone.trim()
+      : "";
 
     if (!cid) {
       const hasNameOrPhone = newName.trim() || newPhone.trim();
@@ -455,7 +460,7 @@ function NewBooking() {
           const c = addCustomer({
             kind: "client",
             name: newName.trim() || "Walk-in",
-            phone: phoneDigits.length === 10 ? "+91" + newPhone : newPhone.trim(),
+            phone: formattedPhone,
             address: newAddress.trim() || undefined,
             locationUrl: newLocationUrl.trim() || undefined,
           });
@@ -467,9 +472,8 @@ function NewBooking() {
       }
     } else if (selectedCust) {
       const updates: Partial<typeof selectedCust> = {};
-      const newPhoneVal = newPhone.length === 10 ? "+91" + newPhone : newPhone.trim();
       if (newName.trim() && newName !== selectedCust.name) updates.name = newName.trim();
-      if (newPhoneVal && newPhoneVal !== selectedCust.phone) updates.phone = newPhoneVal;
+      if (formattedPhone && formattedPhone !== selectedCust.phone) updates.phone = formattedPhone;
       if (newAddress.trim() !== (selectedCust.address || "")) updates.address = newAddress.trim();
       if (newLocationUrl.trim() !== (selectedCust.locationUrl || "")) updates.locationUrl = newLocationUrl.trim();
       if (Object.keys(updates).length > 0) updateCustomer(cid, updates);
@@ -506,9 +510,10 @@ function NewBooking() {
 
     // If WhatsApp confirmation toggle is ON
     if (sendWhatsAppOnSave) {
-      const custObj = customers.find((x) => x.id === cid);
+      const allCustomers = useStore.getState().customers;
+      const custObj = allCustomers.find((x) => x.id === cid);
       const custName = custObj?.name || newName.trim() || "Customer";
-      const phoneRaw = custObj?.phone || newPhoneVal;
+      const phoneRaw = custObj?.phone || formattedPhone;
       const phoneWA = cleanPhoneForWhatsApp(phoneRaw);
 
       if (phoneWA) {
@@ -524,13 +529,12 @@ function NewBooking() {
 
         const msgLines = [
           `🥻 *EYAS SAREE DRAPIST* 🥻`,
-          `_Saree Pre-Pleating & Box Folding_ ✨`,
           ``,
           `Hi *${custName}* 🙏`,
           `Your saree has been safely *collected* for *${service === "prepleat" ? "Pre-Pleating" : "Saree Draping"}*! 🥻`,
           ``,
           `📋 *BOOKING DETAILS*`,
-          `• *Bill No*: #${billNo}`,
+          `• *Bill No*: ${billNo}`,
           `• *Sarees*: ${sareeCount} saree${sareeCount > 1 ? "s" : ""} × ${fmtINR(effPrice)}`,
           `• *Delivery*: ${dateStr} · ${timeStr}`,
           extraLine,

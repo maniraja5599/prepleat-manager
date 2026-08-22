@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.4.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.0",
+    version: "v1.4.1",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "New Booking Save Fix, Bill No Polish & Minimal Ready Message",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "⚡",
+        text: "New Booking Save & Preview Modal Fix",
+        desc: "New Booking-ல் Confirm & Save கொடுத்தவுடன் உடனடியாக புக்கிங் சேமிக்கப்பட்டு WhatsApp Preview Modal தோன்றும் பிழை சரிசெய்யப்பட்டது.",
+      },
+      {
+        emoji: "🧾",
+        text: "Single Hash Bill Number Formatting",
+        desc: "WhatsApp செய்திகளில் பில் எண் முன்னால் இரண்டு முறை ## வருவது தவிர்க்கப்பட்டு ஒற்றை # உடன் சீரமைக்கப்பட்டது.",
+      },
+      {
+        emoji: "🥻",
+        text: "Clean Collection Message",
+        desc: "புடவை எடுக்கும் WhatsApp செய்தியிலிருந்து கூடுதல் துணைத்தலைப்பு நீக்கப்பட்டு சுத்தமான வடிவம் அமைக்கப்பட்டது.",
+      },
+      {
+        emoji: "✨",
+        text: "Minimal Ready Notification",
+        desc: "புடவை தயாரானதும் அனுப்பப்படும் செய்தியிலிருந்து Payment விவரங்கள் நீக்கப்பட்டு பில் எண் மற்றும் டெலிவரி தேதி மட்டும் கொண்ட எளிய வடிவம்.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.0",
+    date: "22 Aug 2026",
     title: "CheckCircle Fix, Strict Completion Limits & Smart Message Styles",
     badge: "LATEST UPDATE ✨",
     changes: [

@@ -2113,7 +2113,7 @@ function IncomeView(p: {
                           `Payment received successfully! Thank you! ✨`,
                           ``,
                           `🧾 *RECEIPT SUMMARY*`,
-                          `• *Bill No*: #${recordedSuccess.billNo}`,
+                          `• *Bill No*: ${recordedSuccess.billNo}`,
                           `• *Service*: ${recordedSuccess.service} (${recordedSuccess.sareeCount} saree${recordedSuccess.sareeCount > 1 ? "s" : ""})`,
                           ``,
                           `💰 *TRANSACTION DETAILS*`,

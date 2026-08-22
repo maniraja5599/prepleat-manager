@@ -1225,7 +1225,7 @@ function BookingsPage() {
                           `Your saree order is *ready & delivered*! ✅🥻`,
                           ``,
                           `🌟 *DELIVERY RECEIPT*`,
-                          `• *Bill No*: #${billNo}`,
+                          `• *Bill No*: ${billNo}`,
                           `• *Sarees*: ${b.sareeCount} saree${b.sareeCount > 1 ? "s" : ""} × ${fmtINR(b.pricePerSaree)}`,
                           extraLine,
                           discLine,
