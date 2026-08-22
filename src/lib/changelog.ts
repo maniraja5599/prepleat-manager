@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.0";
+export const APP_VERSION = "1.5.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,22 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.0",
+    version: "v1.5.1",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "iOS Safe Area & WebKit Dynamic Sticky Month Headers",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🍎",
+        text: "Full iOS & Android Safe Area Adaptation",
+        desc: "iPhone Notch / Dynamic Island மற்றும் WebKit விதிகளுக்கு ஏற்ப, -webkit-sticky மற்றும் env(safe-area-inset-top) துல்லியமாக இணைக்கப்பட்டு iOS மற்றும் Android இரண்டிலும் Sticky Month Headers அச்சு அசலாக வேலை செய்யும்படி மேம்படுத்தப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.0",
+    date: "22 Aug 2026",
     title: "Sticky Fixed Month Timeline Headers",
     badge: "LATEST UPDATE ✨",
     changes: [

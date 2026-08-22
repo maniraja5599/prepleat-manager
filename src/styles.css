@@ -434,6 +434,12 @@
   .safe-pb {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  .sticky-month-header {
+    position: -webkit-sticky;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 62px);
+    z-index: 30;
+  }
   .no-select,
   .no-select * {
     user-select: none !important;
