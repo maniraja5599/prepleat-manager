@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.7";
+export const APP_VERSION = "1.4.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,27 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.7",
+    version: "v1.4.8",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Instant Native Canvas PDF/Image Generator & Smart Rubber Seal",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "⚡",
+        text: "Zero-Lag Native Canvas PDF & Image Export",
+        desc: "முழுக்க முழுக்க Native HTML5 Canvas முறையில் எந்தவிதமான தாமதமோ (0ms Freeze) பிழையோ இன்றி திரையில் பார்க்கும் அசல் Tax Invoice மற்றும் சீல் 100% துல்லியமாக PDF மற்றும் PNG படமாக உடனுக்குடன் பதிவிறக்கப்படும்.",
+      },
+      {
+        emoji: "🏷️",
+        text: "Smart Rubber Stamp Wording",
+        desc: "ரப்பர் சீல் வாசகங்கள் 'PAID & VERIFIED · 100% RECEIVED', 'ADVANCE RECEIVED · PAY ON DELIVERY' என மிக நேர்த்தியாகவும் அதிகாரப்பூர்வமாகவும் மாற்றப்பட்டுள்ளன.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.7",
+    date: "22 Aug 2026",
     title: "Compact Rubber Stamp Seal & Save as PNG Image",
     badge: "LATEST UPDATE ✨",
     changes: [

@@ -11,12 +11,10 @@ import {
   netBookingAmount,
   formatAppDate,
 } from "@/lib/store";
-import { generateBillPDF } from "@/lib/pdf-bill";
+import { downloadInvoicePDFDirect, downloadInvoiceImagePNG } from "@/lib/invoice-canvas";
 import { cleanPhoneForWhatsApp } from "@/lib/utils";
 import { X, Download, MessageCircle, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 interface PDFPreviewModalProps {
   open: boolean;
@@ -37,7 +35,6 @@ export function PDFPreviewModal({
   payments,
   settings,
 }: PDFPreviewModalProps) {
-  const printAreaRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
 
@@ -47,65 +44,34 @@ export function PDFPreviewModal({
   const customerName = customer?.name || "Customer";
   const due = totalDue(booking);
   const netTotal = netBookingAmount(booking);
-  const totalPaid = (booking.advancePaid || 0);
+  const totalPaid = booking.advancePaid || 0;
+
+  const isPaid = due === 0;
+  const isPartial = !isPaid && totalPaid > 0;
 
   const handleDownload = async () => {
     if (!booking) return;
-    if (printAreaRef.current) {
-      setDownloading(true);
-      try {
-        const canvas = await html2canvas(printAreaRef.current, {
-          scale: 3,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-        });
-        const imgData = canvas.toDataURL("image/png");
-
-        const pdfWidth = 420;
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        const pdf = new jsPDF({
-          orientation: pdfHeight > pdfWidth ? "p" : "l",
-          unit: "pt",
-          format: [pdfWidth, pdfHeight],
-        });
-
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
-        pdf.save(`Bill-${billNo}.pdf`);
-        toast.success("PDF Invoice downloaded! 📄");
-      } catch (err) {
-        console.error("Failed to generate PDF from preview:", err);
-        generateBillPDF({ booking, customer, artist, payments, settings });
-        toast.success("PDF Invoice downloaded! 📄");
-      } finally {
-        setDownloading(false);
-      }
-    } else {
-      generateBillPDF({ booking, customer, artist, payments, settings });
+    setDownloading(true);
+    try {
+      await downloadInvoicePDFDirect({ booking, customer, artist, payments, settings });
       toast.success("PDF Invoice downloaded! 📄");
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+      toast.error("Could not download PDF");
+    } finally {
+      setDownloading(false);
     }
   };
 
   const handleSaveImage = async () => {
-    if (!booking || !printAreaRef.current) return;
+    if (!booking) return;
     setSavingImage(true);
     try {
-      const canvas = await html2canvas(printAreaRef.current, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-      const dataUrl = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `Invoice-${billNo}.png`;
-      a.click();
+      await downloadInvoiceImagePNG({ booking, customer, artist, payments, settings });
       toast.success("Invoice Image saved! 📸");
     } catch (err) {
-      console.error("Failed to save invoice image:", err);
-      toast.error("Failed to save image");
+      console.error("Failed to save image:", err);
+      toast.error("Could not save image");
     } finally {
       setSavingImage(false);
     }
@@ -175,7 +141,6 @@ export function PDFPreviewModal({
         {/* Scrollable Authentic Paper Invoice Document Body */}
         <div className="flex-1 bg-muted/40 p-3 sm:p-5 overflow-y-auto flex items-start justify-center">
           <div
-            ref={printAreaRef}
             className="w-full max-w-lg bg-white text-slate-900 rounded-2xl shadow-md overflow-hidden font-sans relative"
             style={{ backgroundColor: "#ffffff", color: "#0f172a", border: "1px solid #e2e8f0" }}
           >
@@ -330,88 +295,53 @@ export function PDFPreviewModal({
                 </tbody>
               </table>
 
-              {/* Financial Calculation Summary & Compact Rubber Seal Stamp */}
+              {/* Financial Calculation Summary & Smart Rubber Seal Stamp */}
               <div
                 className="mt-3.5 pt-3 flex items-center justify-between gap-3"
                 style={{ borderTop: "1px solid #e2e8f0" }}
               >
-                {/* Compact Official Rubber Seal Stamp */}
+                {/* Smart Official Rubber Seal Stamp */}
                 <div className="pb-0.5">
-                  {due === 0 ? (
-                    <div className="inline-block rotate-[-4deg] select-none">
+                  <div className="inline-block rotate-[-4deg] select-none">
+                    <div
+                      className="p-0.5 rounded-md shadow-xs"
+                      style={{
+                        border: isPaid ? "1.8px solid #047857" : "1.8px solid #b91c1c",
+                        backgroundColor: isPaid ? "rgba(4, 120, 87, 0.04)" : "rgba(185, 28, 28, 0.04)",
+                        color: isPaid ? "#047857" : "#b91c1c",
+                      }}
+                    >
                       <div
-                        className="p-0.5 rounded-md shadow-xs"
-                        style={{
-                          border: "1.8px solid #047857",
-                          backgroundColor: "rgba(4, 120, 87, 0.04)",
-                          color: "#047857",
-                        }}
+                        className="px-2 py-0.5 rounded-[2px] flex flex-col items-center justify-center text-center"
+                        style={{ border: isPaid ? "1px dashed rgba(4, 120, 87, 0.7)" : "1px dashed rgba(185, 28, 28, 0.7)" }}
                       >
+                        {/* Header */}
+                        <span className="text-[6.5px] font-black uppercase tracking-tight font-mono whitespace-nowrap leading-none block">
+                          ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
+                        </span>
+                        {/* Main Stamp Text (Smart Words) */}
                         <div
-                          className="px-2 py-0.5 rounded-[2px] flex flex-col items-center justify-center text-center"
-                          style={{ border: "1px dashed rgba(4, 120, 87, 0.7)" }}
+                          className="my-0.5 py-0.5 w-full flex items-center justify-center"
+                          style={{
+                            borderTop: isPaid ? "1px solid rgba(4, 120, 87, 0.35)" : "1px solid rgba(185, 28, 28, 0.35)",
+                            borderBottom: isPaid ? "1px solid rgba(4, 120, 87, 0.35)" : "1px solid rgba(185, 28, 28, 0.35)",
+                          }}
                         >
-                          {/* Header */}
-                          <span className="text-[6.5px] font-black uppercase tracking-tight font-mono whitespace-nowrap leading-none block">
-                            ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
-                          </span>
-                          {/* Main Stamp Text */}
-                          <div
-                            className="my-0.5 py-0.5 w-full flex items-center justify-center"
-                            style={{
-                              borderTop: "1px solid rgba(4, 120, 87, 0.35)",
-                              borderBottom: "1px solid rgba(4, 120, 87, 0.35)",
-                            }}
-                          >
-                            <span className="text-[11px] font-black tracking-wider uppercase font-mono leading-none">
-                              PAID
-                            </span>
-                          </div>
-                          {/* Footer */}
-                          <span className="text-[5.5px] font-extrabold uppercase tracking-tight font-mono leading-none block">
-                            FULL SETTLEMENT · OFFICIAL SEAL
+                          <span className="text-[10px] sm:text-[11px] font-black tracking-wider uppercase font-mono leading-none">
+                            {isPaid ? "PAID & VERIFIED" : isPartial ? "ADVANCE RECEIVED" : "PAYMENT PENDING"}
                           </span>
                         </div>
+                        {/* Footer (Smart Words) */}
+                        <span className="text-[5.5px] font-extrabold uppercase tracking-tight font-mono leading-none block">
+                          {isPaid
+                            ? "100% RECEIVED · ALL DUES CLEARED"
+                            : isPartial
+                            ? `BAL DUE: ${fmtINR(due)} · PAY ON DELIVERY`
+                            : `TOTAL DUE: ${fmtINR(due)} · PAY ON DELIVERY`}
+                        </span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="inline-block rotate-[-4deg] select-none">
-                      <div
-                        className="p-0.5 rounded-md shadow-xs"
-                        style={{
-                          border: "1.8px solid #b91c1c",
-                          backgroundColor: "rgba(185, 28, 28, 0.04)",
-                          color: "#b91c1c",
-                        }}
-                      >
-                        <div
-                          className="px-2 py-0.5 rounded-[2px] flex flex-col items-center justify-center text-center"
-                          style={{ border: "1px dashed rgba(185, 28, 28, 0.7)" }}
-                        >
-                          {/* Header */}
-                          <span className="text-[6.5px] font-black uppercase tracking-tight font-mono whitespace-nowrap leading-none block">
-                            ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
-                          </span>
-                          {/* Main Stamp Text */}
-                          <div
-                            className="my-0.5 py-0.5 w-full flex items-center justify-center"
-                            style={{
-                              borderTop: "1px solid rgba(185, 28, 28, 0.35)",
-                              borderBottom: "1px solid rgba(185, 28, 28, 0.35)",
-                            }}
-                          >
-                            <span className="text-[9.5px] font-black tracking-tight uppercase font-mono leading-none">
-                              {totalPaid > 0 ? "PARTIAL PAID" : "PAYMENT DUE"}
-                            </span>
-                          </div>
-                          {/* Footer */}
-                          <span className="text-[5.5px] font-extrabold uppercase tracking-tight font-mono leading-none block">
-                            DUE: {fmtINR(due)} · OFFICIAL SEAL
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Totals */}
