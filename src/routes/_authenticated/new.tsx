@@ -34,6 +34,7 @@ import {
   Car,
   MessageCircle,
   RotateCcw,
+  CheckCircle,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -518,34 +519,30 @@ function NewBooking() {
         const paid = advNum;
         const dueBal = Math.max(0, netTotal - paid);
 
-        const extraLine = extraNum > 0 ? `🚗 *Extra / Travel*: ${fmtINR(extraNum)} (${extraChargesNote.trim() || "Travel"})` : "";
-        const noteLine = notes.trim() ? `📝 *Note*: ${notes.trim()}` : "";
+        const extraLine = extraNum > 0 ? `• *Extra/Travel*: ${fmtINR(extraNum)} (${extraChargesNote.trim() || "Travel"})` : "";
+        const noteLine = notes.trim() ? `• *Note*: ${notes.trim()}` : "";
 
         const msgLines = [
           `🥻 *EYAS SAREE DRAPIST* 🥻`,
-          ``,
+          `_Saree Pre-Pleating & Box Folding_ ✨`,
           ``,
           `Hi *${custName}* 🙏`,
-          ``,
-          ``,
           `Your saree has been safely *collected* for *${service === "prepleat" ? "Pre-Pleating" : "Saree Draping"}*! 🥻`,
           ``,
-          ``,
-          `🧾 *Bill Number*: ${billNo}`,
-          ``,
-          `🥻 *Sarees*: ${sareeCount} saree${sareeCount > 1 ? "s" : ""} × ${fmtINR(effPrice)}`,
-          `📅 *Delivery Date*: ${dateStr} · ${timeStr}`,
+          `📋 *BOOKING DETAILS*`,
+          `• *Bill No*: #${billNo}`,
+          `• *Sarees*: ${sareeCount} saree${sareeCount > 1 ? "s" : ""} × ${fmtINR(effPrice)}`,
+          `• *Delivery*: ${dateStr} · ${timeStr}`,
           extraLine,
+          noteLine,
           ``,
+          `💳 *PAYMENT SUMMARY*`,
+          `• *Total Bill*: ${fmtINR(netTotal)}`,
+          `• *Advance Paid*: ${fmtINR(paid)}`,
+          dueBal > 0 ? `• *Balance Due*: *${fmtINR(dueBal)}*` : `• *Status*: ✅ *Paid in Full* ✅`,
           ``,
-          `💰 *Total Bill*: ${fmtINR(netTotal)}`,
-          `💵 *Advance Paid*: ${fmtINR(paid)}`,
-          dueBal > 0 ? `📌 *Balance Due*: *${fmtINR(dueBal)}*` : `✅ *Payment Status*: Paid in Full ✅`,
-          noteLine ? `\n${noteLine}` : "",
-          ``,
-          ``,
-          `Wear with confidence & elegance! ✨`,
-          `Eyas Saree Drapist 🙏`,
+          `✨ _Wear with confidence & elegance!_`,
+          `🙏 *Eyas Saree Drapist*`,
         ].filter((l) => l !== "");
 
         const waText = encodeURIComponent(msgLines.join("\n"));

@@ -20,6 +20,7 @@ import {
   Layers,
   Clock,
   CheckCircle2,
+  CheckCircle,
   AlertCircle,
   Phone,
   MessageCircle,
@@ -1179,11 +1180,18 @@ function BookingsPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={pendingCollectType === "custom" && Number(pendingCustomAmount) > fullPayable}
+                  disabled={pendingCollectType === "custom" && (!pendingCustomAmount || Number(pendingCustomAmount) <= 0 || Number(pendingCustomAmount) > fullPayable)}
                   onClick={() => {
-                    if (pendingCollectType === "custom" && Number(pendingCustomAmount) > fullPayable) {
-                      toast.error(`Amount cannot exceed payable due of ${fmtINR(fullPayable)}`);
-                      return;
+                    if (pendingCollectType === "custom") {
+                      const num = Number(pendingCustomAmount);
+                      if (!num || num <= 0) {
+                        toast.error("Please enter a valid payment amount");
+                        return;
+                      }
+                      if (num > fullPayable) {
+                        toast.error(`Amount cannot exceed payable due of ${fmtINR(fullPayable)}`);
+                        return;
+                      }
                     }
                     const b = bookings.find((x) => x.id === pendingComplete.id);
                     if (b && collectedNow > 0) {
@@ -1206,36 +1214,33 @@ function BookingsPage() {
                       const phoneRaw = c?.phone;
                       const phone = phoneRaw ? cleanPhoneForWhatsApp(phoneRaw) : "";
                       if (phone) {
+                        const extraLine = b.extraCharges ? `• *Extra/Travel*: ${fmtINR(b.extraCharges)} (${b.extraChargesNote || "Travel"})` : "";
+                        const discLine = b.discount ? `• *Discount*: -${fmtINR(b.discount)}` : "";
+
                         const msgLines = [
-                          `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                          `🎊 *EYAS SAREE DRAPIST* 🎊`,
+                          `_Order Delivered & Completed_ ✨`,
                           ``,
+                          `Dear *${c?.name || "Customer"}* 🙏`,
+                          `Your saree order is *ready & delivered*! ✅🥻`,
                           ``,
-                          `Hi *${c?.name || "Customer"}* 🙏`,
+                          `🌟 *DELIVERY RECEIPT*`,
+                          `• *Bill No*: #${billNo}`,
+                          `• *Sarees*: ${b.sareeCount} saree${b.sareeCount > 1 ? "s" : ""} × ${fmtINR(b.pricePerSaree)}`,
+                          extraLine,
+                          discLine,
                           ``,
-                          ``,
-                          `Your saree order has been successfully *delivered*! ✅🥻`,
-                          ``,
-                          ``,
-                          `🧾 *Bill Number*: ${billNo}`,
-                          ``,
-                          `🥻 *Sarees*: ${b.sareeCount} saree${b.sareeCount > 1 ? "s" : ""} × ${fmtINR(b.pricePerSaree)}`,
-                          b.extraCharges ? `🚗 *Extra / Travel*: ${fmtINR(b.extraCharges)} (${b.extraChargesNote || "Travel"})` : "",
-                          b.discount ? `🏷️ *Discount*: -${fmtINR(b.discount)}` : "",
-                          ``,
-                          ``,
-                          `💰 *Total Bill*: ${fmtINR(netTotal)}`,
-                          `💵 *Total Paid*: ${fmtINR(totalPaidAfter)}`,
+                          `💰 *SETTLEMENT BREAKDOWN*`,
+                          `• *Total Bill*: ${fmtINR(netTotal)}`,
+                          `• *Total Paid*: ${fmtINR(totalPaidAfter)}`,
                           finalDueAfter === 0
-                            ? `✅ *Settlement*: Paid in Full ✅`
-                            : `📌 *Balance Due*: *${fmtINR(finalDueAfter)}*`,
+                            ? `• *Status*: ✅ *PAID IN FULL* 💯`
+                            : `• *Balance Due*: *${fmtINR(finalDueAfter)}*`,
                           ``,
+                          `💖 _We hope you love your perfect pleats!_`,
+                          `📸 _Please share your saree drape photos with us!_`,
                           ``,
-                          `We hope you love your flawless pleats! 🥻`,
-                          `Please share your photos with us! 📸`,
-                          ``,
-                          ``,
-                          `Wear with confidence & elegance! ✨`,
-                          `Eyas Saree Drapist 🙏`,
+                          `✨ *Thank you for choosing Eyas!* 🙏`,
                         ].filter((l) => l !== "");
 
                         setCompletedDeliveryPreview({

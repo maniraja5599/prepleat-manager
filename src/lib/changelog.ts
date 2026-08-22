@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.9";
+export const APP_VERSION = "1.4.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.9",
+    version: "v1.4.0",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "CheckCircle Fix, Strict Completion Limits & Smart Message Styles",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🐞",
+        text: "CheckCircle Icon Import Fix",
+        desc: "New Booking மற்றும் Bookings பக்கத்தில் Confirm/Complete செய்யும்போது ஏற்பட்ட CheckCircle icon பிழை சரிசெய்யப்பட்டது.",
+      },
+      {
+        emoji: "🚫",
+        text: "Strict Completion Payment Limits",
+        desc: "Order Complete செய்யும்போது பாக்கித் தொகையை (Payable Due) விட கூடுதல் தொகை தவறாக உள்ளிடுவதைத் தடுக்கும் பாதுகாப்பு வசதி.",
+      },
+      {
+        emoji: "🥻",
+        text: "Distinct Saree Collection Slip Style",
+        desc: "புடவை எடுக்கும் போது அனுப்பப்படும் WhatsApp செய்தி குறுகிய, நேர்த்தியான Booking Details & Payment Summary வடிவத்தில் அமைக்கப்பட்டது.",
+      },
+      {
+        emoji: "🎊",
+        text: "Distinct Saree Delivery Celebration Receipt",
+        desc: "ஆர்டர் டெலிவரி செய்யும்போது அனுப்பப்படும் WhatsApp செய்தி கொண்டாட்டமான Delivery Receipt & Settlement Breakdown வடிவத்தில் அமைக்கப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.9",
+    date: "22 Aug 2026",
     title: "Settings Data Fix, Clean Draft Reset & WhatsApp Previews",
     badge: "LATEST UPDATE ✨",
     changes: [

@@ -172,59 +172,52 @@ function BookingDetail() {
 
     if (kind === "ready") {
       parts = [
-        `🥻 *EYAS SAREE DRAPIST* 🥻`,
-        ``,
+        `✨ *EYAS SAREE DRAPIST* ✨`,
+        `_Your Saree is Ready!_ 🥻`,
         ``,
         `Hi *${name}* 🙏`,
+        `Your saree is neatly pre-pleated, pressed, and *READY for you*! 🥻✨`,
         ``,
+        `🌟 *ORDER DETAILS*`,
+        `• *Bill No*: #${formatShortBillNumber(booking.billNumber, booking.id)}`,
+        `• *Sarees*: ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}`,
+        `• *Delivery*: ${dateStr} · ${timeStr}`,
+        extraLine,
+        discLine,
         ``,
-        `Your saree is neatly pre-pleated, pinned, and *READY for you*! 🥻✨`,
+        `💳 *BILL & PAYMENT*`,
+        `• *Total Bill*: ${fmtINR(netTotal)}`,
+        `• *Amount Paid*: ${fmtINR(paid)}`,
+        due > 0 ? `• *Balance Due*: *${fmtINR(due)}*` : `• *Status*: ✅ *Paid in Full* ✅`,
         ``,
-        ``,
-        `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
-        `🥻 *Sarees*: ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""}`,
-        `📅 *Delivery Date*: ${dateStr} · ${timeStr}`,
-        ``,
-        ``,
-        `💰 *Total Bill*: ${fmtINR(netTotal)}`,
-        `💵 *Amount Paid*: ${fmtINR(paid)}`,
-        due > 0 ? `📌 *Pending Balance*: *${fmtINR(due)}*` : `✅ *Payment Status*: Paid in Full ✅`,
-        ``,
-        ``,
-        `Wear with confidence & shine bright! ✨`,
-        `Eyas Saree Drapist 🙏`,
+        `✨ _Wear with confidence & elegance!_`,
+        `🙏 *Eyas Saree Drapist*`,
       ].filter((l) => l !== "");
     }
 
     if (kind === "delivered") {
       parts = [
-        `🥻 *EYAS SAREE DRAPIST* 🥻`,
+        `🎊 *EYAS SAREE DRAPIST* 🎊`,
+        `_Order Delivered & Completed_ ✨`,
         ``,
+        `Dear *${name}* 🙏`,
+        `Your saree order is *ready & delivered*! ✅🥻`,
         ``,
-        `Hi *${name}* 🙏`,
-        ``,
-        ``,
-        `Your saree order has been successfully *delivered*! ✅🥻`,
-        ``,
-        ``,
-        `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
-        ``,
-        `🥻 *Sarees*: ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+        `🌟 *DELIVERY RECEIPT*`,
+        `• *Bill No*: #${formatShortBillNumber(booking.billNumber, booking.id)}`,
+        `• *Sarees*: ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
         extraLine,
         discLine,
         ``,
+        `💰 *SETTLEMENT BREAKDOWN*`,
+        `• *Total Bill*: ${fmtINR(netTotal)}`,
+        `• *Total Paid*: ${fmtINR(paid)}`,
+        due === 0 ? `• *Status*: ✅ *PAID IN FULL* 💯` : `• *Balance Due*: *${fmtINR(due)}*`,
         ``,
-        `💰 *Total Bill*: ${fmtINR(netTotal)}`,
-        `💵 *Total Paid*: ${fmtINR(paid)}`,
-        due === 0 ? `✅ *Settlement*: Paid in Full ✅` : `📌 *Balance Due*: *${fmtINR(due)}*`,
+        `💖 _We hope you love your perfect pleats!_`,
+        `📸 _Please share your saree drape photos with us!_`,
         ``,
-        ``,
-        `We hope you love your flawless pleats! 🥻`,
-        `Please share your photos with us! 📸`,
-        ``,
-        ``,
-        `Wear with confidence & elegance! ✨`,
-        `Eyas Saree Drapist 🙏`,
+        `✨ *Thank you for choosing Eyas!* 🙏`,
       ].filter((l) => l !== "");
     }
 
@@ -1568,6 +1561,12 @@ function BookingDetail() {
                       onChange={(e) => setCompletionCustomAmount(e.target.value)}
                       className="w-full bg-secondary border border-primary/30 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-bold tabular-nums text-foreground"
                     />
+                    {Number(completionCustomAmount) > fullPayable && (
+                      <div className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[10px] font-bold rounded-xl flex items-center gap-1.5 animate-in shake duration-200 mt-1.5">
+                        <AlertCircle className="size-3.5 shrink-0" />
+                        <span>⚠️ Entered amount ({fmtINR(Number(completionCustomAmount))}) exceeds payable due ({fmtINR(fullPayable)})</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1673,10 +1672,19 @@ function BookingDetail() {
                 </button>
                 <button
                   type="button"
-                  disabled={isDiscInvalid}
+                  disabled={isDiscInvalid || (completionPaymentType === "custom" && (!completionCustomAmount || Number(completionCustomAmount) <= 0 || Number(completionCustomAmount) > fullPayable))}
                   onClick={() => {
                     if (isDiscInvalid) {
                       return toast.error("Discount cannot exceed balance");
+                    }
+                    if (completionPaymentType === "custom") {
+                      const num = Number(completionCustomAmount);
+                      if (!num || num <= 0) {
+                        return toast.error("Please enter a valid payment amount");
+                      }
+                      if (num > fullPayable) {
+                        return toast.error(`Payment cannot exceed payable balance of ${fmtINR(fullPayable)}`);
+                      }
                     }
                     
                     const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
@@ -1735,40 +1743,34 @@ function BookingDetail() {
                       const finalDisc = patch.discount ?? booking.discount;
 
                       const extraLine = finalExtra && finalExtra > 0
-                        ? `🚗 *Extra / Travel*: ${fmtINR(finalExtra)} (${finalExtraNote || "Travel"})`
+                        ? `• *Extra/Travel*: ${fmtINR(finalExtra)} (${finalExtraNote || "Travel"})`
                         : "";
                       const discLine = finalDisc && finalDisc > 0
-                        ? `🏷️ *Discount*: -${fmtINR(finalDisc)}`
+                        ? `• *Discount*: -${fmtINR(finalDisc)}`
                         : "";
 
                       const msgLines = [
-                        `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                        `🎊 *EYAS SAREE DRAPIST* 🎊`,
+                        `_Order Delivered & Completed_ ✨`,
                         ``,
+                        `Dear *${customer?.name || "Customer"}* 🙏`,
+                        `Your saree order is *ready & delivered*! ✅🥻`,
                         ``,
-                        `Hi *${customer?.name || "Customer"}* 🙏`,
-                        ``,
-                        ``,
-                        `Your saree order has been successfully *delivered*! ✅🥻`,
-                        ``,
-                        ``,
-                        `🧾 *Bill Number*: ${billNo}`,
-                        ``,
-                        `🥻 *Sarees*: ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+                        `🌟 *DELIVERY RECEIPT*`,
+                        `• *Bill No*: #${billNo}`,
+                        `• *Sarees*: ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
                         extraLine,
                         discLine,
                         ``,
+                        `💰 *SETTLEMENT BREAKDOWN*`,
+                        `• *Total Bill*: ${fmtINR(newNetTotal)}`,
+                        `• *Total Paid*: ${fmtINR(newTotalPaid)}`,
+                        newDueAfter === 0 ? `• *Status*: ✅ *PAID IN FULL* 💯` : `• *Balance Due*: *${fmtINR(newDueAfter)}*`,
                         ``,
-                        `💰 *Total Bill*: ${fmtINR(newNetTotal)}`,
-                        `💵 *Total Paid*: ${fmtINR(newTotalPaid)}`,
-                        newDueAfter === 0 ? `✅ *Settlement*: Paid in Full ✅` : `📌 *Balance Due*: *${fmtINR(newDueAfter)}*`,
+                        `💖 _We hope you love your perfect pleats!_`,
+                        `📸 _Please share your saree drape photos with us!_`,
                         ``,
-                        ``,
-                        `We hope you love your flawless pleats! 🥻`,
-                        `Please share your photos with us! 📸`,
-                        ``,
-                        ``,
-                        `Wear with confidence & elegance! ✨`,
-                        `Eyas Saree Drapist 🙏`,
+                        `✨ *Thank you for choosing Eyas!* 🙏`,
                       ].filter((l) => l !== "");
 
                       setCompletionDeliveryPreview({
@@ -1969,29 +1971,25 @@ function BookingDetail() {
                 <a
                   href={`https://wa.me/${cleanPhoneForWhatsApp(recordedPaymentSuccess.phone)}?text=${encodeURIComponent(
                     [
-                      `🥻 *EYAS SAREE DRAPIST* 🥻`,
-                      ``,
+                      `💵 *EYAS SAREE DRAPIST* 💵`,
+                      `_Payment Confirmation Receipt_ 🧾`,
                       ``,
                       `Hi *${recordedPaymentSuccess.customerName}* 🙏`,
+                      `Payment received successfully! Thank you! ✨`,
                       ``,
+                      `🧾 *RECEIPT SUMMARY*`,
+                      `• *Bill No*: #${recordedPaymentSuccess.billNo}`,
+                      `• *Service*: ${recordedPaymentSuccess.service} (${recordedPaymentSuccess.sareeCount} saree${recordedPaymentSuccess.sareeCount > 1 ? "s" : ""})`,
                       ``,
-                      `Payment received successfully! Thank you! 💵`,
-                      ``,
-                      ``,
-                      `🧾 *Bill Number*: ${recordedPaymentSuccess.billNo}`,
-                      `🥻 *Service*: ${recordedPaymentSuccess.service} (${recordedPaymentSuccess.sareeCount} saree${recordedPaymentSuccess.sareeCount > 1 ? "s" : ""})`,
-                      ``,
-                      ``,
-                      `💰 *Total Bill*: ${fmtINR(recordedPaymentSuccess.totalAmount)}`,
-                      `💵 *Amount Received*: ${fmtINR(recordedPaymentSuccess.amountReceived)} (${recordedPaymentSuccess.mode.toUpperCase()})`,
-                      `💵 *Total Paid*: ${fmtINR(recordedPaymentSuccess.newTotalPaid)}`,
+                      `💰 *TRANSACTION DETAILS*`,
+                      `• *Amount Received*: ${fmtINR(recordedPaymentSuccess.amountReceived)} (${recordedPaymentSuccess.mode.toUpperCase()})`,
+                      `• *Total Paid*: ${fmtINR(recordedPaymentSuccess.newTotalPaid)} / ${fmtINR(recordedPaymentSuccess.totalAmount)}`,
                       recordedPaymentSuccess.newRemainingDue === 0
-                        ? `✅ *Payment Status*: Paid in Full ✅`
-                        : `📌 *Remaining Balance*: *${fmtINR(recordedPaymentSuccess.newRemainingDue)}*`,
+                        ? `• *Status*: ✅ *Paid in Full* ✅`
+                        : `• *Remaining Balance*: *${fmtINR(recordedPaymentSuccess.newRemainingDue)}*`,
                       ``,
-                      ``,
-                      `Wear with confidence & elegance! ✨`,
-                      `Eyas Saree Drapist 🙏`,
+                      `✨ _Wear with confidence & elegance!_`,
+                      `🙏 *Eyas Saree Drapist*`,
                     ].join("\n")
                   )}`}
                   target="_blank"

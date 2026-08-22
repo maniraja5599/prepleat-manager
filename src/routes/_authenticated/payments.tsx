@@ -2106,29 +2106,25 @@ function IncomeView(p: {
                     <a
                       href={`https://wa.me/${cleanPhoneForWhatsApp(recordedSuccess.phone)}?text=${encodeURIComponent(
                         [
-                          `🥻 *EYAS SAREE DRAPIST* 🥻`,
-                          ``,
+                          `💵 *EYAS SAREE DRAPIST* 💵`,
+                          `_Payment Confirmation Receipt_ 🧾`,
                           ``,
                           `Hi *${recordedSuccess.customerName}* 🙏`,
+                          `Payment received successfully! Thank you! ✨`,
                           ``,
+                          `🧾 *RECEIPT SUMMARY*`,
+                          `• *Bill No*: #${recordedSuccess.billNo}`,
+                          `• *Service*: ${recordedSuccess.service} (${recordedSuccess.sareeCount} saree${recordedSuccess.sareeCount > 1 ? "s" : ""})`,
                           ``,
-                          `Payment received successfully! Thank you! 💵`,
-                          ``,
-                          ``,
-                          `🧾 *Bill Number*: ${recordedSuccess.billNo}`,
-                          `🥻 *Service*: ${recordedSuccess.service} (${recordedSuccess.sareeCount} saree${recordedSuccess.sareeCount > 1 ? "s" : ""})`,
-                          ``,
-                          ``,
-                          `💰 *Total Bill*: ${fmtINR(recordedSuccess.totalAmount)}`,
-                          `💵 *Amount Received*: ${fmtINR(recordedSuccess.amountReceived)} (${recordedSuccess.mode.toUpperCase()})`,
-                          `💵 *Total Paid*: ${fmtINR(recordedSuccess.newTotalPaid)}`,
+                          `💰 *TRANSACTION DETAILS*`,
+                          `• *Amount Received*: ${fmtINR(recordedSuccess.amountReceived)} (${recordedSuccess.mode.toUpperCase()})`,
+                          `• *Total Paid*: ${fmtINR(recordedSuccess.newTotalPaid)} / ${fmtINR(recordedSuccess.totalAmount)}`,
                           recordedSuccess.newRemainingDue === 0
-                            ? `✅ *Payment Status*: Paid in Full ✅`
-                            : `📌 *Remaining Balance*: *${fmtINR(recordedSuccess.newRemainingDue)}*`,
+                            ? `• *Status*: ✅ *Paid in Full* ✅`
+                            : `• *Remaining Balance*: *${fmtINR(recordedSuccess.newRemainingDue)}*`,
                           ``,
-                          ``,
-                          `Wear with confidence & elegance! ✨`,
-                          `Eyas Saree Drapist 🙏`,
+                          `✨ _Wear with confidence & elegance!_`,
+                          `🙏 *Eyas Saree Drapist*`,
                         ].join("\n")
                       )}`}
                       target="_blank"
