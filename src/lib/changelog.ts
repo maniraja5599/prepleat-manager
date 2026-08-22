@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.2";
+export const APP_VERSION = "1.4.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.2",
+    version: "v1.4.3",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Full Payment Booking Fix, Bills Register Card Click & PDF Preview",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🥻",
+        text: "Full Payment Booking Preservation",
+        desc: "புதிய புக்கிங்கில் முழுத் தொகையையும் முன்கூட்டியே செலுத்தினாலும் புக்கிங் மறைந்துவிடாமல் ஆக்டிவ் பட்டியலில் இருக்கும்படி சரிசெய்யப்பட்டது.",
+      },
+      {
+        emoji: "👆",
+        text: "Bills Register Tap to View & Selection Lock",
+        desc: "பில் கார்டை எங்கு தொட்டாலும் View Booking திறக்கும் வசதி மற்றும் தொட்டுப் பிடிக்கும்போது (Touch & Hold) Text Select ஆகாமல் தடுக்கப்பட்டது.",
+      },
+      {
+        emoji: "📄",
+        text: "Mobile-Friendly PDF Preview & Open Fullscreen",
+        desc: "PDF Preview அனைத்து மொபைல் மற்றும் கணினி உலாவிகளிலும் எளிதாகத் திறக்கும்படி மேம்படுத்தப்பட்டது.",
+      },
+      {
+        emoji: "🔔",
+        text: "Accurate Delivery Browser Push Notifications",
+        desc: "இன்றைய மற்றும் நாளைய டெலிவரிகள் குறித்த உலாவி நோட்டிபிகேஷன் தேதிகள் துல்லியமாக கணக்கிடப்பட்டு அனுப்பப்படும்.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.2",
+    date: "22 Aug 2026",
     title: "Customer Detail Crash Fix & Full Project Verification",
     badge: "LATEST UPDATE ✨",
     changes: [

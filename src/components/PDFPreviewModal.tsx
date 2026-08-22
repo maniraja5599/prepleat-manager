@@ -12,7 +12,7 @@ import {
 } from "@/lib/store";
 import { getBillPDFBlobUrl, generateBillPDF } from "@/lib/pdf-bill";
 import { cleanPhoneForWhatsApp } from "@/lib/utils";
-import { X, Download, MessageCircle, Printer, Loader2, FileText } from "lucide-react";
+import { X, Download, MessageCircle, Printer, Loader2, FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface PDFPreviewModalProps {
@@ -64,7 +64,7 @@ export function PDFPreviewModal({
       active = false;
       if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
     };
-  }, [open, booking, customer, artist, payments, settings]);
+  }, [open, booking?.id]);
 
   if (!open || !booking) return null;
 
@@ -157,11 +157,30 @@ export function PDFPreviewModal({
               <span className="text-xs font-semibold">Generating Bill PDF...</span>
             </div>
           ) : blobUrl ? (
-            <iframe
-              src={`${blobUrl}#toolbar=0&navpanes=0`}
-              title={`PDF Preview ${billNo}`}
-              className="w-full h-full border-none rounded-b-none"
-            />
+            <div className="w-full h-full flex flex-col items-center justify-center relative">
+              <object
+                data={`${blobUrl}#toolbar=0&navpanes=0`}
+                type="application/pdf"
+                className="w-full h-full border-none"
+              >
+                <iframe
+                  src={`${blobUrl}#toolbar=0&navpanes=0`}
+                  title={`PDF Preview ${billNo}`}
+                  className="w-full h-full border-none"
+                />
+              </object>
+              <div className="sm:hidden absolute bottom-3 right-3 z-10">
+                <a
+                  href={blobUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-card/90 backdrop-blur-xs border border-border/50 text-[11px] font-bold text-primary shadow-md flex items-center gap-1.5"
+                >
+                  <Eye className="size-3.5" />
+                  <span>Open Full PDF</span>
+                </a>
+              </div>
+            </div>
           ) : (
             <p className="text-xs text-muted-foreground">Preview unavailable.</p>
           )}

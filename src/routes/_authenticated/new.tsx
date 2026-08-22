@@ -490,21 +490,12 @@ function NewBooking() {
       totalAmount: sareeSubtotal,
       extraCharges: extraNum > 0 ? extraNum : undefined,
       extraChargesNote: extraNum > 0 ? (extraChargesNote.trim() || "Travel") : undefined,
-      advancePaid: 0,
+      advancePaid: advNum,
       deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
       deliveryTime,
       notes: notes.trim() || undefined,
       measurements: showMeasure ? measurements : undefined,
     });
-    if (advNum > 0) {
-      useStore.getState().addPayment({
-        bookingId: b.id,
-        customerId: cid,
-        amount: advNum,
-        date: new Date().toISOString(),
-        note: "Advance",
-      });
-    }
     isSavedRef.current = true;
     sessionStorage.removeItem("eyas_new_booking_draft");
     toast.success("Booking created successfully! 🎉");

@@ -626,12 +626,9 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) => {
             if (b.id !== p.bookingId) return b;
             const newPaid = b.advancePaid + p.amount;
-            const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
-            const fullyPaid = newPaid >= netBill;
             return {
               ...b,
               advancePaid: newPaid,
-              status: fullyPaid && b.status === "pending" ? "completed" : b.status,
               updatedAt: now,
             };
           });
@@ -665,12 +662,9 @@ export const useStore = create<State>()(
             bookings = s.bookings.map((b) => {
               if (b.id !== oldPay.bookingId) return b;
               const newPaid = Math.max(0, b.advancePaid + diff);
-              const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
-              const fullyPaid = newPaid >= netBill;
               return {
                 ...b,
                 advancePaid: newPaid,
-                status: fullyPaid && b.status === "pending" ? "completed" : (!fullyPaid && b.status === "completed" ? "pending" : b.status),
                 updatedAt: now,
               };
             });
@@ -698,12 +692,9 @@ export const useStore = create<State>()(
           const bookings = s.bookings.map((b) => {
             if (b.id !== pay.bookingId) return b;
             const newPaid = Math.max(0, b.advancePaid - pay.amount);
-            const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
-            const stillFullyPaid = newPaid >= netBill;
             return {
               ...b,
               advancePaid: newPaid,
-              status: !stillFullyPaid && b.status === "completed" ? "pending" : b.status,
               updatedAt: now,
             };
           });
@@ -739,12 +730,9 @@ export const useStore = create<State>()(
             if (b.id !== t.payment.bookingId) return b;
             const relatedPayments = updatedPayments.filter((p) => p.bookingId === b.id);
             const totalPaid = relatedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-            const netBill = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
-            const isFullyPaid = totalPaid >= netBill;
             return {
               ...b,
               advancePaid: totalPaid,
-              status: isFullyPaid && b.status === "pending" ? "completed" : b.status,
               updatedAt: now,
             };
           });

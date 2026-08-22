@@ -109,7 +109,8 @@ export async function checkAndTriggerEventAlerts(bookings: any[]): Promise<void>
   // 1. Check Tomorrow's Deliveries (1 Day Before Advance Notice!)
   const tomorrowBookings = bookings.filter((b) => {
     if (b.status === "cancelled" || b.status === "completed" || b.status === "delivered") return false;
-    return b.deliveryDate === tomorrowStr;
+    const bDateStr = b.deliveryDate ? (b.deliveryDate.includes("T") ? b.deliveryDate.split("T")[0] : b.deliveryDate.slice(0, 10)) : "";
+    return bDateStr === tomorrowStr;
   });
 
   if (tomorrowBookings.length > 0) {
@@ -128,7 +129,8 @@ export async function checkAndTriggerEventAlerts(bookings: any[]): Promise<void>
   // 2. Check Today's Deliveries
   const todayBookings = bookings.filter((b) => {
     if (b.status === "cancelled" || b.status === "completed" || b.status === "delivered") return false;
-    return b.deliveryDate === todayStr;
+    const bDateStr = b.deliveryDate ? (b.deliveryDate.includes("T") ? b.deliveryDate.split("T")[0] : b.deliveryDate.slice(0, 10)) : "";
+    return bDateStr === todayStr;
   });
 
   if (todayBookings.length > 0) {

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import {
   useStore,
@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/bills")({
 });
 
 export function BillsPage() {
+  const navigate = useNavigate();
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const allPayments = useStore((s) => s.payments);
@@ -255,7 +256,10 @@ export function BillsPage() {
         </div>
 
         {/* Sequential Bills List */}
-        <div className="space-y-2.5">
+        <div
+          className="space-y-2.5 select-none touch-manipulation"
+          style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
+        >
           {list.length === 0 ? (
             <div className="p-12 text-center bg-card rounded-2xl border border-border/30">
               <ReceiptText className="size-10 text-muted-foreground/40 mx-auto mb-2" />
@@ -277,8 +281,9 @@ export function BillsPage() {
               return (
                 <div
                   key={b.id}
+                  onClick={() => navigate({ to: "/bookings/$id", params: { id: b.id } })}
                   className={cn(
-                    "bg-card rounded-2xl border p-3.5 shadow-xs transition hover:border-primary/30 flex flex-col gap-2.5 relative group",
+                    "bg-card rounded-2xl border p-3.5 shadow-xs transition hover:border-primary/40 active:scale-[0.99] cursor-pointer flex flex-col gap-2.5 relative group select-none",
                     due > 0 && !isCancelled
                       ? "border-amber-500/30 dark:border-amber-500/20"
                       : isCancelled
@@ -308,7 +313,7 @@ export function BillsPage() {
                           {b.service === "prepleat" ? "Pre-Pleat" : "Direct Drape"}
                         </span>
                         <span>·</span>
-                        <span>{b.sareeCount} saree{b.sareeCount > 1 ? "s" : ""}</span>
+                        <span>{b.sareeCount} {b.sareeCount > 1 ? "sarees" : "saree"}</span>
                         <span>·</span>
                         <span className="flex items-center gap-1">
                           <Calendar className="size-3 text-muted-foreground" />
@@ -344,6 +349,7 @@ export function BillsPage() {
                       {phoneDial && (
                         <a
                           href={`tel:${phoneDial}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="size-7 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center text-primary transition"
                           title="Call Customer"
                         >
@@ -355,6 +361,7 @@ export function BillsPage() {
                           href={`https://wa.me/${phoneWA}`}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition"
                           title="WhatsApp Customer"
                         >
@@ -376,14 +383,10 @@ export function BillsPage() {
                       </button>
                     </div>
 
-                    <Link
-                      to="/bookings/$id"
-                      params={{ id: b.id }}
-                      className="px-3 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
-                    >
+                    <div className="px-3 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center gap-1 transition active:scale-95">
                       <span>View Booking</span>
                       <ChevronRight className="size-3.5" />
-                    </Link>
+                    </div>
                   </div>
                 </div>
               );
