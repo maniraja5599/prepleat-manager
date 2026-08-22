@@ -86,17 +86,28 @@ export function PDFPreviewModal({
     if (!customer?.phone) {
       return toast.error("No customer phone number available");
     }
-    const phone = cleanPhoneForWhatsApp(customer.phone);
     const msg = [
-      `✨ *EYAS SAREE DRAPIST* ✨`,
+      `🥻 *EYAS SAREE DRAPIST* 🥻`,
+      ``,
       ``,
       `Hi *${customerName}* 🙏`,
       ``,
-      `Here is your invoice for *Bill ${billNo}* 🧾`,
-      `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
       ``,
-      `✨ Wear with confidence & elegance! ✨`,
-      `Eyas Saree Drapist 💛`,
+      `Here is your invoice for *Bill ${billNo}* 🧾`,
+      ``,
+      `🥻 *Service*: ${booking.service === "prepleat" ? "Pre-Pleating" : "Saree Draping"} (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
+      `📅 *Delivery Date*: ${formatAppDate(booking.deliveryDate)}`,
+      ``,
+      ``,
+      `💰 *Total Bill*: ${fmtINR(netBookingTotal(booking))}`,
+      `💵 *Advance Paid*: ${fmtINR(booking.advancePaid)}`,
+      totalDue(booking) > 0
+        ? `📌 *Balance Due*: *${fmtINR(totalDue(booking))}*`
+        : `✅ *Payment Status*: Paid in Full ✅`,
+      ``,
+      ``,
+      `Wear with confidence & elegance! ✨`,
+      `Eyas Saree Drapist 🙏`,
     ].join("\n");
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };

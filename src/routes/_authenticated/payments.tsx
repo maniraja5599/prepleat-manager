@@ -1654,11 +1654,14 @@ function IncomeView(p: {
                       : "PrePleat + Drape";
 
                 const waMessage = [
-                  `✨ *EYAS SAREE DRAPIST* ✨`,
+                  `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                  ``,
                   ``,
                   `Hi *${item.name}* 🙏`,
                   ``,
+                  ``,
                   `Gentle reminder — balance payment is pending for your saree order.`,
+                  ``,
                   ``,
                   `🧾 *Bill Number*: ${item.formattedBillNo}`,
                   `🥻 *Service*: ${serviceLabel} (${item.sareeCount} saree${item.sareeCount > 1 ? "s" : ""})`,
@@ -1668,13 +1671,16 @@ function IncomeView(p: {
                     : "",
                   item.discount > 0 ? `🏷️ *Discount*: -${fmtINR(item.discount)}` : "",
                   ``,
+                  ``,
                   `💰 *Total Bill*: ${fmtINR(item.totalAmount)}`,
-                  `💵 *Paid*: ${fmtINR(item.advancePaid)}`,
+                  `💵 *Amount Paid*: ${fmtINR(item.advancePaid)}`,
                   `📌 *Balance Due*: *${fmtINR(item.due)}*`,
+                  ``,
                   ``,
                   `Pay via GPay / Cash. Thank you! 🙏`,
                   ``,
-                  `✨ Wear with confidence & elegance! ✨`,
+                  ``,
+                  `Wear with confidence & elegance! ✨`,
                   `Eyas Saree Drapist 🙏`,
                 ]
                   .filter((l) => l !== "")

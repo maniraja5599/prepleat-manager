@@ -90,29 +90,34 @@ function CustomerDetail() {
   // Build a beautiful, client-friendly WhatsApp message
   const buildWhatsAppMessage = (withLink = includeLink) => {
     const lines: string[] = [
-      `✨ *EYAS SAREE DRAPIST* ✨`,
+      `🥻 *EYAS SAREE DRAPIST* 🥻`,
+      ``,
       ``,
       `Hi *${customer.name}* 🙏`,
+      ``,
       ``,
     ];
 
     if (pendingOrders.length > 0) {
       lines.push(
-        `Reminder: ${pendingOrders.length > 1 ? `*${pendingOrders.length} pending orders*` : "*1 pending order*"} with us.`,
+        `Gentle reminder: Balance payment is pending for ${pendingOrders.length > 1 ? `*${pendingOrders.length} saree orders*` : "*1 saree order*"} with us.`,
       );
-      lines.push(`💰 *Balance Due: ${fmtINR(totalDueAll)}*`);
+      lines.push(``);
+      lines.push(`💰 *Total Balance Due*: *${fmtINR(totalDueAll)}*`);
       if (nextDelivery) {
-        lines.push(`📅 Delivery: ${formatAppDate(nextDelivery.deliveryDate)}`);
+        lines.push(`📅 *Delivery*: ${formatAppDate(nextDelivery.deliveryDate)}`);
       }
+      lines.push(``);
       lines.push(`Pay via GPay / Cash. Thank you! 🙏`);
     } else if (cb.length > 0) {
-      lines.push(`Thank you for trusting us with your sarees! ✨`);
+      lines.push(`Thank you for trusting us with your sarees! 🥻`);
     } else {
       lines.push(`We'd love to assist you with your saree draping & pre-pleating! ✨`);
     }
 
     lines.push(``);
-    lines.push(`✨ Wear with confidence & elegance! ✨`);
+    lines.push(``);
+    lines.push(`Wear with confidence & elegance! ✨`);
     lines.push(`Eyas Saree Drapist 🙏`);
 
     if (withLink) {

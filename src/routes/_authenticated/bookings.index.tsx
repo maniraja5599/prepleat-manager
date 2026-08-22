@@ -1180,23 +1180,36 @@ function BookingsPage() {
                       const c = customers.find((x) => x.id === b.customerId);
                       if (c?.phone) {
                         const phone = cleanPhoneForWhatsApp(c.phone);
-                        const netTotal = netBookingAmount(b);
-                        const billNo = formatShortBillNumber(b.billNumber, b.id);
+                        const totalPaidAfter = (b.advancePaid || 0) + collectedNow;
                         const msgLines = [
-                          `✨ *EYAS SAREE DRAPIST* ✨`,
+                          `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                          ``,
                           ``,
                           `Hi *${c.name || "Customer"}* 🙏`,
                           ``,
-                          `Your saree order has been successfully *delivered*! ✅✨`,
+                          ``,
+                          `Your saree order has been successfully *delivered*! ✅🥻`,
+                          ``,
                           ``,
                           `🧾 *Bill Number*: ${billNo}`,
                           ``,
-                          `💰 *Final Settlement*: Total ${fmtINR(netTotal)} (${remainingDueAfter === 0 ? "Paid in Full ✅" : `Due: ${fmtINR(remainingDueAfter)}`})`,
+                          `🥻 *Sarees*: ${b.sareeCount} saree${b.sareeCount > 1 ? "s" : ""} × ${fmtINR(b.pricePerSaree)}`,
+                          b.extraCharges ? `🚗 *Extra / Travel*: ${fmtINR(b.extraCharges)} (${b.extraChargesNote || "Travel"})` : "",
+                          b.discount ? `🏷️ *Discount*: -${fmtINR(b.discount)}` : "",
+                          ``,
+                          ``,
+                          `💰 *Total Bill*: ${fmtINR(netTotal)}`,
+                          `💵 *Total Paid*: ${fmtINR(totalPaidAfter)}`,
+                          remainingDueAfter === 0
+                            ? `✅ *Settlement*: Paid in Full ✅`
+                            : `📌 *Balance Due*: *${fmtINR(remainingDueAfter)}*`,
+                          ``,
                           ``,
                           `We hope you love your flawless pleats! 🥻`,
                           `Please share your photos with us! 📸`,
                           ``,
-                          `✨ Wear with confidence & elegance! ✨`,
+                          ``,
+                          `Wear with confidence & elegance! ✨`,
                           `Eyas Saree Drapist 🙏`,
                         ].filter((l) => l !== "");
                         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msgLines.join("\n"))}`;
