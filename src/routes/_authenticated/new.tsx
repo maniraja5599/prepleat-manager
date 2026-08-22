@@ -35,6 +35,7 @@ import {
   MessageCircle,
   RotateCcw,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";

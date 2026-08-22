@@ -21,6 +21,7 @@ import {
   Clock,
   CheckCircle2,
   CheckCircle,
+  Check,
   AlertCircle,
   Phone,
   MessageCircle,
@@ -1214,6 +1215,8 @@ function BookingsPage() {
                       const phoneRaw = c?.phone;
                       const phone = phoneRaw ? cleanPhoneForWhatsApp(phoneRaw) : "";
                       if (phone) {
+                        const billNo = formatShortBillNumber(b.billNumber, b.id);
+                        const netTotal = netBookingAmount(b);
                         const extraLine = b.extraCharges ? `• *Extra/Travel*: ${fmtINR(b.extraCharges)} (${b.extraChargesNote || "Travel"})` : "";
                         const discLine = b.discount ? `• *Discount*: -${fmtINR(b.discount)}` : "";
 

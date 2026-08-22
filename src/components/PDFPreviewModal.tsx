@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { type Booking, type Customer, type Payment, type Settings, formatShortBillNumber } from "@/lib/store";
+import {
+  type Booking,
+  type Customer,
+  type Payment,
+  type Settings,
+  formatShortBillNumber,
+  fmtINR,
+  totalDue,
+  netBookingAmount,
+  formatAppDate,
+} from "@/lib/store";
 import { getBillPDFBlobUrl, generateBillPDF } from "@/lib/pdf-bill";
 import { cleanPhoneForWhatsApp } from "@/lib/utils";
 import { X, Download, MessageCircle, Printer, Loader2, FileText } from "lucide-react";
@@ -29,85 +39,79 @@ export function PDFPreviewModal({
 
   useEffect(() => {
     let active = true;
+    let urlToRevoke: string | null = null;
+
     if (open && booking) {
       setLoading(true);
       getBillPDFBlobUrl({ booking, customer, artist, payments, settings })
         .then(({ blobUrl: url }) => {
           if (active) {
+            urlToRevoke = url;
             setBlobUrl(url);
             setLoading(false);
           }
         })
         .catch((err) => {
-          console.error("PDF generation failed", err);
-          if (active) {
-            setLoading(false);
-            toast.error("Failed to render PDF preview");
-          }
+          console.error("Failed to render PDF:", err);
+          if (active) setLoading(false);
+          toast.error("Failed to preview PDF bill");
         });
     } else {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
       setBlobUrl(null);
     }
+
     return () => {
       active = false;
+      if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
     };
-  }, [open, booking?.id]);
+  }, [open, booking, customer, artist, payments, settings]);
 
   if (!open || !booking) return null;
 
   const billNo = formatShortBillNumber(booking.billNumber, booking.id);
   const customerName = customer?.name || "Customer";
 
-  const handleDownload = async () => {
-    try {
-      await generateBillPDF({ booking, customer, artist, payments, settings });
-      toast.success(`Bill ${billNo} downloaded!`);
-    } catch (e) {
-      toast.error("Download failed");
-    }
+  const handleDownload = () => {
+    if (!booking) return;
+    generateBillPDF({ booking, customer, artist, payments, settings });
+    toast.success("PDF Invoice downloaded! 📄");
   };
 
   const handlePrint = () => {
-    if (blobUrl) {
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = blobUrl;
-      document.body.appendChild(iframe);
-      iframe.onload = () => {
-        iframe.contentWindow?.print();
-      };
-    }
+    if (!blobUrl) return;
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = blobUrl;
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    };
   };
 
   const handleShareWhatsApp = () => {
-    if (!customer?.phone) {
+    if (!booking) return;
+    const phone = customer?.phone ? cleanPhoneForWhatsApp(customer.phone) : "";
+    if (!phone) {
       return toast.error("No customer phone number available");
     }
     const msg = [
       `🥻 *EYAS SAREE DRAPIST* 🥻`,
       ``,
-      ``,
       `Hi *${customerName}* 🙏`,
-      ``,
-      ``,
       `Here is your invoice for *Bill ${billNo}* 🧾`,
       ``,
       `🥻 *Service*: ${booking.service === "prepleat" ? "Pre-Pleating" : "Saree Draping"} (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
       `📅 *Delivery Date*: ${formatAppDate(booking.deliveryDate)}`,
       ``,
-      ``,
-      `💰 *Total Bill*: ${fmtINR(netBookingTotal(booking))}`,
-      `💵 *Advance Paid*: ${fmtINR(booking.advancePaid)}`,
+      `💰 *Total Bill*: ${fmtINR(netBookingAmount(booking))}`,
+      `💵 *Advance Paid*: ${fmtINR(booking.advancePaid || 0)}`,
       totalDue(booking) > 0
         ? `📌 *Balance Due*: *${fmtINR(totalDue(booking))}*`
         : `✅ *Payment Status*: Paid in Full ✅`,
       ``,
-      ``,
-      `Wear with confidence & elegance! ✨`,
-      `Eyas Saree Drapist 🙏`,
+      `✨ _Wear with confidence & elegance!_`,
+      `🙏 *Eyas Saree Drapist*`,
     ].join("\n");
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };

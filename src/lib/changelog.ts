@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.1";
+export const APP_VERSION = "1.4.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,27 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.1",
+    version: "v1.4.2",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Customer Detail Crash Fix & Full Project Verification",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "👤",
+        text: "Individual Customer Page Crash Fix",
+        desc: "Individual Customer பக்கம் திறக்கும் போது ஏற்பட்ட 'Can't find variable: Plus' பிழை சரிசெய்யப்பட்டு பக்கங்கள் சீராகத் திறக்கின்றன.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Full Project TypeScript & Variable Verification",
+        desc: "முழு செயலியில் உள்ள அனைத்து பக்கங்கள், ஐகான்கள், PDF மோடல்கள் மற்றும் ரூட்டிங் மாறிகள் 100% சோதிக்கப்பட்டு சரிசெய்யப்பட்டன.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.1",
+    date: "22 Aug 2026",
     title: "New Booking Save Fix, Bill No Polish & Minimal Ready Message",
     badge: "LATEST UPDATE ✨",
     changes: [

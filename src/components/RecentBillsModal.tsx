@@ -325,7 +325,7 @@ export function RecentBillsModal() {
             type="button"
             onClick={() => {
               setIsOpen(false);
-              navigate({ to: "/bookings/new" });
+              navigate({ to: "/new" });
             }}
             className="px-4 py-2 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
           >
