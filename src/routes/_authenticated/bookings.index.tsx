@@ -803,9 +803,7 @@ function BookingsPage() {
                   {/* Sticky Fixed Month Section Header with Highlighted Pill + Animated Scrolling Stats Ticker */}
                   <div
                     className={cn(
-                      "sticky top-[52px] sm:top-[56px] z-10 -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl backdrop-blur-md border-b flex items-center justify-between gap-2 shadow-xs transition-all",
-                      theme.bg,
-                      theme.border,
+                      "sticky top-[58px] sm:top-[62px] z-30 -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 transition-all",
                     )}
                   >
                     {/* Month Highlighted Badge Pill */}
