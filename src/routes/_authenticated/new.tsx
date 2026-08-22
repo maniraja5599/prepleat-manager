@@ -1466,7 +1466,10 @@ function NewBooking() {
           ))}
         </div>
         {advNum > total && (
-          <p className="text-xs text-destructive mt-2">Cannot exceed total {fmtINR(total)}</p>
+          <div className="mt-2.5 p-2.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-bold flex items-center gap-1.5 animate-in shake duration-200">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>⚠️ Advance amount ({fmtINR(advNum)}) cannot exceed total bill ({fmtINR(total)})!</span>
+          </div>
         )}
       </section>
 

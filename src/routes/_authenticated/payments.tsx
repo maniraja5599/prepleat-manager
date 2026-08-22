@@ -98,6 +98,7 @@ function PaymentsPage() {
   const categories = settings.expenseCategories ?? [];
   const incomeCats = settings.incomeCategories ?? [];
 
+  const addPayment = useStore((s) => s.addPayment);
   const addExpense = useStore((s) => s.addExpense);
   const deleteExpense = useStore((s) => s.deleteExpense);
   const restoreExpense = useStore((s) => s.restoreExpense);
@@ -1909,6 +1910,16 @@ function IncomeView(p: {
                   </div>
                 </div>
 
+                {/* Overpayment Warning */}
+                {Number(collectAmount) > collectTarget.due && (
+                  <div className="px-3.5 py-2.5 bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold rounded-2xl flex items-center gap-2 animate-in shake duration-200">
+                    <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>
+                      ⚠️ Entered amount ({fmtINR(Number(collectAmount))}) exceeds pending balance ({fmtINR(collectTarget.due)})!
+                    </span>
+                  </div>
+                )}
+
                 {/* Mode Selector */}
                 <div>
                   <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1.5">
@@ -1958,10 +1969,15 @@ function IncomeView(p: {
                   </button>
                   <button
                     type="button"
+                    disabled={Number(collectAmount) > collectTarget.due || !Number(collectAmount) || Number(collectAmount) <= 0}
                     onClick={() => {
                       const amt = Number(collectAmount);
                       if (!amt || amt <= 0) {
                         toast.error("Please enter a valid amount");
+                        return;
+                      }
+                      if (amt > collectTarget.due) {
+                        toast.error(`Amount cannot exceed pending balance of ${fmtINR(collectTarget.due)}`);
                         return;
                       }
                       if (p.onAddPayment) {
@@ -1977,7 +1993,12 @@ function IncomeView(p: {
                       toast.success(`Payment of ${fmtINR(amt)} recorded! ✅`);
                       setCollectTarget(null);
                     }}
-                    className="py-3 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                    className={cn(
+                      "py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm",
+                      Number(collectAmount) > collectTarget.due || !Number(collectAmount) || Number(collectAmount) <= 0
+                        ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                        : "saree-gradient text-white active:scale-95 shadow-primary/10 hover:brightness-105 cursor-pointer"
+                    )}
                   >
                     <Check className="size-4" />
                     <span>

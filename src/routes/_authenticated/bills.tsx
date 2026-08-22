@@ -130,32 +130,59 @@ export function BillsPage() {
       <div className="max-w-2xl mx-auto space-y-4 pb-20">
         {/* Metric Overview Banner */}
         <div className="grid grid-cols-3 gap-2.5">
-          <div className="bg-card p-3 rounded-2xl border border-border/40 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={cn(
+              "p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 shadow-xs",
+              filter === "all"
+                ? "bg-primary/10 border-primary/40 ring-2 ring-primary/20"
+                : "bg-card border-border/40 hover:bg-secondary/60 hover:border-border/80"
+            )}
+          >
             <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
               Total Bills
             </span>
             <span className="text-xl font-bold font-mono text-foreground mt-0.5 block">
               {totalCount}
             </span>
-          </div>
+          </button>
 
-          <div className="bg-card p-3 rounded-2xl border border-border/40 shadow-xs">
-            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+          <button
+            type="button"
+            onClick={() => setFilter("due")}
+            className={cn(
+              "p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 shadow-xs",
+              filter === "due"
+                ? "bg-destructive/10 border-destructive/40 ring-2 ring-destructive/20"
+                : "bg-card border-border/40 hover:bg-secondary/60 hover:border-border/80"
+            )}
+          >
+            <span className="text-[10px] uppercase font-bold text-destructive tracking-wider block">
               Pending Due
             </span>
             <span className="text-xl font-bold font-mono text-destructive mt-0.5 block">
               {dueCount} <span className="text-[10px] font-sans font-semibold text-muted-foreground">({fmtINR(totalDueSum)})</span>
             </span>
-          </div>
+          </button>
 
-          <div className="bg-card p-3 rounded-2xl border border-border/40 shadow-xs">
-            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+          <button
+            type="button"
+            onClick={() => setFilter("paid")}
+            className={cn(
+              "p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 shadow-xs",
+              filter === "paid"
+                ? "bg-success/10 border-success/40 ring-2 ring-success/20"
+                : "bg-card border-border/40 hover:bg-secondary/60 hover:border-border/80"
+            )}
+          >
+            <span className="text-[10px] uppercase font-bold text-success tracking-wider block">
               Fully Paid
             </span>
             <span className="text-xl font-bold font-mono text-success mt-0.5 block">
               {paidCount}
             </span>
-          </div>
+          </button>
         </div>
 
         {/* Search Bar & Sort Toggle */}

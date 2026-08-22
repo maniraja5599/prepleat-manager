@@ -1067,6 +1067,12 @@ function BookingsPage() {
                     onChange={(e) => setPendingCustomAmount(e.target.value)}
                     className="w-full bg-secondary border border-primary/30 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-bold tabular-nums text-foreground"
                   />
+                  {Number(pendingCustomAmount) > fullPayable && (
+                    <div className="px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[10px] font-bold rounded-xl flex items-center gap-1.5 animate-in shake duration-200 mt-1.5">
+                      <AlertCircle className="size-3.5 shrink-0" />
+                      <span>⚠️ Entered amount ({fmtINR(Number(pendingCustomAmount))}) exceeds payable due ({fmtINR(fullPayable)})</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1162,7 +1168,12 @@ function BookingsPage() {
                 </button>
                 <button
                   type="button"
+                  disabled={pendingCollectType === "custom" && Number(pendingCustomAmount) > fullPayable}
                   onClick={() => {
+                    if (pendingCollectType === "custom" && Number(pendingCustomAmount) > fullPayable) {
+                      toast.error(`Amount cannot exceed payable due of ${fmtINR(fullPayable)}`);
+                      return;
+                    }
                     const b = bookings.find((x) => x.id === pendingComplete.id);
                     if (b && collectedNow > 0) {
                       addPayment({

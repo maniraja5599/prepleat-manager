@@ -1137,10 +1137,11 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                         {searchResults.customers.map((c) => (
                           <button
                             key={c.id}
+                            type="button"
                             onClick={() => {
-                              navigate({ to: `/customers/${c.id}` });
                               setShowSearchModal(false);
                               setSearchQuery("");
+                              navigate({ to: "/customers/$id", params: { id: c.id } });
                             }}
                             className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
                           >
@@ -1196,10 +1197,11 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                           return (
                             <button
                               key={b.id}
+                              type="button"
                               onClick={() => {
-                                navigate({ to: `/bookings/${b.id}` });
                                 setShowSearchModal(false);
                                 setSearchQuery("");
+                                navigate({ to: "/bookings/$id", params: { id: b.id } });
                               }}
                               className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
                             >
@@ -1275,10 +1277,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                           return (
                             <button
                               key={p.id}
+                              type="button"
                               onClick={() => {
-                                navigate({ to: `/bookings/${p.bookingId}` });
                                 setShowSearchModal(false);
                                 setSearchQuery("");
+                                if (p.bookingId) {
+                                  navigate({ to: "/bookings/$id", params: { id: p.bookingId } });
+                                } else {
+                                  navigate({ to: "/payments" });
+                                }
                               }}
                               className="w-full text-left bg-secondary/35 hover:bg-secondary/65 border border-border/10 rounded-2xl p-3 flex items-center justify-between transition cursor-pointer"
                             >

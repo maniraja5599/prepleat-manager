@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.7";
+export const APP_VERSION = "1.3.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.7",
+    version: "v1.3.8",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Interactive Bills Widgets, Search Fix & Payment Warnings",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Interactive Bills Register Widgets",
+        desc: "Bills Register-ன் தலைப்பில் உள்ள Total Bills, Pending Due மற்றும் Fully Paid கட்டங்களைத் தட்டி உடனே அந்தப் பட்டியலுக்குச் செல்லும் வசதி.",
+      },
+      {
+        emoji: "🔍",
+        text: "Global Search Click Navigation Fix",
+        desc: "தேடல் பெட்டியில் வாடிக்கையாளர் பெயர் அல்லது புக்கிங் விவரங்களைத் தட்டும்போது ஏற்படும் வழிசெலுத்தல் பிழை சரிசெய்யப்பட்டது.",
+      },
+      {
+        emoji: "⚠️",
+        text: "Overpayment Warning Banners",
+        desc: "மொத்த பில் அல்லது பாக்கித் தொகையை விட அதிக தொகை வரவு வைக்க முயன்றால் எச்சரிக்கும் பாதுகாப்பு வசதி.",
+      },
+      {
+        emoji: "💵",
+        text: "Payments Page Quick Collect Fix",
+        desc: "Payments பக்கத்தில் Pending Order-க்கு நேரடி வரவு வைக்கும் (Collect) செயல்பாடு முழுமையாகச் சரிசெய்யப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.7",
+    date: "22 Aug 2026",
     title: "Enhanced Pending Payments Hub & In-Place Quick Settle",
     badge: "LATEST UPDATE ✨",
     changes: [
