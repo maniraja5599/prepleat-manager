@@ -249,19 +249,61 @@ export function PDFPreviewModal({
                 </tbody>
               </table>
 
-              {/* Financial Calculation Summary & Status Stamp */}
-              <div className="mt-4 pt-4 border-t border-slate-200 flex items-end justify-between gap-4">
-                {/* Stamp Badge */}
-                <div className="pb-1">
+              {/* Financial Calculation Summary & Authentic Physical Rubber Seal Stamp */}
+              <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between gap-4">
+                {/* Authentic Physical Rubber Seal Stamp */}
+                <div className="pb-0.5">
                   {due === 0 ? (
-                    <div className="px-3 py-1.5 rounded-xl border-2 border-emerald-600 text-emerald-700 bg-emerald-50/80 font-mono font-extrabold text-xs tracking-wider uppercase rotate-[-3deg] shadow-xs flex items-center gap-1.5">
-                      <CheckCircle2 className="size-4 text-emerald-600" />
-                      <span>PAID IN FULL ✓</span>
+                    <div className="inline-block rotate-[-5deg] transition hover:rotate-[-2deg] select-none">
+                      <div className="p-1 rounded-lg border-[2.5px] border-emerald-700/90 bg-emerald-700/[0.04] shadow-xs">
+                        <div className="px-3.5 py-1.5 rounded-sm border border-dashed border-emerald-700/80 flex flex-col items-center justify-center text-center">
+                          {/* Stamp Header */}
+                          <span className="text-[8px] font-extrabold uppercase tracking-widest text-emerald-800 font-mono">
+                            ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
+                          </span>
+                          
+                          {/* Main Stamp Text */}
+                          <div className="my-0.5 flex items-center justify-center gap-1.5 border-y border-emerald-700/40 py-0.5 w-full">
+                            <span className="text-base sm:text-lg font-black tracking-widest text-emerald-700 uppercase font-mono leading-none">
+                              PAID
+                            </span>
+                          </div>
+
+                          {/* Stamp Subtitle & Meta */}
+                          <span className="text-[7.5px] font-bold text-emerald-800 uppercase tracking-wider font-mono">
+                            FULL SETTLEMENT · {formatAppDate(new Date())}
+                          </span>
+                          <span className="text-[6.5px] text-emerald-700/80 font-mono tracking-widest uppercase">
+                            ✓ OFFICIAL RECEIPT SEAL
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="px-3 py-1.5 rounded-xl border-2 border-amber-600 text-amber-700 bg-amber-50/80 font-mono font-extrabold text-xs tracking-wider uppercase rotate-[-3deg] shadow-xs flex items-center gap-1.5">
-                      <AlertCircle className="size-4 text-amber-600" />
-                      <span>BALANCE DUE: {fmtINR(due)}</span>
+                    <div className="inline-block rotate-[-4deg] transition hover:rotate-[-2deg] select-none">
+                      <div className="p-1 rounded-lg border-[2.5px] border-rose-700/90 bg-rose-700/[0.04] shadow-xs">
+                        <div className="px-3.5 py-1.5 rounded-sm border border-dashed border-rose-700/80 flex flex-col items-center justify-center text-center">
+                          {/* Stamp Header */}
+                          <span className="text-[8px] font-extrabold uppercase tracking-widest text-rose-800 font-mono">
+                            ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
+                          </span>
+
+                          {/* Main Stamp Text */}
+                          <div className="my-0.5 flex items-center justify-center gap-1 border-y border-rose-700/40 py-0.5 w-full">
+                            <span className="text-sm sm:text-base font-black tracking-widest text-rose-700 uppercase font-mono leading-none">
+                              {totalPaid > 0 ? "PARTIAL PAID" : "PAYMENT DUE"}
+                            </span>
+                          </div>
+
+                          {/* Stamp Subtitle & Meta */}
+                          <span className="text-[7.5px] font-bold text-rose-800 uppercase tracking-wider font-mono">
+                            BALANCE DUE: {fmtINR(due)}
+                          </span>
+                          <span className="text-[6.5px] text-rose-700/80 font-mono tracking-widest uppercase">
+                            ⚠ PENDING SETTLEMENT
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
