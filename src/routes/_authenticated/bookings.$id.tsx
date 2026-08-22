@@ -88,6 +88,18 @@ function BookingDetail() {
   const [editing, setEditing] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  const [recordedPaymentSuccess, setRecordedPaymentSuccess] = useState<{
+    customerName: string;
+    phone?: string;
+    billNo: string;
+    service: string;
+    sareeCount: number;
+    totalAmount: number;
+    amountReceived: number;
+    mode: PaymentMode;
+    newTotalPaid: number;
+    newRemainingDue: number;
+  } | null>(null);
   const [previewMode, setPreviewMode] = useState<null | {
     channel: "whatsapp" | "sms";
     kind: "reminder" | "bill" | "balance" | "status";
@@ -402,6 +414,26 @@ function BookingDetail() {
         mode: payMode,
         note: payNote.trim() || undefined,
       });
+
+      const totalBill =
+        (booking.totalAmount || 0) +
+        (bookingPatch.extraCharges ?? (booking.extraCharges || 0)) -
+        (bookingPatch.discount ?? (booking.discount || 0));
+      const newTotalPaid = (booking.advancePaid || 0) + n;
+      const newRemainingDue = Math.max(0, totalBill - newTotalPaid);
+
+      setRecordedPaymentSuccess({
+        customerName: customer?.name || "Customer",
+        phone: customer?.phone,
+        billNo: formatShortBillNumber(booking.billNumber, booking.id),
+        service: booking.service === "prepleat" ? "Pre-Pleating" : "Saree Draping",
+        sareeCount: booking.sareeCount || 1,
+        totalAmount: totalBill,
+        amountReceived: n,
+        mode: payMode,
+        newTotalPaid,
+        newRemainingDue,
+      });
     }
 
     setPayAmt("");
@@ -415,7 +447,7 @@ function BookingDetail() {
     const msgs: string[] = [];
     if (e > 0) msgs.push(`Extra charge of ${fmtINR(e)} added`);
     if (d > 0) msgs.push(`Discount of ${fmtINR(d)} applied`);
-    if (n > 0) msgs.push(`Payment of ${fmtINR(n)} added`);
+    if (n > 0) msgs.push(`Payment of ${fmtINR(n)} recorded`);
     toast.success(msgs.join(" · "));
   };
 
@@ -1791,6 +1823,125 @@ function BookingDetail() {
           payments={payments}
           settings={settings}
         />
+      )}
+
+      {/* Payment Success & WhatsApp Receipt Modal */}
+      {recordedPaymentSuccess && (
+        <div
+          className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          onClick={() => setRecordedPaymentSuccess(null)}
+        >
+          <div
+            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border border-border/40"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-1 pt-1">
+              <div className="size-12 rounded-full bg-success/15 text-success mx-auto flex items-center justify-center">
+                <CheckCircle className="size-6" />
+              </div>
+              <h3 className="font-display font-bold text-base text-foreground">
+                Payment Recorded Successfully! 🎉
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {fmtINR(recordedPaymentSuccess.amountReceived)} recorded for Bill {recordedPaymentSuccess.billNo}
+              </p>
+            </div>
+
+            {/* Receipt Summary Card */}
+            <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/30 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Customer:</span>
+                <span className="font-bold text-foreground">{recordedPaymentSuccess.customerName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Payment Mode:</span>
+                <span className="font-bold uppercase text-foreground">{recordedPaymentSuccess.mode}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Total Bill:</span>
+                <span className="font-bold text-foreground">{fmtINR(recordedPaymentSuccess.totalAmount)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Total Paid:</span>
+                <span className="font-bold text-success">{fmtINR(recordedPaymentSuccess.newTotalPaid)}</span>
+              </div>
+              <div className="border-t border-border/30 pt-1.5 flex justify-between items-center font-bold">
+                <span>Status:</span>
+                <span className={recordedPaymentSuccess.newRemainingDue === 0 ? "text-success" : "text-destructive"}>
+                  {recordedPaymentSuccess.newRemainingDue === 0
+                    ? "Paid in Full ✅"
+                    : `Remaining Due: ${fmtINR(recordedPaymentSuccess.newRemainingDue)}`}
+                </span>
+              </div>
+            </div>
+
+            {/* Question Prompt */}
+            <p className="text-xs text-center text-muted-foreground font-medium">
+              Would you like to send the payment receipt to the customer via WhatsApp?
+            </p>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setRecordedPaymentSuccess(null)}
+                className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer"
+              >
+                Done / Close
+              </button>
+
+              {recordedPaymentSuccess.phone ? (
+                <a
+                  href={`https://wa.me/${cleanPhoneForWhatsApp(recordedPaymentSuccess.phone)}?text=${encodeURIComponent(
+                    [
+                      `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                      ``,
+                      ``,
+                      `Hi *${recordedPaymentSuccess.customerName}* 🙏`,
+                      ``,
+                      ``,
+                      `Payment received successfully! Thank you! 💵`,
+                      ``,
+                      ``,
+                      `🧾 *Bill Number*: ${recordedPaymentSuccess.billNo}`,
+                      `🥻 *Service*: ${recordedPaymentSuccess.service} (${recordedPaymentSuccess.sareeCount} saree${recordedPaymentSuccess.sareeCount > 1 ? "s" : ""})`,
+                      ``,
+                      ``,
+                      `💰 *Total Bill*: ${fmtINR(recordedPaymentSuccess.totalAmount)}`,
+                      `💵 *Amount Received*: ${fmtINR(recordedPaymentSuccess.amountReceived)} (${recordedPaymentSuccess.mode.toUpperCase()})`,
+                      `💵 *Total Paid*: ${fmtINR(recordedPaymentSuccess.newTotalPaid)}`,
+                      recordedPaymentSuccess.newRemainingDue === 0
+                        ? `✅ *Payment Status*: Paid in Full ✅`
+                        : `📌 *Remaining Balance*: *${fmtINR(recordedPaymentSuccess.newRemainingDue)}*`,
+                      ``,
+                      ``,
+                      `Wear with confidence & elegance! ✨`,
+                      `Eyas Saree Drapist 🙏`,
+                    ].join("\n")
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setRecordedPaymentSuccess(null)}
+                  className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle className="size-4" />
+                  <span>Send WhatsApp</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.error("No phone number available for WhatsApp");
+                    setRecordedPaymentSuccess(null);
+                  }}
+                  className="py-3 rounded-xl bg-secondary text-muted-foreground text-xs font-bold uppercase tracking-wider"
+                >
+                  No Phone
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );

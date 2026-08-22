@@ -1058,6 +1058,18 @@ function IncomeView(p: {
   const [collectAmount, setCollectAmount] = useState("");
   const [collectMode, setCollectMode] = useState<PaymentMode>("gpay");
   const [collectNote, setCollectNote] = useState("Settled pending balance");
+  const [recordedSuccess, setRecordedSuccess] = useState<{
+    customerName: string;
+    phone?: string;
+    billNo: string;
+    service: string;
+    sareeCount: number;
+    totalAmount: number;
+    amountReceived: number;
+    mode: PaymentMode;
+    newTotalPaid: number;
+    newRemainingDue: number;
+  } | null>(null);
 
   const pendingList = useMemo(() => {
     return p.bookings
@@ -1990,6 +2002,21 @@ function IncomeView(p: {
                           note: collectNote.trim() || "Pending balance collected",
                         });
                       }
+                      const newTotalPaid = (collectTarget.advancePaid || 0) + amt;
+                      const newRemainingDue = Math.max(0, collectTarget.due - amt);
+
+                      setRecordedSuccess({
+                        customerName: collectTarget.name,
+                        phone: collectTarget.phone,
+                        billNo: collectTarget.formattedBillNo,
+                        service: collectTarget.service === "prepleat" ? "Pre-Pleating" : "Saree Draping",
+                        sareeCount: collectTarget.sareeCount,
+                        totalAmount: collectTarget.totalAmount,
+                        amountReceived: amt,
+                        mode: collectMode,
+                        newTotalPaid,
+                        newRemainingDue,
+                      });
                       toast.success(`Payment of ${fmtINR(amt)} recorded! ✅`);
                       setCollectTarget(null);
                     }}
@@ -2005,6 +2032,125 @@ function IncomeView(p: {
                       Record {collectAmount ? fmtINR(Number(collectAmount)) : fmtINR(collectTarget.due)}
                     </span>
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Success & WhatsApp Receipt Modal */}
+          {recordedSuccess && (
+            <div
+              className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+              onClick={() => setRecordedSuccess(null)}
+            >
+              <div
+                className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border border-border/40"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-center space-y-1 pt-1">
+                  <div className="size-12 rounded-full bg-success/15 text-success mx-auto flex items-center justify-center">
+                    <CheckCircle className="size-6" />
+                  </div>
+                  <h3 className="font-display font-bold text-base text-foreground">
+                    Payment Recorded Successfully! 🎉
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {fmtINR(recordedSuccess.amountReceived)} collected for Bill {recordedSuccess.billNo}
+                  </p>
+                </div>
+
+                {/* Receipt Summary Card */}
+                <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/30 space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Customer:</span>
+                    <span className="font-bold text-foreground">{recordedSuccess.customerName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Payment Mode:</span>
+                    <span className="font-bold uppercase text-foreground">{recordedSuccess.mode}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Total Bill:</span>
+                    <span className="font-bold text-foreground">{fmtINR(recordedSuccess.totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Total Paid:</span>
+                    <span className="font-bold text-success">{fmtINR(recordedSuccess.newTotalPaid)}</span>
+                  </div>
+                  <div className="border-t border-border/30 pt-1.5 flex justify-between items-center font-bold">
+                    <span>Status:</span>
+                    <span className={recordedSuccess.newRemainingDue === 0 ? "text-success" : "text-destructive"}>
+                      {recordedSuccess.newRemainingDue === 0
+                        ? "Paid in Full ✅"
+                        : `Remaining Due: ${fmtINR(recordedSuccess.newRemainingDue)}`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Question Prompt */}
+                <p className="text-xs text-center text-muted-foreground font-medium">
+                  Would you like to send the payment receipt to the customer via WhatsApp?
+                </p>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setRecordedSuccess(null)}
+                    className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer"
+                  >
+                    Done / Close
+                  </button>
+
+                  {recordedSuccess.phone ? (
+                    <a
+                      href={`https://wa.me/${cleanPhoneForWhatsApp(recordedSuccess.phone)}?text=${encodeURIComponent(
+                        [
+                          `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                          ``,
+                          ``,
+                          `Hi *${recordedSuccess.customerName}* 🙏`,
+                          ``,
+                          ``,
+                          `Payment received successfully! Thank you! 💵`,
+                          ``,
+                          ``,
+                          `🧾 *Bill Number*: ${recordedSuccess.billNo}`,
+                          `🥻 *Service*: ${recordedSuccess.service} (${recordedSuccess.sareeCount} saree${recordedSuccess.sareeCount > 1 ? "s" : ""})`,
+                          ``,
+                          ``,
+                          `💰 *Total Bill*: ${fmtINR(recordedSuccess.totalAmount)}`,
+                          `💵 *Amount Received*: ${fmtINR(recordedSuccess.amountReceived)} (${recordedSuccess.mode.toUpperCase()})`,
+                          `💵 *Total Paid*: ${fmtINR(recordedSuccess.newTotalPaid)}`,
+                          recordedSuccess.newRemainingDue === 0
+                            ? `✅ *Payment Status*: Paid in Full ✅`
+                            : `📌 *Remaining Balance*: *${fmtINR(recordedSuccess.newRemainingDue)}*`,
+                          ``,
+                          ``,
+                          `Wear with confidence & elegance! ✨`,
+                          `Eyas Saree Drapist 🙏`,
+                        ].join("\n")
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setRecordedSuccess(null)}
+                      className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <MessageCircle className="size-4" />
+                      <span>Send WhatsApp</span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.error("No phone number available for WhatsApp");
+                        setRecordedSuccess(null);
+                      }}
+                      className="py-3 rounded-xl bg-secondary text-muted-foreground text-xs font-bold uppercase tracking-wider"
+                    >
+                      No Phone
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
