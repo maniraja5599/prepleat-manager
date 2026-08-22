@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.3";
+export const APP_VERSION = "1.3.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,32 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.3",
+    version: "v1.3.4",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Booking Draft Retention, Amount-Smart Complete & Chronological Bill Re-indexing",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📝",
+        text: "Booking Draft Auto-Retention (டிராஃப்ட் சேமிப்பு)",
+        desc: "New Booking போடும் போது வேறு பக்கங்களுக்கு சென்று திரும்பினாலும் நீங்கள் உள்ளிட்ட அனைத்து விவரங்களும் அப்படியே இருக்கும்.",
+      },
+      {
+        emoji: "💰",
+        text: "Amount-Smart Complete Buttons (தொகை உறுதி பட்டன்)",
+        desc: "Complete செய்யும் போது Confirm பட்டனிலேயே வசூலிக்கும் தொகை தெளிவாகக் காட்டும் ('Collect ₹500 & Complete ✓').",
+      },
+      {
+        emoji: "🧾",
+        text: "Chronological Sequential Bills (#1 to #N)",
+        desc: "அனைத்து பழைய மற்றும் புதிய பில்களும் #1 முதல் #N வரை வரிசையாக வரிசைப்படுத்தப்பட்டு, சமீபத்திய பில் எப்போதுமே Bills பக்கத்தின் உச்சியில் தோன்றும்.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.3",
+    date: "22 Aug 2026",
     title: "Unique Bill Numbers, Full Bills Hub, Dynamic Nav & Android Notification Fix",
     badge: "LATEST UPDATE ✨",
     changes: [

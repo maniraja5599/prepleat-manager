@@ -1154,9 +1154,18 @@ function BookingsPage() {
                     setPendingCustomAmount("");
                     setPendingCollectType("full");
                   }}
-                  className="flex-1 py-2.5 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition shadow-sm"
+                  className="flex-1 py-3 px-2 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition shadow-sm flex items-center justify-center gap-1.5"
                 >
-                  Confirm
+                  <Check className="size-3.5" />
+                  <span>
+                    {collectedNow > 0 && remainingDueAfter === 0
+                      ? `Collect ${fmtINR(collectedNow)} & Complete ✓`
+                      : collectedNow > 0 && remainingDueAfter > 0
+                      ? `Collect ${fmtINR(collectedNow)} & Complete (${fmtINR(remainingDueAfter)} Due)`
+                      : remainingDueAfter > 0
+                      ? `Complete (${fmtINR(remainingDueAfter)} Due) ✓`
+                      : "Complete Booking ✓"}
+                  </span>
                 </button>
               </div>
             </div>

@@ -176,10 +176,118 @@ function NewBooking() {
     toast.success(`Added custom field: ${name}`);
   };
 
+  // Restore Draft if user navigates back from another page
+  const hasRestoredDraft = useRef(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  useEffect(() => {
+    if (hasRestoredDraft.current) return;
+    hasRestoredDraft.current = true;
+    try {
+      const saved = sessionStorage.getItem("eyas_new_booking_draft");
+      if (saved && !presetCustomerId && !presetArtistId) {
+        const draft = JSON.parse(saved);
+        if (draft.newName) setNewName(draft.newName);
+        if (draft.newPhone) setNewPhone(draft.newPhone);
+        if (draft.newAddress) setNewAddress(draft.newAddress);
+        if (draft.newLocationUrl) setNewLocationUrl(draft.newLocationUrl);
+        if (draft.customerId) setCustomerId(draft.customerId);
+        if (draft.service) setService(draft.service);
+        if (draft.sareeCount) setSareeCount(draft.sareeCount);
+        if (draft.deliveryDate && !presetDate) setDeliveryDate(draft.deliveryDate);
+        if (draft.deliveryTime) setDeliveryTime(draft.deliveryTime);
+        if (draft.notes) setNotes(draft.notes);
+        if (draft.advance) setAdvance(draft.advance);
+        if (draft.extraCharges) {
+          setExtraCharges(draft.extraCharges);
+          setShowExtraCharges(true);
+        }
+        if (draft.extraChargesNote) setExtraChargesNote(draft.extraChargesNote);
+        if (draft.priceTouched && draft.pricePerSaree) {
+          setPricePerSaree(draft.pricePerSaree);
+          setPriceTouched(true);
+        }
+        if (draft.bookingSource) setBookingSource(draft.bookingSource);
+        if (draft.artistId) setArtistId(draft.artistId);
+        if (draft.measurements) {
+          setMeasurements(draft.measurements);
+          setShowMeasure(true);
+        }
+        setDraftRestored(true);
+      }
+    } catch (e) {}
+  }, [presetCustomerId, presetArtistId, presetDate]);
+
+  // Auto-save draft on every change
+  useEffect(() => {
+    if (newName.trim() || newPhone.trim() || customerId || notes.trim() || sareeCount > 1 || advance.trim() || newAddress.trim()) {
+      const draft = {
+        newName,
+        newPhone,
+        newAddress,
+        newLocationUrl,
+        customerId,
+        service,
+        sareeCount,
+        pricePerSaree,
+        priceTouched,
+        extraCharges,
+        extraChargesNote,
+        deliveryDate,
+        deliveryTime,
+        advance,
+        notes,
+        bookingSource,
+        artistId,
+        measurements: showMeasure ? measurements : undefined,
+      };
+      sessionStorage.setItem("eyas_new_booking_draft", JSON.stringify(draft));
+    }
+  }, [
+    newName,
+    newPhone,
+    newAddress,
+    newLocationUrl,
+    customerId,
+    service,
+    sareeCount,
+    pricePerSaree,
+    priceTouched,
+    extraCharges,
+    extraChargesNote,
+    deliveryDate,
+    deliveryTime,
+    advance,
+    notes,
+    bookingSource,
+    artistId,
+    measurements,
+    showMeasure,
+  ]);
+
+  const clearDraft = () => {
+    sessionStorage.removeItem("eyas_new_booking_draft");
+    setNewName("");
+    setNewPhone("");
+    setNewAddress("");
+    setNewLocationUrl("");
+    setCustomerId("");
+    setSareeCount(1);
+    setNotes("");
+    setAdvance("");
+    setExtraCharges("");
+    setShowExtraCharges(false);
+    setPriceTouched(false);
+    setDraftRestored(false);
+    toast.success("Draft cleared");
+  };
+
   // Keep measurements in sync if settings change (e.g. user updates default labels live)
   useEffect(() => {
-    setMeasurements(settings.defaultMeasurements);
-  }, [settings.defaultMeasurements]);
+    if (!draftRestored) {
+      setMeasurements(settings.defaultMeasurements);
+    }
+  }, [settings.defaultMeasurements, draftRestored]);
 
   const nameSuggestions = useMemo(() => {
     const q = newName.toLowerCase().trim();
@@ -371,6 +479,7 @@ function NewBooking() {
         note: "Advance",
       });
     }
+    sessionStorage.removeItem("eyas_new_booking_draft");
     toast.success("Booking created");
     navigate({ to: "/bookings/$id", params: { id: b.id } });
   };
@@ -380,13 +489,37 @@ function NewBooking() {
       <div className="flex items-center justify-between pt-4 pb-3">
         <button
           onClick={() => navigate({ to: "/" })}
-          className="size-10 rounded-full bg-secondary flex items-center justify-center"
+          className="size-10 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
         >
           <ArrowLeft className="size-5" />
         </button>
         <h1 className="text-lg font-display font-semibold">New Booking</h1>
-        <div className="size-10" />
+        {draftRestored ? (
+          <button
+            type="button"
+            onClick={clearDraft}
+            className="text-[11px] font-bold text-destructive hover:underline px-2 py-1 rounded-lg bg-destructive/10 cursor-pointer"
+            title="Discard saved draft"
+          >
+            Clear Draft
+          </button>
+        ) : (
+          <div className="size-10" />
+        )}
       </div>
+
+      {draftRestored && (
+        <div className="mb-3 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-xs text-foreground animate-in fade-in">
+          <span className="font-semibold">📝 Restored unsaved booking draft</span>
+          <button
+            type="button"
+            onClick={clearDraft}
+            className="text-[10px] font-bold text-destructive hover:underline cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {/* Booking source — always decide this first because pricing differs. */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">

@@ -243,6 +243,7 @@ interface State {
   resetApp: () => void;
   importHistoricalCsv: () => void;
   undoImportHistoricalCsv: () => void;
+  resequenceBillNumbers: () => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -1320,10 +1321,33 @@ export const useStore = create<State>()(
           tombstones: [...newTombs, ...(s.tombstones || [])].slice(0, 5000)
         }));
       },
+
+      resequenceBillNumbers: () => {
+        const currentBookings = [...(get().bookings || [])];
+        if (currentBookings.length === 0) return;
+
+        // Sort chronologically from oldest to newest
+        currentBookings.sort((a, b) => {
+          const aDate = a.createdAt || a.deliveryDate || "";
+          const bDate = b.createdAt || b.deliveryDate || "";
+          return new Date(aDate).getTime() - new Date(bDate).getTime();
+        });
+
+        // Re-assign 1, 2, 3... N
+        const updatedBookings = currentBookings.map((b, idx) => ({
+          ...b,
+          billNumber: String(idx + 1),
+          updatedAt: new Date().toISOString(),
+        }));
+
+        set(() => ({
+          bookings: updatedBookings,
+        }));
+      },
     }),
     {
       name: "saree-studio-v1",
-      version: 20,
+      version: 21,
       migrate: (persisted: any, _version) => {
         if (!persisted) return persisted;
         const s = persisted.settings ?? {};
@@ -1757,6 +1781,20 @@ export const useStore = create<State>()(
           persisted.customers = finalCustomers;
           persisted.bookings = finalBookings;
           persisted.payments = finalPayments;
+        }
+
+        // Version 21: Clean re-sequencing of all historical and current bookings from 1 to N chronologically
+        if (Array.isArray(persisted.bookings) && persisted.bookings.length > 0) {
+          const bList = [...persisted.bookings];
+          bList.sort((a: any, b: any) => {
+            const aDate = a.createdAt || a.deliveryDate || "";
+            const bDate = b.createdAt || b.deliveryDate || "";
+            return new Date(aDate).getTime() - new Date(bDate).getTime();
+          });
+          persisted.bookings = bList.map((b: any, idx: number) => ({
+            ...b,
+            billNumber: String(idx + 1),
+          }));
         }
 
         return persisted;

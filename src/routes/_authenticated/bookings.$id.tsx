@@ -1459,13 +1459,22 @@ function BookingDetail() {
                     );
                   }}
                   className={cn(
-                    "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer",
+                    "flex-1 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm",
                     isDiscInvalid
                       ? "bg-muted text-muted-foreground cursor-not-allowed"
-                      : "saree-gradient text-white active:scale-95"
+                      : "saree-gradient text-white active:scale-95 hover:brightness-105"
                   )}
                 >
-                  Confirm Complete
+                  <Check className="size-3.5" />
+                  <span>
+                    {collectedNow > 0 && remainingDueAfter === 0
+                      ? `Collect ${fmtINR(collectedNow)} & Complete ✓`
+                      : collectedNow > 0 && remainingDueAfter > 0
+                      ? `Collect ${fmtINR(collectedNow)} & Complete (${fmtINR(remainingDueAfter)} Due)`
+                      : remainingDueAfter > 0
+                      ? `Complete (${fmtINR(remainingDueAfter)} Due) ✓`
+                      : "Complete Booking ✓"}
+                  </span>
                 </button>
               </div>
             </div>

@@ -1627,6 +1627,28 @@ function SettingsPage() {
                     Turn this ON to show your preloaded earnings. Turn OFF to hide them.
                   </p>
                 </div>
+
+                <div className="mt-4 pt-3 border-t border-border/50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      useStore.getState().resequenceBillNumbers();
+                      toast.success(`All ${useStore.getState().bookings.length} Bill Numbers re-sequenced sequentially from #1 to #${useStore.getState().bookings.length}! 🧾`);
+                    }}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 cursor-pointer transition-colors border bg-secondary/50 text-secondary-foreground border-border hover:bg-secondary/80 active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Receipt className="size-4 shrink-0 text-primary" />
+                      <span className="truncate">Re-sequence Bill Numbers</span>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-primary px-2 py-0.5 rounded-lg bg-primary/10 border border-primary/20">
+                      #1 → #{useStore.getState().bookings.length}
+                    </span>
+                  </button>
+                  <p className="text-[11px] text-muted-foreground mt-2 px-1">
+                    Re-sorts all bookings chronologically and renumbers them sequentially from #1 onwards without duplicates.
+                  </p>
+                </div>
                 <input
                   type="file"
                   ref={importFileRef}
