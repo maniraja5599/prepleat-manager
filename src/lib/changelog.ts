@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.8";
+export const APP_VERSION = "1.4.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,22 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.8",
+    version: "v1.4.9",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Keyboard Auto-Hide for Bottom Nav & Payments",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "⌨️",
+        text: "Smart Keyboard Auto-Hide",
+        desc: "மொபைலில் ஏதேனும் டைப் செய்ய கீபோர்டு திறக்கும்போது, கீழ்ப்பகுதி நேவிகேஷன் மற்றும் பேமெண்ட் பார் திரையை மறைக்காமல் தானாக மறைந்து கொள்ளும் வசதி சேர்க்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.8",
+    date: "22 Aug 2026",
     title: "Instant Native Canvas PDF/Image Generator & Smart Rubber Seal",
     badge: "LATEST UPDATE ✨",
     changes: [

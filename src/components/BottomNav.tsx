@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Calendar, ListChecks, Wallet, Users, ReceiptText, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
 const tabs: Tab[] = [
@@ -16,10 +16,47 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
     return () => {
       if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkKeyboard = () => {
+      const isInputFocused = ["INPUT", "TEXTAREA", "SELECT"].includes(
+        document.activeElement?.tagName || ""
+      );
+      if (window.visualViewport) {
+        const heightDiff = window.innerHeight - window.visualViewport.height;
+        setIsKeyboardOpen(heightDiff > 120 || (isInputFocused && heightDiff > 50));
+      } else {
+        setIsKeyboardOpen(isInputFocused);
+      }
+    };
+
+    const handleFocusIn = () => {
+      setTimeout(checkKeyboard, 100);
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => setIsKeyboardOpen(false), 150);
+    };
+
+    window.visualViewport?.addEventListener("resize", checkKeyboard);
+    window.visualViewport?.addEventListener("scroll", checkKeyboard);
+    window.addEventListener("focusin", handleFocusIn);
+    window.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", checkKeyboard);
+      window.visualViewport?.removeEventListener("scroll", checkKeyboard);
+      window.removeEventListener("focusin", handleFocusIn);
+      window.removeEventListener("focusout", handleFocusOut);
     };
   }, []);
 
@@ -50,7 +87,12 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-[10000] bg-background/95 backdrop-blur border-t border-border safe-pb">
+    <nav
+      className={cn(
+        "fixed bottom-0 inset-x-0 z-[10000] bg-background/95 backdrop-blur border-t border-border safe-pb transition-all duration-200",
+        isKeyboardOpen ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+      )}
+    >
       <ul className="grid grid-cols-5 max-w-md mx-auto">
         {tabs.map((t) => {
           const active = t.to === "/" ? pathname === "/" : pathname.startsWith(t.to);
