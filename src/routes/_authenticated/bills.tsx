@@ -21,16 +21,47 @@ import {
   FileText,
   Calendar,
   X,
-  Eye,
 } from "lucide-react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/bills")({
   component: BillsPage,
 });
+
+const MONTH_THEMES = [
+  {
+    bg: "bg-primary/[0.04]",
+    border: "border-primary/25",
+    badge: "saree-gradient text-white shadow-xs",
+    dot: "bg-primary text-primary",
+    dotPing: "bg-primary",
+  },
+  {
+    bg: "bg-[oklch(0.55_0.13_150)]/[0.04]",
+    border: "border-[oklch(0.55_0.13_150)]/25",
+    badge: "bg-[oklch(0.55_0.13_150)] text-white shadow-xs",
+    dot: "bg-[oklch(0.55_0.13_150)] text-[oklch(0.55_0.13_150)]",
+    dotPing: "bg-[oklch(0.55_0.13_150)]",
+  },
+  {
+    bg: "bg-[oklch(0.78_0.13_75)]/[0.05]",
+    border: "border-[oklch(0.78_0.13_75)]/30",
+    badge: "bg-[oklch(0.78_0.13_75)] text-white shadow-xs",
+    dot: "bg-[oklch(0.78_0.13_75)] text-[oklch(0.78_0.13_75)]",
+    dotPing: "bg-[oklch(0.78_0.13_75)]",
+  },
+  {
+    bg: "bg-indigo-500/[0.04]",
+    border: "border-indigo-500/25",
+    badge: "bg-indigo-600 text-white shadow-xs",
+    dot: "bg-indigo-500 text-indigo-500",
+    dotPing: "bg-indigo-500",
+  },
+];
 
 export function BillsPage() {
   const navigate = useNavigate();
@@ -44,7 +75,6 @@ export function BillsPage() {
   const [sortAsc, setSortAsc] = useState(false);
   const [previewBooking, setPreviewBooking] = useState<Booking | null>(null);
 
-  // Extract pure bill number integer for accurate numerical ordering
   const getBillInt = (b: Booking): number => {
     if (!b.billNumber) return 0;
     const cleaned = b.billNumber.trim().replace(/^#+/, "");
@@ -57,29 +87,26 @@ export function BillsPage() {
     return isNaN(num) ? 0 : num;
   };
 
-  // Filter and sort bookings strictly by sequential bill number
   const list = useMemo(() => {
-    let arr = bookings.slice();
+    let arr = [...bookings];
 
-    // 1. Search Query
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       arr = arr.filter((b) => {
         const c = customers.find((x) => x.id === b.customerId);
-        const billStr = formatShortBillNumber(b.billNumber, b.id).toLowerCase();
+        const bill = formatShortBillNumber(b.billNumber, b.id).toLowerCase();
         const rawBill = (b.billNumber || "").toLowerCase();
-        const cName = (c?.name || "").toLowerCase();
-        const cPhone = (c?.phone || "").toLowerCase();
+        const name = (c?.name || "").toLowerCase();
+        const phone = (c?.phone || "").toLowerCase();
         return (
-          billStr.includes(q) ||
+          bill.includes(q) ||
           rawBill.includes(q) ||
-          cName.includes(q) ||
-          cPhone.includes(q)
+          name.includes(q) ||
+          phone.includes(q)
         );
       });
     }
 
-    // 2. Status Filter Tab
     if (filter === "due") {
       arr = arr.filter((b) => b.status !== "cancelled" && totalDue(b) > 0);
     } else if (filter === "paid") {
@@ -88,7 +115,6 @@ export function BillsPage() {
       arr = arr.filter((b) => b.status === "cancelled");
     }
 
-    // 3. Strict Sequential Numerical Sort
     arr.sort((a, b) => {
       const aInt = getBillInt(a);
       const bInt = getBillInt(b);
@@ -103,6 +129,27 @@ export function BillsPage() {
     return arr;
   }, [bookings, customers, search, filter, sortAsc]);
 
+  const groupedByMonth = useMemo(() => {
+    const map = new Map<string, { monthKey: string; monthLabel: string; items: typeof list }>();
+
+    for (const b of list) {
+      let monthKey = "Unknown";
+      let monthLabel = "Other";
+      try {
+        const d = parseISO(b.deliveryDate || b.createdAt);
+        monthKey = format(d, "yyyy-MM");
+        monthLabel = format(d, "MMMM yyyy");
+      } catch {}
+
+      if (!map.has(monthKey)) {
+        map.set(monthKey, { monthKey, monthLabel, items: [] });
+      }
+      map.get(monthKey)!.items.push(b);
+    }
+
+    return Array.from(map.values());
+  }, [list]);
+
   const totalCount = bookings.length;
   const dueCount = useMemo(() => bookings.filter((b) => b.status !== "cancelled" && totalDue(b) > 0).length, [bookings]);
   const paidCount = useMemo(() => bookings.filter((b) => b.status !== "cancelled" && totalDue(b) === 0).length, [bookings]);
@@ -111,25 +158,9 @@ export function BillsPage() {
     [bookings]
   );
 
-  const handleDownloadPDF = async (b: Booking, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      const c = customers.find((x) => x.id === b.customerId);
-      const artist = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
-      const bPayments = allPayments.filter((p) => p.bookingId === b.id);
-      await generateBillPDF({ booking: b, customer: c, artist, payments: bPayments, settings });
-      toast.success(`PDF Bill for ${formatShortBillNumber(b.billNumber, b.id)} generated! 🧾`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF invoice.");
-    }
-  };
-
   return (
     <AppShell title="Bills Register" subtitle="Sequential Bill Number Hub (#1, #2...)">
       <div className="max-w-2xl mx-auto space-y-4 pb-20">
-        {/* Metric Overview Banner */}
         <div className="grid grid-cols-3 gap-2.5">
           <button
             type="button"
@@ -186,7 +217,6 @@ export function BillsPage() {
           </button>
         </div>
 
-        {/* Search Bar & Sort Toggle */}
         <div className="bg-card p-3 rounded-2xl border border-border/40 shadow-xs space-y-2.5">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -220,7 +250,6 @@ export function BillsPage() {
             </button>
           </div>
 
-          {/* Filter Tabs */}
           <div className="grid grid-cols-4 gap-1 p-1 bg-secondary/60 rounded-xl">
             {(
               [
@@ -255,144 +284,203 @@ export function BillsPage() {
           </div>
         </div>
 
-        {/* Sequential Bills List */}
-        <div
-          className="space-y-2.5 select-none touch-manipulation"
-          style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
-        >
-          {list.length === 0 ? (
-            <div className="p-12 text-center bg-card rounded-2xl border border-border/30">
-              <ReceiptText className="size-10 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm font-bold text-foreground">No Bills Found</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {search ? "No bookings match your search query." : "No bookings recorded in this category yet."}
-              </p>
-            </div>
-          ) : (
-            list.map((b) => {
-              const c = customers.find((x) => x.id === b.customerId);
-              const due = totalDue(b);
-              const netTotal = netBookingAmount(b);
-              const isCancelled = b.status === "cancelled";
-
-              const phoneDial = cleanPhoneForDialing(c?.phone);
-              const phoneWA = cleanPhoneForWhatsApp(c?.phone);
+        {groupedByMonth.length === 0 ? (
+          <div className="p-12 text-center bg-card rounded-2xl border border-border/30">
+            <ReceiptText className="size-10 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-sm font-bold text-foreground">No Bills Found</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {search ? "No bookings match your search query." : "No bookings recorded in this category yet."}
+            </p>
+          </div>
+        ) : (
+          <div
+            className="relative pl-6 sm:pl-7 space-y-6 before:absolute before:left-2.5 sm:before:left-3 before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-border before:to-border/20 select-none touch-manipulation"
+            style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
+          >
+            {groupedByMonth.map((group, gIdx) => {
+              const theme = MONTH_THEMES[gIdx % MONTH_THEMES.length];
+              const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
+              const monthSarees = group.items.reduce((s, b) => s + (b.sareeCount || 1), 0);
+              const monthDue = group.items.reduce((s, b) => s + (b.status !== "cancelled" ? totalDue(b) : 0), 0);
 
               return (
-                <div
-                  key={b.id}
-                  onClick={() => navigate({ to: "/bookings/$id", params: { id: b.id } })}
-                  className={cn(
-                    "bg-card rounded-2xl border p-3.5 shadow-xs transition hover:border-primary/40 active:scale-[0.99] cursor-pointer flex flex-col gap-2.5 relative group select-none",
-                    due > 0 && !isCancelled
-                      ? "border-amber-500/30 dark:border-amber-500/20"
-                      : isCancelled
-                      ? "border-border/30 opacity-60"
-                      : "border-border/40",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    {/* Bill Number Badge & Customer Name */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold border border-primary/20">
-                          {formatShortBillNumber(b.billNumber, b.id)}
+                <div key={group.monthKey} className="relative">
+                  <div
+                    className={cn(
+                      "absolute -left-6 sm:-left-7 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
+                      theme.dot,
+                    )}
+                  >
+                    <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
+                  </div>
+
+                  <section
+                    className={cn(
+                      "border rounded-3xl p-3 sm:p-4 space-y-3 shadow-xs transition-all",
+                      theme.bg,
+                      theme.border,
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2 px-0.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={cn(
+                            "px-3 py-1 rounded-xl text-xs font-display font-extrabold tracking-wide flex items-center gap-1.5",
+                            theme.badge,
+                          )}
+                        >
+                          <Calendar className="size-3.5" />
+                          <span>{group.monthLabel}</span>
                         </span>
-                        <span className="text-xs font-bold text-foreground truncate">
-                          {c?.name || "Walk-in Customer"}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground flex-wrap justify-end">
+                        <span className="font-semibold text-foreground">
+                          {group.items.length} {group.items.length === 1 ? "Bill" : "Bills"} ({monthSarees} Sarees)
                         </span>
-                        {c?.phone && (
-                          <span className="text-[11px] font-mono text-muted-foreground">
-                            {c.phone}
-                          </span>
+                        <span>·</span>
+                        <span className="text-primary font-bold">{fmtINR(monthTotal)}</span>
+                        {monthDue > 0 ? (
+                          <>
+                            <span>·</span>
+                            <span className="text-destructive font-bold">Due: {fmtINR(monthDue)}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>·</span>
+                            <span className="text-success font-bold">100% Paid ✓</span>
+                          </>
                         )}
                       </div>
-
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground flex-wrap">
-                        <span className="capitalize font-semibold text-foreground/80">
-                          {b.service === "prepleat" ? "Pre-Pleat" : "Direct Drape"}
-                        </span>
-                        <span>·</span>
-                        <span>{b.sareeCount} {b.sareeCount > 1 ? "sarees" : "saree"}</span>
-                        <span>·</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="size-3 text-muted-foreground" />
-                          {formatAppDate(b.deliveryDate)} {b.deliveryTime && `· ${fmtTime12(b.deliveryTime)}`}
-                        </span>
-                      </div>
                     </div>
 
-                    {/* Financial Pill */}
-                    <div className="text-right shrink-0">
-                      <span className="text-xs font-bold font-mono text-foreground block">
-                        {fmtINR(netTotal)}
-                      </span>
-                      {isCancelled ? (
-                        <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                          Cancelled
-                        </span>
-                      ) : due > 0 ? (
-                        <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-                          Due: {fmtINR(due)}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-success bg-success/10 px-1.5 py-0.5 rounded">
-                          Paid ✓
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    <div className="space-y-2.5">
+                      {group.items.map((b) => {
+                        const c = customers.find((x) => x.id === b.customerId);
+                        const due = totalDue(b);
+                        const netTotal = netBookingAmount(b);
+                        const isCancelled = b.status === "cancelled";
 
-                  {/* Actions Row */}
-                  <div className="pt-2 border-t border-border/20 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      {phoneDial && (
-                        <a
-                          href={`tel:${phoneDial}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="size-7 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center text-primary transition"
-                          title="Call Customer"
-                        >
-                          <Phone className="size-3.5" />
-                        </a>
-                      )}
-                      {phoneWA && (
-                        <a
-                          href={`https://wa.me/${phoneWA}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition"
-                          title="WhatsApp Customer"
-                        >
-                          <MessageCircle className="size-3.5" />
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setPreviewBooking(b);
-                        }}
-                        className="px-2.5 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold flex items-center gap-1 transition cursor-pointer active:scale-95"
-                        title="Preview & Download Invoice PDF"
-                      >
-                        <FileText className="size-3.5" />
-                        <span>PDF Bill</span>
-                      </button>
-                    </div>
+                        const phoneDial = cleanPhoneForDialing(c?.phone);
+                        const phoneWA = cleanPhoneForWhatsApp(c?.phone);
 
-                    <div className="px-3 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center gap-1 transition active:scale-95">
-                      <span>View Booking</span>
-                      <ChevronRight className="size-3.5" />
+                        return (
+                          <div
+                            key={b.id}
+                            onClick={() => navigate({ to: "/bookings/$id", params: { id: b.id } })}
+                            className={cn(
+                              "bg-card rounded-2xl border p-3.5 shadow-xs transition hover:border-primary/40 active:scale-[0.99] cursor-pointer flex flex-col gap-2.5 relative group select-none",
+                              due > 0 && !isCancelled
+                                ? "border-amber-500/30 dark:border-amber-500/20"
+                                : isCancelled
+                                ? "border-border/30 opacity-60"
+                                : "border-border/40",
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold border border-primary/20">
+                                    {formatShortBillNumber(b.billNumber, b.id)}
+                                  </span>
+                                  <span className="text-xs font-bold text-foreground truncate">
+                                    {c?.name || "Walk-in Customer"}
+                                  </span>
+                                  {c?.phone && (
+                                    <span className="text-[11px] font-mono text-muted-foreground">
+                                      {c.phone}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground flex-wrap">
+                                  <span className="capitalize font-semibold text-foreground/80">
+                                    {b.service === "prepleat" ? "Pre-Pleat" : "Direct Drape"}
+                                  </span>
+                                  <span>·</span>
+                                  <span>{b.sareeCount} {b.sareeCount > 1 ? "sarees" : "saree"}</span>
+                                  <span>·</span>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="size-3 text-muted-foreground" />
+                                    {formatAppDate(b.deliveryDate)} {b.deliveryTime && `· ${fmtTime12(b.deliveryTime)}`}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <span className="text-xs font-bold font-mono text-foreground block">
+                                  {fmtINR(netTotal)}
+                                </span>
+                                {isCancelled ? (
+                                  <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                                    Cancelled
+                                  </span>
+                                ) : due > 0 ? (
+                                  <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                                    Due: {fmtINR(due)}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-success bg-success/10 px-1.5 py-0.5 rounded">
+                                    Paid ✓
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-border/20 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                {phoneDial && (
+                                  <a
+                                    href={`tel:${phoneDial}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="size-7 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center text-primary transition"
+                                    title="Call Customer"
+                                  >
+                                    <Phone className="size-3.5" />
+                                  </a>
+                                )}
+                                {phoneWA && (
+                                  <a
+                                    href={`https://wa.me/${phoneWA}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition"
+                                    title="WhatsApp Customer"
+                                  >
+                                    <MessageCircle className="size-3.5" />
+                                  </a>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setPreviewBooking(b);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold flex items-center gap-1 transition cursor-pointer active:scale-95"
+                                  title="Preview & Download Invoice PDF"
+                                >
+                                  <FileText className="size-3.5" />
+                                  <span>PDF Bill</span>
+                                </button>
+                              </div>
+
+                              <div className="px-3 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center gap-1 transition active:scale-95">
+                                <span>View Booking</span>
+                                <ChevronRight className="size-3.5" />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                  </section>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
 
       {previewBooking && (

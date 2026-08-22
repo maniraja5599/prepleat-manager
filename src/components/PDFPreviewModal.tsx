@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef } from "react";
 import {
   type Booking,
   type Customer,
@@ -6,13 +6,15 @@ import {
   type Settings,
   formatShortBillNumber,
   fmtINR,
+  fmtTime12,
   totalDue,
   netBookingAmount,
   formatAppDate,
+  formatAppDateTime,
 } from "@/lib/store";
-import { getBillPDFBlobUrl, generateBillPDF } from "@/lib/pdf-bill";
+import { generateBillPDF } from "@/lib/pdf-bill";
 import { cleanPhoneForWhatsApp } from "@/lib/utils";
-import { X, Download, MessageCircle, Printer, Loader2, FileText, Eye } from "lucide-react";
+import { X, Download, MessageCircle, Printer, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface PDFPreviewModalProps {
@@ -34,42 +36,15 @@ export function PDFPreviewModal({
   payments,
   settings,
 }: PDFPreviewModalProps) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    let urlToRevoke: string | null = null;
-
-    if (open && booking) {
-      setLoading(true);
-      getBillPDFBlobUrl({ booking, customer, artist, payments, settings })
-        .then(({ blobUrl: url }) => {
-          if (active) {
-            urlToRevoke = url;
-            setBlobUrl(url);
-            setLoading(false);
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to render PDF:", err);
-          if (active) setLoading(false);
-          toast.error("Failed to preview PDF bill");
-        });
-    } else {
-      setBlobUrl(null);
-    }
-
-    return () => {
-      active = false;
-      if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
-    };
-  }, [open, booking?.id]);
+  const printAreaRef = useRef<HTMLDivElement>(null);
 
   if (!open || !booking) return null;
 
   const billNo = formatShortBillNumber(booking.billNumber, booking.id);
   const customerName = customer?.name || "Customer";
+  const due = totalDue(booking);
+  const netTotal = netBookingAmount(booking);
+  const totalPaid = (booking.advancePaid || 0);
 
   const handleDownload = () => {
     if (!booking) return;
@@ -78,15 +53,7 @@ export function PDFPreviewModal({
   };
 
   const handlePrint = () => {
-    if (!blobUrl) return;
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = blobUrl;
-    document.body.appendChild(iframe);
-    iframe.onload = () => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    };
+    window.print();
   };
 
   const handleShareWhatsApp = () => {
@@ -104,10 +71,10 @@ export function PDFPreviewModal({
       `🥻 *Service*: ${booking.service === "prepleat" ? "Pre-Pleating" : "Saree Draping"} (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
       `📅 *Delivery Date*: ${formatAppDate(booking.deliveryDate)}`,
       ``,
-      `💰 *Total Bill*: ${fmtINR(netBookingAmount(booking))}`,
-      `💵 *Advance Paid*: ${fmtINR(booking.advancePaid || 0)}`,
-      totalDue(booking) > 0
-        ? `📌 *Balance Due*: *${fmtINR(totalDue(booking))}*`
+      `💰 *Total Bill*: ${fmtINR(netTotal)}`,
+      `💵 *Advance Paid*: ${fmtINR(totalPaid)}`,
+      due > 0
+        ? `📌 *Balance Due*: *${fmtINR(due)}*`
         : `✅ *Payment Status*: Paid in Full ✅`,
       ``,
       `✨ _Wear with confidence & elegance!_`,
@@ -118,24 +85,24 @@ export function PDFPreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-[30000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+      className="fixed inset-0 z-[30000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-card w-full max-w-2xl h-[88vh] max-h-[720px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-200"
+        className="bg-card w-full max-w-xl h-[90vh] max-h-[760px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-5 py-3.5 border-b border-border/40 flex items-center justify-between bg-card shrink-0">
+        {/* Modal Header Bar */}
+        <div className="px-4 sm:px-5 py-3 border-b border-border/40 flex items-center justify-between bg-card shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="size-8.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <FileText className="size-4.5" />
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-bold text-foreground leading-tight truncate">
                 Invoice Preview · {billNo}
               </h3>
-              <p className="text-[11px] text-muted-foreground truncate">
+              <p className="text-[10px] text-muted-foreground truncate">
                 {customerName} {customer?.phone ? `(${customer.phone})` : ""}
               </p>
             </div>
@@ -149,55 +116,189 @@ export function PDFPreviewModal({
           </button>
         </div>
 
-        {/* PDF Viewer Body */}
-        <div className="flex-1 bg-muted/30 relative flex items-center justify-center overflow-hidden">
-          {loading ? (
-            <div className="flex flex-col items-center gap-3 text-muted-foreground">
-              <Loader2 className="size-7 animate-spin text-primary" />
-              <span className="text-xs font-semibold">Generating Bill PDF...</span>
-            </div>
-          ) : blobUrl ? (
-            <div className="w-full h-full flex flex-col items-center justify-center relative">
-              <object
-                data={`${blobUrl}#toolbar=0&navpanes=0`}
-                type="application/pdf"
-                className="w-full h-full border-none"
-              >
-                <iframe
-                  src={`${blobUrl}#toolbar=0&navpanes=0`}
-                  title={`PDF Preview ${billNo}`}
-                  className="w-full h-full border-none"
-                />
-              </object>
-              <div className="sm:hidden absolute bottom-3 right-3 z-10">
-                <a
-                  href={blobUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-1.5 rounded-xl bg-card/90 backdrop-blur-xs border border-border/50 text-[11px] font-bold text-primary shadow-md flex items-center gap-1.5"
-                >
-                  <Eye className="size-3.5" />
-                  <span>Open Full PDF</span>
-                </a>
+        {/* Scrollable Authentic Paper Invoice Document Body */}
+        <div className="flex-1 bg-muted/40 p-3 sm:p-5 overflow-y-auto flex items-start justify-center">
+          <div
+            ref={printAreaRef}
+            className="w-full max-w-lg bg-white text-slate-900 rounded-2xl shadow-md border border-amber-900/10 overflow-hidden font-sans relative"
+          >
+            {/* Branded Invoice Banner Header */}
+            <div className="saree-gradient p-5 sm:p-6 text-white relative">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-lg sm:text-xl font-display font-extrabold tracking-wide text-amber-100">
+                    {settings.businessName || "EYAS SAREE DRAPIST"}
+                  </h1>
+                  <p className="text-xs italic text-amber-200/90 font-serif mt-0.5">
+                    {settings.businessSlogan || "Flawless Drape & Saree Box Folding"}
+                  </p>
+                  {settings.businessPhone && (
+                    <p className="text-[11px] text-white/85 mt-1.5 font-mono">
+                      📞 {settings.businessPhone}
+                    </p>
+                  )}
+                  {settings.businessAddress && (
+                    <p className="text-[10px] text-white/75 leading-tight max-w-xs mt-0.5">
+                      📍 {settings.businessAddress}
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-xs rounded-xl border border-white/25 text-xs font-mono font-bold text-white shadow-xs">
+                    {billNo}
+                  </span>
+                  <p className="text-[10px] text-amber-100/80 font-mono mt-1.5">
+                    {formatAppDate(booking.createdAt)}
+                  </p>
+                  <p className="text-[9px] text-white/60 uppercase tracking-widest mt-0.5">
+                    TAX INVOICE
+                  </p>
+                </div>
               </div>
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Preview unavailable.</p>
-          )}
+
+            {/* Client & Delivery Info Grid */}
+            <div className="p-4 sm:p-5 bg-amber-50/40 border-b border-amber-900/10 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-amber-900/70 uppercase tracking-wider block">
+                  BILLED TO
+                </span>
+                <p className="font-bold text-slate-900 text-sm mt-0.5">{customerName}</p>
+                {customer?.phone && (
+                  <p className="text-slate-600 font-mono text-[11px] mt-0.5">
+                    {customer.phone}
+                  </p>
+                )}
+                {customer?.address && (
+                  <p className="text-slate-500 text-[10px] leading-tight mt-0.5">
+                    {customer.address}
+                  </p>
+                )}
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-amber-900/70 uppercase tracking-wider block">
+                  DELIVERY SCHEDULE
+                </span>
+                <p className="font-bold text-slate-900 text-sm mt-0.5">
+                  {formatAppDate(booking.deliveryDate)}
+                </p>
+                <p className="text-slate-600 font-medium text-[11px] mt-0.5">
+                  {fmtTime12(booking.deliveryTime)}
+                </p>
+                {artist && (
+                  <p className="text-primary font-semibold text-[10px] mt-0.5">
+                    Artist: {artist.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Line Items Table */}
+            <div className="p-4 sm:p-5">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-2 text-left">Description</th>
+                    <th className="py-2 text-center">Qty</th>
+                    <th className="py-2 text-right">Rate</th>
+                    <th className="py-2 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  <tr>
+                    <td className="py-2.5 text-left text-slate-800">
+                      <span className="font-semibold block">
+                        {booking.service === "prepleat" ? "PrePleat Saree Service" : "Saree Drape Service"}
+                      </span>
+                      <span className="text-[10px] text-slate-400">Professional pleating & box folding</span>
+                    </td>
+                    <td className="py-2.5 text-center font-mono">{booking.sareeCount}</td>
+                    <td className="py-2.5 text-right font-mono">{fmtINR(booking.pricePerSaree)}</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-slate-900">
+                      {fmtINR(booking.totalAmount)}
+                    </td>
+                  </tr>
+
+                  {booking.extraCharges && booking.extraCharges > 0 && (
+                    <tr>
+                      <td className="py-2 text-left text-slate-800">
+                        <span>Extra / {booking.extraChargesNote || "Travel"} Charge</span>
+                      </td>
+                      <td className="py-2 text-center font-mono">1</td>
+                      <td className="py-2 text-right font-mono">{fmtINR(booking.extraCharges)}</td>
+                      <td className="py-2 text-right font-mono font-bold text-slate-900">
+                        {fmtINR(booking.extraCharges)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {booking.discount && booking.discount > 0 && (
+                    <tr>
+                      <td className="py-2 text-left text-emerald-700 font-medium">
+                        Special Discount / Offer
+                      </td>
+                      <td className="py-2 text-center font-mono">1</td>
+                      <td className="py-2 text-right font-mono text-emerald-700">-{fmtINR(booking.discount)}</td>
+                      <td className="py-2 text-right font-mono font-bold text-emerald-700">
+                        -{fmtINR(booking.discount)}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {/* Financial Calculation Summary & Status Stamp */}
+              <div className="mt-4 pt-4 border-t border-slate-200 flex items-end justify-between gap-4">
+                {/* Stamp Badge */}
+                <div className="pb-1">
+                  {due === 0 ? (
+                    <div className="px-3 py-1.5 rounded-xl border-2 border-emerald-600 text-emerald-700 bg-emerald-50/80 font-mono font-extrabold text-xs tracking-wider uppercase rotate-[-3deg] shadow-xs flex items-center gap-1.5">
+                      <CheckCircle2 className="size-4 text-emerald-600" />
+                      <span>PAID IN FULL ✓</span>
+                    </div>
+                  ) : (
+                    <div className="px-3 py-1.5 rounded-xl border-2 border-amber-600 text-amber-700 bg-amber-50/80 font-mono font-extrabold text-xs tracking-wider uppercase rotate-[-3deg] shadow-xs flex items-center gap-1.5">
+                      <AlertCircle className="size-4 text-amber-600" />
+                      <span>BALANCE DUE: {fmtINR(due)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Totals */}
+                <div className="w-48 space-y-1.5 text-xs text-right">
+                  <div className="flex justify-between text-slate-500">
+                    <span>Total Bill:</span>
+                    <span className="font-mono font-semibold text-slate-800">{fmtINR(netTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>Paid / Advance:</span>
+                    <span className="font-mono font-semibold text-slate-800">{fmtINR(totalPaid)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-sm pt-1.5 border-t border-slate-200">
+                    <span className="text-slate-900">Remaining Due:</span>
+                    <span className={due > 0 ? "text-amber-700 font-mono" : "text-emerald-700 font-mono"}>
+                      {due > 0 ? fmtINR(due) : "₹0"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Invoice Footer */}
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500">
+              <span className="font-semibold text-slate-700">
+                {settings.businessName || "Eyas Saree Drapist"}
+              </span>
+              <span className="italic">Thank you for choosing Eyas! 🙏</span>
+            </div>
+          </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-3.5 bg-card border-t border-border/40 flex items-center justify-between gap-2 shrink-0">
+        {/* Footer Action Buttons */}
+        <div className="p-3 sm:p-3.5 bg-card border-t border-border/40 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handlePrint}
-              disabled={!blobUrl || loading}
-              className="px-3 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-semibold flex items-center gap-1.5 cursor-pointer active:scale-95 transition disabled:opacity-50"
-            >
-              <Printer className="size-3.5" />
-              <span className="hidden sm:inline">Print</span>
-            </button>
             {customer?.phone && (
               <button
                 type="button"
@@ -214,7 +315,7 @@ export function PDFPreviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Close
             </button>

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.3";
+export const APP_VERSION = "1.4.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,27 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.3",
+    version: "v1.4.4",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Bills Timeline View & Instant Visual Invoice Preview",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📄",
+        text: "Direct Instant Invoice Preview",
+        desc: "PDF Bill க்ளிக் செய்தவுடன் 'Open' பொத்தான் தேவையின்றி, அனைத்து மொபைல் மற்றும் கணினிகளிலும் அழகான ஒரிஜினல் Tax Invoice நேரடியாக உடனடியாக திரையில் தெரியும்.",
+      },
+      {
+        emoji: "⏳",
+        text: "Monthly Timeline in Bills Register",
+        desc: "Bookings பக்கத்தில் இருப்பது போல், Bills Register பக்கத்திலும் மாத வாரியாக Timeline Milestone மற்றும் விரிவான பில் புள்ளிவிவரங்களுடன் கூடிய காலவரிசை அமைப்பு உருவாக்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.3",
+    date: "22 Aug 2026",
     title: "Full Payment Booking Fix, Bills Register Card Click & PDF Preview",
     badge: "LATEST UPDATE ✨",
     changes: [
