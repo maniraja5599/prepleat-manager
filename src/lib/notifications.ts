@@ -51,13 +51,17 @@ export async function sendNativeNotification(
     return false;
   }
 
-  const defaultIcon = "/eyas-logo.png";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const defaultIcon = `${origin}/icon-192.png`;
+  const defaultBadge = `${origin}/icon-192.png`;
+
   const notificationOptions = {
     icon: options.icon || defaultIcon,
-    badge: options.badge || defaultIcon,
+    badge: options.badge || defaultBadge,
     body: options.body,
     tag: options.tag || "eyas-general",
     data: options.data || { url: "/" },
+    vibrate: [200, 100, 200],
   };
 
   try {

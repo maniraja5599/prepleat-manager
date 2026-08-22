@@ -19,6 +19,7 @@ import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedBookingsRouteImport } from './routes/_authenticated/bookings'
+import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedBookingsIndexRouteImport } from './routes/_authenticated/bookings.index'
 import { Route as AuthenticatedCustomersIdRouteImport } from './routes/_authenticated/customers.$id'
@@ -73,6 +74,11 @@ const AuthenticatedBookingsRoute = AuthenticatedBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBillsRoute = AuthenticatedBillsRouteImport.update({
+  id: '/bills',
+  path: '/bills',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCustomersIndexRoute =
   AuthenticatedCustomersIndexRouteImport.update({
     id: '/',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/privacy': typeof PrivacyRoute
+  '/bills': typeof AuthenticatedBillsRoute
   '/bookings': typeof AuthenticatedBookingsRouteWithChildren
   '/customers': typeof AuthenticatedCustomersRouteWithChildren
   '/new': typeof AuthenticatedNewRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/privacy': typeof PrivacyRoute
+  '/bills': typeof AuthenticatedBillsRoute
   '/new': typeof AuthenticatedNewRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/privacy': typeof PrivacyRoute
+  '/_authenticated/bills': typeof AuthenticatedBillsRoute
   '/_authenticated/bookings': typeof AuthenticatedBookingsRouteWithChildren
   '/_authenticated/customers': typeof AuthenticatedCustomersRouteWithChildren
   '/_authenticated/new': typeof AuthenticatedNewRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/book'
     | '/privacy'
+    | '/bills'
     | '/bookings'
     | '/customers'
     | '/new'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/book'
     | '/privacy'
+    | '/bills'
     | '/new'
     | '/payments'
     | '/settings'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/book'
     | '/privacy'
+    | '/_authenticated/bills'
     | '/_authenticated/bookings'
     | '/_authenticated/customers'
     | '/_authenticated/new'
@@ -268,6 +280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/bills': {
+      id: '/_authenticated/bills'
+      path: '/bills'
+      fullPath: '/bills'
+      preLoaderRoute: typeof AuthenticatedBillsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/'
@@ -331,6 +350,7 @@ const AuthenticatedCustomersRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
   AuthenticatedBookingsRoute: typeof AuthenticatedBookingsRouteWithChildren
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRouteWithChildren
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
@@ -340,6 +360,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBillsRoute: AuthenticatedBillsRoute,
   AuthenticatedBookingsRoute: AuthenticatedBookingsRouteWithChildren,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRouteWithChildren,
   AuthenticatedNewRoute: AuthenticatedNewRoute,

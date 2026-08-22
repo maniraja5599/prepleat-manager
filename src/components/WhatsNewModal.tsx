@@ -1,17 +1,11 @@
 import { useState, useEffect } from "react";
-import { X, Sparkles, Check, ChevronDown, ChevronUp, History, ArrowRight, BellRing } from "lucide-react";
+import { X, Sparkles, Check, ChevronDown, ChevronUp, History, ArrowRight } from "lucide-react";
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
-import {
-  getNotificationPermission,
-  requestNotificationPermission,
-  sendNativeNotification,
-} from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 export function WhatsNewModal() {
   const [open, setOpen] = useState(false);
   const [showOlder, setShowOlder] = useState(false);
-  const [notifGranted, setNotifGranted] = useState(() => getNotificationPermission() === "granted");
   const latestEntry = RECENT_UPDATES[0];
 
   useEffect(() => {
@@ -91,36 +85,6 @@ export function WhatsNewModal() {
 
         {/* Modal Body / Update list */}
         <div className="p-5 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
-          {/* Notification Quick Opt-In Banner */}
-          {!notifGranted && (
-            <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-between gap-2.5 animate-in fade-in duration-300">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <BellRing className="size-3.5 text-primary shrink-0 animate-bounce" />
-                  <span className="text-xs font-bold text-foreground">Delivery Alerts 🔔</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
-                  1 நாள் முன்பே டெலிவரி நினைவூட்டல் பெற Notification-ஐ ஆன் செய்யவும்.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  const res = await requestNotificationPermission();
-                  if (res === "granted") {
-                    setNotifGranted(true);
-                    void sendNativeNotification("Notifications Enabled! 🔔", {
-                      body: "Eyas delivery & event notifications are now active on this device.",
-                    });
-                  }
-                }}
-                className="px-3 py-1.5 rounded-xl saree-gradient text-white text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer shrink-0"
-              >
-                Enable 🔔
-              </button>
-            </div>
-          )}
-
           <div className="space-y-3">
             {latestEntry.changes.map((change, i) => (
               <div

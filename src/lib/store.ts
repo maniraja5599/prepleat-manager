@@ -251,47 +251,37 @@ export const formatShortBillNumber = (billNumber?: string, fallbackId?: string):
   if (!billNumber || !billNumber.trim()) {
     return fallbackId ? `#${fallbackId.slice(0, 4).toUpperCase()}` : "";
   }
-  let cleaned = billNumber.trim();
-  if (cleaned.includes("-")) {
-    cleaned = cleaned.split("-").pop() || cleaned;
-  }
-  const digits = cleaned.replace(/\D/g, "");
-  const num = parseInt(digits, 10);
-  if (!isNaN(num) && num > 0 && num < 100000) {
-    return `#${num}`;
-  }
-  if (!isNaN(num) && num >= 100000) {
-    const lastDigits = digits.slice(-3);
-    const shortNum = parseInt(lastDigits, 10);
-    if (!isNaN(shortNum) && shortNum > 0) {
-      return `#${shortNum}`;
-    }
-  }
-  return `#${cleaned.replace(/^#+/, "")}`;
+  const cleaned = billNumber.trim().replace(/^#+/, "");
+  return `#${cleaned}`;
 };
 
 export const generateBillNumber = (existing: Booking[]): string => {
-  const shortNumbers = existing
-    .map((b) => {
-      if (!b.billNumber) return 0;
-      let cleaned = b.billNumber.trim();
-      if (cleaned.includes("-")) {
-        cleaned = cleaned.split("-").pop() || cleaned;
+  const nums: number[] = [];
+  for (const b of existing) {
+    if (!b.billNumber) continue;
+    const cleaned = b.billNumber.trim().replace(/^#+/, "");
+    if (/^\d+$/.test(cleaned)) {
+      const val = parseInt(cleaned, 10);
+      if (!isNaN(val) && val > 0 && val < 100000) {
+        nums.push(val);
       }
-      const digits = cleaned.replace(/\D/g, "");
-      const num = parseInt(digits, 10);
-      if (!isNaN(num) && num > 0 && num < 100000) {
-        return num;
+    } else if (cleaned.includes("-")) {
+      const lastPart = cleaned.split("-").pop();
+      if (lastPart && /^\d+$/.test(lastPart)) {
+        const val = parseInt(lastPart, 10);
+        if (!isNaN(val) && val > 0 && val < 100000) {
+          nums.push(val);
+        }
       }
-      return 0;
-    })
-    .filter((n) => n > 0);
-
-  if (shortNumbers.length > 0) {
-    const next = Math.max(...shortNumbers) + 1;
-    return String(next);
+    }
   }
-  const next = existing.length + 1;
+
+  let next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+  const existingSet = new Set(existing.map((b) => b.billNumber?.trim().replace(/^#+/, "")));
+  while (existingSet.has(String(next))) {
+    next++;
+  }
+
   return String(next);
 };
 

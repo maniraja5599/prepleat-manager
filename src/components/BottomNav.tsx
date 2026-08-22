@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Calendar, ListChecks, Wallet, Users, ReceiptText } from "lucide-react";
+import { Calendar, ListChecks, Wallet, Users, ReceiptText, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRef, useEffect } from "react";
 
@@ -22,6 +22,13 @@ export function BottomNav() {
       if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
     };
   }, []);
+
+  const isOnBills = pathname === "/bills";
+  const isOnSettings = pathname === "/settings";
+  const isCenterActive = isOnBills || isOnSettings;
+  const centerDestination = isOnBills ? "/settings" : "/bills";
+  const CenterIcon = isOnBills || isOnSettings ? SettingsIcon : ReceiptText;
+  const centerTitle = isOnBills ? "Open Settings" : isOnSettings ? "Settings Active" : "Bills Register";
 
   const handleCalendarClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,18 +57,19 @@ export function BottomNav() {
           const Icon = t.icon;
           if (t.primary) {
             return (
-              <li key="/bills" className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.dispatchEvent(new Event("open-recent-bills"));
-                  }}
-                  className="relative flex flex-col items-center gap-0.5 py-2 px-3 my-1 rounded-2xl text-[10px] font-semibold text-muted-foreground hover:text-foreground active:bg-secondary transition cursor-pointer"
-                  title="Check Recent Bills by Order (#1, #2...)"
+              <li key="/bills" className="flex justify-center -mt-5">
+                <Link
+                  to={centerDestination}
+                  className={cn(
+                    "size-14 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer",
+                    isCenterActive
+                      ? "saree-gradient text-white shadow-lg shadow-primary/35 ring-2 ring-primary/40 ring-offset-2 ring-offset-background"
+                      : "bg-card border-2 border-border/80 text-muted-foreground hover:text-foreground shadow-md hover:border-primary/40",
+                  )}
+                  title={centerTitle}
                 >
-                  <Icon className="size-5" strokeWidth={2} />
-                  <span className="opacity-70">{t.label}</span>
-                </button>
+                  <CenterIcon className={cn("size-6 transition-transform duration-200", isCenterActive ? "scale-105" : "scale-100")} strokeWidth={2.2} />
+                </Link>
               </li>
             );
           }

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.2";
+export const APP_VERSION = "1.3.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.2",
+    version: "v1.3.3",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Unique Bill Numbers, Full Bills Hub, Dynamic Nav & Android Notification Fix",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🧾",
+        text: "Unique & Non-Duplicating Bill Numbers",
+        desc: "பழைய தேதிகள் அல்லது முந்தைய பில்களுடன் எவ்வித எண் மோதலும் (duplicate #1) ஏற்படாதவாறு, தொடர்ச்சியான தனித்துவமான பில் எண்கள்.",
+      },
+      {
+        emoji: "📑",
+        text: "Dedicated Full Bills Register Page (/bills)",
+        desc: "பாப்-அப் இல்லாமல் தனியான முழு பக்கமாக Bills Hub! பில் எண்களின் வரிசைப்படி தேடல், Due/Paid வடிகட்டல், நேரடி WhatsApp மற்றும் Call வசதி.",
+      },
+      {
+        emoji: "⚙️",
+        text: "Elevated Dynamic Center Nav Button",
+        desc: "Bills பக்கத்திற்கு செல்லும்போது மட்டும் Center ஐகான் Highlight ஆகும். Bills பக்கத்தில் இருக்கும் போது அது தானாக Settings (⚙️) ஐகானாக மாறும்.",
+      },
+      {
+        emoji: "🔔",
+        text: "Android Push Notification Icon Fix & Reminder Banner",
+        desc: "Android-ல் சரியான ஆப் லோகோவுடன் கூடிய Notification, மற்றும் முதன்முறை வருபவர்களுக்கு மட்டுமே காட்டும் சிறிய Reminder Banner.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.2",
+    date: "22 Aug 2026",
     title: "Push Notifications Switch, Flexible Complete Payments & Clean Revert",
     badge: "LATEST UPDATE ✨",
     changes: [

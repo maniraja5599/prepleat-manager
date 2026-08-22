@@ -26,7 +26,9 @@ import {
   PackageCheck,
   Sparkles,
   Settings as SettingsIcon,
+  BellRing,
 } from "lucide-react";
+import { getNotificationPermission, requestNotificationPermission, sendNativeNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 
@@ -52,6 +54,17 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const perm = getNotificationPermission();
+      const dismissed = sessionStorage.getItem("eyas_dismiss_notif_banner");
+      if (perm === "default" && dismissed !== "true") {
+        setShowNotifBanner(true);
+      }
+    }
+  }, []);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -709,6 +722,47 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             }
           `}</style>
         </div>
+
+        {showNotifBanner && (
+          <div className="mx-5 mb-2 p-2.5 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-between gap-2 animate-in fade-in duration-300">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <BellRing className="size-4 text-primary shrink-0 animate-bounce" />
+              <p className="text-[11px] text-foreground font-medium truncate">
+                Turn on Delivery Alerts for 1-day advance reminders
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await requestNotificationPermission();
+                  if (res === "granted") {
+                    setShowNotifBanner(false);
+                    void sendNativeNotification("Notifications Enabled! 🔔", {
+                      body: "Eyas delivery & event alerts are now active.",
+                    });
+                  } else {
+                    setShowNotifBanner(false);
+                  }
+                }}
+                className="px-2.5 py-1 rounded-xl saree-gradient text-white text-[10px] font-bold shadow-xs active:scale-95 transition cursor-pointer"
+              >
+                Turn On 🔔
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.setItem("eyas_dismiss_notif_banner", "true");
+                  setShowNotifBanner(false);
+                }}
+                className="size-6 rounded-lg hover:bg-secondary flex items-center justify-center text-muted-foreground transition cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {title && (
           <header className="px-5 pt-2 pb-3">
