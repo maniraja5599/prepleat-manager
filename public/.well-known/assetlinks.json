@@ -1,8 +1,12 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "app.vercel.sareeprepleatmanager.twa",
-    "sha256_cert_fingerprints": ["CB:7F:EB:AB:A4:B7:CE:BA:44:15:6C:FD:DC:58:AD:8D:CF:58:9C:0B:81:BD:2E:6F:87:4F:2F:A7:50:66:45:10"]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.sareeprepleatmanager.twa",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7D:0F:52:EA:43:1E:D0:51:50:4E:65:78:E8:42:F1:B6:44:07:A4:3F:EE:2B:99:E3:03:9C:50:8D:1B"
+      ]
+    }
   }
-}]
+]
