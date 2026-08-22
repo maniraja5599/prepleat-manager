@@ -89,9 +89,12 @@ function CustomerDetail() {
 
   // Build a beautiful, client-friendly WhatsApp message
   const buildWhatsAppMessage = (withLink = includeLink) => {
-    const lines: string[] = [];
-
-    lines.push(`Hi *${customer.name}* 🙏`);
+    const lines: string[] = [
+      `✨ *EYAS SAREE DRAPIST* ✨`,
+      ``,
+      `Hi *${customer.name}* 🙏`,
+      ``,
+    ];
 
     if (pendingOrders.length > 0) {
       lines.push(
@@ -103,10 +106,14 @@ function CustomerDetail() {
       }
       lines.push(`Pay via GPay / Cash. Thank you! 🙏`);
     } else if (cb.length > 0) {
-      lines.push(`Thank you for trusting us! 💛 Hope to see you again soon ✨`);
+      lines.push(`Thank you for trusting us with your sarees! 💛`);
     } else {
-      lines.push(`We'd love to have you for your next occasion! Feel free to book anytime 😊`);
+      lines.push(`We'd love to assist you with your saree draping & pre-pleating! ✨`);
     }
+
+    lines.push(``);
+    lines.push(`✨ Wear with confidence & elegance! ✨`);
+    lines.push(`Eyas Saree Drapist 💛`);
 
     if (withLink) {
       lines.push("");
@@ -557,15 +564,16 @@ function CustomerDetail() {
           </div>
         )}
 
-      <div className="relative mt-3 book-ring-animate rounded-2xl">
+      <div className="relative mt-3.5 book-ring-animate rounded-2xl">
         <Link
           to="/new"
           search={
             customer.kind === "client" ? { customerId: customer.id } : { artistId: customer.id }
           }
-          className="relative z-10 w-full saree-gradient text-white py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition card-shadow text-center text-sm shadow-md"
+          className="relative z-10 w-full saree-gradient text-white py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition card-shadow text-center text-sm shadow-md cursor-pointer"
         >
-          📅 {customer.kind === "client" ? "Book Appointment / Order" : "Book for this Artist"}
+          <Plus className="size-4.5 stroke-[2.5]" />
+          <span>{customer.kind === "client" ? "New Saree Booking" : "New Booking for Artist"}</span>
         </Link>
       </div>
 
@@ -573,30 +581,30 @@ function CustomerDetail() {
       {customer.phone && (
         <div className="bg-card card-shadow rounded-3xl p-4 mt-3 border border-border/10">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Eye className="size-3" /> Quick Actions
+            <Eye className="size-3 text-primary" /> Contact Customer
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => setPreviewMode("whatsapp")}
-              className="bg-[oklch(0.55_0.18_150)] text-white py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold active:scale-95 transition cursor-pointer px-1 text-center shadow-xs"
             >
-              <MessageCircle className="size-4" />
-              WhatsApp
-            </button>
-            <button
-              onClick={() => setPreviewMode("sms")}
-              className="bg-secondary text-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
-            >
-              <MessageSquare className="size-4" />
-              SMS
+              <MessageCircle className="size-4 shrink-0" />
+              <span>WhatsApp</span>
             </button>
             <a
               href={`tel:${cleanPhoneForDialing(customer.phone)}`}
-              className="bg-primary text-primary-foreground py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-95 transition cursor-pointer px-1 text-center"
+              className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 py-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold active:scale-95 transition cursor-pointer px-1 text-center"
             >
-              <Phone className="size-4" />
-              Call
+              <Phone className="size-4 shrink-0" />
+              <span>Call</span>
             </a>
+            <button
+              onClick={() => setPreviewMode("sms")}
+              className="bg-secondary hover:bg-secondary/80 text-foreground py-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold active:scale-95 transition cursor-pointer px-1 text-center border border-border/30"
+            >
+              <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
+              <span>SMS</span>
+            </button>
           </div>
         </div>
       )}

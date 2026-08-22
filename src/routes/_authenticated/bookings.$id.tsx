@@ -42,11 +42,13 @@ import {
   Wallet,
   Car,
   Tag,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
+import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { ScrollNumber } from "@/components/ScrollNumber";
 
 export const Route = createFileRoute("/_authenticated/bookings/$id")({
@@ -98,6 +100,9 @@ function BookingDetail() {
   const [completionPaymentType, setCompletionPaymentType] = useState<"full" | "custom" | "none">("full");
   const [completionCustomAmount, setCompletionCustomAmount] = useState("");
   const [completionPayMode, setCompletionPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
+  const [sendDeliveryWAOnComplete, setSendDeliveryWAOnComplete] = useState(true);
+  const [readyModalOpen, setReadyModalOpen] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   if (!booking) {
     return (
@@ -122,7 +127,7 @@ function BookingDetail() {
   const isOverpaid = (enteredPay + enteredDisc) > dynamicDue;
 
   const buildWhatsAppMessage = (
-    kind: "reminder" | "bill" | "balance" | "status",
+    kind: "reminder" | "bill" | "balance" | "status" | "ready" | "delivered",
     withLink = false,
   ) => {
     const site = settings.websiteUrl || "https://eyasdrapist.shop/";
@@ -140,34 +145,86 @@ function BookingDetail() {
       ? `🏷️ Discount: -${fmtINR(booking.discount)}`
       : "";
 
+    if (kind === "ready") {
+      parts = [
+        `✨ *EYAS SAREE DRAPIST* ✨`,
+        ``,
+        `Hi *${name}* 🙏`,
+        ``,
+        `Your saree is neatly pre-pleated, pinned, and *READY for you*! 🥻✨`,
+        ``,
+        `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)} (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
+        due > 0 ? `💰 *Pending Balance*: *${fmtINR(due)}*` : `✅ *Payment Status*: Fully Paid`,
+        ``,
+        `✨ Wear with confidence & shine bright! ✨`,
+        `Eyas Saree Drapist 💛`,
+      ].filter((l) => l !== "");
+    }
+
+    if (kind === "delivered") {
+      parts = [
+        `✨ *EYAS SAREE DRAPIST* ✨`,
+        ``,
+        `Hi *${name}* 💛`,
+        ``,
+        `Your saree order has been successfully *delivered*! ✅✨`,
+        ``,
+        `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
+        `💰 *Final Settlement*: Total ${fmtINR(netTotal)} (${due === 0 ? "Paid in Full ✅" : `Due: ${fmtINR(due)}`})`,
+        ``,
+        `We hope you love your flawless pleats! 🥻`,
+        `Please share your photos with us! 📸`,
+        ``,
+        `✨ Wear with confidence & elegance! ✨`,
+        `Eyas Saree Drapist 💛`,
+      ].filter((l) => l !== "");
+    }
+
     if (kind === "status") {
       if (booking.status === "completed") {
         parts = [
-          `Hi ${name},`,
+          `✨ *EYAS SAREE DRAPIST* ✨`,
+          ``,
+          `Hi *${name}* 💛`,
+          ``,
           `Your order is *completed* ✅ Thank you for trusting us 💛`,
-          `🧾 Bill: ${formatShortBillNumber(booking.billNumber, booking.id)} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
+          `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
           extraLine,
           discLine,
           `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
-          due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully Paid`,
-        ].filter(Boolean);
+          due > 0 ? `💰 *Balance*: *${fmtINR(due)}*` : `✅ *Status*: Fully Paid`,
+          ``,
+          `✨ Wear with confidence & elegance! ✨`,
+          `Eyas Saree Drapist 💛`,
+        ].filter((l) => l !== "");
       } else {
         parts = [
-          `Hi ${name} 🙏`,
+          `✨ *EYAS SAREE DRAPIST* ✨`,
+          ``,
+          `Hi *${name}* 🙏`,
+          ``,
           `Your order is booked for *${booking.service === "prepleat" ? "PrePleat" : "Draping"}*.`,
+          `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
           `📅 Delivery: ${dateStr}, ${timeStr}`,
           extraLine,
           discLine,
           `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
-          due > 0 ? `💰 Balance: *${fmtINR(due)}*` : `✅ Fully paid`,
-        ].filter(Boolean);
+          due > 0 ? `💰 *Balance*: *${fmtINR(due)}*` : `✅ *Status*: Fully paid`,
+          ``,
+          `✨ Wear with confidence & elegance! ✨`,
+          `Eyas Saree Drapist 💛`,
+        ].filter((l) => l !== "");
       }
     }
     
     if (kind === "balance") {
       parts = [
-        `Hi ${name} 🙏`,
+        `✨ *EYAS SAREE DRAPIST* ✨`,
+        ``,
+        `Hi *${name}* 🙏`,
+        ``,
         `Gentle reminder — balance pending for your saree order.`,
+        `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
         `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
         extraLine,
         discLine,
@@ -175,20 +232,30 @@ function BookingDetail() {
         `💰 *Due: ${fmtINR(due)}*`,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
         `Pay via GPay / Cash. Thank you! 🙏`,
-      ].filter(Boolean);
+        ``,
+        `✨ Wear with confidence & elegance! ✨`,
+        `Eyas Saree Drapist 💛`,
+      ].filter((l) => l !== "");
     }
     
     if (kind === "bill") {
       parts = [
-        `Hi ${name},`,
+        `✨ *EYAS SAREE DRAPIST* ✨`,
+        ``,
+        `Hi *${name}* 🙏`,
+        ``,
         `Here are your order details 📋`,
+        `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
         `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
         extraLine,
         discLine,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
-        `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
-        due > 0 ? `💰 *Balance: ${fmtINR(due)}*` : `✅ Fully Paid`,
-      ].filter(Boolean);
+        `💰 *Total*: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
+        due > 0 ? `📌 *Balance Due*: *${fmtINR(due)}*` : `✅ *Status*: Fully Paid`,
+        ``,
+        `✨ Wear with confidence & elegance! ✨`,
+        `Eyas Saree Drapist 💛`,
+      ].filter((l) => l !== "");
     }
 
     if (withLink) {
@@ -200,13 +267,13 @@ function BookingDetail() {
   };
 
   const sendWhatsApp = (
-    kind: "reminder" | "bill" | "balance" | "status" = "reminder",
+    kind: "reminder" | "bill" | "balance" | "status" | "ready" | "delivered" = "reminder",
     withLink = false,
   ) => {
     if (!customer?.phone) return toast.error("No phone number");
     const phone = cleanPhoneForWhatsApp(customer.phone);
     const encoded = encodeURIComponent(buildWhatsAppMessage(kind, withLink));
-    window.location.href = `https://wa.me/${phone}?text=${encoded}`;
+    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
   };
 
   const downloadBillPDF = async () => {
@@ -620,22 +687,80 @@ function BookingDetail() {
             </span>
           </div>
           
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-col gap-2.5">
             {booking.status !== "completed" && booking.status !== "delivered" ? (
-              <button
-                onClick={() => {
-                  if (due > 0) {
-                    setCompletionOpen(true);
-                  } else {
-                    const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
-                    updateBooking(booking.id, patch);
-                    toast.success("Booking Completed!");
-                  }
-                }}
-                className="flex-1 py-3 rounded-xl bg-success text-success-foreground font-bold text-sm hover:opacity-90 active:scale-95 transition shadow-sm flex items-center justify-center gap-2 border border-success/20"
-              >
-                <CheckCircle className="size-5" /> Mark as Completed
-              </button>
+              <>
+                {booking.service === "prepleat" && booking.workDoneAt && (
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base">🥻</span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-foreground block truncate">
+                          Saree Ready for Pickup
+                        </span>
+                        <span className="text-[10px] text-muted-foreground block truncate">
+                          Pleated & Packed · {formatAppDate(booking.workDoneAt)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => sendWhatsApp("ready")}
+                        className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
+                        title="Re-send Ready WhatsApp Notice"
+                      >
+                        <MessageCircle className="size-3" />
+                        <span>Send WA</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateBooking(booking.id, { workDoneAt: undefined });
+                          toast.success("Ready status reverted");
+                        }}
+                        className="size-7 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+                        title="Undo Ready"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2.5">
+                  {booking.service === "prepleat" && !booking.workDoneAt && (
+                    <button
+                      type="button"
+                      onClick={() => setReadyModalOpen(true)}
+                      className="flex-1 py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider active:scale-95 transition shadow-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer"
+                    >
+                      <span>🥻</span>
+                      <span>Mark Ready</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (due > 0) {
+                        setCompletionOpen(true);
+                      } else {
+                        const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
+                        updateBooking(booking.id, patch);
+                        if (sendDeliveryWAOnComplete && customer?.phone) {
+                          sendWhatsApp("delivered");
+                        }
+                        toast.success("Booking Completed! ✅");
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-xl saree-gradient text-white font-bold text-xs uppercase tracking-wider hover:opacity-95 active:scale-95 transition shadow-sm flex items-center justify-center gap-1.5 border border-primary/20 cursor-pointer"
+                  >
+                    <CheckCircle className="size-4" />
+                    <span>Complete Order</span>
+                  </button>
+                </div>
+              </>
             ) : (
               <button
                 onClick={() => {
@@ -1126,10 +1251,10 @@ function BookingDetail() {
           </button>
 
           <button
-            onClick={downloadBillPDF}
+            onClick={() => setShowPDFPreview(true)}
             className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
           >
-            <FileDown className="size-4 text-primary" /> Download PDF
+            <FileText className="size-4 text-primary" /> PDF Invoice
           </button>
         </div>
 
@@ -1389,6 +1514,37 @@ function BookingDetail() {
                     </span>
                   </div>
                 </div>
+
+                {/* Send Delivery Receipt on WhatsApp Toggle */}
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground leading-tight truncate">
+                        Send Delivery Receipt on WhatsApp
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        Send thank you & final settlement to customer
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSendDeliveryWAOnComplete(!sendDeliveryWAOnComplete)}
+                    className={cn(
+                      "w-10 h-5.5 rounded-full relative transition-colors duration-200 cursor-pointer shrink-0",
+                      sendDeliveryWAOnComplete ? "bg-emerald-600" : "bg-muted-foreground/30"
+                    )}
+                    title={sendDeliveryWAOnComplete ? "Delivery receipt ON" : "Delivery receipt OFF"}
+                  >
+                    <div
+                      className={cn(
+                        "size-4 rounded-full bg-white transition-transform duration-200 absolute top-0.75 left-0.75 shadow-sm",
+                        sendDeliveryWAOnComplete && "translate-x-4.5"
+                      )}
+                    />
+                  </button>
+                </div>
               </div>
 
               {isDiscInvalid && (
@@ -1450,6 +1606,11 @@ function BookingDetail() {
                     setCompletionExtraCharge("");
                     setCompletionCustomAmount("");
                     setCompletionPaymentType("full");
+
+                    if (sendDeliveryWAOnComplete && customer?.phone) {
+                      sendWhatsApp("delivered");
+                    }
+
                     toast.success(
                       collectedNow > 0 && remainingDueAfter === 0
                         ? "Booking Paid & Marked Completed! ✅"
@@ -1481,6 +1642,97 @@ function BookingDetail() {
           </div>
         );
       })()}
+
+      {/* Saree Ready Confirmation Modal */}
+      {readyModalOpen && (
+        <div
+          className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs px-3 pb-4 sm:pb-0 text-left"
+          onClick={() => setReadyModalOpen(false)}
+        >
+          <div
+            className="bg-card w-full max-w-md rounded-3xl p-5 shadow-2xl border border-border/40 animate-in slide-in-from-bottom-4 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-border/30">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
+                  🥻
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Mark Saree as Ready</h3>
+                  <p className="text-[11px] text-muted-foreground">Pre-pleating finished & packed for pickup</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReadyModalOpen(false)}
+                className="size-7 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3">
+              <p className="text-xs text-foreground leading-relaxed">
+                Choose how you would like to mark this order as ready:
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const patch: Partial<typeof booking> = { workDoneAt: new Date().toISOString() };
+                  updateBooking(booking.id, patch);
+                  setReadyModalOpen(false);
+                  sendWhatsApp("ready");
+                  toast.success("Marked as Ready & WhatsApp Notice Sent! 🥻💬");
+                }}
+                className="w-full p-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-between gap-3 text-left transition cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Mark Ready & Send WhatsApp</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Notifies customer that saree is ready for pickup</p>
+                  </div>
+                </div>
+                <ChevronRight className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const patch: Partial<typeof booking> = { workDoneAt: new Date().toISOString() };
+                  updateBooking(booking.id, patch);
+                  setReadyModalOpen(false);
+                  toast.success("Marked as Ready (Silent)! 🥻");
+                }}
+                className="w-full p-3.5 rounded-2xl bg-secondary/60 hover:bg-secondary border border-border/40 flex items-center justify-between gap-3 text-left transition cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="size-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Only Mark as Ready (Silent)</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Updates status in app without opening WhatsApp</p>
+                  </div>
+                </div>
+                <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPDFPreview && (
+        <PDFPreviewModal
+          open={showPDFPreview}
+          onClose={() => setShowPDFPreview(false)}
+          booking={booking}
+          customer={customer}
+          artist={artist}
+          payments={payments}
+          settings={settings}
+        />
+      )}
     </AppShell>
   );
 }

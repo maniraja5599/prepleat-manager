@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.4";
+export const APP_VERSION = "1.3.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,60 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.4",
+    version: "v1.3.6",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Branded WhatsApp, In-App PDF Preview & Measurement Reset",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "💬",
+        text: "Branded 'EYAS SAREE DRAPIST' Notifications",
+        desc: "அனைத்து வாட்ஸ்அப் மெசேஜ்களிலும் முதலிலேயே 'EYAS SAREE DRAPIST' என தோன்றும். நிறைவு வாசகமாக 'Wear with confidence & elegance!' சேர்க்கப்பட்டுள்ளது.",
+      },
+      {
+        emoji: "📑",
+        text: "In-App PDF Invoice Preview Modal",
+        desc: "Bills Register மற்றும் Booking பக்கத்தில் பில் PDF-ஐ உடனே பார்த்து, Print, Download அல்லது WhatsApp-ல் பகிரும் முழுமையான Preview வசதி.",
+      },
+      {
+        emoji: "📐",
+        text: "Measurement 'Reset Defaults' Button",
+        desc: "New Booking-ல் தவறுதலாக ஏதேனும் அளவீட்டை நீக்கினாலோ மாற்றினாலோ ஒரே கிளிக்கில் அசல் அளவீடுகளை மீட்டெடுக்கும் வசதி.",
+      },
+      {
+        emoji: "✨",
+        text: "Modern Customer Action Buttons",
+        desc: "Customer பக்கத்தில் '+ New Saree Booking' மற்றும் WhatsApp, Call, SMS பட்டன்கள் புதிய நேர்த்தியான தோற்றத்திற்கு மேம்படுத்தப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.5",
+    date: "22 Aug 2026",
+    title: "Smart 3-Stage Pre-Pleat WhatsApp Lifecycle (Collection, Ready & Delivery)",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📦",
+        text: "Stage 1: Saree Collection Confirmation",
+        desc: "புதிய Pre-Pleat புக்கிங் போடும் போது புடவை பாதுகாப்பாக பெறப்பட்டது, பில் எண் & டெலிவரி நேரத்துடன் WhatsApp அனுப்பும் வசதி.",
+      },
+      {
+        emoji: "🥻",
+        text: "Stage 2: Saree Ready for Pickup (Silent / WhatsApp)",
+        desc: "புடவை மடித்து தயாரானவுடன் வாடிக்கையாளருக்கு கடை லொகேஷனுடன் WhatsApp அனுப்பலாம் அல்லது Silent-ஆக Ready பேட்ஜ் போடலாம்.",
+      },
+      {
+        emoji: "💛",
+        text: "Stage 3: Saree Delivered & Thank You Receipt",
+        desc: "ஆர்டரை Complete செய்யும் போது வாடிக்கையாளருக்கு முழு கணக்குத் தீர்வு, நன்றி மற்றும் போட்டோ பகிரும் வாழ்த்து WhatsApp செய்தி அனுப்பும் வசதி.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.4",
+    date: "22 Aug 2026",
     title: "Booking Draft Retention, Amount-Smart Complete & Chronological Bill Re-indexing",
     badge: "LATEST UPDATE ✨",
     changes: [

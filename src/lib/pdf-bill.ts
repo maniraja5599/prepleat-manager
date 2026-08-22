@@ -81,13 +81,15 @@ async function flattenLogoOnCream(dataUrl: string, bgColorHex: string): Promise<
   }
 }
 
-export async function generateBillPDF(opts: {
+export interface GenerateBillOptions {
   booking: Booking;
   customer?: Customer;
   artist?: Customer;
   payments: Payment[];
   settings: Settings;
-}) {
+}
+
+export async function createBillPDFDoc(opts: GenerateBillOptions): Promise<{ doc: jsPDF; filename: string }> {
   const { booking, customer, artist, payments, settings } = opts;
   // Resolve a usable logo — prefer the user-uploaded one in settings, else
   // fall back to the bundled brand asset (fetched async into a data-URL).
@@ -395,6 +397,24 @@ export async function generateBillPDF(opts: {
   });
 
 
-  const fname = `bill-${booking.billNumber || booking.id.slice(0, 6)}-${(customer?.name || "customer").replace(/\s+/g, "_")}.pdf`;
-  doc.save(fname);
+  const filename = `bill-${booking.billNumber || booking.id.slice(0, 6)}-${(customer?.name || "customer").replace(/\s+/g, "_")}.pdf`;
+  return { doc, filename };
+}
+
+export async function generateBillPDF(opts: GenerateBillOptions): Promise<void> {
+  const { doc, filename } = await createBillPDFDoc(opts);
+  doc.save(filename);
+}
+
+export async function getBillPDFBlobUrl(opts: GenerateBillOptions): Promise<{ blobUrl: string; filename: string; doc: jsPDF }> {
+  const { doc, filename } = await createBillPDFDoc(opts);
+  const blob = doc.output("blob");
+  const blobUrl = URL.createObjectURL(blob);
+  return { blobUrl, filename, doc };
+}
+
+export async function getBillPDFDataUri(opts: GenerateBillOptions): Promise<{ dataUri: string; filename: string; doc: jsPDF }> {
+  const { doc, filename } = await createBillPDFDoc(opts);
+  const dataUri = doc.output("datauristring");
+  return { dataUri, filename, doc };
 }

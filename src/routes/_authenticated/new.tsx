@@ -9,9 +9,10 @@ import {
   type ServiceType,
   type Measurement,
   formatAppDate,
+  formatShortBillNumber,
 } from "@/lib/store";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn, cleanPhoneForWhatsApp } from "@/lib/utils";
 import {
   ArrowLeft,
   Check,
@@ -31,6 +32,8 @@ import {
   Clipboard,
   Map,
   Car,
+  MessageCircle,
+  RotateCcw,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -133,6 +136,7 @@ function NewBooking() {
   const extraNum = Number(extraCharges) || 0;
   const [extraChargesNote, setExtraChargesNote] = useState<string>("Travel");
   const [showExtraCharges, setShowExtraCharges] = useState(false);
+  const [sendWhatsAppOnSave, setSendWhatsAppOnSave] = useState(true);
 
   const sareeSubtotal = manualTotal !== null ? manualTotal : sareeCount * effPrice;
   const total = sareeSubtotal + extraNum;
@@ -481,6 +485,50 @@ function NewBooking() {
     }
     sessionStorage.removeItem("eyas_new_booking_draft");
     toast.success("Booking created");
+
+    // Auto-send WhatsApp Saree Collected confirmation if enabled for prepleat
+    if (service === "prepleat" && sendWhatsAppOnSave) {
+      const custObj = customers.find((x) => x.id === cid);
+      const custName = custObj?.name || newName.trim() || "Customer";
+      const phoneRaw = custObj?.phone || newPhoneVal;
+      const phoneWA = cleanPhoneForWhatsApp(phoneRaw);
+
+      if (phoneWA) {
+        const dateStr = formatAppDate(b.deliveryDate);
+        const timeStr = fmtTime12(b.deliveryTime);
+        const billNo = formatShortBillNumber(b.billNumber, b.id);
+        const netTotal = total;
+        const paid = advNum;
+        const dueBal = Math.max(0, netTotal - paid);
+
+        const extraLine = extraNum > 0 ? `🚗 *Extra / Travel*: ${fmtINR(extraNum)} (${extraChargesNote.trim() || "Travel"})` : "";
+        const noteLine = notes.trim() ? `📝 *Note*: ${notes.trim()}` : "";
+
+        const msgLines = [
+          `✨ *EYAS SAREE DRAPIST* ✨`,
+          ``,
+          `Hi *${custName}* 🙏`,
+          ``,
+          `Your saree has been safely *collected* for *Pre-Pleating*! 🧵💛`,
+          ``,
+          `🧾 *Bill Number*: ${billNo}`,
+          `🥻 *Sarees*: ${sareeCount} saree${sareeCount > 1 ? "s" : ""} × ${fmtINR(effPrice)}`,
+          `📅 *Delivery*: ${dateStr} · ${timeStr}`,
+          extraLine,
+          `💰 *Total Bill*: ${fmtINR(netTotal)}`,
+          `💵 *Advance Paid*: ${fmtINR(paid)}`,
+          dueBal > 0 ? `📌 *Balance Due*: *${fmtINR(dueBal)}*` : `✅ *Status*: Fully Paid`,
+          noteLine,
+          ``,
+          `✨ Wear with confidence & elegance! ✨`,
+          `Eyas Saree Drapist 💛`,
+        ].filter((l) => l !== "");
+
+        const waText = encodeURIComponent(msgLines.join("\n"));
+        window.open(`https://wa.me/${phoneWA}?text=${waText}`, "_blank");
+      }
+    }
+
     navigate({ to: "/bookings/$id", params: { id: b.id } });
   };
 
@@ -1534,13 +1582,26 @@ function NewBooking() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center mt-1 border-t border-border/40 pt-3">
+                  <div className="flex items-center justify-between mt-1 border-t border-border/40 pt-2.5 px-1">
                     <button
                       type="button"
                       onClick={() => setShowAddField(true)}
-                      className="text-[11px] font-semibold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
+                      className="text-[11px] font-bold text-primary flex items-center gap-1 hover:underline cursor-pointer active:scale-95"
                     >
                       + Add Custom Field
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMeasurements(settings.defaultMeasurements.map((m) => ({ label: m.label, value: m.value ?? 30 })));
+                        toast.success("Measurements reset to defaults 📐");
+                      }}
+                      className="text-[10px] font-bold text-muted-foreground hover:text-foreground flex items-center gap-1 bg-secondary hover:bg-secondary/80 px-2.5 py-1 rounded-lg transition active:scale-95 cursor-pointer"
+                      title="Reset fields to default settings"
+                    >
+                      <RotateCcw className="size-3" />
+                      <span>Reset Defaults</span>
                     </button>
                   </div>
                 )}
@@ -1658,7 +1719,35 @@ function NewBooking() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2.5 mt-5">
+            {service === "prepleat" && (
+              <div className="mt-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <MessageCircle className="size-4.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground leading-tight truncate">Send Saree Collected on WhatsApp</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">Send confirmation & bill details to customer</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSendWhatsAppOnSave(!sendWhatsAppOnSave)}
+                  className={cn(
+                    "w-10 h-5.5 rounded-full relative transition-colors duration-200 cursor-pointer shrink-0",
+                    sendWhatsAppOnSave ? "bg-emerald-600" : "bg-muted-foreground/30"
+                  )}
+                  title={sendWhatsAppOnSave ? "WhatsApp confirmation ON" : "WhatsApp confirmation OFF"}
+                >
+                  <div
+                    className={cn(
+                      "size-4 rounded-full bg-white transition-transform duration-200 absolute top-0.75 left-0.75 shadow-sm",
+                      sendWhatsAppOnSave && "translate-x-4.5"
+                    )}
+                  />
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2.5 mt-4">
               <button
                 type="button"
                 onClick={() => setReviewOpen(false)}

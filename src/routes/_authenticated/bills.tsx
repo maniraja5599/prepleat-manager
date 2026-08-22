@@ -21,9 +21,11 @@ import {
   FileText,
   Calendar,
   X,
+  Eye,
 } from "lucide-react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
+import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/bills")({
@@ -39,6 +41,7 @@ export function BillsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "due" | "paid" | "cancelled">("all");
   const [sortAsc, setSortAsc] = useState(false);
+  const [previewBooking, setPreviewBooking] = useState<Booking | null>(null);
 
   // Extract pure bill number integer for accurate numerical ordering
   const getBillInt = (b: Booking): number => {
@@ -333,11 +336,16 @@ export function BillsPage() {
                       )}
                       <button
                         type="button"
-                        onClick={(e) => handleDownloadPDF(b, e)}
-                        className="size-7 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition cursor-pointer"
-                        title="Download Invoice PDF"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPreviewBooking(b);
+                        }}
+                        className="px-2.5 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold flex items-center gap-1 transition cursor-pointer active:scale-95"
+                        title="Preview & Download Invoice PDF"
                       >
                         <FileText className="size-3.5" />
+                        <span>PDF Bill</span>
                       </button>
                     </div>
 
@@ -356,6 +364,18 @@ export function BillsPage() {
           )}
         </div>
       </div>
+
+      {previewBooking && (
+        <PDFPreviewModal
+          open={!!previewBooking}
+          onClose={() => setPreviewBooking(null)}
+          booking={previewBooking}
+          customer={customers.find((c) => c.id === previewBooking.customerId)}
+          artist={previewBooking.artistId ? customers.find((c) => c.id === previewBooking.artistId) : undefined}
+          payments={allPayments.filter((p) => p.bookingId === previewBooking.id)}
+          settings={settings}
+        />
+      )}
     </AppShell>
   );
 }

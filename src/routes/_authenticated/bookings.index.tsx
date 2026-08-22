@@ -130,6 +130,7 @@ function BookingsPage() {
   const [pendingCollectType, setPendingCollectType] = useState<"full" | "custom" | "none">("full");
   const [pendingCustomAmount, setPendingCustomAmount] = useState("");
   const [pendingPayMode, setPendingPayMode] = useState<string>(settings.defaultPaymentMode ?? "gpay");
+  const [pendingSendDeliveryWA, setPendingSendDeliveryWA] = useState(true);
 
   // Ticker Index and interval for scrolling stats ticker in header and month cards
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -1116,6 +1117,37 @@ function BookingsPage() {
                 </div>
               </div>
 
+              {/* Delivery Receipt WhatsApp Toggle */}
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground leading-tight truncate">
+                      Send Delivery Receipt on WhatsApp
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      Thank you & settlement receipt to customer
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPendingSendDeliveryWA(!pendingSendDeliveryWA)}
+                  className={cn(
+                    "w-9 h-5 rounded-full relative transition-colors duration-200 cursor-pointer shrink-0",
+                    pendingSendDeliveryWA ? "bg-emerald-600" : "bg-muted-foreground/30"
+                  )}
+                  title={pendingSendDeliveryWA ? "Delivery receipt ON" : "Delivery receipt OFF"}
+                >
+                  <div
+                    className={cn(
+                      "size-3.5 rounded-full bg-white transition-transform duration-200 absolute top-0.75 left-0.75 shadow-sm",
+                      pendingSendDeliveryWA && "translate-x-4"
+                    )}
+                  />
+                </button>
+              </div>
+
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
@@ -1143,6 +1175,34 @@ function BookingsPage() {
                       });
                     }
                     updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
+                    
+                    if (b && pendingSendDeliveryWA) {
+                      const c = customers.find((x) => x.id === b.customerId);
+                      if (c?.phone) {
+                        const phone = cleanPhoneForWhatsApp(c.phone);
+                        const netTotal = netBookingAmount(b);
+                        const billNo = formatShortBillNumber(b.billNumber, b.id);
+                        const msgLines = [
+                          `✨ *EYAS SAREE DRAPIST* ✨`,
+                          ``,
+                          `Hi *${c.name || "Customer"}* 💛`,
+                          ``,
+                          `Your saree order has been successfully *delivered*! ✅✨`,
+                          ``,
+                          `🧾 *Bill Number*: ${billNo}`,
+                          `💰 *Final Settlement*: Total ${fmtINR(netTotal)} (${remainingDueAfter === 0 ? "Paid in Full ✅" : `Due: ${fmtINR(remainingDueAfter)}`})`,
+                          ``,
+                          `We hope you love your flawless pleats! 🥻`,
+                          `Please share your photos with us! 📸`,
+                          ``,
+                          `✨ Wear with confidence & elegance! ✨`,
+                          `Eyas Saree Drapist 💛`,
+                        ].filter((l) => l !== "");
+                        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msgLines.join("\n"))}`;
+                        window.open(waUrl, "_blank");
+                      }
+                    }
+
                     toast.success(
                       collectedNow > 0 && remainingDueAfter === 0
                         ? "Paid & Marked as Completed! ✅"
