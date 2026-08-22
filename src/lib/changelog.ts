@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.9";
+export const APP_VERSION = "1.5.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,22 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.9",
+    version: "v1.5.0",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Sticky Fixed Month Timeline Headers",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📌",
+        text: "Sticky Month Timeline Headers",
+        desc: "Bookings மற்றும் Bills பக்கங்களில் கீழே ஸ்க்ரோல் செய்யும்போது, அந்த மாதத்தின் தலைப்பு (Month Header & Stats Ticker) அடுத்த மாதம் வரும் வரை திரையின் மேல்பகுதியில் நிலையாக (Sticky Fixed) ஒட்டிக்கொண்டு இருக்கும் வசதி சேர்க்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.9",
+    date: "22 Aug 2026",
     title: "Keyboard Auto-Hide for Bottom Nav & Payments",
     badge: "LATEST UPDATE ✨",
     changes: [

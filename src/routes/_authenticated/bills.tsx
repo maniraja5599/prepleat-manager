@@ -321,40 +321,47 @@ export function BillsPage() {
                       theme.border,
                     )}
                   >
-                    <div className="flex items-center justify-between gap-2 px-0.5 flex-wrap">
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span
-                          className={cn(
-                            "px-3 py-1 rounded-xl text-xs font-display font-extrabold tracking-wide flex items-center gap-1.5",
-                            theme.badge,
-                          )}
-                        >
-                          <Calendar className="size-3.5" />
-                          <span>{group.monthLabel}</span>
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground flex-wrap justify-end">
-                        <span className="font-semibold text-foreground">
-                          {group.items.length} {group.items.length === 1 ? "Bill" : "Bills"} ({monthSarees} Sarees)
-                        </span>
-                        <span>·</span>
-                        <span className="text-primary font-bold">{fmtINR(monthTotal)}</span>
-                        {monthDue > 0 ? (
-                          <>
-                            <span>·</span>
-                            <span className="text-destructive font-bold">Due: {fmtINR(monthDue)}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>·</span>
-                            <span className="text-success font-bold">100% Paid ✓</span>
-                          </>
+                  {/* Sticky Fixed Month Section Header */}
+                  <div
+                    className={cn(
+                      "sticky top-[52px] sm:top-[56px] z-10 -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl backdrop-blur-md border-b flex items-center justify-between gap-2 flex-wrap shadow-xs transition-all",
+                      theme.bg,
+                      theme.border,
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded-xl text-xs font-display font-extrabold tracking-wide flex items-center gap-1.5 shadow-2xs",
+                          theme.badge,
                         )}
-                      </div>
+                      >
+                        <Calendar className="size-3.5" />
+                        <span>{group.monthLabel}</span>
+                      </span>
                     </div>
 
-                    <div className="space-y-2.5">
+                    <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground flex-wrap justify-end">
+                      <span className="font-semibold text-foreground">
+                        {group.items.length} {group.items.length === 1 ? "Bill" : "Bills"} ({monthSarees} Sarees)
+                      </span>
+                      <span>·</span>
+                      <span className="text-primary font-bold">{fmtINR(monthTotal)}</span>
+                      {monthDue > 0 ? (
+                        <>
+                          <span>·</span>
+                          <span className="text-destructive font-bold">Due: {fmtINR(monthDue)}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>·</span>
+                          <span className="text-success font-bold">100% Paid ✓</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 pt-1">
                       {group.items.map((b) => {
                         const c = customers.find((x) => x.id === b.customerId);
                         const due = totalDue(b);

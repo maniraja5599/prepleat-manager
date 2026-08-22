@@ -800,13 +800,19 @@ function BookingsPage() {
                     theme.border,
                   )}
                 >
-                  {/* Month Section Header with Highlighted Pill + Animated Scrolling Stats Ticker */}
-                  <div className="flex items-center justify-between gap-2 px-0.5">
+                  {/* Sticky Fixed Month Section Header with Highlighted Pill + Animated Scrolling Stats Ticker */}
+                  <div
+                    className={cn(
+                      "sticky top-[52px] sm:top-[56px] z-10 -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl backdrop-blur-md border-b flex items-center justify-between gap-2 shadow-xs transition-all",
+                      theme.bg,
+                      theme.border,
+                    )}
+                  >
                     {/* Month Highlighted Badge Pill */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span
                         className={cn(
-                          "px-3 py-1 rounded-xl text-xs font-display font-extrabold tracking-wide flex items-center gap-1.5",
+                          "px-3 py-1 rounded-xl text-xs font-display font-extrabold tracking-wide flex items-center gap-1.5 shadow-2xs",
                           theme.badge,
                         )}
                       >
@@ -832,7 +838,7 @@ function BookingsPage() {
                   </div>
 
                   {/* Month's Cards */}
-                  <ul className="space-y-2">
+                  <ul className="space-y-2 pt-1">
                     {group.items.map((b) => {
                       const c = customers.find((x) => x.id === b.customerId);
                       const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
