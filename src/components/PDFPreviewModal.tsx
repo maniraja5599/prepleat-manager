@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   type Booking,
   type Customer,
@@ -14,8 +14,10 @@ import {
 } from "@/lib/store";
 import { generateBillPDF } from "@/lib/pdf-bill";
 import { cleanPhoneForWhatsApp } from "@/lib/utils";
-import { X, Download, MessageCircle, Printer, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Download, MessageCircle, Printer, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 interface PDFPreviewModalProps {
   open: boolean;
@@ -37,6 +39,7 @@ export function PDFPreviewModal({
   settings,
 }: PDFPreviewModalProps) {
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
   if (!open || !booking) return null;
 
@@ -46,10 +49,42 @@ export function PDFPreviewModal({
   const netTotal = netBookingAmount(booking);
   const totalPaid = (booking.advancePaid || 0);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!booking) return;
-    generateBillPDF({ booking, customer, artist, payments, settings });
-    toast.success("PDF Invoice downloaded! 📄");
+    if (printAreaRef.current) {
+      setDownloading(true);
+      try {
+        const canvas = await html2canvas(printAreaRef.current, {
+          scale: 3,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        });
+        const imgData = canvas.toDataURL("image/png");
+
+        const pdfWidth = 420;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        const pdf = new jsPDF({
+          orientation: pdfHeight > pdfWidth ? "p" : "l",
+          unit: "pt",
+          format: [pdfWidth, pdfHeight],
+        });
+
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+        pdf.save(`Bill-${billNo}.pdf`);
+        toast.success("PDF Invoice downloaded! 📄");
+      } catch (err) {
+        console.error("Failed to generate PDF from preview:", err);
+        generateBillPDF({ booking, customer, artist, payments, settings });
+        toast.success("PDF Invoice downloaded! 📄");
+      } finally {
+        setDownloading(false);
+      }
+    } else {
+      generateBillPDF({ booking, customer, artist, payments, settings });
+      toast.success("PDF Invoice downloaded! 📄");
+    }
   };
 
   const handlePrint = () => {
@@ -364,10 +399,20 @@ export function PDFPreviewModal({
             <button
               type="button"
               onClick={handleDownload}
-              className="px-4 py-2 rounded-xl saree-gradient text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer"
+              disabled={downloading}
+              className="px-4 py-2 rounded-xl saree-gradient text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-60"
             >
-              <Download className="size-3.5" />
-              <span>Download PDF</span>
+              {downloading ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Exporting PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="size-3.5" />
+                  <span>Download PDF</span>
+                </>
+              )}
             </button>
           </div>
         </div>

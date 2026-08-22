@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.5";
+export const APP_VERSION = "1.4.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,22 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.5",
+    version: "v1.4.6",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "100% WYSIWYG Invoice PDF Download (Matches Screen Preview 1:1)",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📄",
+        text: "Direct High-Res Screen Matching PDF Export",
+        desc: "Download PDF பட்டனை அழுத்தும்போது திரையில் பார்க்கும் அதே வண்ணமயமான Tax Invoice மற்றும் ரப்பர் சீலுடன் கூடிய அசல் பில் 100% துல்லியமாக PDF ஃபைலாகப் பதிவிறக்கப்படும்.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.5",
+    date: "22 Aug 2026",
     title: "Refined Rubber Stamp Seal (Single Line Header & No Date)",
     badge: "LATEST UPDATE ✨",
     changes: [
