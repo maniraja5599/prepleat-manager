@@ -38,6 +38,10 @@ import {
   X,
   Phone,
   MessageCircle,
+  Search,
+  Check,
+  CheckCircle,
+  ChevronRight,
 } from "lucide-react";
 import {
   BarChart,
@@ -854,6 +858,8 @@ function PaymentsPage() {
           serviceSplit={serviceSplit}
           customerKindSplit={customerKindSplit}
           monthlyYearlyReport={monthlyYearlyReport}
+          onAddPayment={addPayment}
+          settings={settings}
         />
       )}
 
@@ -887,6 +893,10 @@ function PaymentsPage() {
           unifiedRecentTransactions={unifiedRecentTransactions}
           allTimeTrend={allTimeTrend}
           onEditTx={setEditingTx}
+          onViewPending={() => {
+            setTab("income");
+            handleSubFilterChange("pending");
+          }}
         />
       )}
 
@@ -1038,27 +1048,73 @@ function IncomeView(p: {
   serviceSplit: { drape: number; prepleat: number };
   customerKindSplit: { artist: number; client: number };
   monthlyYearlyReport: { year: string; totalCollected: number; totalBooked: number; months: { label: string; collected: number; booked: number }[] }[];
+  onAddPayment?: (payment: any) => void;
+  settings?: any;
 }) {
+  const [searchPending, setSearchPending] = useState("");
+  const [pendingCategoryFilter, setPendingCategoryFilter] = useState<"all" | "prepleat" | "draping" | "high">("all");
+  const [collectTarget, setCollectTarget] = useState<any | null>(null);
+  const [collectAmount, setCollectAmount] = useState("");
+  const [collectMode, setCollectMode] = useState<PaymentMode>("gpay");
+  const [collectNote, setCollectNote] = useState("Settled pending balance");
+
   const pendingList = useMemo(() => {
     return p.bookings
       .filter((b) => {
-        if (b.status !== "completed") return false;
+        if (b.status !== "completed" && b.status !== "delivered") return false;
         return totalDue(b) > 0;
       })
       .map((b) => {
         const c = p.customers.find((x) => x.id === b.customerId);
+        const due = totalDue(b);
+        const total = (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0);
         return {
+          booking: b,
+          customer: c,
           bookingId: b.id,
-          name: c?.name || b.customerName || "Unknown",
+          customerId: b.customerId,
+          billNumber: b.billNumber,
+          formattedBillNo: formatShortBillNumber(b.billNumber, b.id),
+          name: c?.name || b.customerName || "Customer",
           phone: c?.phone || b.customerPhone || "",
-          due: totalDue(b),
-          totalAmount: (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0),
-          service: b.service || "Saree PrePleat",
+          customerKind: c?.kind || "client",
+          customerPlace: c?.place || "",
+          due,
+          totalAmount: total,
+          advancePaid: b.advancePaid || 0,
+          sareeCount: b.sareeCount || 1,
+          pricePerSaree: b.pricePerSaree || 0,
+          extraCharges: b.extraCharges || 0,
+          extraChargesNote: b.extraChargesNote || "Travel",
+          discount: b.discount || 0,
+          service: b.service || "prepleat",
+          deliveryDate: b.deliveryDate,
+          deliveryTime: b.deliveryTime,
+          completedAt: b.completedAt,
           dateStr: formatAppDate(b.deliveryDate),
         };
       })
       .sort((a, b) => b.due - a.due);
   }, [p.bookings, p.customers]);
+
+  const filteredPending = useMemo(() => {
+    return pendingList.filter((item) => {
+      const q = searchPending.trim().toLowerCase();
+      const matchesQuery =
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        item.phone.toLowerCase().includes(q) ||
+        item.formattedBillNo.toLowerCase().includes(q) ||
+        String(item.billNumber).toLowerCase().includes(q);
+
+      if (!matchesQuery) return false;
+      if (pendingCategoryFilter === "prepleat") return item.service === "prepleat";
+      if (pendingCategoryFilter === "draping")
+        return item.service === "drape" || item.service === "draping" || item.service === "both";
+      if (pendingCategoryFilter === "high") return item.due >= 500;
+      return true;
+    });
+  }, [pendingList, searchPending, pendingCategoryFilter]);
 
   return (
     <>
@@ -1497,68 +1553,434 @@ function IncomeView(p: {
           </div>
         </>
       ) : (
-        /* Pending Payments List */
-        <div className="bg-card card-shadow rounded-2xl p-4 mb-20">
-          <div className="flex items-center justify-between mb-4 border-b border-border/40 pb-2">
-            <div>
-              <p className="text-xs font-bold text-foreground">Outstanding Bookings</p>
-              <p className="text-[10px] text-muted-foreground">{pendingList.length} client{pendingList.length > 1 ? "s" : ""} pending</p>
+        /* Enhanced Pending Payments Hub */
+        <div className="space-y-3 mb-24">
+          {/* Summary Alert Banner */}
+          <div className="bg-gradient-to-r from-destructive/15 via-destructive/10 to-amber-500/10 border border-destructive/30 rounded-2xl p-3.5 card-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="size-9 rounded-xl bg-destructive/20 text-destructive flex items-center justify-center font-bold shrink-0">
+                  <AlertCircle className="size-5" />
+                </span>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground">
+                    Completed Orders Pending Balance
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground">
+                    {pendingList.length} order{pendingList.length > 1 ? "s" : ""} · Total Due:{" "}
+                    <span className="font-bold text-destructive tabular-nums">{fmtINR(p.totalPending)}</span>
+                  </p>
+                </div>
+              </div>
+              {pendingList.length > 0 && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/20 text-destructive">
+                  Action Required
+                </span>
+              )}
             </div>
-            <span className="text-xs font-bold text-destructive">Total Due: {fmtINR(p.totalPending)}</span>
           </div>
 
-          {pendingList.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">No pending payments! All cleared ✅</p>
+          {/* Search & Filter Bar */}
+          {pendingList.length > 0 && (
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by customer, phone, or bill #..."
+                  value={searchPending}
+                  onChange={(e) => setSearchPending(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 bg-card rounded-xl border border-border/50 text-xs focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+                />
+                {searchPending && (
+                  <button
+                    onClick={() => setSearchPending("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Category Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {(
+                  [
+                    { id: "all", label: `All (${pendingList.length})` },
+                    { id: "prepleat", label: "Pre-Pleat" },
+                    { id: "draping", label: "Draping" },
+                    { id: "high", label: "High Due (≥ ₹500)" },
+                  ] as const
+                ).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setPendingCategoryFilter(f.id)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer active:scale-95",
+                      pendingCategoryFilter === f.id
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pending Cards List */}
+          {filteredPending.length === 0 ? (
+            <div className="bg-card card-shadow rounded-2xl p-8 text-center border border-border/30">
+              <div className="size-12 rounded-full bg-success/15 text-success mx-auto flex items-center justify-center mb-2">
+                <CheckCircle className="size-6" />
+              </div>
+              <p className="text-sm font-bold text-foreground mb-0.5">
+                {searchPending ? "No matching pending payments found" : "All Balances Cleared!"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {searchPending ? "Try a different search keyword" : "All completed bookings are paid in full ✅"}
+              </p>
+            </div>
           ) : (
-            <ul className="divide-y divide-border/40">
-              {pendingList.map((item) => (
-                <li key={item.bookingId} className="py-3 first:pt-0 last:pb-0">
-                  <div className="flex items-center gap-3">
-                    <span className="size-9 rounded-full bg-destructive/10 text-destructive text-sm font-bold flex items-center justify-center shrink-0">
-                      {item.name.charAt(0).toUpperCase()}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between gap-1">
-                        <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
-                        <p className="text-sm font-bold text-destructive tabular-nums">{fmtINR(item.due)}</p>
+            <div className="space-y-3">
+              {filteredPending.map((item) => {
+                const serviceLabel =
+                  item.service === "prepleat"
+                    ? "Pre-Pleat"
+                    : item.service === "drape" || item.service === "draping"
+                      ? "Draping"
+                      : "PrePleat + Drape";
+
+                const waMessage = [
+                  `✨ *EYAS SAREE DRAPIST* ✨`,
+                  ``,
+                  `Hi *${item.name}* 🙏`,
+                  ``,
+                  `Gentle reminder — balance payment is pending for your saree order.`,
+                  ``,
+                  `🧾 *Bill Number*: ${item.formattedBillNo}`,
+                  `🥻 *Service*: ${serviceLabel} (${item.sareeCount} saree${item.sareeCount > 1 ? "s" : ""})`,
+                  `📅 *Delivered*: ${item.dateStr}`,
+                  item.extraCharges > 0
+                    ? `🚗 *Extra / Travel*: ${fmtINR(item.extraCharges)} (${item.extraChargesNote})`
+                    : "",
+                  item.discount > 0 ? `🏷️ *Discount*: -${fmtINR(item.discount)}` : "",
+                  ``,
+                  `💰 *Total Bill*: ${fmtINR(item.totalAmount)}`,
+                  `💵 *Paid*: ${fmtINR(item.advancePaid)}`,
+                  `📌 *Balance Due*: *${fmtINR(item.due)}*`,
+                  ``,
+                  `Pay via GPay / Cash. Thank you! 🙏`,
+                  ``,
+                  `✨ Wear with confidence & elegance! ✨`,
+                  `Eyas Saree Drapist 🙏`,
+                ]
+                  .filter((l) => l !== "")
+                  .join("\n");
+
+                return (
+                  <div
+                    key={item.bookingId}
+                    className="bg-card card-shadow rounded-2xl p-4 border border-border/40 space-y-3 relative overflow-hidden transition hover:border-border/70"
+                  >
+                    {/* Top Accent Line */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-destructive via-amber-500 to-primary" />
+
+                    {/* Card Header: Bill & Due */}
+                    <div className="flex items-start justify-between gap-2 pt-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-secondary text-foreground border border-border/40">
+                          {item.formattedBillNo}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary">
+                          {serviceLabel}
+                        </span>
+                        {item.customerKind === "artist" && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                            Artist
+                          </span>
+                        )}
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success">
+                          Delivered ✅
+                        </span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {item.dateStr} · {item.service} (Total: {fmtINR(item.totalAmount)})
-                      </p>
+
+                      <div className="text-right shrink-0">
+                        <div className="flex items-center gap-1 text-destructive font-extrabold text-base tabular-nums">
+                          <IndianRupee className="size-4 stroke-[2.5]" />
+                          <span>{fmtINR(item.due).replace("₹", "")}</span>
+                        </div>
+                        <span className="text-[9px] uppercase font-bold text-destructive/80 tracking-wider">
+                          Balance Due
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/20">
-                    <Link
-                      to="/bookings/$id"
-                      params={{ id: item.bookingId }}
-                      className="text-[10px] font-semibold text-primary px-2.5 py-1 rounded-md bg-primary/10 active:scale-95 transition"
-                    >
-                      View Booking
-                    </Link>
-                    {item.phone && (
-                      <div className="flex gap-2">
+
+                    {/* Customer & Delivery Details */}
+                    <div className="flex items-center gap-3 bg-secondary/30 rounded-xl p-2.5">
+                      <span className="size-9 rounded-full bg-destructive/15 text-destructive font-bold text-sm flex items-center justify-center shrink-0">
+                        {item.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="font-bold text-sm text-foreground truncate">{item.name}</h4>
+                          {item.customerPlace && (
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              📍 {item.customerPlace}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                          Delivered: {item.dateStr} {item.deliveryTime ? `· ${item.deliveryTime}` : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Order Financial Breakdown */}
+                    <div className="bg-secondary/50 rounded-xl p-2.5 space-y-1 text-xs">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>
+                          {item.sareeCount} Saree{item.sareeCount > 1 ? "s" : ""} × {fmtINR(item.pricePerSaree)}
+                        </span>
+                        <span className="font-medium text-foreground tabular-nums">
+                          {fmtINR(item.sareeCount * item.pricePerSaree)}
+                        </span>
+                      </div>
+                      {item.extraCharges > 0 && (
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>🚗 Extra ({item.extraChargesNote})</span>
+                          <span className="font-medium text-foreground tabular-nums">+{fmtINR(item.extraCharges)}</span>
+                        </div>
+                      )}
+                      {item.discount > 0 && (
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>🏷️ Discount</span>
+                          <span className="font-medium text-destructive tabular-nums">-{fmtINR(item.discount)}</span>
+                        </div>
+                      )}
+                      <div className="border-t border-border/30 pt-1 flex items-center justify-between text-xs font-bold">
+                        <span className="text-muted-foreground">
+                          Total: <span className="text-foreground">{fmtINR(item.totalAmount)}</span> · Paid:{" "}
+                          <span className="text-success">{fmtINR(item.advancePaid)}</span>
+                        </span>
+                        <span className="text-destructive font-bold tabular-nums">Due: {fmtINR(item.due)}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions Grid */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCollectTarget(item);
+                          setCollectAmount(String(item.due));
+                          setCollectMode("gpay");
+                          setCollectNote("Settled pending balance");
+                        }}
+                        className="py-2.5 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer"
+                      >
+                        <Wallet className="size-3.5" />
+                        <span>Collect {fmtINR(item.due)}</span>
+                      </button>
+
+                      {item.phone ? (
                         <a
-                          href={`tel:${cleanPhoneForDialing(item.phone)}`}
-                          className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground px-2 py-1 rounded-md bg-secondary active:scale-95 transition"
-                        >
-                          <Phone className="size-3" /> Call
-                        </a>
-                        <a
-                          href={`https://wa.me/${cleanPhoneForWhatsApp(item.phone)}?text=${encodeURIComponent(
-                            `Hi ${item.name}, this is a gentle reminder regarding the pending payment of ${fmtINR(item.due)} for your ${item.service} booking on ${item.dateStr}.`
-                          )}`}
+                          href={`https://wa.me/${cleanPhoneForWhatsApp(item.phone)}?text=${encodeURIComponent(waMessage)}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-1 text-[10px] font-semibold text-[oklch(0.45_0.18_150)] px-2 py-1 rounded-md bg-[oklch(0.55_0.18_150)]/10 active:scale-95 transition"
+                          className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition cursor-pointer"
                         >
-                          <MessageCircle className="size-3" /> WhatsApp
+                          <MessageCircle className="size-3.5" />
+                          <span>WhatsApp</span>
                         </a>
-                      </div>
+                      ) : (
+                        <Link
+                          to="/bookings/$id"
+                          params={{ id: item.bookingId }}
+                          className="py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition"
+                        >
+                          <FileText className="size-3.5 text-primary" />
+                          <span>View Booking</span>
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Secondary Actions */}
+                    <div className="flex items-center justify-between pt-1 border-t border-border/20 text-[10px]">
+                      <Link
+                        to="/bookings/$id"
+                        params={{ id: item.bookingId }}
+                        className="font-bold text-primary hover:underline flex items-center gap-1 py-1"
+                      >
+                        <FileText className="size-3" />
+                        <span>Open Booking #{item.formattedBillNo}</span>
+                      </Link>
+
+                      {item.phone && (
+                        <a
+                          href={`tel:${cleanPhoneForDialing(item.phone)}`}
+                          className="font-bold text-muted-foreground hover:text-foreground flex items-center gap-1 py-1 bg-secondary/80 px-2.5 rounded-md active:scale-95 transition"
+                        >
+                          <Phone className="size-3 text-primary" />
+                          <span>Call {item.phone}</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Quick Collect Dialog */}
+          {collectTarget && (
+            <div
+              className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+              onClick={() => setCollectTarget(null)}
+            >
+              <div
+                className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-200 border border-border/40"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between border-b border-border/30 pb-3">
+                  <div>
+                    <h3 className="font-display font-bold text-base flex items-center gap-1.5 text-foreground">
+                      <Wallet className="size-4 text-primary" /> Collect Pending Balance
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {collectTarget.formattedBillNo} · {collectTarget.name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setCollectTarget(null)}
+                    className="size-8 rounded-full bg-secondary flex items-center justify-center cursor-pointer hover:bg-secondary/80 active:scale-95 transition"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+
+                {/* Due Summary Card */}
+                <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-destructive tracking-wider block">
+                      Total Outstanding Balance
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {collectTarget.sareeCount} saree(s) · {collectTarget.service}
+                    </span>
+                  </div>
+                  <span className="text-xl font-extrabold text-destructive tabular-nums">
+                    {fmtINR(collectTarget.due)}
+                  </span>
+                </div>
+
+                {/* Amount to collect */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">
+                    Amount to Collect
+                  </label>
+                  <div className="relative bg-secondary rounded-2xl flex items-center px-3.5 py-2.5">
+                    <IndianRupee className="size-4 text-muted-foreground" />
+                    <input
+                      type="number"
+                      value={collectAmount}
+                      onChange={(e) => setCollectAmount(e.target.value)}
+                      className="bg-transparent flex-1 pl-1 text-xl font-bold tabular-nums focus:outline-none"
+                      placeholder={String(collectTarget.due)}
+                      autoFocus
+                    />
+                    {Number(collectAmount) !== collectTarget.due && (
+                      <button
+                        type="button"
+                        onClick={() => setCollectAmount(String(collectTarget.due))}
+                        className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg hover:bg-primary/20 active:scale-95 transition cursor-pointer"
+                      >
+                        Full Due
+                      </button>
                     )}
                   </div>
-                </li>
-              ))}
-            </ul>
+                </div>
+
+                {/* Mode Selector */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1.5">
+                    Payment Mode
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setCollectMode(m)}
+                        className={cn(
+                          "py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer active:scale-95 text-center border",
+                          collectMode === m
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                            : "bg-secondary border-border/30 hover:bg-secondary/80 text-foreground/80"
+                        )}
+                      >
+                        {m === "gpay" ? "📱 GPay" : m === "cash" ? "💵 Cash" : "💳 Other"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold block mb-1">
+                    Payment Note (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={collectNote}
+                    onChange={(e) => setCollectNote(e.target.value)}
+                    placeholder="e.g. Settled after delivery"
+                    className="w-full bg-secondary rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary border border-border/30"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
+                  <button
+                    type="button"
+                    onClick={() => setCollectTarget(null)}
+                    className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const amt = Number(collectAmount);
+                      if (!amt || amt <= 0) {
+                        toast.error("Please enter a valid amount");
+                        return;
+                      }
+                      if (p.onAddPayment) {
+                        p.onAddPayment({
+                          bookingId: collectTarget.bookingId,
+                          customerId: collectTarget.customerId,
+                          amount: amt,
+                          mode: collectMode,
+                          date: new Date().toISOString(),
+                          note: collectNote.trim() || "Pending balance collected",
+                        });
+                      }
+                      toast.success(`Payment of ${fmtINR(amt)} recorded! ✅`);
+                      setCollectTarget(null);
+                    }}
+                    className="py-3 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="size-4" />
+                    <span>
+                      Record {collectAmount ? fmtINR(Number(collectAmount)) : fmtINR(collectTarget.due)}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1776,6 +2198,7 @@ function SummaryView(p: {
     expense: number;
     net: number;
   }>;
+  onViewPending?: () => void;
 }) {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
@@ -1962,6 +2385,34 @@ function SummaryView(p: {
           <span>{metrics}</span>
         </div>
       </div>
+
+      {/* Outstanding Dues Alert Card */}
+      {p.totalPending > 0 && (
+        <div className="bg-destructive/10 border border-destructive/25 rounded-2xl p-3.5 mb-3 flex items-center justify-between gap-3 card-shadow">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="size-8 rounded-full bg-destructive/20 text-destructive flex items-center justify-center shrink-0 font-bold">
+              <AlertCircle className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-foreground truncate">
+                {fmtINR(p.totalPending)} Outstanding Balance
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                From completed orders awaiting settlement
+              </p>
+            </div>
+          </div>
+          {p.onViewPending && (
+            <button
+              onClick={p.onViewPending}
+              className="px-3 py-1.5 rounded-xl bg-destructive text-destructive-foreground text-[11px] font-bold hover:brightness-95 active:scale-95 transition shrink-0 cursor-pointer flex items-center gap-1 shadow-xs"
+            >
+              <span>Collect</span>
+              <ArrowRight className="size-3" />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2 mb-3">
         <Stat

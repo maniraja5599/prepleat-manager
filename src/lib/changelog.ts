@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.6";
+export const APP_VERSION = "1.3.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.6",
+    version: "v1.3.7",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Enhanced Pending Payments Hub & In-Place Quick Settle",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "💵",
+        text: "In-Place Quick Collect & Settle Dialog",
+        desc: "Payments பக்கத்தில் இருந்தபடியே முழு பாக்கித் தொகை அல்லது தேவையான தொகையை GPay / Cash மூலம் 1-Tap-ல் வரவு வைக்கும் வசதி.",
+      },
+      {
+        emoji: "📑",
+        text: "Full Financial Breakdown Cards",
+        desc: "முடிவடைந்த ஆர்டர்களின் புடவை எண்ணிக்கை, ரேட், கூடுதல் கட்டணம், தள்ளுபடி, வரவு மற்றும் பாக்கித் தொகை அனைத்தும் முழுமையாகத் தெரியும்.",
+      },
+      {
+        emoji: "💬",
+        text: "Branded WhatsApp Payment Reminders",
+        desc: "பில் எண் மற்றும் கணக்கு விவரங்களுடன் 'EYAS SAREE DRAPIST' பிராண்டட் WhatsApp நினைவூட்டல் செய்தி அனுப்பும் வசதி.",
+      },
+      {
+        emoji: "🔍",
+        text: "Search & Filter for Pending Orders",
+        desc: "வாடிக்கையாளர் பெயர், போன் எண் அல்லது பில் எண் மூலம் பாக்கி உள்ள ஆர்டர்களை எளிதாகத் தேடும் வசதி.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.6",
+    date: "22 Aug 2026",
     title: "Branded WhatsApp, In-App PDF Preview & Measurement Reset",
     badge: "LATEST UPDATE ✨",
     changes: [
