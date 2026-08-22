@@ -7,6 +7,17 @@ export function isNotificationSupported(): boolean {
   return typeof window !== "undefined" && "Notification" in window;
 }
 
+export function isNotificationsMuted(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("eyas_notifications_muted") === "true";
+}
+
+export function setNotificationsMuted(muted: boolean): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("eyas_notifications_muted", String(muted));
+  window.dispatchEvent(new Event("notification-settings-changed"));
+}
+
 export function getNotificationPermission(): NotificationStatus {
   if (!isNotificationSupported()) return "unsupported";
   return Notification.permission;
@@ -16,6 +27,9 @@ export async function requestNotificationPermission(): Promise<NotificationStatu
   if (!isNotificationSupported()) return "unsupported";
   try {
     const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotificationsMuted(false);
+    }
     return permission;
   } catch (err) {
     console.error("Error requesting notification permission:", err);
@@ -76,7 +90,7 @@ export async function sendNativeNotification(
  * Checks for upcoming deliveries tomorrow and today, sending browser push notifications once per day.
  */
 export async function checkAndTriggerEventAlerts(bookings: any[]): Promise<void> {
-  if (!isNotificationSupported() || Notification.permission !== "granted") return;
+  if (!isNotificationSupported() || Notification.permission !== "granted" || isNotificationsMuted()) return;
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
@@ -130,7 +144,7 @@ export async function checkAndTriggerEventAlerts(bookings: any[]): Promise<void>
  * Sends a native notification when the app is updated to a new version.
  */
 export async function checkAndTriggerUpdateAlert(): Promise<void> {
-  if (!isNotificationSupported() || Notification.permission !== "granted") return;
+  if (!isNotificationSupported() || Notification.permission !== "granted" || isNotificationsMuted()) return;
 
   const lastNotifiedVersion = localStorage.getItem("eyas_last_browser_notified_version");
   if (lastNotifiedVersion !== APP_VERSION) {

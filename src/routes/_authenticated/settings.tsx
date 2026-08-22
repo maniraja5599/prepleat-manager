@@ -46,6 +46,8 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   sendNativeNotification,
+  isNotificationsMuted,
+  setNotificationsMuted,
 } from "@/lib/notifications";
 import logoAsset from "@/assets/eyas-logo.png";
 import { formatDistanceToNow } from "date-fns";
@@ -250,6 +252,7 @@ function SettingsPage() {
   const [modeDraft, setModeDraft] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
   const [binTab, setBinTab] = useState<"bookings" | "customers" | "payments" | "finance">("bookings");
+  const [, setNotifRefresh] = useState(0);
   const [confirmAction, setConfirmAction] = useState<
     null | "resetTheme" | "resetPricing" | "clearData" | "undoImport"
   >(null);
@@ -1343,39 +1346,56 @@ function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-3">
                   Receive native mobile / desktop push alerts for 1-day advance delivery reminders, today's saree events, and new app updates.
                 </p>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-secondary/40 border border-border/20">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "size-2.5 rounded-full",
-                          getNotificationPermission() === "granted"
-                            ? "bg-success"
+                <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "size-2.5 rounded-full shrink-0",
+                            getNotificationPermission() === "granted" && !isNotificationsMuted()
+                              ? "bg-success animate-pulse"
+                              : getNotificationPermission() === "denied"
+                              ? "bg-destructive"
+                              : "bg-muted-foreground",
+                          )}
+                        />
+                        <span className="text-sm font-bold text-foreground truncate">
+                          {getNotificationPermission() === "granted" && !isNotificationsMuted()
+                            ? "Push Notifications (ON 🟢)"
                             : getNotificationPermission() === "denied"
-                            ? "bg-destructive"
-                            : "bg-amber-500",
-                        )}
-                      />
-                      <span className="text-xs font-bold text-foreground">
-                        {getNotificationPermission() === "granted"
-                          ? "Notifications Enabled (Active 🟢)"
+                            ? "Notifications Blocked (🔴)"
+                            : "Push Notifications (OFF ⚪)"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {getNotificationPermission() === "granted" && !isNotificationsMuted()
+                          ? "Active: You will receive 1-day advance delivery alerts & updates."
                           : getNotificationPermission() === "denied"
-                          ? "Notifications Blocked in Browser (🔴)"
-                          : "Notifications Not Enabled (⚪)"}
-                      </span>
+                          ? "Permission blocked in browser settings. Please click lock icon in address bar to Allow."
+                          : "Disabled: Turn on to receive delivery reminders on your device."}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {getNotificationPermission() === "granted"
-                        ? "You will receive timely alerts for tomorrow's deliveries and updates."
-                        : "Allow notifications to receive delivery alerts directly on your device."}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {getNotificationPermission() !== "granted" && (
-                      <button
-                        type="button"
-                        onClick={async () => {
+                    {/* iOS-Style ON/OFF Switch */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const currentPerm = getNotificationPermission();
+                        if (currentPerm === "denied") {
+                          toast.error("Notifications blocked in browser settings. Please allow notifications from your browser address bar.");
+                          return;
+                        }
+                        if (currentPerm === "granted") {
+                          const newMuted = !isNotificationsMuted();
+                          setNotificationsMuted(newMuted);
+                          if (newMuted) {
+                            toast.info("Notifications Turned OFF (Muted)");
+                          } else {
+                            toast.success("Notifications Turned ON 🔔");
+                          }
+                          setNotifRefresh((r) => r + 1);
+                        } else {
                           const res = await requestNotificationPermission();
                           if (res === "granted") {
                             toast.success("Notifications Enabled! 🔔");
@@ -1383,31 +1403,48 @@ function SettingsPage() {
                               body: "Eyas delivery & event notifications are now active on this device.",
                             });
                           } else if (res === "denied") {
-                            toast.error("Permission denied in browser settings.");
+                            toast.error("Permission denied in browser.");
                           }
-                        }}
-                        className="px-3.5 py-2 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
-                      >
-                        Enable Notifications 🔔
-                      </button>
-                    )}
+                          setNotifRefresh((r) => r + 1);
+                        }
+                      }}
+                      className={cn(
+                        "w-12 h-7 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 relative",
+                        getNotificationPermission() === "granted" && !isNotificationsMuted()
+                          ? "bg-success"
+                          : "bg-muted-foreground/30",
+                      )}
+                      title="Toggle Notifications ON / OFF"
+                    >
+                      <div
+                        className={cn(
+                          "size-6 rounded-full bg-white shadow-md transition-transform duration-200",
+                          getNotificationPermission() === "granted" && !isNotificationsMuted()
+                            ? "translate-x-5"
+                            : "translate-x-0",
+                        )}
+                      />
+                    </button>
+                  </div>
 
-                    {getNotificationPermission() === "granted" && (
+                  {getNotificationPermission() === "granted" && !isNotificationsMuted() && (
+                    <div className="pt-2 border-t border-border/20 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-muted-foreground">Test notification on this device:</span>
                       <button
                         type="button"
                         onClick={async () => {
                           const sent = await sendNativeNotification("Eyas Saree Alert 🔔", {
                             body: "Test notification working perfectly! You'll receive delivery reminders here.",
                           });
-                          if (sent) toast.success("Test notification sent to device!");
+                          if (sent) toast.success("Test push notification sent!");
                           else toast.error("Could not trigger notification.");
                         }}
                         className="px-3 py-1.5 rounded-xl bg-card border border-border text-foreground text-xs font-semibold hover:bg-secondary active:scale-95 transition cursor-pointer"
                       >
                         Send Test Push 🔔
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </Section>
 

@@ -50,16 +50,17 @@ export function BottomNav() {
           const Icon = t.icon;
           if (t.primary) {
             return (
-              <li key="/bills" className="flex justify-center -mt-5">
+              <li key="/bills" className="flex justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     window.dispatchEvent(new Event("open-recent-bills"));
                   }}
-                  className="size-14 rounded-full saree-gradient text-white flex items-center justify-center shadow-lg shadow-primary/30 active:scale-90 transition cursor-pointer ring-2 ring-primary/20 ring-offset-2 ring-offset-background"
+                  className="relative flex flex-col items-center gap-0.5 py-2 px-3 my-1 rounded-2xl text-[10px] font-semibold text-muted-foreground hover:text-foreground active:bg-secondary transition cursor-pointer"
                   title="Check Recent Bills by Order (#1, #2...)"
                 >
-                  <ReceiptText className="size-7" strokeWidth={2.2} />
+                  <Icon className="size-5" strokeWidth={2} />
+                  <span className="opacity-70">{t.label}</span>
                 </button>
               </li>
             );

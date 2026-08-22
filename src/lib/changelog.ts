@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.1";
+export const APP_VERSION = "1.3.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v1.3.2",
+    date: "22 Aug 2026",
+    isLatest: true,
+    title: "Push Notifications Switch, Flexible Complete Payments & Clean Revert",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🔔",
+        text: "Browser Notifications ON/OFF Switch (நோட்டிபிகேஷன் ஸ்விட்ச்)",
+        desc: "Settings பக்கத்தில் Push Notification-ஐ ஆன் / ஆஃப் செய்ய iOS-Style Toggle Switch மற்றும் What's New பாப்-அப்பில் 1-Tap Opt-In வசதி.",
+      },
+      {
+        emoji: "✅",
+        text: "Flexible Mark as Complete (பணம் வாங்குதல் & நிலுவை தேர்வு)",
+        desc: "புக்கிங்கை Complete செய்யும் போது Full Payment, Custom/Partial தொகை, அல்லது பணம் வாங்காமல் ₹0 என நிலுவையில் வைக்கும் (Keep Due) 3 தேர்வுகள்.",
+      },
+      {
+        emoji: "🟢",
+        text: "Clean Revert to Active Bookings (மீண்டும் புக்கிங்காக மாற்றுதல்)",
+        desc: "Complete செய்த புக்கிங்கை Revert செய்யும் போது, தானியங்கி கணக்குகள் சரியாக நீக்கப்பட்டு மீண்டும் Active Bookings பட்டியலில் தோன்றும்.",
+      },
+      {
+        emoji: "🧾",
+        text: "Balanced Bottom Navigation Bar",
+        desc: "கீழ் Navbar-ல் Center Bill ஐகான் எப்போதும் Highlight ஆகாமல், மற்ற 4 ஐகான்களுடன் நேர்த்தியாகவும் சீராகவும் ஒருங்கிணைக்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
     version: "v1.3.1",
     date: "21 Aug 2026",
-    isLatest: true,
     title: "Month Timeline, Scrolling Summary Tickers & 1-Day Advance Alerts",
-    badge: "LATEST UPDATE ✨",
     changes: [
       {
         emoji: "⏳",

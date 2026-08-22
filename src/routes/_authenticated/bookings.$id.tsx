@@ -95,6 +95,8 @@ function BookingDetail() {
   const [completionDiscount, setCompletionDiscount] = useState("");
   const [completionExtraCharge, setCompletionExtraCharge] = useState("");
   const [completionExtraNote, setCompletionExtraNote] = useState("Travel");
+  const [completionPaymentType, setCompletionPaymentType] = useState<"full" | "custom" | "none">("full");
+  const [completionCustomAmount, setCompletionCustomAmount] = useState("");
   const [completionPayMode, setCompletionPayMode] = useState<PaymentMode>(settings.defaultPaymentMode ?? "gpay");
 
   if (!booking) {
@@ -637,13 +639,17 @@ function BookingDetail() {
             ) : (
               <button
                 onClick={() => {
-                  if (!confirm("Are you sure you want to revert this booking to Booked (Active)?")) return;
+                  if (!confirm("Are you sure you want to revert this booking back to Active Bookings?")) return;
+                  const onCompletionPayment = payments.find((p) => p.note === "On completion");
+                  if (onCompletionPayment) {
+                    deletePayment(onCompletionPayment.id);
+                  }
                   updateBooking(booking.id, { status: "pending", completedAt: undefined, deliveredAt: undefined });
-                  toast.success("Reverted to Booked");
+                  toast.success("Reverted to Active Bookings 🟢");
                 }}
-                className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-bold text-sm border border-border/40 hover:bg-secondary/80 active:scale-95 transition"
+                className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-bold text-sm border border-border/40 hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
               >
-                Revert to Booked
+                Revert to Booked (Active)
               </button>
             )}
           </div>
@@ -1198,174 +1204,274 @@ function BookingDetail() {
         />
       )}
 
-      {completionOpen && (
-        <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-5 overflow-hidden animate-in slide-in-from-bottom-4 duration-200 border border-border/40">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-3 flex items-center gap-1.5">
-              <span>✅</span> Complete Booking
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-              Apply any final extra charge/discount and record balance payment to mark this booking as completed.
-            </p>
-            
-            <div className="space-y-3.5">
-              <div className="flex justify-between items-center text-xs font-semibold bg-secondary/50 rounded-xl p-3">
-                <span className="text-muted-foreground">Pending Balance:</span>
-                <span className="text-sm font-bold text-destructive">{fmtINR(due)}</span>
-              </div>
+      {completionOpen && (() => {
+        const d = Number(completionDiscount) || 0;
+        const eAmt = Number(completionExtraCharge) || 0;
+        const dynamicDueOnComplete = due + eAmt;
+        const fullPayable = Math.max(0, dynamicDueOnComplete - d);
+        const collectedNow =
+          completionPaymentType === "full"
+            ? fullPayable
+            : completionPaymentType === "custom"
+            ? Math.min(fullPayable, Math.max(0, Number(completionCustomAmount) || 0))
+            : 0;
+        const remainingDueAfter = Math.max(0, fullPayable - collectedNow);
+        const isDiscInvalid = d > dynamicDueOnComplete;
 
-              {/* Extra Charge input in completion */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <Car className="size-3 text-primary" /> Extra / Travel Charge (optional)
-                </label>
-                <div className="flex gap-2">
+        return (
+          <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left animate-in fade-in duration-200">
+            <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-5 overflow-hidden animate-in slide-in-from-bottom-4 duration-200 border border-border/40 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-1 flex items-center gap-1.5">
+                <span>✅</span> Complete Booking
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                Apply optional charges/discounts and choose whether to record full, partial, or no payment.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-xs font-semibold bg-secondary/50 rounded-xl p-3">
+                  <span className="text-muted-foreground">Current Due Balance:</span>
+                  <span className="text-sm font-bold text-destructive">{fmtINR(due)}</span>
+                </div>
+
+                {/* Extra Charge input in completion */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Car className="size-3 text-primary" /> Extra / Travel Charge (optional)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Extra amount"
+                      value={completionExtraCharge}
+                      onChange={(e) => setCompletionExtraCharge(e.target.value)}
+                      className="flex-1 bg-secondary border-0 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-semibold tabular-nums"
+                    />
+                    <div className="flex gap-1">
+                      {["Travel", "Delivery"].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setCompletionExtraNote(tag)}
+                          className={cn(
+                            "px-2 py-1 rounded-xl text-[10px] font-bold transition cursor-pointer border",
+                            completionExtraNote === tag ? "bg-primary/10 text-primary border-primary/30" : "bg-secondary text-muted-foreground border-transparent"
+                          )}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Discount */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Tag className="size-3 text-rose-500" /> Final Discount (optional)
+                  </label>
                   <input
                     type="number"
-                    placeholder="Extra / Travel amount"
-                    value={completionExtraCharge}
-                    onChange={(e) => setCompletionExtraCharge(e.target.value)}
-                    className="flex-1 bg-secondary border-0 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-semibold tabular-nums"
+                    placeholder="Discount amount"
+                    value={completionDiscount}
+                    onChange={(e) => setCompletionDiscount(e.target.value)}
+                    className="w-full bg-secondary border-0 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-semibold text-rose-500"
                   />
-                  <div className="flex gap-1">
-                    {["Travel", "Delivery"].map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setCompletionExtraNote(tag)}
-                        className={cn(
-                          "px-2 py-1 rounded-xl text-[10px] font-bold transition cursor-pointer border",
-                          completionExtraNote === tag ? "bg-primary/10 text-primary border-primary/30" : "bg-secondary text-muted-foreground border-transparent"
-                        )}
-                      >
-                        {tag}
-                      </button>
-                    ))}
+                </div>
+
+                {/* Payment Option Tabs */}
+                <div className="space-y-1.5 pt-1 border-t border-border/20">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Payment Collection Option
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 p-1 bg-secondary/60 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setCompletionPaymentType("full")}
+                      className={cn(
+                        "py-2 rounded-lg text-[10px] font-bold transition cursor-pointer flex flex-col items-center gap-0.5",
+                        completionPaymentType === "full"
+                          ? "bg-card text-foreground shadow-xs border border-border/40"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>Full Paid</span>
+                      <span className="text-[9px] font-mono text-success font-semibold">{fmtINR(fullPayable)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCompletionPaymentType("custom")}
+                      className={cn(
+                        "py-2 rounded-lg text-[10px] font-bold transition cursor-pointer flex flex-col items-center gap-0.5",
+                        completionPaymentType === "custom"
+                          ? "bg-card text-foreground shadow-xs border border-border/40"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>Custom / Partial</span>
+                      <span className="text-[9px] font-mono text-primary font-semibold">Enter ₹</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCompletionPaymentType("none")}
+                      className={cn(
+                        "py-2 rounded-lg text-[10px] font-bold transition cursor-pointer flex flex-col items-center gap-0.5",
+                        completionPaymentType === "none"
+                          ? "bg-card text-foreground shadow-xs border border-border/40"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>No Payment</span>
+                      <span className="text-[9px] font-mono text-destructive font-semibold">Keep Due</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Custom Amount Input if Partial */}
+                {completionPaymentType === "custom" && (
+                  <div className="space-y-1 animate-in fade-in duration-150">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                      Enter Amount Received Now (₹)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder={`Max: ${fullPayable}`}
+                      value={completionCustomAmount}
+                      onChange={(e) => setCompletionCustomAmount(e.target.value)}
+                      className="w-full bg-secondary border border-primary/30 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-bold tabular-nums text-foreground"
+                    />
+                  </div>
+                )}
+
+                {/* Payment Mode (only if collecting payment > 0) */}
+                {collectedNow > 0 && (
+                  <div className="space-y-1 animate-in fade-in duration-150">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Payment Mode ({fmtINR(collectedNow)})
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setCompletionPayMode(m)}
+                          className={cn(
+                            "py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer active:scale-95",
+                            completionPayMode === m
+                              ? "bg-primary text-primary-foreground font-bold"
+                              : "bg-secondary hover:bg-secondary/80 text-muted-foreground",
+                          )}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Outcome summary banner */}
+                <div className={cn(
+                  "p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between",
+                  collectedNow > 0 && remainingDueAfter === 0
+                    ? "bg-success/10 text-success border-success/20"
+                    : remainingDueAfter > 0
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    : "bg-secondary text-foreground border-border/20"
+                )}>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">Payment Recorded:</span>
+                    <span className="font-bold">{fmtINR(collectedNow)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground block">Remaining Due:</span>
+                    <span className={cn("font-bold", remainingDueAfter > 0 ? "text-destructive" : "text-success")}>
+                      {remainingDueAfter > 0 ? fmtINR(remainingDueAfter) : "₹0 (Fully Paid)"}
+                    </span>
                   </div>
                 </div>
               </div>
-              
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <Tag className="size-3 text-rose-500" /> Final Discount (optional)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Discount amount"
-                  value={completionDiscount}
-                  onChange={(e) => setCompletionDiscount(e.target.value)}
-                  className="w-full bg-secondary border-0 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-semibold text-rose-500"
-                />
-              </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Payment Mode for Balance
-                </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(["gpay", "cash", "other"] as PaymentMode[]).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setCompletionPayMode(m)}
-                      className={cn(
-                        "py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer active:scale-95",
-                        completionPayMode === m
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary hover:bg-secondary/80",
-                      )}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {((due + (Number(completionExtraCharge) || 0)) - Number(completionDiscount || 0)) > 0 && (
-                <div className="flex justify-between items-center text-xs font-semibold bg-success/10 text-success rounded-xl p-3 border border-success/20">
-                  <span>Final Payment Received:</span>
-                  <span className="text-sm font-bold">
-                    {fmtINR(Math.max(0, (due + (Number(completionExtraCharge) || 0)) - Number(completionDiscount || 0)))}
-                  </span>
+              {isDiscInvalid && (
+                <div className="mt-3 px-3 py-2 bg-rose-500/10 text-rose-500 text-[10px] font-semibold rounded-xl border border-rose-500/20 flex items-center gap-1.5 animate-in shake duration-200">
+                  <AlertCircle className="size-3.5 shrink-0" />
+                  <span>Discount cannot exceed total balance ({fmtINR(dynamicDueOnComplete)})</span>
                 </div>
               )}
-            </div>
 
-            {Number(completionDiscount) > (due + (Number(completionExtraCharge) || 0)) && (
-              <div className="mt-3 px-3 py-2 bg-rose-500/10 text-rose-500 text-[10px] font-semibold rounded-xl border border-rose-500/20 flex items-center gap-1.5 animate-in shake duration-200">
-                <AlertCircle className="size-3.5 shrink-0" />
-                <span>Discount cannot exceed the total balance ({fmtINR(due + (Number(completionExtraCharge) || 0))})</span>
+              <div className="flex gap-2.5 mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCompletionOpen(false);
+                    setCompletionDiscount("");
+                    setCompletionExtraCharge("");
+                    setCompletionCustomAmount("");
+                    setCompletionPaymentType("full");
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition active:scale-95 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDiscInvalid}
+                  onClick={() => {
+                    if (isDiscInvalid) {
+                      return toast.error("Discount cannot exceed balance");
+                    }
+                    
+                    const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
+                    
+                    if (eAmt > 0) {
+                      patch.extraCharges = (booking.extraCharges || 0) + eAmt;
+                      patch.extraChargesNote = booking.extraCharges
+                        ? `${booking.extraChargesNote || "Extra"} + ${completionExtraNote || "Travel"}`
+                        : (completionExtraNote || "Travel");
+                    }
+
+                    if (d > 0) {
+                      patch.discount = (booking.discount || 0) + d;
+                    }
+                    
+                    if (collectedNow > 0) {
+                      addPayment({
+                        bookingId: booking.id,
+                        customerId: booking.customerId,
+                        amount: collectedNow,
+                        date: new Date().toISOString(),
+                        mode: completionPayMode,
+                        note: "On completion",
+                      });
+                    }
+                    
+                    updateBooking(booking.id, patch);
+                    setCompletionOpen(false);
+                    setCompletionDiscount("");
+                    setCompletionExtraCharge("");
+                    setCompletionCustomAmount("");
+                    setCompletionPaymentType("full");
+                    toast.success(
+                      collectedNow > 0 && remainingDueAfter === 0
+                        ? "Booking Paid & Marked Completed! ✅"
+                        : remainingDueAfter > 0
+                        ? `Booking Completed! (₹${remainingDueAfter} balance due) 📋`
+                        : "Booking Marked Completed! ✅"
+                    );
+                  }}
+                  className={cn(
+                    "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer",
+                    isDiscInvalid
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "saree-gradient text-white active:scale-95"
+                  )}
+                >
+                  Confirm Complete
+                </button>
               </div>
-            )}
-
-            <div className="flex gap-2.5 mt-5">
-              <button
-                type="button"
-                onClick={() => {
-                  setCompletionOpen(false);
-                  setCompletionDiscount("");
-                  setCompletionExtraCharge("");
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition active:scale-95 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={Number(completionDiscount) > (due + (Number(completionExtraCharge) || 0))}
-                onClick={() => {
-                  const d = Number(completionDiscount) || 0;
-                  const eAmt = Number(completionExtraCharge) || 0;
-                  const dynamicDueOnComplete = due + eAmt;
-
-                  if (d > dynamicDueOnComplete) {
-                    return toast.error("Discount cannot exceed balance");
-                  }
-                  
-                  const amt = dynamicDueOnComplete - d;
-                  const patch: Partial<typeof booking> = { status: "completed", completedAt: new Date().toISOString() };
-                  
-                  if (eAmt > 0) {
-                    patch.extraCharges = (booking.extraCharges || 0) + eAmt;
-                    patch.extraChargesNote = booking.extraCharges
-                      ? `${booking.extraChargesNote || "Extra"} + ${completionExtraNote || "Travel"}`
-                      : (completionExtraNote || "Travel");
-                  }
-
-                  if (d > 0) {
-                    patch.discount = (booking.discount || 0) + d;
-                  }
-                  
-                  if (amt > 0) {
-                    addPayment({
-                      bookingId: booking.id,
-                      customerId: booking.customerId,
-                      amount: amt,
-                      date: new Date().toISOString(),
-                      mode: completionPayMode,
-                      note: "On completion",
-                    });
-                  }
-                  
-                  updateBooking(booking.id, patch);
-                  setCompletionOpen(false);
-                  setCompletionDiscount("");
-                  setCompletionExtraCharge("");
-                  toast.success("Booking Completed!");
-                }}
-                className={cn(
-                  "flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer",
-                  Number(completionDiscount) > (due + (Number(completionExtraCharge) || 0))
-                    ? "bg-muted text-muted-foreground cursor-not-allowed"
-                    : "saree-gradient text-white active:scale-95"
-                )}
-              >
-                Complete
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </AppShell>
   );
 }

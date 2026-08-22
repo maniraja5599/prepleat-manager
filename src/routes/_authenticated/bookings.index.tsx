@@ -127,6 +127,9 @@ function BookingsPage() {
 
   // Pending complete warning (payment check before completing)
   const [pendingComplete, setPendingComplete] = useState<{ id: string; due: number; name: string } | null>(null);
+  const [pendingCollectType, setPendingCollectType] = useState<"full" | "custom" | "none">("full");
+  const [pendingCustomAmount, setPendingCustomAmount] = useState("");
+  const [pendingPayMode, setPendingPayMode] = useState<string>(settings.defaultPaymentMode ?? "gpay");
 
   // Ticker Index and interval for scrolling stats ticker in header and month cards
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -976,62 +979,190 @@ function BookingsPage() {
       )}
 
       {/* ── PAYMENT PENDING COMPLETE WARNING MODAL ── */}
-      {pendingComplete && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-5" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}>
-          <div className="bg-card rounded-3xl p-7 w-full max-w-sm border border-border shadow-2xl animate-in zoom-in-95 fade-in duration-200">
-            <div className="flex flex-col items-center text-center mb-5">
-              <div className="size-14 rounded-full bg-destructive/15 flex items-center justify-center mb-3">
-                <AlertTriangle className="size-7 text-destructive" />
+      {pendingComplete && (() => {
+        const fullPayable = pendingComplete.due;
+        const collectedNow =
+          pendingCollectType === "full"
+            ? fullPayable
+            : pendingCollectType === "custom"
+            ? Math.min(fullPayable, Math.max(0, Number(pendingCustomAmount) || 0))
+            : 0;
+        const remainingDueAfter = Math.max(0, fullPayable - collectedNow);
+
+        return (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}>
+            <div className="bg-card rounded-3xl p-6 w-full max-w-sm border border-border shadow-2xl animate-in zoom-in-95 fade-in duration-200 space-y-4">
+              <div className="flex flex-col items-center text-center">
+                <div className="size-12 rounded-full bg-amber-500/15 flex items-center justify-center mb-2">
+                  <AlertTriangle className="size-6 text-amber-500" />
+                </div>
+                <h2 className="text-base font-bold">Complete Booking & Payment</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  <span className="font-semibold text-foreground">{pendingComplete.name}</span> has a balance of:
+                </p>
+                <p className="text-2xl font-extrabold text-destructive my-1 tabular-nums">
+                  {fmtINR(pendingComplete.due)}
+                </p>
               </div>
-              <h2 className="text-lg font-bold mb-1">Payment Pending!</h2>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">{pendingComplete.name}</span> still has
-              </p>
-              <p className="text-3xl font-extrabold text-destructive my-2 tabular-nums">
-                {fmtINR(pendingComplete.due)}
-              </p>
-              <p className="text-sm text-muted-foreground">pending. Mark as completed anyway?</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  const b = bookings.find((x) => x.id === pendingComplete.id);
-                  if (b) {
-                    addPayment({
-                      bookingId: b.id,
-                      customerId: b.customerId,
-                      amount: pendingComplete.due,
-                      date: new Date().toISOString(),
-                      mode: settings.defaultPaymentMode ?? "gpay",
-                      note: "On completion",
-                    });
-                  }
-                  updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
-                  toast.success("Paid and Marked as completed!");
-                  setPendingComplete(null);
-                }}
-                className="w-full py-3 rounded-2xl bg-success text-success-foreground text-sm font-bold cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle2 className="size-4" /> Mark Paid & Complete
-              </button>
-              <div className="flex gap-2">
+
+              {/* Payment Collection Type Tabs */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Payment Collection Option
+                </label>
+                <div className="grid grid-cols-3 gap-1 p-1 bg-secondary/60 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setPendingCollectType("full")}
+                    className={cn(
+                      "py-1.5 rounded-lg text-[10px] font-bold transition cursor-pointer flex flex-col items-center gap-0.5",
+                      pendingCollectType === "full"
+                        ? "bg-card text-foreground shadow-xs border border-border/40"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span>Full Paid</span>
+                    <span className="text-[9px] font-mono text-success font-semibold">{fmtINR(fullPayable)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingCollectType("custom")}
+                    className={cn(
+                      "py-1.5 rounded-lg text-[10px] font-bold transition cursor-pointer flex flex-col items-center gap-0.5",
+                      pendingCollectType === "custom"
+                        ? "bg-card text-foreground shadow-xs border border-border/40"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span>Custom ₹</span>
+                    <span className="text-[9px] font-mono text-primary font-semibold">Partial</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingCollectType("none")}
+                    className={cn(
+                      "py-1.5 rounded-lg text-[10px] font-bold transition cursor-pointer flex flex-col items-center gap-0.5",
+                      pendingCollectType === "none"
+                        ? "bg-card text-foreground shadow-xs border border-border/40"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span>No Payment</span>
+                    <span className="text-[9px] font-mono text-destructive font-semibold">Keep Due</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Amount Input if Partial */}
+              {pendingCollectType === "custom" && (
+                <div className="space-y-1 animate-in fade-in duration-150">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                    Enter Amount Received Now (₹)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder={`Max: ${fullPayable}`}
+                    value={pendingCustomAmount}
+                    onChange={(e) => setPendingCustomAmount(e.target.value)}
+                    className="w-full bg-secondary border border-primary/30 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 font-bold tabular-nums text-foreground"
+                  />
+                </div>
+              )}
+
+              {/* Payment Mode (only if collecting payment > 0) */}
+              {collectedNow > 0 && (
+                <div className="space-y-1 animate-in fade-in duration-150">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Payment Mode ({fmtINR(collectedNow)})
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {["gpay", "cash", "other"].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setPendingPayMode(m)}
+                        className={cn(
+                          "py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer active:scale-95",
+                          pendingPayMode === m
+                            ? "bg-primary text-primary-foreground font-bold"
+                            : "bg-secondary hover:bg-secondary/80 text-muted-foreground",
+                        )}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Outcome pill */}
+              <div className={cn(
+                "p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between",
+                collectedNow > 0 && remainingDueAfter === 0
+                  ? "bg-success/10 text-success border-success/20"
+                  : remainingDueAfter > 0
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                  : "bg-secondary text-foreground border-border/20"
+              )}>
+                <div>
+                  <span className="text-[10px] text-muted-foreground block">Payment Recorded:</span>
+                  <span className="font-bold">{fmtINR(collectedNow)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-muted-foreground block">Remaining Due:</span>
+                  <span className={cn("font-bold", remainingDueAfter > 0 ? "text-destructive" : "text-success")}>
+                    {remainingDueAfter > 0 ? fmtINR(remainingDueAfter) : "₹0 (Fully Paid)"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
                 <button
-                  onClick={() => setPendingComplete(null)}
-                  className="flex-1 py-3 rounded-2xl bg-secondary text-sm font-semibold border border-border cursor-pointer active:scale-95 transition"
-                >Cancel</button>
-                <button
+                  type="button"
                   onClick={() => {
-                    updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
-                    toast.success("Marked as completed!");
                     setPendingComplete(null);
+                    setPendingCustomAmount("");
+                    setPendingCollectType("full");
                   }}
-                  className="flex-1 py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-semibold border border-destructive/20 cursor-pointer active:scale-95 transition"
-                >Complete Anyway</button>
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider border border-border cursor-pointer active:scale-95 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const b = bookings.find((x) => x.id === pendingComplete.id);
+                    if (b && collectedNow > 0) {
+                      addPayment({
+                        bookingId: b.id,
+                        customerId: b.customerId,
+                        amount: collectedNow,
+                        date: new Date().toISOString(),
+                        mode: pendingPayMode,
+                        note: "On completion",
+                      });
+                    }
+                    updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
+                    toast.success(
+                      collectedNow > 0 && remainingDueAfter === 0
+                        ? "Paid & Marked as Completed! ✅"
+                        : remainingDueAfter > 0
+                        ? `Marked as Completed (₹${remainingDueAfter} balance due) 📋`
+                        : "Marked as Completed! ✅"
+                    );
+                    setPendingComplete(null);
+                    setPendingCustomAmount("");
+                    setPendingCollectType("full");
+                  }}
+                  className="flex-1 py-2.5 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition shadow-sm"
+                >
+                  Confirm
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <ConfirmDialog
         open={confirmOpen}
