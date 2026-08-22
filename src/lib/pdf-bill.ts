@@ -296,15 +296,14 @@ export async function createBillPDFDoc(opts: GenerateBillOptions): Promise<{ doc
     cy += rowH;
   }
 
-  // Rectangular rubber-stamp on the left — double border + business name + status + date.
+  // Rectangular rubber-stamp on the left — compact double border + business name + status.
   const stamp = due === 0 ? "PAID" : "DUE";
-  const subStamp = due === 0 ? "IN FULL" : "BALANCE";
   const stampColor: [number, number, number] = due === 0 ? [38, 130, 70] : [190, 50, 50];
 
-  const w = 70;
-  const h = 34;
-  const sx = 60;
-  const sy = cy - rowH * 2;
+  const w = 54;
+  const h = 24;
+  const sx = 52;
+  const sy = cy - rowH * 1.5;
   const rx = sx - w / 2;
   const ry = sy - h / 2;
 
@@ -312,29 +311,29 @@ export async function createBillPDFDoc(opts: GenerateBillOptions): Promise<{ doc
   doc.setTextColor(...stampColor);
 
   // Outer rectangle
-  doc.setLineWidth(1.6);
+  doc.setLineWidth(1.2);
   doc.rect(rx, ry, w, h, "D");
 
   // Inner rectangle
-  doc.setLineWidth(0.6);
-  doc.rect(rx + 2, ry + 2, w - 4, h - 4, "D");
+  doc.setLineWidth(0.5);
+  doc.rect(rx + 1.5, ry + 1.5, w - 3, h - 3, "D");
 
   // Business Name (Top line)
   const rawBizName = settings.businessName || "Eyas Saree Drapist";
   const bizName = rawBizName.length > 20 ? rawBizName.slice(0, 18) + ".." : rawBizName;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(5.5);
-  doc.text(`* ${bizName.toUpperCase()} *`, sx, ry + 8, { align: "center" });
+  doc.setFontSize(4.5);
+  doc.text(`* ${bizName.toUpperCase()} *`, sx, ry + 6, { align: "center" });
 
   // Status (Middle line, large and bold)
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text(stamp, sx, ry + 19, { align: "center" });
+  doc.setFontSize(8.5);
+  doc.text(stamp, sx, ry + 14.5, { align: "center" });
 
   // Sub-status (Bottom line - No Date as requested)
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(5);
-  doc.text(due === 0 ? "FULL SETTLEMENT · OFFICIAL SEAL" : `BALANCE: ${rs(due)} · OFFICIAL SEAL`, sx, ry + 28, { align: "center" });
+  doc.setFontSize(4);
+  doc.text(due === 0 ? "FULL SETTLEMENT · OFFICIAL SEAL" : `BALANCE: ${rs(due)} · OFFICIAL SEAL`, sx, ry + 20.5, { align: "center" });
 
   cy += 8;
 

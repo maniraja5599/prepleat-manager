@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.6";
+export const APP_VERSION = "1.4.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,27 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.6",
+    version: "v1.4.7",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Compact Rubber Stamp Seal & Save as PNG Image",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🏷️",
+        text: "Compact Rubber Stamp Seal",
+        desc: "ரப்பர் சீல் அளவு நேர்த்தியாகக் குறைக்கப்பட்டு மிகச் சிறிய அழகிய முத்திரையாக மாற்றப்பட்டுள்ளது.",
+      },
+      {
+        emoji: "📸",
+        text: "Save as Invoice Image (PNG)",
+        desc: "Preview திரையில் புதிய 'Save Image' பொத்தான் சேர்க்கப்பட்டு வாடிக்கையாளருக்கு படமாக அனுப்பும் வசதி உருவாக்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.6",
+    date: "22 Aug 2026",
     title: "100% WYSIWYG Invoice PDF Download (Matches Screen Preview 1:1)",
     badge: "LATEST UPDATE ✨",
     changes: [

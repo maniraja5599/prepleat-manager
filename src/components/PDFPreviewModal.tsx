@@ -10,11 +10,10 @@ import {
   totalDue,
   netBookingAmount,
   formatAppDate,
-  formatAppDateTime,
 } from "@/lib/store";
 import { generateBillPDF } from "@/lib/pdf-bill";
 import { cleanPhoneForWhatsApp } from "@/lib/utils";
-import { X, Download, MessageCircle, Printer, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { X, Download, MessageCircle, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -40,6 +39,7 @@ export function PDFPreviewModal({
 }: PDFPreviewModalProps) {
   const printAreaRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [savingImage, setSavingImage] = useState(false);
 
   if (!open || !booking) return null;
 
@@ -87,8 +87,28 @@ export function PDFPreviewModal({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleSaveImage = async () => {
+    if (!booking || !printAreaRef.current) return;
+    setSavingImage(true);
+    try {
+      const canvas = await html2canvas(printAreaRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `Invoice-${billNo}.png`;
+      a.click();
+      toast.success("Invoice Image saved! 📸");
+    } catch (err) {
+      console.error("Failed to save invoice image:", err);
+      toast.error("Failed to save image");
+    } finally {
+      setSavingImage(false);
+    }
   };
 
   const handleShareWhatsApp = () => {
@@ -99,6 +119,7 @@ export function PDFPreviewModal({
     }
     const msg = [
       `🥻 *EYAS SAREE DRAPIST* 🥻`,
+      `*${settings.businessSlogan || "Flawless Drape & Saree Box Folding"}*`,
       ``,
       `Hi *${customerName}* 🙏`,
       `Here is your invoice for *Bill ${billNo}* 🧾`,
@@ -110,7 +131,7 @@ export function PDFPreviewModal({
       `💵 *Advance Paid*: ${fmtINR(totalPaid)}`,
       due > 0
         ? `📌 *Balance Due*: *${fmtINR(due)}*`
-        : `✅ *Payment Status*: Paid in Full ✅`,
+        : `✅ *Payment Status*: *PAID IN FULL* ✓`,
       ``,
       `✨ _Wear with confidence & elegance!_`,
       `🙏 *Eyas Saree Drapist*`,
@@ -155,38 +176,51 @@ export function PDFPreviewModal({
         <div className="flex-1 bg-muted/40 p-3 sm:p-5 overflow-y-auto flex items-start justify-center">
           <div
             ref={printAreaRef}
-            className="w-full max-w-lg bg-white text-slate-900 rounded-2xl shadow-md border border-amber-900/10 overflow-hidden font-sans relative"
+            className="w-full max-w-lg bg-white text-slate-900 rounded-2xl shadow-md overflow-hidden font-sans relative"
+            style={{ backgroundColor: "#ffffff", color: "#0f172a", border: "1px solid #e2e8f0" }}
           >
             {/* Branded Invoice Banner Header */}
-            <div className="saree-gradient p-5 sm:p-6 text-white relative">
+            <div
+              className="p-4 sm:p-5 text-white relative"
+              style={{ background: "linear-gradient(135deg, #7a1f2a 0%, #991b1b 50%, #4c0519 100%)", color: "#ffffff" }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h1 className="text-lg sm:text-xl font-display font-extrabold tracking-wide text-amber-100">
+                  <h1
+                    className="text-base sm:text-lg font-bold tracking-wide"
+                    style={{ color: "#fef3c7", fontFamily: "Georgia, serif" }}
+                  >
                     {settings.businessName || "EYAS SAREE DRAPIST"}
                   </h1>
-                  <p className="text-xs italic text-amber-200/90 font-serif mt-0.5">
+                  <p
+                    className="text-[11px] italic mt-0.5"
+                    style={{ color: "#fde68a", fontFamily: "Georgia, serif" }}
+                  >
                     {settings.businessSlogan || "Flawless Drape & Saree Box Folding"}
                   </p>
                   {settings.businessPhone && (
-                    <p className="text-[11px] text-white/85 mt-1.5 font-mono">
+                    <p className="text-[10px] text-white/90 mt-1 font-mono">
                       📞 {settings.businessPhone}
                     </p>
                   )}
                   {settings.businessAddress && (
-                    <p className="text-[10px] text-white/75 leading-tight max-w-xs mt-0.5">
+                    <p className="text-[9.5px] text-white/80 leading-tight max-w-xs mt-0.5">
                       📍 {settings.businessAddress}
                     </p>
                   )}
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-xs rounded-xl border border-white/25 text-xs font-mono font-bold text-white shadow-xs">
+                  <span
+                    className="inline-block px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold text-white shadow-xs"
+                    style={{ backgroundColor: "rgba(255, 255, 255, 0.18)", border: "1px solid rgba(255, 255, 255, 0.3)" }}
+                  >
                     {billNo}
                   </span>
-                  <p className="text-[10px] text-amber-100/80 font-mono mt-1.5">
+                  <p className="text-[10px] font-mono mt-1" style={{ color: "#fef3c7" }}>
                     {formatAppDate(booking.createdAt)}
                   </p>
-                  <p className="text-[9px] text-white/60 uppercase tracking-widest mt-0.5">
+                  <p className="text-[8.5px] uppercase tracking-widest text-white/70 mt-0.5 font-bold">
                     TAX INVOICE
                   </p>
                 </div>
@@ -194,36 +228,45 @@ export function PDFPreviewModal({
             </div>
 
             {/* Client & Delivery Info Grid */}
-            <div className="p-4 sm:p-5 bg-amber-50/40 border-b border-amber-900/10 grid grid-cols-2 gap-3 text-xs">
+            <div
+              className="p-3.5 sm:p-4 grid grid-cols-2 gap-3 text-xs"
+              style={{ backgroundColor: "#fefce8", borderBottom: "1px solid #fef08a" }}
+            >
               <div>
-                <span className="text-[10px] font-bold text-amber-900/70 uppercase tracking-wider block">
+                <span
+                  className="text-[9.5px] font-bold uppercase tracking-wider block"
+                  style={{ color: "#854d0e" }}
+                >
                   BILLED TO
                 </span>
-                <p className="font-bold text-slate-900 text-sm mt-0.5">{customerName}</p>
+                <p className="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">{customerName}</p>
                 {customer?.phone && (
-                  <p className="text-slate-600 font-mono text-[11px] mt-0.5">
+                  <p className="text-slate-600 font-mono text-[10.5px] mt-0.5">
                     {customer.phone}
                   </p>
                 )}
                 {customer?.address && (
-                  <p className="text-slate-500 text-[10px] leading-tight mt-0.5">
+                  <p className="text-slate-500 text-[9.5px] leading-tight mt-0.5">
                     {customer.address}
                   </p>
                 )}
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] font-bold text-amber-900/70 uppercase tracking-wider block">
+                <span
+                  className="text-[9.5px] font-bold uppercase tracking-wider block"
+                  style={{ color: "#854d0e" }}
+                >
                   DELIVERY SCHEDULE
                 </span>
-                <p className="font-bold text-slate-900 text-sm mt-0.5">
+                <p className="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">
                   {formatAppDate(booking.deliveryDate)}
                 </p>
-                <p className="text-slate-600 font-medium text-[11px] mt-0.5">
+                <p className="text-slate-600 font-medium text-[10.5px] mt-0.5">
                   {fmtTime12(booking.deliveryTime)}
                 </p>
                 {artist && (
-                  <p className="text-primary font-semibold text-[10px] mt-0.5">
+                  <p className="font-semibold text-[9.5px] mt-0.5" style={{ color: "#7a1f2a" }}>
                     Artist: {artist.name}
                   </p>
                 )}
@@ -231,52 +274,55 @@ export function PDFPreviewModal({
             </div>
 
             {/* Line Items Table */}
-            <div className="p-4 sm:p-5">
+            <div className="p-3.5 sm:p-4">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-2 text-left">Description</th>
-                    <th className="py-2 text-center">Qty</th>
-                    <th className="py-2 text-right">Rate</th>
-                    <th className="py-2 text-right">Amount</th>
+                  <tr
+                    className="text-[9.5px] font-bold uppercase tracking-wider"
+                    style={{ borderBottom: "1px solid #e2e8f0", color: "#64748b" }}
+                  >
+                    <th className="py-1.5 text-left">Description</th>
+                    <th className="py-1.5 text-center">Qty</th>
+                    <th className="py-1.5 text-right">Rate</th>
+                    <th className="py-1.5 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
-                  <tr>
-                    <td className="py-2.5 text-left text-slate-800">
-                      <span className="font-semibold block">
+                <tbody style={{ color: "#1e293b" }}>
+                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td className="py-2 text-left">
+                      <span className="font-semibold block text-slate-800">
                         {booking.service === "prepleat" ? "PrePleat Saree Service" : "Saree Drape Service"}
                       </span>
-                      <span className="text-[10px] text-slate-400">Professional pleating & box folding</span>
+                      <span className="text-[9.5px] text-slate-400">Professional pleating & box folding</span>
                     </td>
-                    <td className="py-2.5 text-center font-mono">{booking.sareeCount}</td>
-                    <td className="py-2.5 text-right font-mono">{fmtINR(booking.pricePerSaree)}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2 text-center font-mono">{booking.sareeCount}</td>
+                    <td className="py-2 text-right font-mono">{fmtINR(booking.pricePerSaree)}</td>
+                    <td className="py-2 text-right font-mono font-bold text-slate-900">
                       {fmtINR(booking.totalAmount)}
                     </td>
                   </tr>
 
                   {booking.extraCharges && booking.extraCharges > 0 && (
-                    <tr>
-                      <td className="py-2 text-left text-slate-800">
+                    <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td className="py-1.5 text-left text-slate-800">
                         <span>Extra / {booking.extraChargesNote || "Travel"} Charge</span>
                       </td>
-                      <td className="py-2 text-center font-mono">1</td>
-                      <td className="py-2 text-right font-mono">{fmtINR(booking.extraCharges)}</td>
-                      <td className="py-2 text-right font-mono font-bold text-slate-900">
+                      <td className="py-1.5 text-center font-mono">1</td>
+                      <td className="py-1.5 text-right font-mono">{fmtINR(booking.extraCharges)}</td>
+                      <td className="py-1.5 text-right font-mono font-bold text-slate-900">
                         {fmtINR(booking.extraCharges)}
                       </td>
                     </tr>
                   )}
 
                   {booking.discount && booking.discount > 0 && (
-                    <tr>
-                      <td className="py-2 text-left text-emerald-700 font-medium">
+                    <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td className="py-1.5 text-left font-medium" style={{ color: "#047857" }}>
                         Special Discount / Offer
                       </td>
-                      <td className="py-2 text-center font-mono">1</td>
-                      <td className="py-2 text-right font-mono text-emerald-700">-{fmtINR(booking.discount)}</td>
-                      <td className="py-2 text-right font-mono font-bold text-emerald-700">
+                      <td className="py-1.5 text-center font-mono">1</td>
+                      <td className="py-1.5 text-right font-mono" style={{ color: "#047857" }}>-{fmtINR(booking.discount)}</td>
+                      <td className="py-1.5 text-right font-mono font-bold" style={{ color: "#047857" }}>
                         -{fmtINR(booking.discount)}
                       </td>
                     </tr>
@@ -284,58 +330,83 @@ export function PDFPreviewModal({
                 </tbody>
               </table>
 
-              {/* Financial Calculation Summary & Authentic Physical Rubber Seal Stamp */}
-              <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between gap-4">
-                {/* Authentic Physical Rubber Seal Stamp */}
+              {/* Financial Calculation Summary & Compact Rubber Seal Stamp */}
+              <div
+                className="mt-3.5 pt-3 flex items-center justify-between gap-3"
+                style={{ borderTop: "1px solid #e2e8f0" }}
+              >
+                {/* Compact Official Rubber Seal Stamp */}
                 <div className="pb-0.5">
                   {due === 0 ? (
-                    <div className="inline-block rotate-[-5deg] transition hover:rotate-[-2deg] select-none">
-                      <div className="p-1 rounded-lg border-[2.5px] border-emerald-700/90 bg-emerald-700/[0.04] shadow-xs">
-                        <div className="px-3.5 py-1.5 rounded-sm border border-dashed border-emerald-700/80 flex flex-col items-center justify-center text-center">
-                          {/* Stamp Header */}
-                          <span className="text-[8px] font-black uppercase tracking-normal text-emerald-800 font-mono whitespace-nowrap px-1">
+                    <div className="inline-block rotate-[-4deg] select-none">
+                      <div
+                        className="p-0.5 rounded-md shadow-xs"
+                        style={{
+                          border: "1.8px solid #047857",
+                          backgroundColor: "rgba(4, 120, 87, 0.04)",
+                          color: "#047857",
+                        }}
+                      >
+                        <div
+                          className="px-2 py-0.5 rounded-[2px] flex flex-col items-center justify-center text-center"
+                          style={{ border: "1px dashed rgba(4, 120, 87, 0.7)" }}
+                        >
+                          {/* Header */}
+                          <span className="text-[6.5px] font-black uppercase tracking-tight font-mono whitespace-nowrap leading-none block">
                             ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
                           </span>
-                          
                           {/* Main Stamp Text */}
-                          <div className="my-0.5 flex items-center justify-center gap-1.5 border-y border-emerald-700/40 py-0.5 w-full">
-                            <span className="text-base sm:text-lg font-black tracking-widest text-emerald-700 uppercase font-mono leading-none">
+                          <div
+                            className="my-0.5 py-0.5 w-full flex items-center justify-center"
+                            style={{
+                              borderTop: "1px solid rgba(4, 120, 87, 0.35)",
+                              borderBottom: "1px solid rgba(4, 120, 87, 0.35)",
+                            }}
+                          >
+                            <span className="text-[11px] font-black tracking-wider uppercase font-mono leading-none">
                               PAID
                             </span>
                           </div>
-
-                          {/* Stamp Subtitle & Meta (No Date) */}
-                          <span className="text-[7.5px] font-extrabold text-emerald-800 uppercase tracking-wider font-mono">
-                            FULL SETTLEMENT
-                          </span>
-                          <span className="text-[6.5px] text-emerald-700 font-mono tracking-wider uppercase">
-                            ✓ OFFICIAL RECEIPT SEAL
+                          {/* Footer */}
+                          <span className="text-[5.5px] font-extrabold uppercase tracking-tight font-mono leading-none block">
+                            FULL SETTLEMENT · OFFICIAL SEAL
                           </span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="inline-block rotate-[-4deg] transition hover:rotate-[-2deg] select-none">
-                      <div className="p-1 rounded-lg border-[2.5px] border-rose-700/90 bg-rose-700/[0.04] shadow-xs">
-                        <div className="px-3.5 py-1.5 rounded-sm border border-dashed border-rose-700/80 flex flex-col items-center justify-center text-center">
-                          {/* Stamp Header */}
-                          <span className="text-[8px] font-black uppercase tracking-normal text-rose-800 font-mono whitespace-nowrap px-1">
+                    <div className="inline-block rotate-[-4deg] select-none">
+                      <div
+                        className="p-0.5 rounded-md shadow-xs"
+                        style={{
+                          border: "1.8px solid #b91c1c",
+                          backgroundColor: "rgba(185, 28, 28, 0.04)",
+                          color: "#b91c1c",
+                        }}
+                      >
+                        <div
+                          className="px-2 py-0.5 rounded-[2px] flex flex-col items-center justify-center text-center"
+                          style={{ border: "1px dashed rgba(185, 28, 28, 0.7)" }}
+                        >
+                          {/* Header */}
+                          <span className="text-[6.5px] font-black uppercase tracking-tight font-mono whitespace-nowrap leading-none block">
                             ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
                           </span>
-
                           {/* Main Stamp Text */}
-                          <div className="my-0.5 flex items-center justify-center gap-1 border-y border-rose-700/40 py-0.5 w-full">
-                            <span className="text-sm sm:text-base font-black tracking-widest text-rose-700 uppercase font-mono leading-none">
+                          <div
+                            className="my-0.5 py-0.5 w-full flex items-center justify-center"
+                            style={{
+                              borderTop: "1px solid rgba(185, 28, 28, 0.35)",
+                              borderBottom: "1px solid rgba(185, 28, 28, 0.35)",
+                            }}
+                          >
+                            <span className="text-[9.5px] font-black tracking-tight uppercase font-mono leading-none">
                               {totalPaid > 0 ? "PARTIAL PAID" : "PAYMENT DUE"}
                             </span>
                           </div>
-
-                          {/* Stamp Subtitle & Meta (No Date) */}
-                          <span className="text-[7.5px] font-extrabold text-rose-800 uppercase tracking-wider font-mono">
-                            BALANCE DUE: {fmtINR(due)}
-                          </span>
-                          <span className="text-[6.5px] text-rose-700 font-mono tracking-wider uppercase">
-                            ⚠ PENDING SETTLEMENT
+                          {/* Footer */}
+                          <span className="text-[5.5px] font-extrabold uppercase tracking-tight font-mono leading-none block">
+                            DUE: {fmtINR(due)} · OFFICIAL SEAL
                           </span>
                         </div>
                       </div>
@@ -344,18 +415,24 @@ export function PDFPreviewModal({
                 </div>
 
                 {/* Totals */}
-                <div className="w-48 space-y-1.5 text-xs text-right">
-                  <div className="flex justify-between text-slate-500">
+                <div className="w-44 space-y-1 text-xs text-right">
+                  <div className="flex justify-between text-slate-500 text-[11px]">
                     <span>Total Bill:</span>
                     <span className="font-mono font-semibold text-slate-800">{fmtINR(netTotal)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-500">
+                  <div className="flex justify-between text-slate-500 text-[11px]">
                     <span>Paid / Advance:</span>
                     <span className="font-mono font-semibold text-slate-800">{fmtINR(totalPaid)}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-sm pt-1.5 border-t border-slate-200">
+                  <div
+                    className="flex justify-between font-bold text-xs sm:text-sm pt-1"
+                    style={{ borderTop: "1px solid #e2e8f0" }}
+                  >
                     <span className="text-slate-900">Remaining Due:</span>
-                    <span className={due > 0 ? "text-amber-700 font-mono" : "text-emerald-700 font-mono"}>
+                    <span
+                      className="font-mono"
+                      style={{ color: due > 0 ? "#b91c1c" : "#047857" }}
+                    >
                       {due > 0 ? fmtINR(due) : "₹0"}
                     </span>
                   </div>
@@ -364,7 +441,10 @@ export function PDFPreviewModal({
             </div>
 
             {/* Invoice Footer */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500">
+            <div
+              className="px-4 py-2.5 flex items-center justify-between text-[9.5px]"
+              style={{ backgroundColor: "#f8fafc", borderTop: "1px solid #e2e8f0", color: "#64748b" }}
+            >
               <span className="font-semibold text-slate-700">
                 {settings.businessName || "Eyas Saree Drapist"}
               </span>
@@ -374,25 +454,40 @@ export function PDFPreviewModal({
         </div>
 
         {/* Footer Action Buttons */}
-        <div className="p-3 sm:p-3.5 bg-card border-t border-border/40 flex items-center justify-between gap-2 shrink-0">
+        <div className="p-3 sm:p-3.5 bg-card border-t border-border/40 flex items-center justify-between gap-1.5 shrink-0 flex-wrap">
           <div className="flex items-center gap-1.5">
             {customer?.phone && (
               <button
                 type="button"
                 onClick={handleShareWhatsApp}
-                className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                className="px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                title="Send via WhatsApp"
               >
                 <MessageCircle className="size-3.5" />
                 <span className="hidden sm:inline">WhatsApp</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleSaveImage}
+              disabled={savingImage}
+              className="px-2.5 sm:px-3 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-semibold flex items-center gap-1.5 cursor-pointer active:scale-95 transition disabled:opacity-60"
+              title="Save as PNG Image"
+            >
+              {savingImage ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ImageIcon className="size-3.5" />
+              )}
+              <span className="hidden sm:inline">Save Image</span>
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 rounded-xl bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Close
             </button>
@@ -400,12 +495,12 @@ export function PDFPreviewModal({
               type="button"
               onClick={handleDownload}
               disabled={downloading}
-              className="px-4 py-2 rounded-xl saree-gradient text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-60"
+              className="px-3.5 sm:px-4 py-2 rounded-xl saree-gradient text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-60"
             >
               {downloading ? (
                 <>
                   <Loader2 className="size-3.5 animate-spin" />
-                  <span>Exporting PDF...</span>
+                  <span>Exporting...</span>
                 </>
               ) : (
                 <>
