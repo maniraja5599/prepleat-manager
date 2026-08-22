@@ -258,7 +258,7 @@ export function PDFPreviewModal({
                       <div className="p-1 rounded-lg border-[2.5px] border-emerald-700/90 bg-emerald-700/[0.04] shadow-xs">
                         <div className="px-3.5 py-1.5 rounded-sm border border-dashed border-emerald-700/80 flex flex-col items-center justify-center text-center">
                           {/* Stamp Header */}
-                          <span className="text-[8px] font-extrabold uppercase tracking-widest text-emerald-800 font-mono">
+                          <span className="text-[8px] font-black uppercase tracking-normal text-emerald-800 font-mono whitespace-nowrap px-1">
                             ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
                           </span>
                           
@@ -269,11 +269,11 @@ export function PDFPreviewModal({
                             </span>
                           </div>
 
-                          {/* Stamp Subtitle & Meta */}
-                          <span className="text-[7.5px] font-bold text-emerald-800 uppercase tracking-wider font-mono">
-                            FULL SETTLEMENT · {formatAppDate(new Date())}
+                          {/* Stamp Subtitle & Meta (No Date) */}
+                          <span className="text-[7.5px] font-extrabold text-emerald-800 uppercase tracking-wider font-mono">
+                            FULL SETTLEMENT
                           </span>
-                          <span className="text-[6.5px] text-emerald-700/80 font-mono tracking-widest uppercase">
+                          <span className="text-[6.5px] text-emerald-700 font-mono tracking-wider uppercase">
                             ✓ OFFICIAL RECEIPT SEAL
                           </span>
                         </div>
@@ -284,7 +284,7 @@ export function PDFPreviewModal({
                       <div className="p-1 rounded-lg border-[2.5px] border-rose-700/90 bg-rose-700/[0.04] shadow-xs">
                         <div className="px-3.5 py-1.5 rounded-sm border border-dashed border-rose-700/80 flex flex-col items-center justify-center text-center">
                           {/* Stamp Header */}
-                          <span className="text-[8px] font-extrabold uppercase tracking-widest text-rose-800 font-mono">
+                          <span className="text-[8px] font-black uppercase tracking-normal text-rose-800 font-mono whitespace-nowrap px-1">
                             ★ {settings.businessName || "EYAS SAREE DRAPIST"} ★
                           </span>
 
@@ -295,11 +295,11 @@ export function PDFPreviewModal({
                             </span>
                           </div>
 
-                          {/* Stamp Subtitle & Meta */}
-                          <span className="text-[7.5px] font-bold text-rose-800 uppercase tracking-wider font-mono">
+                          {/* Stamp Subtitle & Meta (No Date) */}
+                          <span className="text-[7.5px] font-extrabold text-rose-800 uppercase tracking-wider font-mono">
                             BALANCE DUE: {fmtINR(due)}
                           </span>
-                          <span className="text-[6.5px] text-rose-700/80 font-mono tracking-widest uppercase">
+                          <span className="text-[6.5px] text-rose-700 font-mono tracking-wider uppercase">
                             ⚠ PENDING SETTLEMENT
                           </span>
                         </div>

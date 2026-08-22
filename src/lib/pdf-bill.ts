@@ -324,18 +324,17 @@ export async function createBillPDFDoc(opts: GenerateBillOptions): Promise<{ doc
   const bizName = rawBizName.length > 20 ? rawBizName.slice(0, 18) + ".." : rawBizName;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(5.5);
-  doc.text(bizName.toUpperCase(), sx, ry + 8, { align: "center" });
+  doc.text(`* ${bizName.toUpperCase()} *`, sx, ry + 8, { align: "center" });
 
   // Status (Middle line, large and bold)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text(stamp, sx, ry + 20, { align: "center" });
+  doc.text(stamp, sx, ry + 19, { align: "center" });
 
-  // Sub-status and Date (Bottom line)
-  doc.setFont("helvetica", "normal");
+  // Sub-status (Bottom line - No Date as requested)
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(5);
-  const dateStr = formatAppDate(new Date()).toUpperCase();
-  doc.text(`${subStamp} · ${dateStr}`, sx, ry + 29, { align: "center" });
+  doc.text(due === 0 ? "FULL SETTLEMENT · OFFICIAL SEAL" : `BALANCE: ${rs(due)} · OFFICIAL SEAL`, sx, ry + 28, { align: "center" });
 
   cy += 8;
 

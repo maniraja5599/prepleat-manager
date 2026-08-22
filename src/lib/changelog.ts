@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.4";
+export const APP_VERSION = "1.4.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,22 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.4.4",
+    version: "v1.4.5",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Refined Rubber Stamp Seal (Single Line Header & No Date)",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🏷️",
+        text: "Refined Rubber Stamp Seal",
+        desc: "ரப்பர் சீலில் நிறுவனப் பெயர் நட்சத்திரக் குறியீடு அடுத்த வரிக்குச் செல்லாமல் ஒரே வரியில் நேர்த்தியாக அமைக்கப்பட்டதுடன், சீலில் இருந்து தேதி நீக்கப்பட்டு அசல் அதிகாரப்பூர்வ முத்திரை வடிவம் பெறப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.4",
+    date: "22 Aug 2026",
     title: "Bills Timeline View & Instant Visual Invoice Preview",
     badge: "LATEST UPDATE ✨",
     changes: [
