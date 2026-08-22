@@ -131,6 +131,17 @@ function BookingsPage() {
   const [pendingCustomAmount, setPendingCustomAmount] = useState("");
   const [pendingPayMode, setPendingPayMode] = useState<string>(settings.defaultPaymentMode ?? "gpay");
   const [pendingSendDeliveryWA, setPendingSendDeliveryWA] = useState(true);
+  const [completedDeliveryPreview, setCompletedDeliveryPreview] = useState<{
+    customerName: string;
+    phone?: string;
+    phoneWA?: string;
+    waText: string;
+    billNo: string;
+    sareeCount: number;
+    netTotal: number;
+    totalPaidAfter: number;
+    remainingDueAfter: number;
+  } | null>(null);
 
   // Ticker Index and interval for scrolling stats ticker in header and month cards
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -1187,16 +1198,19 @@ function BookingsPage() {
                     }
                     updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
                     
+                    const totalPaidAfter = (b ? (b.advancePaid || 0) : 0) + collectedNow;
+                    const finalDueAfter = remainingDueAfter;
+
                     if (b && pendingSendDeliveryWA) {
                       const c = customers.find((x) => x.id === b.customerId);
-                      if (c?.phone) {
-                        const phone = cleanPhoneForWhatsApp(c.phone);
-                        const totalPaidAfter = (b.advancePaid || 0) + collectedNow;
+                      const phoneRaw = c?.phone;
+                      const phone = phoneRaw ? cleanPhoneForWhatsApp(phoneRaw) : "";
+                      if (phone) {
                         const msgLines = [
                           `🥻 *EYAS SAREE DRAPIST* 🥻`,
                           ``,
                           ``,
-                          `Hi *${c.name || "Customer"}* 🙏`,
+                          `Hi *${c?.name || "Customer"}* 🙏`,
                           ``,
                           ``,
                           `Your saree order has been successfully *delivered*! ✅🥻`,
@@ -1211,9 +1225,9 @@ function BookingsPage() {
                           ``,
                           `💰 *Total Bill*: ${fmtINR(netTotal)}`,
                           `💵 *Total Paid*: ${fmtINR(totalPaidAfter)}`,
-                          remainingDueAfter === 0
+                          finalDueAfter === 0
                             ? `✅ *Settlement*: Paid in Full ✅`
-                            : `📌 *Balance Due*: *${fmtINR(remainingDueAfter)}*`,
+                            : `📌 *Balance Due*: *${fmtINR(finalDueAfter)}*`,
                           ``,
                           ``,
                           `We hope you love your flawless pleats! 🥻`,
@@ -1223,8 +1237,18 @@ function BookingsPage() {
                           `Wear with confidence & elegance! ✨`,
                           `Eyas Saree Drapist 🙏`,
                         ].filter((l) => l !== "");
-                        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msgLines.join("\n"))}`;
-                        window.open(waUrl, "_blank");
+
+                        setCompletedDeliveryPreview({
+                          customerName: c?.name || "Customer",
+                          phone: phoneRaw,
+                          phoneWA: phone,
+                          waText: encodeURIComponent(msgLines.join("\n")),
+                          billNo,
+                          sareeCount: b.sareeCount,
+                          netTotal,
+                          totalPaidAfter,
+                          remainingDueAfter: finalDueAfter,
+                        });
                       }
                     }
 
@@ -1284,6 +1308,107 @@ function BookingsPage() {
           });
         }}
       />
+
+      {/* Completion & Delivery Receipt WhatsApp Modal */}
+      {completedDeliveryPreview && (
+        <div
+          className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          onClick={() => setCompletedDeliveryPreview(null)}
+        >
+          <div
+            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border border-border/40 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-1 pt-1">
+              <div className="size-12 rounded-full bg-success/15 text-success mx-auto flex items-center justify-center">
+                <CheckCircle className="size-6" />
+              </div>
+              <h3 className="font-display font-bold text-base text-foreground">
+                Order Completed & Saved! 🎉
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Final settlement ready for Bill #{completedDeliveryPreview.billNo}
+              </p>
+            </div>
+
+            {/* Receipt Summary Card */}
+            <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/30 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Customer:</span>
+                <span className="font-bold text-foreground">{completedDeliveryPreview.customerName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Total Bill:</span>
+                <span className="font-bold text-foreground">{fmtINR(completedDeliveryPreview.netTotal)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Total Paid:</span>
+                <span className="font-bold text-success">{fmtINR(completedDeliveryPreview.totalPaidAfter)}</span>
+              </div>
+              <div className="border-t border-border/30 pt-1.5 flex justify-between items-center font-bold">
+                <span>Settlement:</span>
+                <span className={completedDeliveryPreview.remainingDueAfter === 0 ? "text-success" : "text-destructive"}>
+                  {completedDeliveryPreview.remainingDueAfter === 0
+                    ? "Paid in Full ✅"
+                    : `Balance Due: ${fmtINR(completedDeliveryPreview.remainingDueAfter)}`}
+                </span>
+              </div>
+            </div>
+
+            {/* WhatsApp Message Preview */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <MessageCircle className="size-3 text-emerald-500" /> WhatsApp Receipt Preview
+                </span>
+                {completedDeliveryPreview.phone && (
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {completedDeliveryPreview.phone}
+                  </span>
+                )}
+              </div>
+              <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-3 text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                {decodeURIComponent(completedDeliveryPreview.waText)}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/30">
+              <button
+                type="button"
+                onClick={() => setCompletedDeliveryPreview(null)}
+                className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer"
+              >
+                Done / Close
+              </button>
+
+              {completedDeliveryPreview.phoneWA ? (
+                <a
+                  href={`https://wa.me/${completedDeliveryPreview.phoneWA}?text=${completedDeliveryPreview.waText}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setCompletedDeliveryPreview(null)}
+                  className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle className="size-4" />
+                  <span>Send WhatsApp</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.error("No phone number available for WhatsApp");
+                    setCompletedDeliveryPreview(null);
+                  }}
+                  className="py-3 rounded-xl bg-secondary text-muted-foreground text-xs font-bold uppercase tracking-wider"
+                >
+                  No Phone
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

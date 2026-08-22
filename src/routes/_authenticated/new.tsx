@@ -182,7 +182,22 @@ function NewBooking() {
 
   // Restore Draft if user navigates back from another page
   const hasRestoredDraft = useRef(false);
+  const isSavedRef = useRef(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [createdBookingPreview, setCreatedBookingPreview] = useState<{
+    bookingId: string;
+    customerName: string;
+    phone?: string;
+    phoneWA?: string;
+    waText: string;
+    billNo: string;
+    dateStr: string;
+    timeStr: string;
+    sareeCount: number;
+    netTotal: number;
+    paid: number;
+    dueBal: number;
+  } | null>(null);
 
   useEffect(() => {
     if (hasRestoredDraft.current) return;
@@ -224,6 +239,7 @@ function NewBooking() {
 
   // Auto-save draft on every change
   useEffect(() => {
+    if (isSavedRef.current) return;
     if (newName.trim() || newPhone.trim() || customerId || notes.trim() || sareeCount > 1 || advance.trim() || newAddress.trim()) {
       const draft = {
         newName,
@@ -483,11 +499,12 @@ function NewBooking() {
         note: "Advance",
       });
     }
+    isSavedRef.current = true;
     sessionStorage.removeItem("eyas_new_booking_draft");
-    toast.success("Booking created");
+    toast.success("Booking created successfully! 🎉");
 
-    // Auto-send WhatsApp Saree Collected confirmation if enabled for prepleat
-    if (service === "prepleat" && sendWhatsAppOnSave) {
+    // If WhatsApp confirmation toggle is ON
+    if (sendWhatsAppOnSave) {
       const custObj = customers.find((x) => x.id === cid);
       const custName = custObj?.name || newName.trim() || "Customer";
       const phoneRaw = custObj?.phone || newPhoneVal;
@@ -511,7 +528,7 @@ function NewBooking() {
           `Hi *${custName}* 🙏`,
           ``,
           ``,
-          `Your saree has been safely *collected* for *Pre-Pleating*! 🥻`,
+          `Your saree has been safely *collected* for *${service === "prepleat" ? "Pre-Pleating" : "Saree Draping"}*! 🥻`,
           ``,
           ``,
           `🧾 *Bill Number*: ${billNo}`,
@@ -532,7 +549,21 @@ function NewBooking() {
         ].filter((l) => l !== "");
 
         const waText = encodeURIComponent(msgLines.join("\n"));
-        window.open(`https://wa.me/${phoneWA}?text=${waText}`, "_blank");
+        setCreatedBookingPreview({
+          bookingId: b.id,
+          customerName: custName,
+          phone: phoneRaw,
+          phoneWA,
+          waText,
+          billNo,
+          dateStr,
+          timeStr,
+          sareeCount,
+          netTotal,
+          paid,
+          dueBal,
+        });
+        return;
       }
     }
 
@@ -1800,6 +1831,108 @@ function NewBooking() {
         onOpenChange={setShowMapPicker}
         onConfirm={(url) => setNewLocationUrl(url)}
       />
+
+      {/* Booking Created & WhatsApp Preview Modal */}
+      {createdBookingPreview && (
+        <div
+          className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          onClick={() => {
+            const bid = createdBookingPreview.bookingId;
+            setCreatedBookingPreview(null);
+            navigate({ to: "/bookings/$id", params: { id: bid } });
+          }}
+        >
+          <div
+            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border border-border/40 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-1 pt-1">
+              <div className="size-12 rounded-full bg-success/15 text-success mx-auto flex items-center justify-center">
+                <CheckCircle className="size-6" />
+              </div>
+              <h3 className="font-display font-bold text-base text-foreground">
+                Booking Saved Successfully! 🎉
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Order #{createdBookingPreview.billNo} registered for {createdBookingPreview.customerName}
+              </p>
+            </div>
+
+            {/* Quick Bill Summary */}
+            <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/30 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Customer:</span>
+                <span className="font-bold text-foreground">{createdBookingPreview.customerName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Delivery:</span>
+                <span className="font-bold text-foreground">{createdBookingPreview.dateStr} · {createdBookingPreview.timeStr}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Total Bill:</span>
+                <span className="font-bold text-foreground">{fmtINR(createdBookingPreview.netTotal)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Advance Paid:</span>
+                <span className="font-bold text-success">{fmtINR(createdBookingPreview.paid)}</span>
+              </div>
+              <div className="border-t border-border/30 pt-1.5 flex justify-between items-center font-bold">
+                <span>Balance:</span>
+                <span className={createdBookingPreview.dueBal === 0 ? "text-success" : "text-destructive"}>
+                  {createdBookingPreview.dueBal === 0 ? "Paid in Full ✅" : `Due: ${fmtINR(createdBookingPreview.dueBal)}`}
+                </span>
+              </div>
+            </div>
+
+            {/* WhatsApp Message Preview */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <MessageCircle className="size-3 text-emerald-500" /> WhatsApp Message Preview
+                </span>
+                {createdBookingPreview.phone && (
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {createdBookingPreview.phone}
+                  </span>
+                )}
+              </div>
+              <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-3 text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                {decodeURIComponent(createdBookingPreview.waText)}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/30">
+              <button
+                type="button"
+                onClick={() => {
+                  const bid = createdBookingPreview.bookingId;
+                  setCreatedBookingPreview(null);
+                  navigate({ to: "/bookings/$id", params: { id: bid } });
+                }}
+                className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer"
+              >
+                View Details
+              </button>
+
+              <a
+                href={`https://wa.me/${createdBookingPreview.phoneWA}?text=${createdBookingPreview.waText}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => {
+                  const bid = createdBookingPreview.bookingId;
+                  setCreatedBookingPreview(null);
+                  navigate({ to: "/bookings/$id", params: { id: bid } });
+                }}
+                className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+              >
+                <MessageCircle className="size-4" />
+                <span>Send WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

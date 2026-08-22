@@ -228,14 +228,14 @@ const THEMES: {
 function SettingsPage() {
   const settings = useStore((s) => s.settings);
   const update = useStore((s) => s.updateSettings);
-  const customers = useStore((s) => s.customers);
-  const bookings = useStore((s) => s.bookings);
-  const trash = useStore((s) => s.trash);
+  const customers = useStore((s) => s.customers ?? []);
+  const bookings = useStore((s) => s.bookings ?? []);
+  const trash = useStore((s) => s.trash ?? []);
   const restoreBooking = useStore((s) => s.restoreBooking);
-  const deletedCustomers = useStore((s) => s.deletedCustomers || []);
-  const deletedPayments = useStore((s) => s.deletedPayments || []);
-  const deletedExpenses = useStore((s) => s.deletedExpenses || []);
-  const deletedExtraIncomes = useStore((s) => s.deletedExtraIncomes || []);
+  const deletedCustomers = useStore((s) => s.deletedCustomers ?? []);
+  const deletedPayments = useStore((s) => s.deletedPayments ?? []);
+  const deletedExpenses = useStore((s) => s.deletedExpenses ?? []);
+  const deletedExtraIncomes = useStore((s) => s.deletedExtraIncomes ?? []);
   const restoreCustomer = useStore((s) => s.restoreCustomer);
   const restorePayment = useStore((s) => s.restorePayment);
   const restoreExpense = useStore((s) => s.restoreExpense);
@@ -1726,31 +1726,32 @@ function SettingsPage() {
                     </div>
 
                     {binTab === "bookings" && (
-                      trash.length === 0 ? (
+                      (trash ?? []).filter((t) => t && t.booking).length === 0 ? (
                         <p className="text-xs text-muted-foreground py-3 text-center">
                           No deleted bookings in recycle bin.
                         </p>
                       ) : (
                         <ul className="space-y-2 mt-2">
-                          {trash.map((t) => {
-                            const c = customers.find((x) => x.id === t.booking.customerId);
+                          {(trash ?? []).filter((t) => t && t.booking).map((t) => {
+                            const b = t.booking;
+                            const c = customers.find((x) => x.id === b.customerId);
                             return (
                               <li
-                                key={t.booking.id}
+                                key={b.id}
                                 className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
                               >
                                 <div className="min-w-0">
                                   <p className="text-xs font-semibold truncate">
-                                    {c?.name ?? "Unknown"} · {t.booking.service}
+                                    {c?.name ?? "Unknown"} · {b.service}
                                   </p>
                                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    {t.booking.deliveryDate.slice(0, 10)} ·{" "}
-                                    {fmtTime12(t.booking.deliveryTime)} ·{" "}
-                                    {fmtINR(t.booking.totalAmount)}
+                                    {b.deliveryDate ? b.deliveryDate.slice(0, 10) : "—"} ·{" "}
+                                    {b.deliveryTime ? fmtTime12(b.deliveryTime) : "—"} ·{" "}
+                                    {fmtINR(b.totalAmount || 0)}
                                   </p>
                                 </div>
                                 <button
-                                  onClick={() => setRestoreId(t.booking.id)}
+                                  onClick={() => setRestoreId(b.id)}
                                   className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
                                 >
                                   <RotateCw className="size-3" /> Restore
@@ -1763,13 +1764,13 @@ function SettingsPage() {
                     )}
 
                     {binTab === "customers" && (
-                      deletedCustomers.length === 0 ? (
+                      (deletedCustomers ?? []).filter((t) => t && t.customer).length === 0 ? (
                         <p className="text-xs text-muted-foreground py-3 text-center">
                           No deleted customers in recycle bin.
                         </p>
                       ) : (
                         <ul className="space-y-2 mt-2">
-                          {deletedCustomers.map((t) => (
+                          {(deletedCustomers ?? []).filter((t) => t && t.customer).map((t) => (
                             <li
                               key={t.customer.id}
                               className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
@@ -1779,7 +1780,7 @@ function SettingsPage() {
                                   {t.customer.name} ({t.customer.kind ?? "client"})
                                 </p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {t.customer.phone} · Includes {t.bookings.length} bookings, {t.payments.length} payments
+                                  {t.customer.phone || "No phone"} · Includes {(t.bookings || []).length} bookings, {(t.payments || []).length} payments
                                 </p>
                               </div>
                               <button
@@ -1798,13 +1799,13 @@ function SettingsPage() {
                     )}
 
                     {binTab === "payments" && (
-                      deletedPayments.length === 0 ? (
+                      (deletedPayments ?? []).filter((t) => t && t.payment).length === 0 ? (
                         <p className="text-xs text-muted-foreground py-3 text-center">
                           No deleted payments in recycle bin.
                         </p>
                       ) : (
                         <ul className="space-y-2 mt-2">
-                          {deletedPayments.map((t) => {
+                          {(deletedPayments ?? []).filter((t) => t && t.payment).map((t) => {
                             const b = bookings.find((x) => x.id === t.payment.bookingId);
                             const c = customers.find((x) => x.id === t.payment.customerId);
                             return (
@@ -1837,13 +1838,13 @@ function SettingsPage() {
                     )}
 
                     {binTab === "finance" && (
-                      (deletedExpenses.length === 0 && deletedExtraIncomes.length === 0) ? (
+                      ((deletedExpenses ?? []).length === 0 && (deletedExtraIncomes ?? []).length === 0) ? (
                         <p className="text-xs text-muted-foreground py-3 text-center">
                           No deleted finance records in recycle bin.
                         </p>
                       ) : (
                         <ul className="space-y-2 mt-2">
-                          {deletedExpenses.map((t) => (
+                          {(deletedExpenses ?? []).filter((t) => t && t.expense).map((t) => (
                             <li
                               key={t.expense.id}
                               className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
@@ -1869,7 +1870,7 @@ function SettingsPage() {
                               </button>
                             </li>
                           ))}
-                          {deletedExtraIncomes.map((t) => (
+                          {(deletedExtraIncomes ?? []).filter((t) => t && t.extraIncome).map((t) => (
                             <li
                               key={t.extraIncome.id}
                               className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
@@ -2601,23 +2602,23 @@ function ChipListSection({
 }
 
 function ActivityBlock() {
-  const activity = useStore((s) => s.activity);
-  const redoStack = useStore((s) => s.redoStack);
+  const activity = useStore((s) => s.activity ?? []);
+  const redoStack = useStore((s) => s.redoStack ?? []);
   const undoLast = useStore((s) => s.undoLastEdit);
   const redoLast = useStore((s) => s.redoLastEdit);
   const undoEntry = useStore((s) => s.undoActivityEntry);
   const clearActivity = useStore((s) => s.clearActivity);
-  const customers = useStore((s) => s.customers);
-  const bookings = useStore((s) => s.bookings);
+  const customers = useStore((s) => s.customers ?? []);
+  const bookings = useStore((s) => s.bookings ?? []);
   const [query, setQuery] = useState("");
 
-  const canUndo = activity.some((e) => e.kind === "update" && e.prev && e.next);
-  const canRedo = redoStack.length > 0;
+  const canUndo = (activity ?? []).some((e) => e && e.kind === "update" && e.prev && e.next);
+  const canRedo = (redoStack ?? []).length > 0;
 
   const nameFor = (bid?: string) => {
     if (!bid) return "";
-    const b = bookings.find((x) => x.id === bid);
-    const c = customers.find((x) => x.id === b?.customerId);
+    const b = (bookings ?? []).find((x) => x?.id === bid);
+    const c = (customers ?? []).find((x) => x?.id === b?.customerId);
     return c?.name ?? "—";
   };
 
@@ -2632,16 +2633,15 @@ function ActivityBlock() {
   };
 
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? activity.filter((e) => {
-        const name = nameFor(e.bookingId).toLowerCase();
-        return (
-          e.kind.toLowerCase().includes(q) ||
-          e.summary.toLowerCase().includes(q) ||
-          name.includes(q)
-        );
-      })
-    : activity;
+  const filtered = (activity ?? []).filter((e) => Boolean(e)).filter((e) => {
+    if (!q) return true;
+    const name = nameFor(e.bookingId).toLowerCase();
+    return (
+      (e.kind || "").toLowerCase().includes(q) ||
+      (e.summary || "").toLowerCase().includes(q) ||
+      name.includes(q)
+    );
+  });
 
   return (
     <>
@@ -2695,6 +2695,13 @@ function ActivityBlock() {
                   e.bookingId &&
                   (e.kind === "update" || e.kind === "cancel")
                 );
+                let timeStr = "just now";
+                try {
+                  if (e.ts) {
+                    timeStr = formatDistanceToNow(new Date(e.ts), { addSuffix: false });
+                  }
+                } catch {}
+
                 return (
                   <li key={e.id} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/40">
                     <span
@@ -2707,7 +2714,7 @@ function ActivityBlock() {
                       <p className="text-[11px] text-muted-foreground truncate">{e.summary}</p>
                     </div>
                     <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                      {formatDistanceToNow(new Date(e.ts), { addSuffix: false })}
+                      {timeStr}
                     </span>
                     {revertable && (
                       <button

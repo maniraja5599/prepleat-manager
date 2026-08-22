@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.8";
+export const APP_VERSION = "1.3.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,37 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.3.8",
+    version: "v1.3.9",
     date: "22 Aug 2026",
     isLatest: true,
+    title: "Settings Data Fix, Clean Draft Reset & WhatsApp Previews",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🛡️",
+        text: "Settings Data Section Crash Fix",
+        desc: "Settings -> Data பகுதியில் உள்ள Recycle Bin & Activity Log பிழையின்றி திறக்கும்படி பாதுகாப்பு சரி செய்யப்பட்டது.",
+      },
+      {
+        emoji: "🧹",
+        text: "Clean Booking Draft Reset",
+        desc: "புதிய புக்கிங் Confirm செய்து சேமிக்கப்பட்டவுடன் அதன் Draft முழுமையாக அழிக்கப்பட்டு அடுத்த முறை புது படிவமாகத் தொடங்கும்.",
+      },
+      {
+        emoji: "💬",
+        text: "New Booking WhatsApp Preview Modal",
+        desc: "புக்கிங் சேமிக்கப்பட்டதும் உடனே WhatsApp திறக்காமல், செய்தியை முன்னோட்டம் (Preview) பார்த்து Send அல்லது Skip செய்யும் வசதி.",
+      },
+      {
+        emoji: "🧾",
+        text: "Accurate Order Completion WhatsApp Receipt",
+        desc: "ஆர்டரை Complete செய்யும்போது வரவு வைக்கப்பட்ட புதிய தொகையுடன் சரியான Total Paid மற்றும் Paid in Full ரசீது அனுப்பும் வசதி.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.8",
+    date: "22 Aug 2026",
     title: "Interactive Bills Widgets, Search Fix & Payment Warnings",
     badge: "LATEST UPDATE ✨",
     changes: [
