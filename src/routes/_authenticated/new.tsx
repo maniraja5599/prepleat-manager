@@ -509,19 +509,21 @@ function NewBooking() {
           ``,
           `Hi *${custName}* 🙏`,
           ``,
-          `Your saree has been safely *collected* for *Pre-Pleating*! 🧵💛`,
+          `Your saree has been safely *collected* for *Pre-Pleating*! ✨`,
           ``,
           `🧾 *Bill Number*: ${billNo}`,
+          ``,
           `🥻 *Sarees*: ${sareeCount} saree${sareeCount > 1 ? "s" : ""} × ${fmtINR(effPrice)}`,
           `📅 *Delivery*: ${dateStr} · ${timeStr}`,
           extraLine,
+          ``,
           `💰 *Total Bill*: ${fmtINR(netTotal)}`,
           `💵 *Advance Paid*: ${fmtINR(paid)}`,
           dueBal > 0 ? `📌 *Balance Due*: *${fmtINR(dueBal)}*` : `✅ *Status*: Fully Paid`,
           noteLine,
           ``,
           `✨ Wear with confidence & elegance! ✨`,
-          `Eyas Saree Drapist 💛`,
+          `Eyas Saree Drapist 🙏`,
         ].filter((l) => l !== "");
 
         const waText = encodeURIComponent(msgLines.join("\n"));

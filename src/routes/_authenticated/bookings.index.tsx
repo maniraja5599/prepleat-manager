@@ -1185,18 +1185,19 @@ function BookingsPage() {
                         const msgLines = [
                           `✨ *EYAS SAREE DRAPIST* ✨`,
                           ``,
-                          `Hi *${c.name || "Customer"}* 💛`,
+                          `Hi *${c.name || "Customer"}* 🙏`,
                           ``,
                           `Your saree order has been successfully *delivered*! ✅✨`,
                           ``,
                           `🧾 *Bill Number*: ${billNo}`,
+                          ``,
                           `💰 *Final Settlement*: Total ${fmtINR(netTotal)} (${remainingDueAfter === 0 ? "Paid in Full ✅" : `Due: ${fmtINR(remainingDueAfter)}`})`,
                           ``,
                           `We hope you love your flawless pleats! 🥻`,
                           `Please share your photos with us! 📸`,
                           ``,
                           `✨ Wear with confidence & elegance! ✨`,
-                          `Eyas Saree Drapist 💛`,
+                          `Eyas Saree Drapist 🙏`,
                         ].filter((l) => l !== "");
                         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msgLines.join("\n"))}`;
                         window.open(waUrl, "_blank");

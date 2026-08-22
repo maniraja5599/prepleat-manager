@@ -43,6 +43,7 @@ import {
   Car,
   Tag,
   FileText,
+  ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -157,7 +158,7 @@ function BookingDetail() {
         due > 0 ? `💰 *Pending Balance*: *${fmtINR(due)}*` : `✅ *Payment Status*: Fully Paid`,
         ``,
         `✨ Wear with confidence & shine bright! ✨`,
-        `Eyas Saree Drapist 💛`,
+        `Eyas Saree Drapist 🙏`,
       ].filter((l) => l !== "");
     }
 
@@ -165,18 +166,19 @@ function BookingDetail() {
       parts = [
         `✨ *EYAS SAREE DRAPIST* ✨`,
         ``,
-        `Hi *${name}* 💛`,
+        `Hi *${name}* 🙏`,
         ``,
         `Your saree order has been successfully *delivered*! ✅✨`,
         ``,
         `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
+        ``,
         `💰 *Final Settlement*: Total ${fmtINR(netTotal)} (${due === 0 ? "Paid in Full ✅" : `Due: ${fmtINR(due)}`})`,
         ``,
         `We hope you love your flawless pleats! 🥻`,
         `Please share your photos with us! 📸`,
         ``,
         `✨ Wear with confidence & elegance! ✨`,
-        `Eyas Saree Drapist 💛`,
+        `Eyas Saree Drapist 🙏`,
       ].filter((l) => l !== "");
     }
 
@@ -185,17 +187,19 @@ function BookingDetail() {
         parts = [
           `✨ *EYAS SAREE DRAPIST* ✨`,
           ``,
-          `Hi *${name}* 💛`,
+          `Hi *${name}* 🙏`,
           ``,
-          `Your order is *completed* ✅ Thank you for trusting us 💛`,
+          `Your order is *completed* ✅ Thank you for trusting us! ✨`,
+          ``,
           `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)} | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
           extraLine,
           discLine,
+          ``,
           `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
           due > 0 ? `💰 *Balance*: *${fmtINR(due)}*` : `✅ *Status*: Fully Paid`,
           ``,
           `✨ Wear with confidence & elegance! ✨`,
-          `Eyas Saree Drapist 💛`,
+          `Eyas Saree Drapist 🙏`,
         ].filter((l) => l !== "");
       } else {
         parts = [
@@ -204,15 +208,17 @@ function BookingDetail() {
           `Hi *${name}* 🙏`,
           ``,
           `Your order is booked for *${booking.service === "prepleat" ? "PrePleat" : "Draping"}*.`,
+          ``,
           `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
           `📅 Delivery: ${dateStr}, ${timeStr}`,
           extraLine,
           discLine,
+          ``,
           `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
           due > 0 ? `💰 *Balance*: *${fmtINR(due)}*` : `✅ *Status*: Fully paid`,
           ``,
           `✨ Wear with confidence & elegance! ✨`,
-          `Eyas Saree Drapist 💛`,
+          `Eyas Saree Drapist 🙏`,
         ].filter((l) => l !== "");
       }
     }
@@ -224,17 +230,19 @@ function BookingDetail() {
         `Hi *${name}* 🙏`,
         ``,
         `Gentle reminder — balance pending for your saree order.`,
+        ``,
         `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
         `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
         extraLine,
         discLine,
+        ``,
         `Total: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
         `💰 *Due: ${fmtINR(due)}*`,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
         `Pay via GPay / Cash. Thank you! 🙏`,
         ``,
         `✨ Wear with confidence & elegance! ✨`,
-        `Eyas Saree Drapist 💛`,
+        `Eyas Saree Drapist 🙏`,
       ].filter((l) => l !== "");
     }
     
@@ -245,16 +253,18 @@ function BookingDetail() {
         `Hi *${name}* 🙏`,
         ``,
         `Here are your order details 📋`,
+        ``,
         `🧾 *Bill Number*: ${formatShortBillNumber(booking.billNumber, booking.id)}`,
         `Service: *${booking.service === "prepleat" ? "PrePleat" : "Draping"}* | ${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""} × ${fmtINR(booking.pricePerSaree)}`,
         extraLine,
         discLine,
+        ``,
         `📅 Delivery: ${dateStr}, ${timeStr}`,
         `💰 *Total*: ${fmtINR(netTotal)} | Paid: ${fmtINR(paid)}`,
         due > 0 ? `📌 *Balance Due*: *${fmtINR(due)}*` : `✅ *Status*: Fully Paid`,
         ``,
         `✨ Wear with confidence & elegance! ✨`,
-        `Eyas Saree Drapist 💛`,
+        `Eyas Saree Drapist 🙏`,
       ].filter((l) => l !== "");
     }
 

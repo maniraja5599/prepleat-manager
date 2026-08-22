@@ -106,14 +106,14 @@ function CustomerDetail() {
       }
       lines.push(`Pay via GPay / Cash. Thank you! 🙏`);
     } else if (cb.length > 0) {
-      lines.push(`Thank you for trusting us with your sarees! 💛`);
+      lines.push(`Thank you for trusting us with your sarees! ✨`);
     } else {
       lines.push(`We'd love to assist you with your saree draping & pre-pleating! ✨`);
     }
 
     lines.push(``);
     lines.push(`✨ Wear with confidence & elegance! ✨`);
-    lines.push(`Eyas Saree Drapist 💛`);
+    lines.push(`Eyas Saree Drapist 🙏`);
 
     if (withLink) {
       lines.push("");
