@@ -38,6 +38,9 @@ import {
   ChevronDown,
   ChevronUp,
   Receipt,
+  MessageCircle,
+  PackageCheck,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -53,6 +56,7 @@ import {
 import logoAsset from "@/assets/eyas-logo.png";
 import { formatDistanceToNow } from "date-fns";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { generateSampleData } from "@/lib/sample-data";
 import {
   Accordion,
   AccordionItem,
@@ -85,13 +89,13 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "pricing" | "theme" | "headers" | "data" | "account";
+type TabId = "profile" | "rates" | "whatsapp" | "staff" | "security";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
-  { id: "pricing", label: "Pricing", hint: "Defaults & measures", icon: IndianRupee },
-  { id: "theme", label: "Theme & Brand", hint: "Logo, name & colors", icon: Palette },
-  { id: "headers", label: "Headers", hint: "Categories & modes", icon: Tag },
-  { id: "data", label: "Data & Recovery", hint: "Backup, log & reset", icon: Database },
-  { id: "account", label: "Account", hint: "Sign in & sync", icon: User },
+  { id: "profile", label: "🏢 Business Profile", hint: "Name, Logo & Branding", icon: Palette },
+  { id: "rates", label: "💰 Rates & Services", hint: "Pricing & Charges", icon: IndianRupee },
+  { id: "whatsapp", label: "💬 WhatsApp & Alerts", hint: "Templates & Sounds", icon: MessageCircle },
+  { id: "staff", label: "👥 Staff & Artists", hint: "Team & Commissions", icon: User },
+  { id: "security", label: "🔒 Data & Security", hint: "Backup, PIN & Demo", icon: Database },
 ];
 
 const THEMES: {
@@ -246,7 +250,7 @@ function SettingsPage() {
   const isHistoryImported = (payments ?? []).some((p: any) => p.note === "Imported Earning");
   const fileRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<TabId>("pricing");
+  const [tab, setTab] = useState<TabId>("profile");
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
   const [incCatDraft, setIncCatDraft] = useState("");
@@ -268,7 +272,7 @@ function SettingsPage() {
 
   // Swipe tab switching on mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const TABS_ORDER: TabId[] = ["pricing", "theme", "headers", "data", "account"];
+  const TABS_ORDER: TabId[] = ["profile", "rates", "whatsapp", "staff", "security"];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
@@ -395,45 +399,31 @@ function SettingsPage() {
         </Dialog>
       </div>
 
-      <div className="grid gap-3 grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
-        {/* Left rail — icon-only on mobile, full list on desktop */}
-        <nav className="sticky top-[calc(env(safe-area-inset-top,0px)+7.75rem)] self-start z-30">
-          <ul className="bg-card card-shadow rounded-2xl p-1.5 sm:p-2 space-y-1">
-            {TABS.map((t) => {
-              const active = tab === t.id;
-              const Icon = t.icon;
-              return (
-                <li key={t.id}>
-                  <button
-                    onClick={() => setTab(t.id)}
-                    title={t.label}
-                    className={`w-full flex items-center gap-2.5 px-1.5 sm:px-2.5 py-2 rounded-xl transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-secondary text-foreground"}`}
-                  >
-                    <span
-                      className={`size-9 rounded-xl flex items-center justify-center shrink-0 mx-auto sm:mx-0 ${active ? "bg-primary-foreground/20" : "bg-primary/10 text-primary"}`}
-                    >
-                      <Icon className="size-4" />
-                    </span>
-                    <span className="hidden sm:block min-w-0 text-left">
-                      <span className="block text-sm font-semibold leading-tight">{t.label}</span>
-                      <span
-                        className={`block text-[10px] leading-tight ${active ? "opacity-80" : "text-muted-foreground"}`}
-                      >
-                        {t.hint}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="sm:hidden mt-2 text-[10px] text-center font-semibold uppercase tracking-wider text-muted-foreground">
-            {TABS.find((t) => t.id === tab)?.label}
-          </p>
-        </nav>
+      {/* Sticky Top Sub-Tab Selector Bar */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+52px)] z-30 bg-background/95 backdrop-blur-md -mx-5 px-5 py-2 border-b border-border/30 mb-4 flex gap-1.5 overflow-x-auto no-scrollbar shadow-2xs">
+        {TABS.map((t) => {
+          const active = tab === t.id;
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95",
+                active
+                  ? "bg-primary text-primary-foreground shadow-xs border border-primary"
+                  : "bg-card border border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3.5" />
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="min-w-0" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-          {tab === "pricing" && (
+      <div className="min-w-0 space-y-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        {tab === "rates" && (
             <>
               <Section title="Pricing per saree">
                 <p className="text-[11px] text-muted-foreground mb-4">
@@ -631,7 +621,7 @@ function SettingsPage() {
             </>
           )}
 
-          {tab === "headers" && (
+          {tab === "rates" && (
             <>
               <ChipListSection
                 title="Quick Note Presets"
@@ -743,7 +733,7 @@ function SettingsPage() {
             </>
           )}
 
-          {tab === "theme" && (
+          {tab === "profile" && (
             <>
               {/* Brand & Logo Section */}
               <Section title="Brand & Logo">
@@ -1488,8 +1478,203 @@ function SettingsPage() {
             </>
           )}
 
-          {tab === "data" && (
+          {tab === "whatsapp" && (
             <>
+              {/* Push Notifications Section */}
+              <Section title="Device & Browser Push Notifications">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Receive native mobile / desktop push alerts for 1-day advance delivery reminders, today's saree events, and new app updates.
+                </p>
+                <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "size-2.5 rounded-full shrink-0",
+                            getNotificationPermission() === "granted" && !isNotificationsMuted()
+                              ? "bg-success animate-pulse"
+                              : getNotificationPermission() === "denied"
+                              ? "bg-destructive"
+                              : "bg-muted-foreground",
+                          )}
+                        />
+                        <span className="text-sm font-bold text-foreground truncate">
+                          {getNotificationPermission() === "granted" && !isNotificationsMuted()
+                            ? "Push Notifications (ON 🟢)"
+                            : getNotificationPermission() === "denied"
+                            ? "Notifications Blocked (🔴)"
+                            : "Push Notifications (OFF ⚪)"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {getNotificationPermission() === "granted" && !isNotificationsMuted()
+                          ? "Active: You will receive 1-day advance delivery alerts & updates."
+                          : getNotificationPermission() === "denied"
+                          ? "Permission blocked in browser settings. Please click lock icon in address bar to Allow."
+                          : "Disabled: Turn on to receive delivery reminders on your device."}
+                      </p>
+                    </div>
+
+                    {/* Switch */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const currentPerm = getNotificationPermission();
+                        if (currentPerm === "denied") {
+                          toast.error("Notifications blocked in browser settings.");
+                          return;
+                        }
+                        if (currentPerm === "granted") {
+                          const newMuted = !isNotificationsMuted();
+                          setNotificationsMuted(newMuted);
+                          if (newMuted) toast.info("Notifications Muted");
+                          else toast.success("Notifications Turned ON 🔔");
+                          setNotifRefresh((r) => r + 1);
+                        } else {
+                          const res = await requestNotificationPermission();
+                          if (res === "granted") {
+                            toast.success("Notifications Enabled! 🔔");
+                            void sendNativeNotification("Notifications Enabled! 🔔", {
+                              body: "Eyas delivery & event notifications are now active on this device.",
+                            });
+                          }
+                          setNotifRefresh((r) => r + 1);
+                        }
+                      }}
+                      className={cn(
+                        "w-12 h-7 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 relative",
+                        getNotificationPermission() === "granted" && !isNotificationsMuted()
+                          ? "bg-success"
+                          : "bg-muted-foreground/30",
+                      )}
+                      title="Toggle Notifications ON / OFF"
+                    >
+                      <div
+                        className={cn(
+                          "size-6 rounded-full bg-white shadow-md transition-transform duration-200",
+                          getNotificationPermission() === "granted" && !isNotificationsMuted()
+                            ? "translate-x-5"
+                            : "translate-x-0",
+                        )}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </Section>
+
+              {/* WhatsApp Fast Share Presets */}
+              <Section title="WhatsApp Templates & Fast Sharing">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Quick message templates sent along with PDF bills and delivery updates.
+                </p>
+                <div className="space-y-3">
+                  <div className="p-3.5 bg-secondary/40 rounded-2xl border border-border/30 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">📝</span>
+                      <h4 className="text-xs font-bold text-foreground">Order Confirmation Template</h4>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      "Namaste [Customer]! Your booking for [Sarees] Saree(s) is confirmed. Total: ₹[Total], Advance: ₹[Advance], Delivery: [Date]. Thank you for choosing [BusinessName]!"
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-secondary/40 rounded-2xl border border-border/30 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🥻</span>
+                      <h4 className="text-xs font-bold text-foreground">Delivery Ready & Pickup Alert</h4>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      "Hello [Customer]! Your saree pleating is completed & ready for pickup/delivery. Balance Due: ₹[Due]. Kindly collect at your convenience."
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-secondary/40 rounded-2xl border border-border/30 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">💰</span>
+                      <h4 className="text-xs font-bold text-foreground">Payment Received Receipt</h4>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      "Payment Received! ₹[Amount] received via [Mode] for Bill #[BillNo]. All dues cleared. Thank you!"
+                    </p>
+                  </div>
+                </div>
+              </Section>
+            </>
+          )}
+
+          {tab === "staff" && (
+            <>
+              <Section title="Staff & Draping Artists">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Manage your boutique drapists, assistants, and makeup artist partners.
+                </p>
+                <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">Artist / Staff Assignment</h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                      Assign specific staff members or partner artists to bookings to track pleating work, delivery status, and commissions.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-card border border-border/40 text-xs text-muted-foreground flex items-center gap-2">
+                    <Lightbulb className="size-4 text-amber-500 shrink-0" />
+                    <span>You can select Artist partners when creating a booking or customer in the app.</span>
+                  </div>
+                </div>
+              </Section>
+            </>
+          )}
+
+          {tab === "security" && (
+            <>
+              <Section title="Account & Cloud Sync">
+                <AccountBlock />
+              </Section>
+
+              {/* Sample Demo Data Section */}
+              <Section title="Sample Demo Data (Testing)">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Load realistic sample bookings, sarees, customers, and payments to test all app features, or reset to a clean slate.
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const { customers: sampleCust, bookings: sampleBook, payments: samplePay } = generateSampleData();
+                      useStore.setState((prev) => ({
+                        ...prev,
+                        customers: [...sampleCust],
+                        bookings: [...sampleBook],
+                        payments: [...samplePay],
+                      }));
+                      toast.success("Sample Demo Data Loaded! 🎉", {
+                        description: "4 Sample Bookings & Customers added for testing.",
+                        duration: 3000,
+                      });
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition"
+                  >
+                    <PackageCheck className="size-4" /> Load Sample Demo Data
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      useStore.setState((prev) => ({
+                        ...prev,
+                        customers: [],
+                        bookings: [],
+                        payments: [],
+                      }));
+                      toast.info("Data Cleared (Clean Slate)");
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 border border-border/40 text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition"
+                  >
+                    <Trash2 className="size-4 text-muted-foreground" /> Clear All Bookings
+                  </button>
+                </div>
+              </Section>
+
               <Section title="Data Overview">
                 <p className="text-xs text-muted-foreground">
                   {customers.length} customers · {bookings.length} bookings ·{" "}
@@ -1974,24 +2159,16 @@ function SettingsPage() {
                   </div>
                 )}
               </Section>
-            </>
-          )}
 
-          {tab === "account" && (
-            <div className="space-y-6">
-              <Section title="Account">
-                <AccountBlock />
-              </Section>
               <Section title="About App">
                 <AboutBlock />
               </Section>
-            </div>
+            </>
           )}
         </div>
         <p className="mt-6 text-center text-[11px] text-muted-foreground/70 tabular-nums">
           App version v{APP_VERSION}
         </p>
-      </div>
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>

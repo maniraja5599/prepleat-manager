@@ -27,10 +27,13 @@ import {
   Sparkles,
   Settings as SettingsIcon,
   BellRing,
+  Lightbulb,
 } from "lucide-react";
 import { getNotificationPermission, requestNotificationPermission, sendNativeNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
+import { WelcomeOnboardingModal } from "./WelcomeOnboardingModal";
+import { QuickTipsModal } from "./QuickTipsModal";
 
 interface Props {
   title?: string;
@@ -52,9 +55,16 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showTipsModal, setShowTipsModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
   const [showNotifBanner, setShowNotifBanner] = useState(false);
+
+  useEffect(() => {
+    const handleOpenTips = () => setShowTipsModal(true);
+    window.addEventListener("trigger-quick-tips", handleOpenTips);
+    return () => window.removeEventListener("trigger-quick-tips", handleOpenTips);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -627,6 +637,20 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             >
               <SettingsIcon className="size-4.5" />
             </Link>
+
+            {/* Quick Tips & Shortcuts Button */}
+            <button
+              onClick={() => setShowTipsModal(true)}
+              className={cn(
+                "rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-amber-500 active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
+                showPill && currentNotification
+                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
+                  : "size-9 opacity-100 mr-1.5 scale-100",
+              )}
+              title="Quick Tips & Shortcuts 💡"
+            >
+              <Lightbulb className="size-4 text-amber-500" />
+            </button>
 
             {/* What's New Updates Button - Hides smoothly when notification pill is active */}
             <button
@@ -1328,6 +1352,12 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
           </div>
         </div>
       )}
+
+      {/* First-Time User Onboarding & Sample Data Modal */}
+      <WelcomeOnboardingModal />
+
+      {/* Quick Tips & Shortcuts Helper Modal */}
+      <QuickTipsModal open={showTipsModal} onOpenChange={setShowTipsModal} />
     </div>
   );
 }

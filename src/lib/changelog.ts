@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.2";
+export const APP_VERSION = "1.5.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.2",
+    version: "v1.5.3",
     date: "23 Aug 2026",
     isLatest: true,
-    title: "Sticky Fixed Search Bar & Docked Month Headers",
+    title: "Quick Tips, Demo Data Onboarding & 5-Sub-Tabs Settings",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "💡",
+        text: "Smart Micro-Tips & Shortcuts Helper",
+        desc: "Header-ல் புதிய 💡 Tips பட்டன்! Gestures, 1-Tap Canvas Invoices, WhatsApp Fast Share மற்றும் Keyboard குறுக்குவழிகள் எளிய தமிழில்.",
+      },
+      {
+        emoji: "📦",
+        text: "First-Time User Demo Data Onboarding",
+        desc: "புதிய பயனர்கள் App-ஐத் திறக்கும்போது மாதிரி புக்கிங் & பில்களை லோட் செய்து உடனடியாக சோதித்துப் பார்க்கும் புதிய Welcome Onboarding வசதி.",
+      },
+      {
+        emoji: "⚙️",
+        text: "Settings 5-Sub-Tabs Architecture",
+        desc: "நீளமான Settings பக்கம் 5 நேர்த்தியான Sub-Tabs (🏢 Profile, 💰 Rates, 💬 WhatsApp, 👥 Staff, 🔒 Security) ஆக மாற்றப்பட்டு மொபைலில் Full-width அனுபவம் வழங்குகிறது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.2",
+    date: "23 Aug 2026",
+    title: "Sticky Fixed Search Bar & Docked Month Headers",
     changes: [
       {
         emoji: "🔍",
