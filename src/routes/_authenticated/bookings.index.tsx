@@ -344,33 +344,33 @@ function BookingsPage() {
   }, [collected, pending]);
 
   return (
-    <AppShell showFloatingSearch={true}>
-      {/* Sticky Header block (Title + Ticker + Primary Switcher + Tab Bar) */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
-        <div className="flex items-center justify-between gap-4 h-9">
+    <AppShell showFloatingSearch={true}>      {/* Sticky Top Control Deck (Title/Ticker + Search + Filters) */}
+      <div className="sticky-search-deck bg-background/95 backdrop-blur-md -mx-5 px-5 pt-2 pb-2 border-b border-border/40 mb-3 space-y-2 shadow-2xs">
+        {/* Row 1: Title + Ticker */}
+        <div className="flex items-center justify-between gap-4 h-7">
           <div>
-            <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
+            <h1 className="text-lg font-display font-semibold tracking-tight text-foreground leading-tight">
               Bookings
             </h1>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[10px] text-muted-foreground">
               {showPast ? `${counts.history} Completed Orders` : `${counts.active} Active Orders`}
             </p>
           </div>
 
           {/* Scrolling Stats Ticker */}
-          <div className="h-7 overflow-hidden relative min-w-[110px]">
+          <div className="h-6 overflow-hidden relative min-w-[110px]">
             <div
               className="transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateY(-${tickerIndex * 28}px)` }}
+              style={{ transform: `translateY(-${tickerIndex * 24}px)` }}
             >
               {tickerItems.map((item, idx) => (
-                <div key={idx} className="h-7 flex flex-col items-end justify-center">
-                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">
+                <div key={idx} className="h-6 flex flex-col items-end justify-center">
+                  <span className="text-[7.5px] uppercase tracking-wider text-muted-foreground font-extrabold leading-none">
                     {item.label}
                   </span>
                   <span
                     className={cn(
-                      "text-xs font-extrabold tabular-nums mt-0.5 leading-none",
+                      "text-[11px] font-extrabold tabular-nums mt-0.5 leading-none",
                       item.color,
                     )}
                   >
@@ -382,224 +382,140 @@ function BookingsPage() {
           </div>
         </div>
 
-        {/* Primary View Toggle: Active Bookings vs Past / History */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 bg-secondary/60 rounded-2xl mt-3 mb-2 border border-border/20">
-          <button
-            type="button"
-            onClick={() => {
-              setShowPast(false);
-              setMainFilter("active");
-              navigate({ to: "/bookings", search: { past: undefined }, replace: true });
-            }}
-            className={cn(
-              "py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-              !showPast
-                ? "bg-card text-foreground shadow-sm border border-border/40"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <span>🟢 Active Bookings</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-primary/10 text-primary font-extrabold">
-              {bookings.filter((b) => b.status !== "completed" && b.status !== "delivered").length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setShowPast(true);
-              setMainFilter("active");
-              navigate({ to: "/bookings", search: { past: true }, replace: true });
-            }}
-            className={cn(
-              "py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-              showPast
-                ? "bg-card text-foreground shadow-sm border border-border/40"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <span className="flex items-center gap-1">
-              <History className="size-3.5" /> Past / History
-            </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary text-muted-foreground font-extrabold">
-              {counts.history}
-            </span>
-          </button>
-        </div>
-
-        {/* Horizontal Scrollable Filter Row */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center pb-0.5">
-          {[
-            { id: "active" as const, label: showPast ? "All Past" : "All Active", count: counts.active },
-            { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
-            { id: "drape" as const, label: "Direct Drape", count: counts.drape },
-            { id: "artist" as const, label: "Artist", count: counts.artist },
-          ].map((item) => {
-            const isActive = mainFilter === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setMainFilter(item.id)}
-                className={cn(
-                  "shrink-0 rounded-full px-3.5 py-1 text-[11px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95",
-                  isActive
-                    ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                    : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
-                )}
-              >
-                <span>{item.label}</span>
-                <span
-                  className={cn(
-                    "text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums",
-                    isActive
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {item.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Action Buttons Bar */}
-      <div className="flex gap-1.5 mb-3 items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {list.length} {showPast ? "past" : "active"} orders matched
-        </span>
-
+        {/* Row 2: Search Input + Active/Past Switch + Filter Drawer */}
         <div className="flex gap-1.5 items-center">
-          {!selectMode && (
-            <Link
-              to="/"
-              search={{ guide: "book" }}
-              className="rounded-full px-3 py-1.5 bg-card border border-border text-muted-foreground flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:bg-secondary/40 hover:text-foreground"
-            >
-              <Calendar className="size-3.5" /> Book
-            </Link>
-          )}
-
-          <button
-            onClick={() => {
-              setSelectMode((v) => !v);
-              setSelected(new Set());
-            }}
-            className={cn(
-              "rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
-              selectMode
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border text-muted-foreground",
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search customer, phone, bill..."
+              className="w-full bg-card border border-border/60 rounded-full pl-8 pr-7 py-1 text-xs focus:outline-none focus:border-primary placeholder:text-muted-foreground"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <XIcon className="size-3" />
+              </button>
             )}
-          >
-            <CheckSquare className="size-3.5" /> {selectMode ? "Done" : "Select"}
-          </button>
-        </div>
-      </div>
+          </div>
 
-      {selectMode && (
-        <div className="bg-card card-shadow rounded-2xl p-2 mb-3 flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (selected.size === list.length) setSelected(new Set());
-              else setSelected(new Set(list.map((b) => b.id)));
-            }}
-            className="px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold"
-          >
-            {selected.size === list.length && list.length > 0 ? "Clear all" : "Select all"}
-          </button>
-          <span className="text-xs text-muted-foreground flex-1">{selected.size} selected</span>
-          <button
-            disabled={selected.size === 0}
-            onClick={() => setConfirmOpen(true)}
-            className="px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
-          >
-            <Trash2 className="size-3.5" /> Delete {selected.size || ""}
-          </button>
-        </div>
-      )}
-
-      <BookingRequestsInbox />
-
-      <div className="flex gap-2 mb-3">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search customer or phone"
-            className="w-full bg-card border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-          />
-        </div>
-        <Sheet>
-          <SheetTrigger asChild>
+          {/* Primary View Toggle: Active vs Past */}
+          <div className="flex bg-secondary/70 p-0.5 rounded-full border border-border/20 shrink-0">
             <button
+              type="button"
+              onClick={() => {
+                setShowPast(false);
+                setMainFilter("active");
+                navigate({ to: "/bookings", search: { past: undefined }, replace: true });
+              }}
               className={cn(
-                "shrink-0 size-11 rounded-full flex items-center justify-center relative transition border cursor-pointer border-border",
-                activeFiltersCount > 0
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground",
+                "py-0.5 px-2 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer",
+                !showPast
+                  ? "bg-card text-foreground shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground",
               )}
-              aria-label="Filter bookings"
             >
-              <SlidersHorizontal className="size-4" />
-              {activeFiltersCount > 0 && (
-                <span className="absolute -top-1 -right-1 size-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center ring-2 ring-background">
-                  {activeFiltersCount}
-                </span>
-              )}
+              <span>Active</span>
+              <span className="text-[8.5px] px-1 rounded-full bg-primary/10 text-primary font-bold">
+                {bookings.filter((b) => b.status !== "completed" && b.status !== "delivered").length}
+              </span>
             </button>
-          </SheetTrigger>
-          <SheetContent
-            side="bottom"
-            className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8"
-          >
-            <SheetHeader className="mb-3 border-b border-border/40 pb-3 pt-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Filter className="size-4.5 text-primary" />
-                  <SheetTitle className="text-base font-semibold">
-                    Filter & Sort Bookings
-                  </SheetTitle>
-                </div>
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={() => {
-                      setPay("all");
-                      setRange("all");
-                      setSort("delivery");
-                      setFrom("");
-                      setTo("");
-                      toast.success("All filters cleared", { duration: 1200 });
-                    }}
-                    className="text-xs font-semibold text-destructive flex items-center gap-1 active:scale-95 transition bg-destructive/10 px-2.5 py-1 rounded-full cursor-pointer animate-in fade-in zoom-in-95 duration-150"
-                  >
-                    <XIcon className="size-3" /> Clear all
-                  </button>
-                )}
-              </div>
-            </SheetHeader>
 
-            <Accordion type="multiple" defaultValue={["pay-status"]} className="w-full">
-              {/* Category 1: Payment Status */}
-              <AccordionItem value="pay-status" className="border-b border-border/40 py-1">
-                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                      <Wallet className="size-4 text-primary" /> Payment Status
-                    </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                      {paymentSummary}
-                    </span>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPast(true);
+                setMainFilter("active");
+                navigate({ to: "/bookings", search: { past: true }, replace: true });
+              }}
+              className={cn(
+                "py-0.5 px-2 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer",
+                showPast
+                  ? "bg-card text-foreground shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <span>Past</span>
+              <span className="text-[8.5px] px-1 rounded-full bg-secondary text-muted-foreground font-bold">
+                {counts.history}
+              </span>
+            </button>
+          </div>
+
+          {/* Filter Drawer Trigger */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                className={cn(
+                  "shrink-0 size-7.5 rounded-full flex items-center justify-center relative transition border cursor-pointer border-border",
+                  activeFiltersCount > 0
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground",
+                )}
+                aria-label="Filter bookings"
+              >
+                <SlidersHorizontal className="size-3.5" />
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 size-3.5 rounded-full bg-destructive text-[7.5px] text-white font-bold flex items-center justify-center ring-1 ring-background">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              className="rounded-t-3xl max-h-[85vh] overflow-y-auto p-5 pt-10 pb-8"
+            >
+              <SheetHeader className="mb-3 border-b border-border/40 pb-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <Filter className="size-4" />
+                    </div>
+                    <div>
+                      <SheetTitle className="text-base font-bold">Filter & Sort</SheetTitle>
+                      <p className="text-[11px] text-muted-foreground">
+                        Customize your booking feed
+                      </p>
+                    </div>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  {/* Payment Status */}
-                  <div className="space-y-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
-                      Payment Status
-                    </span>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={() => {
+                        setPay("all");
+                        setRange("all");
+                        setSort("delivery");
+                        setFrom("");
+                        setTo("");
+                        toast.success("All filters cleared", { duration: 1200 });
+                      }}
+                      className="text-xs text-destructive hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <XIcon className="size-3" /> Reset All
+                    </button>
+                  )}
+                </div>
+              </SheetHeader>
+
+              {/* Accordion Categories */}
+              <Accordion type="multiple" defaultValue={["pay-status", "date-range"]} className="w-full">
+                {/* Category 1: Payment Status */}
+                <AccordionItem value="pay-status" className="border-b border-border/40 py-1">
+                  <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <Wallet className="size-4 text-primary" /> Payment Status
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                        {paymentSummary}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-4">
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: "all" as const, label: "All Payments", icon: Wallet },
@@ -634,121 +550,208 @@ function BookingsPage() {
                         );
                       })}
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                  </AccordionContent>
+                </AccordionItem>
 
-              {/* Category 2: Date & Time */}
-              <AccordionItem value="date-range" className="border-b border-border/40 py-1">
-                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                      <Calendar className="size-4 text-primary" /> Delivery Date
-                    </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                      {getDateSummary()}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: "all" as Range, label: "All Time" },
-                      { id: "thisMonth" as Range, label: "This Month" },
-                      { id: "lastMonth" as Range, label: "Last Month" },
-                      { id: "custom" as Range, label: "Custom Range" },
-                    ].map((r) => (
-                      <button
-                        key={r.id}
-                        onClick={() => setRange(r.id)}
-                        className={cn(
-                          "py-2.5 px-3 rounded-xl text-xs font-semibold text-center transition active:scale-95 cursor-pointer border",
-                          range === r.id
-                            ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                            : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary",
-                        )}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {range === "custom" && (
-                    <div className="grid grid-cols-2 gap-3 mt-1 bg-secondary/30 p-3 rounded-2xl border border-border/40 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
-                          From
-                        </span>
-                        <input
-                          type="date"
-                          value={from}
-                          onChange={(e) => setFrom(e.target.value)}
-                          className="bg-card rounded-xl border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary w-full cursor-pointer"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
-                          To
-                        </span>
-                        <input
-                          type="date"
-                          value={to}
-                          onChange={(e) => setTo(e.target.value)}
-                          className="bg-card rounded-xl border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary w-full cursor-pointer"
-                        />
-                      </div>
+                {/* Category 2: Date Range */}
+                <AccordionItem value="date-range" className="border-b border-border/40 py-1">
+                  <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <Calendar className="size-4 text-primary" /> Date Period
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                        {getDateSummary()}
+                      </span>
                     </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Category 3: Sorting */}
-              <AccordionItem value="sorting" className="border-b-0 py-1">
-                <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                      <ArrowUpDown className="size-4 text-primary" /> Sort Preference
-                    </span>
-                    <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                      {sortingSummary}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-3">
-                  <div className="space-y-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
-                      Sort By
-                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-4 space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { id: "delivery" as Sort, label: "Delivery Date" },
-                        { id: "recent" as Sort, label: "Recently Booked" },
-                        { id: "bill" as Sort, label: "Bill Number (#)" },
-                        { id: "due" as Sort, label: "Balance Due" },
-                      ].map((sOpt) => (
+                        { id: "all" as Range, label: "All Time" },
+                        { id: "thisMonth" as Range, label: "This Month" },
+                        { id: "lastMonth" as Range, label: "Last Month" },
+                        { id: "custom" as Range, label: "Custom Range" },
+                      ].map((r) => (
                         <button
-                          key={sOpt.id}
-                          onClick={() => setSort(sOpt.id)}
+                          key={r.id}
+                          onClick={() => setRange(r.id)}
                           className={cn(
-                            "py-2 px-1.5 rounded-xl text-[11px] font-semibold text-center transition active:scale-95 cursor-pointer border leading-tight flex items-center justify-center h-10",
-                            sort === sOpt.id
+                            "py-2.5 px-3 rounded-xl text-xs font-semibold text-center transition active:scale-95 cursor-pointer border",
+                            range === r.id
                               ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                              : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary/80",
+                              : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary",
                           )}
                         >
-                          {sOpt.label}
+                          {r.label}
                         </button>
                       ))}
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </SheetContent>
-        </Sheet>
+
+                    {range === "custom" && (
+                      <div className="grid grid-cols-2 gap-3 mt-1 bg-secondary/30 p-3 rounded-2xl border border-border/40 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                            From
+                          </span>
+                          <input
+                            type="date"
+                            value={from}
+                            onChange={(e) => setFrom(e.target.value)}
+                            className="bg-card rounded-xl border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary w-full cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                            To
+                          </span>
+                          <input
+                            type="date"
+                            value={to}
+                            onChange={(e) => setTo(e.target.value)}
+                            className="bg-card rounded-xl border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary w-full cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Category 3: Sorting */}
+                <AccordionItem value="sorting" className="border-b-0 py-1">
+                  <AccordionTrigger className="hover:no-underline py-3 cursor-pointer">
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <ArrowUpDown className="size-4 text-primary" /> Sort Preference
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                        {sortingSummary}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-3">
+                    <div className="space-y-2">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold pl-1">
+                        Sort By
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "delivery" as Sort, label: "Delivery Date" },
+                          { id: "recent" as Sort, label: "Recently Booked" },
+                          { id: "bill" as Sort, label: "Bill Number (#)" },
+                          { id: "due" as Sort, label: "Balance Due" },
+                        ].map((sOpt) => (
+                          <button
+                            key={sOpt.id}
+                            onClick={() => setSort(sOpt.id)}
+                            className={cn(
+                              "py-2 px-1.5 rounded-xl text-[11px] font-semibold text-center transition active:scale-95 cursor-pointer border leading-tight flex items-center justify-center h-10",
+                              sort === sOpt.id
+                                ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                                : "bg-secondary/60 border-transparent text-muted-foreground hover:bg-secondary/80",
+                            )}
+                          >
+                            {sOpt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Row 3: Horizontal Scrollable Filter Row + Action Buttons */}
+        <div className="flex gap-1.5 items-center justify-between overflow-x-auto no-scrollbar pt-0.5">
+          <div className="flex gap-1.5 shrink-0">
+            {[
+              { id: "active" as const, label: showPast ? "All Past" : "All Active", count: counts.active },
+              { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
+              { id: "drape" as const, label: "Direct Drape", count: counts.drape },
+              { id: "artist" as const, label: "Artist", count: counts.artist },
+            ].map((item) => {
+              const isActive = mainFilter === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setMainFilter(item.id)}
+                  className={cn(
+                    "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide border transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                    isActive
+                      ? "bg-primary border-primary text-primary-foreground shadow-xs"
+                      : "bg-card border-border text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
+                  )}
+                >
+                  <span>{item.label}</span>
+                  <span
+                    className={cn(
+                      "text-[8.5px] px-1 rounded-full font-bold tabular-nums",
+                      isActive
+                        ? "bg-primary-foreground/20 text-primary-foreground"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {item.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-1 items-center shrink-0">
+            {!selectMode && (
+              <Link
+                to="/"
+                search={{ guide: "book" }}
+                className="rounded-full px-2.5 py-0.5 bg-card border border-border text-muted-foreground flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:bg-secondary/40 hover:text-foreground"
+              >
+                <Calendar className="size-3" /> Book
+              </Link>
+            )}
+
+            <button
+              onClick={() => {
+                setSelectMode((v) => !v);
+                setSelected(new Set());
+              }}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95",
+                selectMode
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card border border-border text-muted-foreground",
+              )}
+            >
+              <CheckSquare className="size-3" /> {selectMode ? "Done" : "Select"}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Removed duplicate tabs */}
+      {selectMode && (
+        <div className="bg-card card-shadow rounded-2xl p-2 mb-3 flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (selected.size === list.length) setSelected(new Set());
+              else setSelected(new Set(list.map((b) => b.id)));
+            }}
+            className="px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold"
+          >
+            {selected.size === list.length && list.length > 0 ? "Clear all" : "Select all"}
+          </button>
+          <span className="text-xs text-muted-foreground flex-1">{selected.size} selected</span>
+          <button
+            disabled={selected.size === 0}
+            onClick={() => setConfirmOpen(true)}
+            className="px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
+          >
+            <Trash2 className="size-3.5" /> Delete {selected.size || ""}
+          </button>
+        </div>
+      )}
+
+      <BookingRequestsInbox />
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">

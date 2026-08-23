@@ -434,10 +434,16 @@
   .safe-pb {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  .sticky-search-deck {
+    position: -webkit-sticky;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 52px);
+    z-index: 40;
+  }
   .sticky-month-header {
     position: -webkit-sticky;
     position: sticky;
-    top: calc(env(safe-area-inset-top, 0px) + 62px);
+    top: calc(env(safe-area-inset-top, 0px) + 140px);
     z-index: 30;
   }
   .no-select,

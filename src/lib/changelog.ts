@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.1";
+export const APP_VERSION = "1.5.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,27 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v1.5.2",
+    date: "23 Aug 2026",
+    isLatest: true,
+    title: "Sticky Fixed Search Bar & Docked Month Headers",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🔍",
+        text: "Sticky Unified Search & Control Bar",
+        desc: "Bookings மற்றும் Bills பக்கங்களில் கீழே ஸ்க்ரோல் செய்யும்போது, Search Box மற்றும் Filters திரையின் மேற்பகுதியில் (Company Header-க்கு கீழே) Fixed ஆக நிற்கும்.",
+      },
+      {
+        emoji: "📅",
+        text: "Docked Month Timeline Headers",
+        desc: "மாதத் தலைப்புகள் அந்த Search Box-க்குக் கீழே சரியாக இணைக்கப்பட்டு, அடுத்த மாதம் வரும் வரை அங்கே நிலையாக நிற்கும்.",
+      },
+    ],
+  },
+  {
     version: "v1.5.1",
     date: "22 Aug 2026",
-    isLatest: true,
     title: "iOS Safe Area & WebKit Dynamic Sticky Month Headers",
     badge: "LATEST UPDATE ✨",
     changes: [

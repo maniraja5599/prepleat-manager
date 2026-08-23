@@ -217,7 +217,7 @@ export function BillsPage() {
           </button>
         </div>
 
-        <div className="bg-card p-3 rounded-2xl border border-border/40 shadow-xs space-y-2.5">
+        <div className="sticky-search-deck bg-background/95 backdrop-blur-md p-2.5 rounded-2xl border border-border/40 shadow-xs space-y-2 mb-3">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <input
