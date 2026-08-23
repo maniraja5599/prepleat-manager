@@ -440,10 +440,22 @@
     top: calc(env(safe-area-inset-top, 0px) + 52px);
     z-index: 40;
   }
+  .sticky-month-header-bookings {
+    position: -webkit-sticky;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 172px);
+    z-index: 30;
+  }
+  .sticky-month-header-bills {
+    position: -webkit-sticky;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 154px);
+    z-index: 30;
+  }
   .sticky-month-header {
     position: -webkit-sticky;
     position: sticky;
-    top: calc(env(safe-area-inset-top, 0px) + 140px);
+    top: calc(env(safe-area-inset-top, 0px) + 172px);
     z-index: 30;
   }
   .no-select,

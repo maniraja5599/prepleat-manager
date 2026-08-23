@@ -324,7 +324,7 @@ export function BillsPage() {
                   {/* Sticky Fixed Month Section Header */}
                   <div
                     className={cn(
-                      "sticky-month-header -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 flex-wrap transition-all",
+                      "sticky-month-header-bills -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 flex-wrap transition-all",
                     )}
                   >
                     <div className="flex items-center gap-1.5 shrink-0">

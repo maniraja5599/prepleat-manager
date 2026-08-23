@@ -806,7 +806,7 @@ function BookingsPage() {
                   {/* Sticky Fixed Month Section Header with Highlighted Pill + Animated Scrolling Stats Ticker */}
                   <div
                     className={cn(
-                      "sticky-month-header -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 transition-all",
+                      "sticky-month-header-bookings -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 transition-all",
                     )}
                   >
                     {/* Month Highlighted Badge Pill */}
