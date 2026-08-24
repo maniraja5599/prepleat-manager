@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.8";
+export const APP_VERSION = "1.5.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.8",
+    version: "v1.5.9",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Native Android Google Sign-In via Google Play Services",
+    title: "Firebase Android Configuration & Google Play Services Verified",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🛡️",
+        text: "Official google-services.json Connected",
+        desc: "Firebase Android Credentials (SHA-1 & OAuth Web Client ID) வெற்றிகரமாக இணைக்கப்பட்டு, Google Play Services Native Sign-In முழுமையாக இயக்கப்பட்டது.",
+      },
+      {
+        emoji: "⚡",
+        text: "Direct 1-Tap Google Sign-In Active",
+        desc: "பிரவுசர் ஓபன் ஆகாமல், போன் திரையிலேயே கூகுள் கணக்கை தேர்வு செய்து நொடியில் ஆப் திறக்கும் வசதி உறுதிப்படுத்தப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.8",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Native Android Google Sign-In via Google Play Services",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🚀",

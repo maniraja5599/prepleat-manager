@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "419876090748",
+    "project_id": "eyas-saree-drapist",
+    "storage_bucket": "eyas-saree-drapist.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:419876090748:android:41e317862c5da7e40c2af9",
+        "android_client_info": {
+          "package_name": "app.vercel.sareeprepleatmanager.twa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "419876090748-b2irm1mmt1kpctjmsdq48sqeju31rv9l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYaSaTXZjq19BWGsNNE15Y0fULQTWG2zs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "419876090748-b2irm1mmt1kpctjmsdq48sqeju31rv9l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
