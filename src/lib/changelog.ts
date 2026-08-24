@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.4";
+export const APP_VERSION = "1.5.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,40 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.4",
+    version: "v1.5.5",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Enhanced Interactive Onboarding & Contextual Micro-Tips",
+    title: "Settings Sub-Tabs Architecture, Top Account Bar & WhatsApp Previews",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🗂️",
+        text: "Modular Settings Sub-Tabs Architecture",
+        desc: "செட்டிங்ஸ் பக்கம் குழப்பமில்லாமல் Shop & Logo, Theme Colors, Font & Clock, Saree Rates, Measurements, WhatsApp Previews, மற்றும் Backup & Reset என தனித்தனி சப்-டேப்களாக மாற்றப்பட்டது.",
+      },
+      {
+        emoji: "👤",
+        text: "Direct Top Account & Logout Card",
+        desc: "செட்டிங்ஸ் மேலே நேரடியாக உங்களின் Google மின்னஞ்சல் மற்றும் 1-Tap Logout / Sign In பட்டன் வைக்கப்பட்டுள்ளது.",
+      },
+      {
+        emoji: "💬",
+        text: "WhatsApp Chat Bubble Live Previews",
+        desc: "ஆர்டர் உறுதிப்படுத்தல், புடவை ரெடி அலர்ட், மற்றும் கட்டணம் ரசீதுகள் WhatsApp-ல் எப்படி செல்லும் என்பதை காட்டும் நேரலை முன்னோட்டம் மற்றும் 1-Tap Sample Copy வசதி.",
+      },
+      {
+        emoji: "🎯",
+        text: "Smooth Touch & Staff Tab Cleanup",
+        desc: "தேவையில்லாத Staff Tab நீக்கப்பட்டு, தவறுதலாக பக்கங்கள் மாறுவதைத் தடுக்க Swipe Tab Change முடக்கப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.4",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Enhanced Interactive Onboarding & Contextual Micro-Tips",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🌟",
