@@ -51,6 +51,7 @@ import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { ScrollNumber } from "@/components/ScrollNumber";
+import { TimePicker12 } from "@/components/TimePicker12";
 
 export const Route = createFileRoute("/_authenticated/bookings/$id")({
   component: BookingDetail,
@@ -2473,7 +2474,7 @@ function EditPanel({
       </div>
 
       {/* Date & Time */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             Delivery Date
@@ -2482,20 +2483,15 @@ function EditPanel({
             type="date"
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
-            className="w-full min-w-0 bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full min-w-0 bg-secondary/80 hover:bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/40"
           />
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-            Delivery Time
-          </p>
-          <input
-            type="time"
-            step={900}
+          <TimePicker12
+            label="Delivery Time"
             value={deliveryTime}
-            onChange={(e) => setDeliveryTime(e.target.value)}
-            className="w-full min-w-0 bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+            onChange={setDeliveryTime}
           />
         </div>
       </div>

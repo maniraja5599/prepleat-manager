@@ -7,6 +7,7 @@ import logoAsset from "@/assets/eyas-logo.png";
 import { z } from "zod";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db, signInAsGuest } from "@/integrations/firebase/client";
+import { TimePicker12 } from "@/components/TimePicker12";
 
 const recipientSchema = z.string().min(6).max(128);
 
@@ -190,22 +191,20 @@ function PublicBookPage() {
               </button>
             </div>
           </Field>
-          <Field label="Preferred delivery (optional)">
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-                min={new Date().toLocaleDateString('en-CA')}
-                className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <input
-                type="time"
-                value={deliveryTime}
-                onChange={(e) => setDeliveryTime(e.target.value)}
-                className="bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+          <Field label="Preferred delivery date (optional)">
+            <input
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              min={new Date().toLocaleDateString('en-CA')}
+              className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </Field>
+          <Field label="Preferred delivery time (optional)">
+            <TimePicker12
+              value={deliveryTime}
+              onChange={setDeliveryTime}
+            />
           </Field>
           <Field label="Notes (optional)">
             <textarea

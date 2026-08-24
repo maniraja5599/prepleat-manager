@@ -46,6 +46,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { MapPicker } from "@/components/MapPicker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { MicroTipBanner } from "@/components/MicroTipBanner";
+import { TimePicker12 } from "@/components/TimePicker12";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -149,6 +150,7 @@ function NewBooking() {
   const [deliveryTime, setDeliveryTime] = useState(roundUpToQuarter());
   // Popover open state for tap-once calendar / clock pickers (works on iOS & Android).
   const [dateOpen, setDateOpen] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
   const timeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1382,50 +1384,34 @@ function NewBooking() {
         <div className="mt-3">
           <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             <Clock className="size-3.5 text-primary/70" />
-            <span>Time · 15-min · tap 🕒</span>
-            <button
-              type="button"
-              aria-label="Open time picker"
-              onClick={() => {
-                const el = timeInputRef.current;
-                if (!el) return;
-                // Native picker — if user cancels, nothing else is shown.
-                // showPicker() works on modern Chrome/Safari/Firefox.
-                try {
-                  if (typeof el.showPicker === "function") el.showPicker();
-                  else {
-                    el.focus();
-                    el.click();
-                  }
-                } catch {
-                  el.focus();
-                  el.click();
-                }
-              }}
-              className="ml-1 size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-95"
-            >
-              <Clock className="size-3.5" />
-            </button>
-            <input
-              ref={timeInputRef}
-              type="time"
-              step={900}
-              value={deliveryTime}
-              onChange={(e) => {
-                if (e.target.value) setDeliveryTime(e.target.value);
-              }}
-              tabIndex={-1}
-              aria-hidden="true"
-              className="sr-only pointer-events-none"
-              style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
-            />
+            <span>Time · 12-Hour format</span>
+            <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open 12-hr time picker"
+                  className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-bold flex items-center gap-1 cursor-pointer active:scale-95 transition"
+                >
+                  <Clock className="size-3" />
+                  <span>{fmtTime12(deliveryTime)}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3.5 bg-card rounded-2xl border border-border shadow-2xl z-50">
+                <TimePicker12
+                  value={deliveryTime}
+                  onChange={(t) => {
+                    setDeliveryTime(t);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <HorizontalPicker
             itemWidth={86}
             value={deliveryTime}
             onChange={setDeliveryTime}
-            onDoubleTap={() => timeInputRef.current?.showPicker?.()}
+            onDoubleTap={() => setTimeOpen(true)}
             items={Array.from({ length: 24 * 4 }, (_, i) => {
               const h = Math.floor(i / 4);
               const m = (i % 4) * 15;

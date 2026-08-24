@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.9";
+export const APP_VERSION = "1.6.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.9",
+    version: "v1.6.0",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Firebase Android Configuration & Google Play Services Verified",
+    title: "12-Hour AM/PM Time Selection & Enhanced Booking Editor",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🕒",
+        text: "Dedicated 12-Hour AM/PM Time Picker",
+        desc: "ரயில்வே நேரம் (24-Hour) முழுமையாக அகற்றப்பட்டு, 1 முதல் 12 மணி வரை எளிதாக தேர்வு செய்யும் AM/PM பட்டன்கள் மற்றும் ஸ்டெப்பர் கண்ட்ரோல்கள் சேர்க்கப்பட்டது.",
+      },
+      {
+        emoji: "⚡",
+        text: "1-Tap Popular Delivery Presets",
+        desc: "புடவை டெலிவரிக்கு அதிகம் பயன்படும் நேரங்களை (09:00 AM, 12:00 PM, 05:00 PM, 06:30 PM) ஒரே கிளிக்கில் தேர்வு செய்யும் வசதி.",
+      },
+      {
+        emoji: "📝",
+        text: "Smooth Booking Edit Experience",
+        desc: "புக்கிங் எடிட் மற்றும் புதிய புக்கிங் உருவாக்கும் போது மொபைல் திரையில் குழப்பமில்லாமல் நேரம் மாற்றி அமைக்கும் நவீன வடிவமைப்பு.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.9",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Firebase Android Configuration & Google Play Services Verified",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🛡️",
