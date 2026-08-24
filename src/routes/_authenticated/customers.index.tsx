@@ -659,9 +659,13 @@ function CustomersPage() {
 
       <MicroTipBanner
         id="customers_contact_tip"
-        badge="CUSTOMER PRO-TIP ⚡"
-        tamilTip="வாட்ஸ்அப் & அழைப்பு"
-        tip="Tap the Phone or WhatsApp icon next to any customer for 1-tap direct messaging or calling without saving their phone number in your contacts!"
+        badge="SHORTCUTS ⚡"
+        tamilTip="வாடிக்கையாளர்"
+        chips={[
+          { emoji: "📞", tag: "Call", desc: "1-Tap Dial" },
+          { emoji: "💬", tag: "WhatsApp", desc: "No-Save Chat" },
+          { emoji: "🔍", tag: "Last 4-digit", desc: "Fast Search" },
+        ]}
       />
 
       {list.length === 0 ? (

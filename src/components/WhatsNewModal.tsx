@@ -9,26 +9,22 @@ export function WhatsNewModal() {
   const latestEntry = RECENT_UPDATES[0];
 
   useEffect(() => {
-    // 1. Check if the current user has already seen this version or if 7 days (weekly) have passed
-    const lastSeenVersion = localStorage.getItem("eyas_last_seen_version");
-    const lastSeenTime = localStorage.getItem("eyas_last_seen_version_time");
-    const now = Date.now();
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-    const isNewVersion = lastSeenVersion !== APP_VERSION;
-    const isWeeklyTimeElapsed = lastSeenTime ? now - Number(lastSeenTime) > SEVEN_DAYS_MS : true;
-
-    if (isNewVersion || isWeeklyTimeElapsed) {
-      // Delay slightly for smooth initial animation
-      const timer = setTimeout(() => {
-        setOpen(true);
-      }, 700);
-      return () => clearTimeout(timer);
+    // Strictly show ONLY ONCE when a new version update arrives
+    try {
+      const lastSeenVersion = localStorage.getItem("eyas_last_seen_version");
+      if (lastSeenVersion !== APP_VERSION) {
+        const timer = setTimeout(() => {
+          setOpen(true);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // ignore
     }
   }, []);
 
   useEffect(() => {
-    // 2. Allow manual triggering from Settings or footer
+    // Allow manual triggering from Settings or footer
     const handleTrigger = () => {
       setOpen(true);
     };
@@ -36,9 +32,17 @@ export function WhatsNewModal() {
     return () => window.removeEventListener("trigger-whats-new", handleTrigger);
   }, []);
 
-  const handleDismiss = () => {
-    localStorage.setItem("eyas_last_seen_version", APP_VERSION);
-    localStorage.setItem("eyas_last_seen_version_time", String(Date.now()));
+  const handleDismiss = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      localStorage.setItem("eyas_last_seen_version", APP_VERSION);
+      localStorage.setItem("eyas_last_seen_version_time", String(Date.now()));
+    } catch {
+      // ignore
+    }
     setOpen(false);
   };
 
@@ -153,7 +157,8 @@ export function WhatsNewModal() {
         {/* Modal Footer Action */}
         <div className="p-4 bg-card border-t border-border/10 shrink-0">
           <button
-            onClick={handleDismiss}
+            type="button"
+            onClick={(e) => handleDismiss(e)}
             className="w-full py-3 px-4 rounded-2xl saree-gradient text-white text-sm font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>புரிந்துவிட்டது (Got it!)</span>

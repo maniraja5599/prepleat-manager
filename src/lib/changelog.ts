@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.1";
+export const APP_VERSION = "1.6.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.1",
+    version: "v1.6.2",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Streamlined 12-Hour Time Picker & Responsive Mobile UI",
+    title: "1-Time Update Alerts, Easy-View Micro-Tips & Clean Shortcuts",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🔔",
+        text: "Strict 1-Time Update Alert & Instant Dismiss",
+        desc: "புதிய அப்டேட் வரும்போது ஒரே ஒரு முறை மட்டுமே பாப்-அப் தோன்றும்; 'Got it' பட்டனைத் தொட்டவுடன் உடனடியாக மறைந்துவிடும்.",
+      },
+      {
+        emoji: "💡",
+        text: "Easy-View Visual Action Chips",
+        desc: "பக்கங்களில் உள்ள நீண்ட வாக்கியங்கள் நீக்கப்பட்டு, 1 நொடியில் பார்த்து புரிந்துகொள்ளும் எளிய தகவல் பில் பேட்ஜ்களாக மாற்றப்பட்டது.",
+      },
+      {
+        emoji: "⚡",
+        text: "Updated Tour & Shortcuts Guide",
+        desc: "பழைய Settings Swipe குறிப்புகள் அகற்றப்பட்டு, 1-Tap PDF பில், வாட்ஸ்அப் பகிர்வு மற்றும் Double-Tap Search குறுக்குவழிகள் சேர்க்கப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.1",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Streamlined 12-Hour Time Picker & Responsive Mobile UI",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🎯",

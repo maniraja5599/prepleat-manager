@@ -5,6 +5,7 @@ import {
   Calendar,
   Settings,
   Clock,
+  Receipt,
   Check,
   ChevronRight,
   ChevronLeft,
@@ -112,22 +113,16 @@ export function AppTour() {
       ),
     },
     {
-      title: "Settings Swipe",
-      subtitle: "Switch tabs instantly",
-      desc: "Inside the Settings page, swipe left or right on the details container to switch smoothly between Pricing, Theme, Headers, and Data tabs without tapping the icons.",
-      icon: Settings,
-      color: "text-blue-500 bg-blue-500/10",
+      title: "1-Tap Invoices & WhatsApp",
+      subtitle: "Instant Canvas PDF sharing",
+      desc: "Tap any Bill # (e.g. EYAS-101) to open zero-lag crystal-clear Canvas invoices in <5ms. Share directly to customer's WhatsApp without saving their contact number!",
+      icon: Receipt,
+      color: "text-emerald-500 bg-emerald-500/10",
       illustration: (
         <div className="relative size-28 bg-card rounded-3xl border border-border flex flex-col items-center justify-center p-3 shadow-sm overflow-hidden">
-          <Settings className="size-8 text-blue-500 animate-spin-slow" />
-          {/* Tab line representation */}
-          <div className="w-16 h-1 bg-border rounded-full mt-3 flex justify-start">
-            <div className="w-6 h-full bg-blue-500 rounded-full animate-swipe-bar" />
-          </div>
-          <div className="flex gap-1 bottom-3 absolute">
-            <span className="w-3 h-1 rounded bg-blue-500/30" />
-            <span className="w-3 h-1 rounded bg-blue-500" />
-            <span className="w-3 h-1 rounded bg-blue-500/30" />
+          <Receipt className="size-9 text-emerald-500" />
+          <div className="flex items-center gap-1 mt-2.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+            <span>PAID & VERIFIED</span>
           </div>
         </div>
       ),

@@ -605,9 +605,13 @@ function NewBooking() {
 
       <MicroTipBanner
         id="new_booking_phone_tip"
-        badge="AUTOFILL PRO-TIP ⚡"
-        tamilTip="வாடிக்கையாளர் தேடல்"
-        tip="Type the last 4 digits of a customer's phone number to automatically load their existing profile, saree rates, and saved measurements!"
+        badge="SHORTCUTS ⚡"
+        tamilTip="புதிய புக்கிங்"
+        chips={[
+          { emoji: "🔍", tag: "Last 4-digit", desc: "Autofill Client" },
+          { emoji: "🕒", tag: "12-Hour", desc: "AM/PM Delivery" },
+          { emoji: "📏", tag: "Size Chart", desc: "Measurements" },
+        ]}
       />
 
       {/* Booking source — always decide this first because pricing differs. */}

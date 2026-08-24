@@ -2608,12 +2608,12 @@ function HelpBlock({ query, setQuery }: { query: string; setQuery: (v: string) =
             </div>
           </div>
           <div className="flex items-start gap-3 text-xs leading-relaxed border-t border-border/40 pt-2.5">
-            <span className="text-base select-none shrink-0">🖐️</span>
+            <span className="text-base select-none shrink-0">🧾</span>
             <div>
-              <p className="font-semibold text-foreground">Settings Tab Swiping</p>
+              <p className="font-semibold text-foreground">1-Tap Canvas Invoices & WhatsApp</p>
               <p className="text-muted-foreground">
-                Swipe left or right on any Settings tab view to easily cycle between different
-                configuration tabs on mobile.
+                Tap any Bill # (e.g. EYAS-101) to open zero-lag PDF bills and share directly on
+                WhatsApp without saving phone numbers.
               </p>
             </div>
           </div>

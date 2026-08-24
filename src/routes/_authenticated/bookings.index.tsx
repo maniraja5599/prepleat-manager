@@ -756,9 +756,13 @@ function BookingsPage() {
 
       <MicroTipBanner
         id="bookings_invoice_tip"
-        badge="BOOKINGS PRO-TIP ⚡"
-        tamilTip="பில் நம்பர் & WhatsApp"
-        tip="Tap any Bill # (e.g. EYAS-101) to open instant Canvas PDF invoice & share on WhatsApp without saving contacts. Long-press any card for quick actions."
+        badge="SHORTCUTS ⚡"
+        tamilTip="புக்கிங் குறிப்புகள்"
+        chips={[
+          { emoji: "⚡", tag: "Bill #", desc: "Instant PDF Bill" },
+          { emoji: "💬", tag: "WhatsApp", desc: "Direct Share" },
+          { emoji: "👆", tag: "Long-Press", desc: "Quick Actions" },
+        ]}
       />
 
       {list.length === 0 ? (

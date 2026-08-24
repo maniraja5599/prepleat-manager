@@ -299,10 +299,14 @@ function CalendarPage() {
 
         <MicroTipBanner
           id="calendar_nav_tip"
-          badge="CALENDAR PRO-TIP ⚡"
-          tamilTip="கேலெண்டர் குறுக்குவழி"
-          tip="Single-tap any date to see delivery bookings & dues. Double-tap the bottom Calendar tab to open Global Search, or single-tap to jump straight to Today!"
-          actionLabel="View All Shortcuts"
+          badge="SHORTCUTS ⚡"
+          tamilTip="கேலெண்டர்"
+          chips={[
+            { emoji: "👆", tag: "1-Tap Date", desc: "View Deliveries" },
+            { emoji: "⚡", tag: "2-Tap Tab", desc: "Global Search" },
+            { emoji: "📅", tag: "1-Tap Tab", desc: "Today" },
+          ]}
+          actionLabel="All Tips"
           onAction={() => window.dispatchEvent(new CustomEvent("trigger-quick-tips"))}
         />
 

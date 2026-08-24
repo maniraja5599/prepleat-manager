@@ -287,9 +287,13 @@ export function BillsPage() {
 
         <MicroTipBanner
           id="bills_due_filter_tip"
-          badge="BILLS PRO-TIP 🧾"
-          tamilTip="நிலுவைத் தொகை & பில்"
-          tip="Filter by 'Due' to quickly track pending balances. Tap any bill card to open Canvas preview, add payment receipts, or download A5 PDF invoices."
+          badge="SHORTCUTS 🧾"
+          tamilTip="பில் குறிப்புகள்"
+          chips={[
+            { emoji: "🔴", tag: "Due Filter", desc: "Pending Balances" },
+            { emoji: "🧾", tag: "Bill Card", desc: "A5 Canvas PDF" },
+            { emoji: "💳", tag: "UPI QR", desc: "Instant Scan" },
+          ]}
         />
 
         {groupedByMonth.length === 0 ? (
