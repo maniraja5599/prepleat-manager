@@ -557,20 +557,26 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
         {/* Uniform brand strip — every page */}
         <div className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-5 pb-2.5 flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <img
-              src={logo}
-              alt={settings.businessName}
-              className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25 shrink-0"
-            />
-            <div className="flex flex-col min-w-0">
-              <p className="text-[13px] font-display font-semibold tracking-tight truncate">
-                {settings.businessName}
-              </p>
-              <HeaderClock
-                dateFormat={settings.dateFormat || "DD-MM-YYYY"}
-                timeFormat={settings.timeFormat || "12"}
+            <Link
+              to="/settings"
+              title="Open Settings"
+              className="flex items-center gap-2.5 min-w-0 group cursor-pointer active:scale-95 transition"
+            >
+              <img
+                src={logo}
+                alt={settings.businessName}
+                className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25 group-hover:ring-primary/60 shrink-0 transition"
               />
-            </div>
+              <div className="flex flex-col min-w-0">
+                <p className="text-[13px] font-display font-semibold tracking-tight truncate group-hover:text-primary transition">
+                  {settings.businessName}
+                </p>
+                <HeaderClock
+                  dateFormat={settings.dateFormat || "DD-MM-YYYY"}
+                  timeFormat={settings.timeFormat || "12"}
+                />
+              </div>
+            </Link>
           </div>
 
           <div className="flex items-center ml-auto shrink-0 min-w-0">

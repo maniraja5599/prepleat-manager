@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.2";
+export const APP_VERSION = "1.6.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.2",
+    version: "v1.6.3",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "1-Time Update Alerts, Easy-View Micro-Tips & Clean Shortcuts",
+    title: "Smart Clipboard Phone Auto-Fill & Logo Settings Link",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📋",
+        text: "Smart Clipboard Auto-Fill",
+        desc: "போன் Call Log அல்லது வாட்ஸ்அப்பில் Copy செய்த 10-இலக்க மொபைல் எண்ணை தானாகக் கண்டறிந்து 1-டச்சில் பூர்த்தி செய்யும் வசதி.",
+      },
+      {
+        emoji: "🏷️",
+        text: "Direct Logo Tap to Settings",
+        desc: "ஹெடரில் உள்ள Eyas Drapist லோகோ அல்லது பெயரைத் தொட்டவுடன் உடனடியாக Settings பக்கத்திற்கு செல்லும் வசதி.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.2",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "1-Time Update Alerts, Easy-View Micro-Tips & Clean Shortcuts",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🔔",

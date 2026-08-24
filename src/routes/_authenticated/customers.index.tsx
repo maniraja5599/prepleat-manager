@@ -19,8 +19,9 @@ import {
   TrendingUp,
   CalendarPlus,
   Map,
+  Clipboard,
 } from "lucide-react";
-import { cn, cleanPhoneForDialing } from "@/lib/utils";
+import { cn, cleanPhoneForDialing, sanitizeIndianPhone, isValidIndianMobile } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -60,6 +61,45 @@ function CustomersPage() {
   const [locationUrl, setLocationUrl] = useState("");
   const [showMapPicker, setShowMapPicker] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [detectedClipboardPhone, setDetectedClipboardPhone] = useState<string | null>(null);
+
+  // Check clipboard when showAdd is opened or window focused
+  useEffect(() => {
+    const checkClipboard = async () => {
+      try {
+        if (typeof navigator === "undefined" || !navigator.clipboard?.readText) return;
+        const text = await navigator.clipboard.readText();
+        const cleaned = sanitizeIndianPhone(text);
+        if (isValidIndianMobile(cleaned) && cleaned !== phone) {
+          setDetectedClipboardPhone(cleaned);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    if (showAdd) {
+      checkClipboard();
+    }
+    window.addEventListener("focus", checkClipboard);
+    return () => window.removeEventListener("focus", checkClipboard);
+  }, [showAdd, phone]);
+
+  const handlePasteCustomerPhone = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const cleaned = sanitizeIndianPhone(text);
+      if (cleaned) {
+        setPhone(cleaned);
+        setDetectedClipboardPhone(null);
+        toast.success(`Pasted: ${cleaned}`);
+      } else {
+        toast.error("No valid phone number found in clipboard");
+      }
+    } catch {
+      toast.error("Could not access clipboard");
+    }
+  };
 
   const settings = useStore((s) => s.settings);
   const [showMeasure, setShowMeasure] = useState(false);
@@ -461,6 +501,39 @@ function CustomersPage() {
 
       {showAdd && (
         <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2">
+          {/* Smart Clipboard Auto-Fill Pill */}
+          {detectedClipboardPhone && !phone && (
+            <div className="flex items-center justify-between p-2 rounded-xl bg-primary/10 border border-primary/25 text-xs animate-in fade-in">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Clipboard className="size-3.5 text-primary shrink-0" />
+                <span className="text-[11px] text-muted-foreground">Copied:</span>
+                <span className="font-bold font-mono text-primary text-xs tracking-wide">
+                  {detectedClipboardPhone}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhone(detectedClipboardPhone);
+                    setDetectedClipboardPhone(null);
+                    toast.success(`Auto-filled: ${detectedClipboardPhone}`);
+                  }}
+                  className="px-2 py-0.5 rounded-lg saree-gradient text-white text-[10px] font-bold cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1"
+                >
+                  <span>⚡ Auto-Fill</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDetectedClipboardPhone(null)}
+                  className="size-4.5 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             <input
               value={name}
@@ -468,13 +541,29 @@ function CustomersPage() {
               placeholder={`${tab === "client" ? "Client" : "Artist"} name`}
               className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none"
             />
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone"
-              inputMode="tel"
-              className="bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none"
-            />
+            <div className="relative">
+              <input
+                value={phone}
+                onChange={(e) => setPhone(sanitizeIndianPhone(e.target.value))}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const txt = e.clipboardData.getData("text");
+                  setPhone(sanitizeIndianPhone(txt));
+                }}
+                placeholder="Phone (10-digit)"
+                inputMode="tel"
+                maxLength={10}
+                className="w-full bg-secondary rounded-full pl-3 pr-7 py-2 text-sm tabular-nums focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handlePasteCustomerPhone}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                title="Paste from clipboard"
+              >
+                <Clipboard className="size-3.5" />
+              </button>
+            </div>
           </div>
           <textarea
             value={address}
