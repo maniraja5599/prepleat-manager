@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.6";
+export const APP_VERSION = "1.5.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.6",
+    version: "v1.5.7",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Enhanced Mobile Auth, Intent-Filter Deep Links & Quick Guest Mode",
+    title: "Official Eyas Drapist High-Res App Icon & Launcher Branding",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🎨",
+        text: "Official Eyas Drapist App Icon & Adaptive Launcher",
+        desc: "அனைத்து ஆண்ட்ராய்டு போன்களிலும் (HD, FHD, 2K, 4K) தெளிவாக தெரியும் வகையில் அசல் Eyas Drapist லோகோவுடன் கூடிய புதிய Launcher Icon மற்றும் Splash Screen உருவாக்கப்பட்டது.",
+      },
+      {
+        emoji: "📱",
+        text: "Adaptive Icon & Round Icon Support",
+        desc: "Android 8 முதல் Android 14/15 வரையிலான அனைத்து Launcher வடிவங்களுக்கும் (Circle, Squircle, Rounded Square) ஏற்றவாறு ஐகான் பேக் செய்யப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.6",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Enhanced Mobile Auth, Intent-Filter Deep Links & Quick Guest Mode",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🔐",
