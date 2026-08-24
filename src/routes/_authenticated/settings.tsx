@@ -275,7 +275,7 @@ function SettingsPage() {
   const importFileRef = useRef<HTMLInputElement>(null);
 
   const [tab, setTab] = useState<TabId>("profile");
-  const [profileSub, setProfileSub] = useState<"shop" | "logo" | "colors" | "font_time">("shop");
+  const [profileSub, setProfileSub] = useState<"shop_brand" | "colors" | "font_time">("shop_brand");
   const [ratesSub, setRatesSub] = useState<"pricing" | "measures" | "presets" | "calendar">("pricing");
   const [waSub, setWaSub] = useState<"push" | "templates" | "audio">("push");
   const [secSub, setSecSub] = useState<"backup" | "demo_reset" | "pin_lock" | "logs">("backup");
@@ -298,48 +298,6 @@ function SettingsPage() {
   useEffect(() => {
     setDataLocked(true);
   }, [tab]);
-
-  // Swipe tab switching on mobile
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const TABS_ORDER: TabId[] = ["profile", "rates", "whatsapp", "security"];
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-      };
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartRef.current) return;
-    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-    touchStartRef.current = null;
-
-    // Only switch if it is a clear horizontal swipe
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
-      const idx = TABS_ORDER.indexOf(tab);
-      if (dx < 0) {
-        // Swipe left -> Next tab
-        if (idx < TABS_ORDER.length - 1) {
-          setTab(TABS_ORDER[idx + 1]);
-          toast.info(`Tab: ${TABS.find((t) => t.id === TABS_ORDER[idx + 1])?.label}`, {
-            duration: 800,
-          });
-        }
-      } else {
-        // Swipe right -> Prev tab
-        if (idx > 0) {
-          setTab(TABS_ORDER[idx - 1]);
-          toast.info(`Tab: ${TABS.find((t) => t.id === TABS_ORDER[idx - 1])?.label}`, {
-            duration: 800,
-          });
-        }
-      }
-    }
-  };
 
   const onLogoPick = (file: File) => {
     if (file.size > 1_500_000) return toast.error("Logo must be under 1.5MB");
@@ -435,24 +393,14 @@ function SettingsPage() {
             {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="size-4.5" />}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-xs font-bold text-foreground truncate">
-                {isUserGuest ? "Guest Mode" : userEmail || "Account Active"}
-              </p>
-              <span
-                className={cn(
-                  "text-[8.5px] font-extrabold uppercase px-1.5 py-0.2 rounded-full",
-                  isUserGuest ? "bg-amber-500/15 text-amber-600" : "bg-success/15 text-success",
-                )}
-              >
-                {isUserGuest ? "Local" : "Cloud Synced"}
-              </span>
-            </div>
-            <p className="text-[10px] text-muted-foreground truncate">
-              {isUserGuest
-                ? "Sign in with Google to backup data"
-                : "Automatic cloud sync active"}
+            <p className="text-xs font-bold text-foreground truncate">
+              {isUserGuest ? "Guest Mode" : userEmail || "Account Active"}
             </p>
+            {isUserGuest && (
+              <p className="text-[10px] text-muted-foreground truncate">
+                Sign in with Google to backup data
+              </p>
+            )}
           </div>
         </div>
 
@@ -489,7 +437,7 @@ function SettingsPage() {
         })}
       </div>
 
-      <div className="min-w-0 space-y-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div className="min-w-0 space-y-4">
         {/* ===================== 1. RATES & SERVICES ===================== */}
         {tab === "rates" && (
           <>
@@ -820,8 +768,7 @@ function SettingsPage() {
             {/* Profile Sub-Tabs */}
             <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
               {[
-                { id: "shop" as const, label: "🏷️ Shop Info" },
-                { id: "logo" as const, label: "🖼️ Logo & Branding" },
+                { id: "shop_brand" as const, label: "🏷️ Shop & Logo" },
                 { id: "colors" as const, label: "🎨 Theme Colors" },
                 { id: "font_time" as const, label: "🔤 Font & Clock" },
               ].map((item) => (
@@ -841,102 +788,102 @@ function SettingsPage() {
               ))}
             </div>
 
-            {profileSub === "shop" && (
-              <Section title="Shop Details">
-                <div>
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    Business name
-                  </label>
-                  <input
-                    value={settings.businessName}
-                    onChange={(e) => update({ businessName: e.target.value })}
-                    className="input mt-1.5"
-                  />
-                </div>
-                <div className="mt-4">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    Company slogan
-                  </label>
-                  <input
-                    value={settings.businessSlogan ?? ""}
-                    onChange={(e) => update({ businessSlogan: e.target.value })}
-                    placeholder="e.g. Drape with grace · Pleat with love"
-                    className="input mt-1.5"
-                  />
-                </div>
-                <div className="mt-4">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    Mobile number
-                  </label>
-                  <input
-                    value={settings.businessPhone ?? ""}
-                    onChange={(e) => update({ businessPhone: e.target.value })}
-                    placeholder="e.g. +91 83000 30123"
-                    className="input mt-1.5"
-                  />
-                </div>
-                <div className="mt-4">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    Business address
-                  </label>
-                  <textarea
-                    value={settings.businessAddress ?? ""}
-                    onChange={(e) => update({ businessAddress: e.target.value })}
-                    placeholder="e.g. 123, Street name, City"
-                    rows={2}
-                    className="input mt-1.5 rounded-2xl resize-none"
-                  />
-                </div>
-                <div className="mt-4">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    Website (for WhatsApp bills)
-                  </label>
-                  <input
-                    value={settings.websiteUrl ?? ""}
-                    onChange={(e) => update({ websiteUrl: e.target.value })}
-                    placeholder="https://eyasdrapist.shop/"
-                    className="input mt-1.5"
-                  />
-                </div>
-              </Section>
-            )}
-
-            {profileSub === "logo" && (
-              <Section title="Brand & Logo">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={settings.logoDataUrl || logoAsset}
-                    alt="logo"
-                    className="size-16 rounded-full object-cover scale-[1.18] ring-2 ring-primary/20"
-                  />
-                  <div className="flex-1 min-w-0 flex flex-col gap-2">
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      className="inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold hover:bg-secondary/80 transition"
-                    >
-                      <Upload className="size-3.5" /> Change logo
-                    </button>
-                    {settings.logoDataUrl && (
+            {profileSub === "shop_brand" && (
+              <>
+                <Section title="Brand Logo & Icon">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={settings.logoDataUrl || logoAsset}
+                      alt="logo"
+                      className="size-16 rounded-full object-cover scale-[1.18] ring-2 ring-primary/20"
+                    />
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
                       <button
-                        onClick={() => {
-                          update({ logoDataUrl: undefined });
-                          toast.success("Logo reset", { duration: 1200 });
-                        }}
-                        className="text-[11px] text-muted-foreground underline self-start"
+                        onClick={() => fileRef.current?.click()}
+                        className="inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold hover:bg-secondary/80 transition cursor-pointer"
                       >
-                        Use default
+                        <Upload className="size-3.5" /> Change logo
                       </button>
-                    )}
+                      {settings.logoDataUrl && (
+                        <button
+                          onClick={() => {
+                            update({ logoDataUrl: undefined });
+                            toast.success("Logo reset", { duration: 1200 });
+                          }}
+                          className="text-[11px] text-muted-foreground underline self-start cursor-pointer"
+                        >
+                          Use default
+                        </button>
+                      )}
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(e) => e.target.files?.[0] && onLogoPick(e.target.files[0])}
+                      />
+                    </div>
+                  </div>
+                </Section>
+
+                <Section title="Shop Details">
+                  <div>
+                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      Business name
+                    </label>
                     <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={(e) => e.target.files?.[0] && onLogoPick(e.target.files[0])}
+                      value={settings.businessName}
+                      onChange={(e) => update({ businessName: e.target.value })}
+                      className="input mt-1.5"
                     />
                   </div>
-                </div>
-              </Section>
+                  <div className="mt-4">
+                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      Company slogan
+                    </label>
+                    <input
+                      value={settings.businessSlogan ?? ""}
+                      onChange={(e) => update({ businessSlogan: e.target.value })}
+                      placeholder="e.g. Drape with grace · Pleat with love"
+                      className="input mt-1.5"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      Mobile number
+                    </label>
+                    <input
+                      value={settings.businessPhone ?? ""}
+                      onChange={(e) => update({ businessPhone: e.target.value })}
+                      placeholder="e.g. +91 83000 30123"
+                      className="input mt-1.5"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      Business address
+                    </label>
+                    <textarea
+                      value={settings.businessAddress ?? ""}
+                      onChange={(e) => update({ businessAddress: e.target.value })}
+                      placeholder="e.g. 123, Street name, City"
+                      rows={2}
+                      className="input mt-1.5 rounded-2xl resize-none"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      Website (for WhatsApp bills)
+                    </label>
+                    <input
+                      value={settings.websiteUrl ?? ""}
+                      onChange={(e) => update({ websiteUrl: e.target.value })}
+                      placeholder="https://eyasdrapist.shop/"
+                      className="input mt-1.5"
+                    />
+                  </div>
+                </Section>
+              </>
             )}
 
             {profileSub === "colors" && (
@@ -1429,39 +1376,160 @@ function SettingsPage() {
             )}
 
             {waSub === "templates" && (
-              <Section title="WhatsApp Templates & Fast Sharing">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Quick message templates sent along with PDF bills and delivery updates.
+              <Section title="WhatsApp Live Message Previews">
+                <p className="text-xs text-muted-foreground mb-4">
+                  Below is how your automated WhatsApp messages look when sharing booking confirmations, delivery alerts, and payment receipts.
                 </p>
-                <div className="space-y-3">
-                  <div className="p-3.5 bg-secondary/40 rounded-2xl border border-border/30 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">📝</span>
-                      <h4 className="text-xs font-bold text-foreground">Order Confirmation Template</h4>
+
+                <div className="space-y-4">
+                  {/* Template 1: Order Confirmation */}
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 dark:bg-emerald-950/30 overflow-hidden shadow-xs">
+                    <div className="px-3.5 py-2 bg-emerald-600/15 border-b border-emerald-500/20 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-foreground">1. Order Confirmation Receipt</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10">
+                        Auto Generated
+                      </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      "Namaste [Customer]! Your booking for [Sarees] Saree(s) is confirmed. Total: ₹[Total], Advance: ₹[Advance], Delivery: [Date]. Thank you for choosing [BusinessName]!"
-                    </p>
+
+                    <div className="p-3.5 space-y-2">
+                      <div className="p-3 rounded-2xl rounded-tl-xs bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 font-sans text-xs leading-relaxed shadow-xs">
+                        <p className="font-bold text-emerald-800 dark:text-emerald-300">
+                          ✨ {settings.businessName || "Eyas Saree Drapist"}
+                        </p>
+                        <p className="mt-1">
+                          Dear <strong>Priya S.</strong>, your booking is confirmed! 🥻
+                        </p>
+                        <div className="my-1.5 p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-emerald-500/20 text-[11px] space-y-0.5 font-mono">
+                          <p>🧾 Bill No: <strong>#EYAS-101</strong></p>
+                          <p>📦 Service: <strong>2 PrePleat Saree(s)</strong></p>
+                          <p>📅 Delivery: <strong>Tomorrow, 5:00 PM</strong></p>
+                          <p>💰 Total: <strong>₹700</strong> (Advance Paid: <strong>₹200</strong>)</p>
+                          <p className="text-destructive dark:text-amber-400 font-bold">⚠️ Balance Due: ₹500</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Thank you for choosing {settings.businessName || "us"}! 🙏
+                        </p>
+                        <div className="flex justify-end items-center gap-1 text-[9px] text-muted-foreground mt-1">
+                          <span>10:30 AM</span>
+                          <span className="text-emerald-600 font-bold">✓✓</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              `✨ ${settings.businessName || "Eyas Saree Drapist"}\nDear Priya S., your booking is confirmed! 🥻\n\n🧾 Bill No: #EYAS-101\n📦 Service: 2 PrePleat Saree(s)\n📅 Delivery: Tomorrow, 5:00 PM\n💰 Total: ₹700 (Advance Paid: ₹200)\n⚠️ Balance Due: ₹500\n\nThank you for choosing us! 🙏`,
+                            );
+                            toast.success("Order template copied to clipboard! 📋");
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-secondary text-xs font-semibold hover:bg-secondary/80 active:scale-95 transition cursor-pointer flex items-center gap-1"
+                        >
+                          <span>Copy Sample</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="p-3.5 bg-secondary/40 rounded-2xl border border-border/30 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🥻</span>
-                      <h4 className="text-xs font-bold text-foreground">Delivery Ready & Pickup Alert</h4>
+                  {/* Template 2: Delivery Ready Alert */}
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 dark:bg-emerald-950/30 overflow-hidden shadow-xs">
+                    <div className="px-3.5 py-2 bg-emerald-600/15 border-b border-emerald-500/20 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-foreground">2. Saree Ready for Pickup Alert</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10">
+                        1-Tap WhatsApp
+                      </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      "Hello [Customer]! Your saree pleating is completed & ready for pickup/delivery. Balance Due: ₹[Due]. Kindly collect at your convenience."
-                    </p>
+
+                    <div className="p-3.5 space-y-2">
+                      <div className="p-3 rounded-2xl rounded-tl-xs bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 font-sans text-xs leading-relaxed shadow-xs">
+                        <p className="font-bold text-emerald-800 dark:text-emerald-300">
+                          🥻 Saree Pleating Completed!
+                        </p>
+                        <p className="mt-1">
+                          Hello <strong>Priya S.</strong>, your sarees are box-folded, steam-pressed, and ready for pickup! 🌸
+                        </p>
+                        <div className="my-1.5 p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-emerald-500/20 text-[11px] space-y-0.5 font-mono">
+                          <p>🧾 Bill No: <strong>#EYAS-101</strong></p>
+                          <p>💰 Pending Balance: <strong>₹500</strong></p>
+                          <p>📍 Pickup: <strong>{settings.businessAddress || "At our studio"}</strong></p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Kindly collect at your convenience. See you soon! ✨
+                        </p>
+                        <div className="flex justify-end items-center gap-1 text-[9px] text-muted-foreground mt-1">
+                          <span>04:15 PM</span>
+                          <span className="text-emerald-600 font-bold">✓✓</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              `🥻 Saree Pleating Completed!\nHello Priya S., your sarees are box-folded, steam-pressed, and ready for pickup! 🌸\n\n🧾 Bill No: #EYAS-101\n💰 Pending Balance: ₹500\n📍 Pickup: ${settings.businessAddress || "At our studio"}\n\nKindly collect at your convenience!`,
+                            );
+                            toast.success("Delivery alert template copied! 📋");
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-secondary text-xs font-semibold hover:bg-secondary/80 active:scale-95 transition cursor-pointer flex items-center gap-1"
+                        >
+                          <span>Copy Sample</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="p-3.5 bg-secondary/40 rounded-2xl border border-border/30 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">💰</span>
-                      <h4 className="text-xs font-bold text-foreground">Payment Received Receipt</h4>
+                  {/* Template 3: Payment Received Receipt */}
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 dark:bg-emerald-950/30 overflow-hidden shadow-xs">
+                    <div className="px-3.5 py-2 bg-emerald-600/15 border-b border-emerald-500/20 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-foreground">3. Payment Cleared Receipt</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10">
+                        Paid in Full
+                      </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      "Payment Received! ₹[Amount] received via [Mode] for Bill #[BillNo]. All dues cleared. Thank you!"
-                    </p>
+
+                    <div className="p-3.5 space-y-2">
+                      <div className="p-3 rounded-2xl rounded-tl-xs bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100 font-sans text-xs leading-relaxed shadow-xs">
+                        <p className="font-bold text-emerald-800 dark:text-emerald-300">
+                          ✅ Payment Received with Thanks!
+                        </p>
+                        <p className="mt-1">
+                          Dear <strong>Priya S.</strong>, we have received your payment of <strong>₹500</strong> via <strong>GPay</strong> for Bill <strong>#EYAS-101</strong>.
+                        </p>
+                        <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                          🎉 All dues cleared. Account balance: ₹0.
+                        </p>
+                        <div className="flex justify-end items-center gap-1 text-[9px] text-muted-foreground mt-1">
+                          <span>05:02 PM</span>
+                          <span className="text-emerald-600 font-bold">✓✓</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              `✅ Payment Received with Thanks!\nDear Priya S., we have received your payment of ₹500 via GPay for Bill #EYAS-101.\n🎉 All dues cleared. Account balance: ₹0.\n\nThank you for choosing ${settings.businessName || "us"}! 🙏`,
+                            );
+                            toast.success("Payment receipt template copied! 📋");
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-secondary text-xs font-semibold hover:bg-secondary/80 active:scale-95 transition cursor-pointer flex items-center gap-1"
+                        >
+                          <span>Copy Sample</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </Section>
