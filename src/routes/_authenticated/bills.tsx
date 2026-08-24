@@ -27,6 +27,7 @@ import { generateBillPDF } from "@/lib/pdf-bill";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/bills")({
   component: BillsPage,
@@ -283,6 +284,13 @@ export function BillsPage() {
             ))}
           </div>
         </div>
+
+        <MicroTipBanner
+          id="bills_due_filter_tip"
+          badge="BILLS PRO-TIP 🧾"
+          tamilTip="நிலுவைத் தொகை & பில்"
+          tip="Filter by 'Due' to quickly track pending balances. Tap any bill card to open Canvas preview, add payment receipts, or download A5 PDF invoices."
+        />
 
         {groupedByMonth.length === 0 ? (
           <div className="p-12 text-center bg-card rounded-2xl border border-border/30">

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.3";
+export const APP_VERSION = "1.5.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v1.5.4",
+    date: "24 Aug 2026",
+    isLatest: true,
+    title: "Enhanced Interactive Onboarding & Contextual Micro-Tips",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🌟",
+        text: "Interactive Onboarding Guide & Secret Gestures",
+        desc: "புதிய பயனர்களுக்கான வெல்கம் மாடலில் கேலெண்டர் பயன்பாடு, கலர் புள்ளிகள் (PrePleat, Drape, Artist), மற்றும் கீழ் Calendar ஐகானை Double Tap செய்தால் Global Search திறக்கும் குறுக்குவழிகள் தெளிவாக சேர்க்கப்பட்டுள்ளது.",
+      },
+      {
+        emoji: "💡",
+        text: "Contextual Dismissible Micro-Tips",
+        desc: "Calendar, Bookings, Bills, New Booking, மற்றும் Customers பக்கங்களில் தேவையான இடங்களில் சுருக்கமான, பயனுள்ள 💡 Pro-Tip பதாகைகள் சேர்க்கப்பட்டுள்ளன.",
+      },
+    ],
+  },
+  {
     version: "v1.5.3",
     date: "23 Aug 2026",
-    isLatest: true,
     title: "Quick Tips, Demo Data Onboarding & 5-Sub-Tabs Settings",
-    badge: "LATEST UPDATE ✨",
     changes: [
       {
         emoji: "💡",

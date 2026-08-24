@@ -45,6 +45,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { MapPicker } from "@/components/MapPicker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -599,6 +600,13 @@ function NewBooking() {
           </button>
         </div>
       )}
+
+      <MicroTipBanner
+        id="new_booking_phone_tip"
+        badge="AUTOFILL PRO-TIP ⚡"
+        tamilTip="வாடிக்கையாளர் தேடல்"
+        tip="Type the last 4 digits of a customer's phone number to automatically load their existing profile, saree rates, and saved measurements!"
+      />
 
       {/* Booking source — always decide this first because pricing differs. */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">

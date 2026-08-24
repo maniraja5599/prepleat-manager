@@ -32,6 +32,7 @@ import {
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/")({
   validateSearch: (s: Record<string, unknown>): { guide?: string } => ({
@@ -295,6 +296,15 @@ function CalendarPage() {
     <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
         <GrowthDashboard />
+
+        <MicroTipBanner
+          id="calendar_nav_tip"
+          badge="CALENDAR PRO-TIP ⚡"
+          tamilTip="கேலெண்டர் குறுக்குவழி"
+          tip="Single-tap any date to see delivery bookings & dues. Double-tap the bottom Calendar tab to open Global Search, or single-tap to jump straight to Today!"
+          actionLabel="View All Shortcuts"
+          onAction={() => window.dispatchEvent(new CustomEvent("trigger-quick-tips"))}
+        />
 
 
 

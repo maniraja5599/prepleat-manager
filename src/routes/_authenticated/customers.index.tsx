@@ -32,6 +32,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({ meta: [{ title: "Customers — Saree Studio" }] }),
@@ -655,6 +656,13 @@ function CustomersPage() {
           </button>
         </div>
       )}
+
+      <MicroTipBanner
+        id="customers_contact_tip"
+        badge="CUSTOMER PRO-TIP ⚡"
+        tamilTip="வாட்ஸ்அப் & அழைப்பு"
+        tip="Tap the Phone or WhatsApp icon next to any customer for 1-tap direct messaging or calling without saving their phone number in your contacts!"
+      />
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">

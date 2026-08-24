@@ -38,6 +38,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   validateSearch: (search: Record<string, unknown>): { past?: boolean } => {
@@ -752,6 +753,13 @@ function BookingsPage() {
       )}
 
       <BookingRequestsInbox />
+
+      <MicroTipBanner
+        id="bookings_invoice_tip"
+        badge="BOOKINGS PRO-TIP ⚡"
+        tamilTip="பில் நம்பர் & WhatsApp"
+        tip="Tap any Bill # (e.g. EYAS-101) to open instant Canvas PDF invoice & share on WhatsApp without saving contacts. Long-press any card for quick actions."
+      />
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
