@@ -1396,7 +1396,7 @@ function NewBooking() {
                   <span>{fmtTime12(deliveryTime)}</span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-3.5 bg-card rounded-2xl border border-border shadow-2xl z-50">
+              <PopoverContent className="w-[calc(100vw-32px)] max-w-xs p-3 bg-card rounded-2xl border border-border shadow-2xl z-50">
                 <TimePicker12
                   value={deliveryTime}
                   onChange={(t) => {

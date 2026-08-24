@@ -2474,7 +2474,7 @@ function EditPanel({
       </div>
 
       {/* Date & Time */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             Delivery Date
@@ -2483,7 +2483,7 @@ function EditPanel({
             type="date"
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
-            className="w-full min-w-0 bg-secondary/80 hover:bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/40"
+            className="w-full min-w-0 bg-secondary/80 hover:bg-secondary rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/40"
           />
         </div>
 

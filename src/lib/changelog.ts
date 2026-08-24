@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.0";
+export const APP_VERSION = "1.6.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.0",
+    version: "v1.6.1",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "12-Hour AM/PM Time Selection & Enhanced Booking Editor",
+    title: "Streamlined 12-Hour Time Picker & Responsive Mobile UI",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🎯",
+        text: "Clean 1-Tap Hour & Minute Selection",
+        desc: "குழப்பமான +/- பட்டன்கள் அகற்றப்பட்டு, 1 முதல் 12 மணி மற்றும் நிமிடங்கள் நேரடி 1-Tap கிரிட் மூலம் தேர்ந்தெடுக்க எளிமையாக்கப்பட்டது.",
+      },
+      {
+        emoji: "📱",
+        text: "Zero-Overflow Responsive Design",
+        desc: "சிறிய மொபைல் திரைகளிலும் எழுத்துக்கள் மறைந்துவிடாமல் அல்லது பிசிறின்றி கச்சிதமாக பொருந்தும் வண்ணம் வடிவமைக்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.0",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "12-Hour AM/PM Time Selection & Enhanced Booking Editor",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🕒",

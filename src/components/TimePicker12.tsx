@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Clock, Sun, Moon, ChevronDown, Check, Plus, Minus, Sparkles } from "lucide-react";
+import { Clock, Sun, Moon, ChevronDown, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface TimePicker12Props {
@@ -30,13 +30,13 @@ export function format12Display(hour12: number, minute: number, ampm: "AM" | "PM
 }
 
 const COMMON_PRESETS = [
-  { label: "09:00 AM", h: 9, m: 0, a: "AM" as const, period: "Morning" },
-  { label: "10:30 AM", h: 10, m: 30, a: "AM" as const, period: "Morning" },
-  { label: "12:00 PM", h: 12, m: 0, a: "PM" as const, period: "Noon" },
-  { label: "03:00 PM", h: 3, m: 0, a: "PM" as const, period: "Afternoon" },
-  { label: "05:00 PM", h: 5, m: 0, a: "PM" as const, period: "Evening" },
-  { label: "06:30 PM", h: 6, m: 30, a: "PM" as const, period: "Pickup" },
-  { label: "08:00 PM", h: 8, m: 0, a: "PM" as const, period: "Night" },
+  { label: "09:00 AM", h: 9, m: 0, a: "AM" as const },
+  { label: "10:30 AM", h: 10, m: 30, a: "AM" as const },
+  { label: "12:00 PM", h: 12, m: 0, a: "PM" as const },
+  { label: "03:00 PM", h: 3, m: 0, a: "PM" as const },
+  { label: "05:00 PM", h: 5, m: 0, a: "PM" as const },
+  { label: "06:30 PM", h: 6, m: 30, a: "PM" as const },
+  { label: "08:00 PM", h: 8, m: 0, a: "PM" as const },
 ];
 
 export function TimePicker12({ value, onChange, className, label }: TimePicker12Props) {
@@ -61,153 +61,96 @@ export function TimePicker12({ value, onChange, className, label }: TimePicker12
     onChange(val24);
   };
 
-  const handleHourStep = (delta: number) => {
-    let nextH = hour + delta;
-    if (nextH > 12) nextH = 1;
-    if (nextH < 1) nextH = 12;
-    updateTime(nextH, minute, ampm);
-  };
-
-  const handleMinuteStep = (delta: number) => {
-    let nextM = (Math.round((minute + delta) / 5) * 5) % 60;
-    if (nextM < 0) nextM = 55;
-    updateTime(hour, nextM, ampm);
-  };
-
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn("relative w-full min-w-0", className)}>
       {label && (
-        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1.5 flex items-center justify-between">
-          <span>{label}</span>
-          <span className="text-[9px] font-semibold text-primary/80 lowercase bg-primary/10 px-1.5 py-0.5 rounded">
-            12-hr format
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">
+            {label}
           </span>
-        </p>
+          <span className="text-[9px] font-semibold text-primary lowercase bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
+            12-hr
+          </span>
+        </div>
       )}
 
-      {/* Main Trigger Button */}
+      {/* Main Trigger Button - Compact & Overflow Free */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between bg-secondary/80 hover:bg-secondary rounded-xl px-3 py-2.5 text-xs font-semibold border transition cursor-pointer text-left",
+          "w-full min-w-0 flex items-center justify-between bg-secondary/80 hover:bg-secondary rounded-xl px-2.5 py-2 text-xs font-semibold border transition cursor-pointer text-left overflow-hidden gap-1.5",
           isOpen ? "border-primary ring-2 ring-primary/20 bg-secondary" : "border-border/40 hover:border-border",
         )}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <Clock className="size-4 text-primary shrink-0" />
-          <span className="text-sm font-bold text-foreground tracking-wide font-mono">
+        <div className="flex items-center gap-1.5 min-w-0 truncate">
+          <Clock className="size-3.5 text-primary shrink-0" />
+          <span className="text-xs font-bold text-foreground font-mono truncate">
             {format12Display(hour, minute, ampm)}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <span
             className={cn(
-              "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+              "px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase",
               ampm === "AM"
                 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                 : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
             )}
           >
-            {ampm === "AM" ? "☀️ AM" : "🌙 PM"}
+            {ampm}
           </span>
           <ChevronDown
-            className={cn("size-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")}
+            className={cn("size-3 text-muted-foreground transition-transform duration-200 shrink-0", isOpen && "rotate-180")}
           />
         </div>
       </button>
 
       {/* Expandable 12-Hour Time Picker Panel */}
       {isOpen && (
-        <div className="mt-2 bg-card border border-border rounded-2xl p-3.5 shadow-lg space-y-3 z-30 animate-in fade-in zoom-in-95 duration-150">
-          {/* Large 12-Hour Stepper Card */}
-          <div className="bg-secondary/60 rounded-xl p-3 flex items-center justify-between border border-border/30">
-            {/* Hour Stepper */}
-            <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1">Hour</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleHourStep(-1)}
-                  className="size-7 rounded-lg bg-background hover:bg-secondary border border-border/60 flex items-center justify-center text-foreground cursor-pointer active:scale-95 transition"
-                >
-                  <Minus className="size-3.5" />
-                </button>
-                <div className="w-10 text-center font-mono font-extrabold text-lg text-foreground">
-                  {String(hour).padStart(2, "0")}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleHourStep(1)}
-                  className="size-7 rounded-lg bg-background hover:bg-secondary border border-border/60 flex items-center justify-center text-foreground cursor-pointer active:scale-95 transition"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </div>
+        <div className="mt-2 bg-card border border-border rounded-2xl p-3 shadow-xl space-y-2.5 z-30 animate-in fade-in zoom-in-95 duration-150 max-w-full">
+          {/* Header Card: Big Time Display & AM/PM Switcher */}
+          <div className="bg-secondary/60 rounded-xl p-2.5 flex items-center justify-between border border-border/30 gap-2">
+            <div className="flex items-center gap-1 min-w-0">
+              <Clock className="size-4 text-primary shrink-0" />
+              <span className="text-base font-extrabold font-mono text-foreground tracking-wide">
+                {String(hour).padStart(2, "0")} : {String(minute).padStart(2, "0")}
+              </span>
             </div>
 
-            <div className="font-bold text-xl text-muted-foreground pb-1">:</div>
-
-            {/* Minute Stepper */}
-            <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1">Minute</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleMinuteStep(-15)}
-                  className="size-7 rounded-lg bg-background hover:bg-secondary border border-border/60 flex items-center justify-center text-foreground cursor-pointer active:scale-95 transition"
-                >
-                  <Minus className="size-3.5" />
-                </button>
-                <div className="w-10 text-center font-mono font-extrabold text-lg text-foreground">
-                  {String(minute).padStart(2, "0")}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleMinuteStep(15)}
-                  className="size-7 rounded-lg bg-background hover:bg-secondary border border-border/60 flex items-center justify-center text-foreground cursor-pointer active:scale-95 transition"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* AM / PM Toggle Buttons */}
-            <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1">Period</span>
-              <div className="flex bg-background p-0.5 rounded-lg border border-border/60">
-                <button
-                  type="button"
-                  onClick={() => updateTime(hour, minute, "AM")}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md text-xs font-extrabold transition cursor-pointer flex items-center gap-1",
-                    ampm === "AM"
-                      ? "bg-amber-500 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Sun className="size-3" /> AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateTime(hour, minute, "PM")}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md text-xs font-extrabold transition cursor-pointer flex items-center gap-1",
-                    ampm === "PM"
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Moon className="size-3" /> PM
-                </button>
-              </div>
+            {/* AM / PM Segmented Control */}
+            <div className="flex bg-background p-0.5 rounded-lg border border-border/60 shrink-0">
+              <button
+                type="button"
+                onClick={() => updateTime(hour, minute, "AM")}
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-[10px] font-extrabold transition cursor-pointer flex items-center gap-1",
+                  ampm === "AM"
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Sun className="size-2.5" /> AM
+              </button>
+              <button
+                type="button"
+                onClick={() => updateTime(hour, minute, "PM")}
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-[10px] font-extrabold transition cursor-pointer flex items-center gap-1",
+                  ampm === "PM"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Moon className="size-2.5" /> PM
+              </button>
             </div>
           </div>
 
-          {/* Quick 1-Tap Hour Buttons */}
+          {/* Quick 1-Tap Hour Grid (1 to 12) */}
           <div>
-            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground mb-1.5">
-              Quick Hour (1 - 12)
+            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground mb-1">
+              Select Hour (1 - 12)
             </p>
             <div className="grid grid-cols-6 gap-1">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
@@ -228,12 +171,12 @@ export function TimePicker12({ value, onChange, className, label }: TimePicker12
             </div>
           </div>
 
-          {/* Quick Minute Buttons */}
+          {/* Quick Minute Grid (:00, :15, :30, :45) */}
           <div>
-            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground mb-1.5">
-              Minutes
+            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground mb-1">
+              Select Minutes
             </p>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-4 gap-1">
               {[0, 15, 30, 45].map((m) => (
                 <button
                   key={m}
@@ -252,12 +195,12 @@ export function TimePicker12({ value, onChange, className, label }: TimePicker12
             </div>
           </div>
 
-          {/* Popular Saree Boutique Delivery Time Presets */}
+          {/* Popular Saree Delivery Presets */}
           <div>
-            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
-              <Sparkles className="size-3 text-primary" /> Popular Delivery Times
+            <p className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground mb-1 flex items-center gap-1">
+              <Sparkles className="size-2.5 text-primary" /> Delivery Presets
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {COMMON_PRESETS.map((preset) => {
                 const isSelected = hour === preset.h && minute === preset.m && ampm === preset.a;
                 return (
@@ -266,27 +209,27 @@ export function TimePicker12({ value, onChange, className, label }: TimePicker12
                     type="button"
                     onClick={() => updateTime(preset.h, preset.m, preset.a)}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border flex items-center gap-1",
+                      "px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer border",
                       isSelected
                         ? "bg-primary/15 text-primary border-primary/40"
                         : "bg-secondary/50 text-muted-foreground border-border/30 hover:bg-secondary hover:text-foreground",
                     )}
                   >
-                    <span>{preset.label}</span>
+                    {preset.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Done / Close Button */}
-          <div className="pt-1 flex justify-end">
+          {/* Done Button */}
+          <div className="pt-0.5 flex justify-end">
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="px-4 py-1.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold cursor-pointer active:scale-95 transition shadow-xs flex items-center gap-1"
+              className="px-3.5 py-1 rounded-lg saree-gradient text-primary-foreground text-xs font-bold cursor-pointer active:scale-95 transition shadow-xs flex items-center gap-1"
             >
-              <Check className="size-3.5" /> Done
+              <Check className="size-3" /> Done
             </button>
           </div>
         </div>
