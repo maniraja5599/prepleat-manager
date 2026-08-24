@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore, fmtINR, type ThemeName, type AppFontSize, fmtTime12 } from "@/lib/store";
+import { useStore, fmtINR, type ThemeName, type AppFontSize, type CustomColors, fmtTime12 } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
 import {
   IndianRupee,
@@ -89,12 +89,11 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type TabId = "profile" | "rates" | "whatsapp" | "staff" | "security";
+type TabId = "profile" | "rates" | "whatsapp" | "security";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
-  { id: "profile", label: "🏢 Business Profile", hint: "Name, Logo & Branding", icon: Palette },
-  { id: "rates", label: "💰 Rates & Services", hint: "Pricing & Charges", icon: IndianRupee },
+  { id: "profile", label: "🏢 Business Profile", hint: "Shop, Logo & Theme", icon: Palette },
+  { id: "rates", label: "💰 Rates & Services", hint: "Pricing & Measures", icon: IndianRupee },
   { id: "whatsapp", label: "💬 WhatsApp & Alerts", hint: "Templates & Sounds", icon: MessageCircle },
-  { id: "staff", label: "👥 Staff & Artists", hint: "Team & Commissions", icon: User },
   { id: "security", label: "🔒 Data & Security", hint: "Backup, PIN & Demo", icon: Database },
 ];
 
@@ -230,6 +229,14 @@ const THEMES: {
   },
 ];
 
+const CUSTOM_COLOR_KEYS: { key: keyof CustomColors; label: string; desc: string; defaultVal: string }[] = [
+  { key: "primary", label: "Primary (Buttons/Brand)", desc: "Buttons, badges, highlights", defaultVal: "#5b3fc8" },
+  { key: "accent", label: "Accent / Highlights", desc: "Selected tabs & active borders", defaultVal: "#cfc5f0" },
+  { key: "background", label: "Page Background", desc: "Overall app backdrop", defaultVal: "#f0eefa" },
+  { key: "card", label: "Card Background", desc: "Boxes, cards, containers", defaultVal: "#ffffff" },
+  { key: "foreground", label: "Main Text", desc: "Headings & primary typography", defaultVal: "#1c1340" },
+];
+
 function SettingsPage() {
   const settings = useStore((s) => s.settings);
   const update = useStore((s) => s.updateSettings);
@@ -248,9 +255,31 @@ function SettingsPage() {
   const resetApp = useStore((s) => s.resetApp);
   const payments = useStore((s) => s.payments);
   const isHistoryImported = (payments ?? []).some((p: any) => p.note === "Imported Earning");
+  const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [isUserGuest, setIsUserGuest] = useState(false);
+
+  useEffect(() => {
+    waitForAppUser(300).then((user) => {
+      setUserEmail(user?.email ?? "");
+      setIsUserGuest(!!user?.isAnonymous);
+    });
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/auth" });
+  };
+
   const fileRef = useRef<HTMLInputElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
+
   const [tab, setTab] = useState<TabId>("profile");
+  const [profileSub, setProfileSub] = useState<"shop" | "logo" | "colors" | "font_time">("shop");
+  const [ratesSub, setRatesSub] = useState<"pricing" | "measures" | "presets" | "calendar">("pricing");
+  const [waSub, setWaSub] = useState<"push" | "templates" | "audio">("push");
+  const [secSub, setSecSub] = useState<"backup" | "demo_reset" | "pin_lock" | "logs">("backup");
+
   const [presetDraft, setPresetDraft] = useState("");
   const [expCatDraft, setExpCatDraft] = useState("");
   const [incCatDraft, setIncCatDraft] = useState("");
@@ -272,7 +301,7 @@ function SettingsPage() {
 
   // Swipe tab switching on mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const TABS_ORDER: TabId[] = ["profile", "rates", "whatsapp", "staff", "security"];
+  const TABS_ORDER: TabId[] = ["profile", "rates", "whatsapp", "security"];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
@@ -375,7 +404,7 @@ function SettingsPage() {
   return (
     <AppShell wide>
       {/* Sticky Header block (Title + Subtitle) */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4 flex items-center justify-between">
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-3 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
             Settings
@@ -399,8 +428,46 @@ function SettingsPage() {
         </Dialog>
       </div>
 
-      {/* Sticky Top Sub-Tab Selector Bar */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+52px)] z-30 bg-background/95 backdrop-blur-md -mx-5 px-5 py-2 border-b border-border/30 mb-4 flex gap-1.5 overflow-x-auto no-scrollbar shadow-2xs">
+      {/* Top Account & Logout Bar */}
+      <div className="p-3 rounded-2xl bg-card border border-border/50 shadow-2xs flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 border border-primary/20">
+            {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="size-4.5" />}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs font-bold text-foreground truncate">
+                {isUserGuest ? "Guest Mode" : userEmail || "Account Active"}
+              </p>
+              <span
+                className={cn(
+                  "text-[8.5px] font-extrabold uppercase px-1.5 py-0.2 rounded-full",
+                  isUserGuest ? "bg-amber-500/15 text-amber-600" : "bg-success/15 text-success",
+                )}
+              >
+                {isUserGuest ? "Local" : "Cloud Synced"}
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {isUserGuest
+                ? "Sign in with Google to backup data"
+                : "Automatic cloud sync active"}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="shrink-0 px-3 py-1.5 rounded-xl bg-destructive/10 hover:bg-destructive/15 text-destructive border border-destructive/20 text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+        >
+          <LogOut className="size-3.5" />
+          <span>{isUserGuest ? "Sign In" : "Logout"}</span>
+        </button>
+      </div>
+
+      {/* Sticky Top Main Tab Selector Bar */}
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+52px)] z-30 bg-background/95 backdrop-blur-md -mx-5 px-5 py-2 border-b border-border/30 mb-3 flex gap-1.5 overflow-x-auto no-scrollbar shadow-2xs">
         {TABS.map((t) => {
           const active = tab === t.id;
           const Icon = t.icon;
@@ -423,8 +490,34 @@ function SettingsPage() {
       </div>
 
       <div className="min-w-0 space-y-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        {/* ===================== 1. RATES & SERVICES ===================== */}
         {tab === "rates" && (
-            <>
+          <>
+            {/* Rates Sub-Tabs */}
+            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
+              {[
+                { id: "pricing" as const, label: "🥻 Saree Rates" },
+                { id: "measures" as const, label: "📏 Measurements" },
+                { id: "presets" as const, label: "🏷️ Presets & Categories" },
+                { id: "calendar" as const, label: "📅 Calendar Display" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setRatesSub(item.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                    ratesSub === item.id
+                      ? "bg-card text-primary shadow-xs border border-border/60"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {ratesSub === "pricing" && (
               <Section title="Pricing per saree">
                 <p className="text-[11px] text-muted-foreground mb-4">
                   Direct client and artist rates. Tap +/- to step by ₹50.
@@ -485,7 +578,9 @@ function SettingsPage() {
                   </div>
                 </div>
               </Section>
+            )}
 
+            {ratesSub === "measures" && (
               <Section title="Default Measurements">
                 <p className="text-xs text-muted-foreground mb-3">
                   Labels (e.g. P, W, H) and default values in inches. Used as start values for new
@@ -519,18 +614,9 @@ function SettingsPage() {
                         >
                           −
                         </button>
-                        <input
-                          type="number"
-                          value={m.value}
-                          onChange={(e) =>
-                            update({
-                              defaultMeasurements: (settings.defaultMeasurements ?? []).map((x, j) =>
-                                i === j ? { ...x, value: Number(e.target.value) || 0 } : x,
-                              ),
-                            })
-                          }
-                          className="w-12 bg-transparent text-center tabular-nums text-sm focus:outline-none"
-                        />
+                        <span className="w-8 text-center text-xs font-semibold tabular-nums">
+                          {m.value}
+                        </span>
                         <button
                           onClick={() =>
                             update({
@@ -576,16 +662,122 @@ function SettingsPage() {
                   </button>
                 )}
               </Section>
+            )}
 
-              <Section title="Website (for WhatsApp bills)">
-                <input
-                  value={settings.websiteUrl ?? ""}
-                  onChange={(e) => update({ websiteUrl: e.target.value })}
-                  placeholder="https://eyasdrapist.shop/"
-                  className="input"
+            {ratesSub === "presets" && (
+              <>
+                <ChipListSection
+                  title="Quick Note Presets"
+                  hint="Tap chips appear under the Notes field when creating a booking."
+                  placeholder="Add preset (e.g. Engagement)"
+                  tone="primary"
+                  items={settings.occasionPresets ?? []}
+                  draft={presetDraft}
+                  setDraft={setPresetDraft}
+                  onAdd={(v) =>
+                    update({
+                      occasionPresets: Array.from(new Set([...(settings.occasionPresets ?? []), v])),
+                    })
+                  }
+                  onRemove={(v) =>
+                    update({
+                      occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== v),
+                    })
+                  }
                 />
-              </Section>
 
+                <ChipListSection
+                  title="Income Categories"
+                  hint="Headers used when logging extra income (tips, sales, etc.) on the Payments page."
+                  placeholder="Add income header (e.g. Tips)"
+                  tone="success"
+                  items={settings.incomeCategories ?? []}
+                  draft={incCatDraft}
+                  setDraft={setIncCatDraft}
+                  onAdd={(v) =>
+                    update({
+                      incomeCategories: Array.from(
+                        new Set([...(settings.incomeCategories ?? []), v]),
+                      ),
+                    })
+                  }
+                  onRemove={(v) =>
+                    update({
+                      incomeCategories: (settings.incomeCategories ?? []).filter((x) => x !== v),
+                    })
+                  }
+                />
+
+                <ChipListSection
+                  title="Expense Categories"
+                  hint="Headers used when logging expenses on the Payments page."
+                  placeholder="Add expense header (e.g. Material)"
+                  tone="danger"
+                  items={settings.expenseCategories ?? []}
+                  draft={expCatDraft}
+                  setDraft={setExpCatDraft}
+                  onAdd={(v) =>
+                    update({
+                      expenseCategories: Array.from(
+                        new Set([...(settings.expenseCategories ?? []), v]),
+                      ),
+                    })
+                  }
+                  onRemove={(v) =>
+                    update({
+                      expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== v),
+                    })
+                  }
+                />
+
+                <ChipListSection
+                  title="Payment Modes"
+                  hint="Add your own payment modes (gpay, cash, card, upi, cheque, etc). Appears when logging income & expenses."
+                  placeholder="Add payment mode (e.g. UPI)"
+                  tone="primary"
+                  items={settings.paymentModes ?? []}
+                  draft={modeDraft}
+                  setDraft={setModeDraft}
+                  onAdd={(v) =>
+                    update({
+                      paymentModes: Array.from(
+                        new Set([...(settings.paymentModes ?? []), v.toLowerCase()]),
+                      ),
+                    })
+                  }
+                  onRemove={(v) =>
+                    update({
+                      paymentModes: (settings.paymentModes ?? []).filter((x) => x !== v),
+                      defaultPaymentMode:
+                        settings.defaultPaymentMode === v ? "gpay" : settings.defaultPaymentMode,
+                    })
+                  }
+                />
+
+                <Section title="Default Payment Mode">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Pre-selected when adding a new payment.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(settings.paymentModes ?? []).map((m) => {
+                      const active = (settings.defaultPaymentMode ?? "gpay") === m;
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => update({ defaultPaymentMode: m })}
+                          className={`px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider ${active ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
+                        >
+                          <CreditCard className="inline size-3 mr-1" />
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Section>
+              </>
+            )}
+
+            {ratesSub === "calendar" && (
               <Section title="Calendar Amount Display">
                 <p className="text-xs text-muted-foreground mb-3">
                   Configure how bookings amounts are displayed on the main dashboard calendar cells.
@@ -618,159 +810,40 @@ function SettingsPage() {
                   </div>
                 </div>
               </Section>
-            </>
-          )}
+            )}
+          </>
+        )}
 
-          {tab === "rates" && (
-            <>
-              <ChipListSection
-                title="Quick Note Presets"
-                hint="Tap chips appear under the Notes field when creating a booking."
-                placeholder="Add preset (e.g. Engagement)"
-                tone="primary"
-                items={settings.occasionPresets ?? []}
-                draft={presetDraft}
-                setDraft={setPresetDraft}
-                onAdd={(v) =>
-                  update({
-                    occasionPresets: Array.from(new Set([...(settings.occasionPresets ?? []), v])),
-                  })
-                }
-                onRemove={(v) =>
-                  update({
-                    occasionPresets: (settings.occasionPresets ?? []).filter((x) => x !== v),
-                  })
-                }
-              />
+        {/* ===================== 2. BUSINESS PROFILE ===================== */}
+        {tab === "profile" && (
+          <>
+            {/* Profile Sub-Tabs */}
+            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
+              {[
+                { id: "shop" as const, label: "🏷️ Shop Info" },
+                { id: "logo" as const, label: "🖼️ Logo & Branding" },
+                { id: "colors" as const, label: "🎨 Theme Colors" },
+                { id: "font_time" as const, label: "🔤 Font & Clock" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setProfileSub(item.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                    profileSub === item.id
+                      ? "bg-card text-primary shadow-xs border border-border/60"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
 
-              <ChipListSection
-                title="Income Categories"
-                hint="Headers used when logging extra income (tips, sales, etc.) on the Payments page."
-                placeholder="Add income header (e.g. Tips)"
-                tone="success"
-                items={settings.incomeCategories ?? []}
-                draft={incCatDraft}
-                setDraft={setIncCatDraft}
-                onAdd={(v) =>
-                  update({
-                    incomeCategories: Array.from(
-                      new Set([...(settings.incomeCategories ?? []), v]),
-                    ),
-                  })
-                }
-                onRemove={(v) =>
-                  update({
-                    incomeCategories: (settings.incomeCategories ?? []).filter((x) => x !== v),
-                  })
-                }
-              />
-
-              <ChipListSection
-                title="Expense Categories"
-                hint="Headers used when logging expenses on the Payments page."
-                placeholder="Add expense header (e.g. Material)"
-                tone="danger"
-                items={settings.expenseCategories ?? []}
-                draft={expCatDraft}
-                setDraft={setExpCatDraft}
-                onAdd={(v) =>
-                  update({
-                    expenseCategories: Array.from(
-                      new Set([...(settings.expenseCategories ?? []), v]),
-                    ),
-                  })
-                }
-                onRemove={(v) =>
-                  update({
-                    expenseCategories: (settings.expenseCategories ?? []).filter((x) => x !== v),
-                  })
-                }
-              />
-
-              <ChipListSection
-                title="Payment Modes"
-                hint="Add your own payment modes (gpay, cash, card, upi, cheque, etc). Appears when logging income & expenses."
-                placeholder="Add payment mode (e.g. UPI)"
-                tone="primary"
-                items={settings.paymentModes ?? []}
-                draft={modeDraft}
-                setDraft={setModeDraft}
-                onAdd={(v) =>
-                  update({
-                    paymentModes: Array.from(
-                      new Set([...(settings.paymentModes ?? []), v.toLowerCase()]),
-                    ),
-                  })
-                }
-                onRemove={(v) =>
-                  update({
-                    paymentModes: (settings.paymentModes ?? []).filter((x) => x !== v),
-                    defaultPaymentMode:
-                      settings.defaultPaymentMode === v ? "gpay" : settings.defaultPaymentMode,
-                  })
-                }
-              />
-              <Section title="Default Payment Mode">
-                <p className="text-xs text-muted-foreground mb-2">
-                  Pre-selected when adding a new payment.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(settings.paymentModes ?? []).map((m) => {
-                    const active = (settings.defaultPaymentMode ?? "gpay") === m;
-                    return (
-                      <button
-                        key={m}
-                        onClick={() => update({ defaultPaymentMode: m })}
-                        className={`px-3 py-2 rounded-full text-xs font-semibold uppercase tracking-wider ${active ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-                      >
-                        <CreditCard className="inline size-3 mr-1" />
-                        {m}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Section>
-            </>
-          )}
-
-          {tab === "profile" && (
-            <>
-              {/* Brand & Logo Section */}
-              <Section title="Brand & Logo">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={settings.logoDataUrl || logoAsset}
-                    alt="logo"
-                    className="size-16 rounded-full object-cover scale-[1.18] ring-2 ring-primary/20"
-                  />
-                  <div className="flex-1 min-w-0 flex flex-col gap-2">
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      className="inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold hover:bg-secondary/80 transition"
-                    >
-                      <Upload className="size-3.5" /> Change logo
-                    </button>
-                    {settings.logoDataUrl && (
-                      <button
-                        onClick={() => {
-                          update({ logoDataUrl: undefined });
-                          toast.success("Logo reset", { duration: 1200 });
-                        }}
-                        className="text-[11px] text-muted-foreground underline self-start"
-                      >
-                        Use default
-                      </button>
-                    )}
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={(e) => e.target.files?.[0] && onLogoPick(e.target.files[0])}
-                    />
-                  </div>
-                </div>
-                <div className="mt-4">
+            {profileSub === "shop" && (
+              <Section title="Shop Details">
+                <div>
                   <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
                     Business name
                   </label>
@@ -814,756 +887,548 @@ function SettingsPage() {
                     className="input mt-1.5 rounded-2xl resize-none"
                   />
                 </div>
+                <div className="mt-4">
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Website (for WhatsApp bills)
+                  </label>
+                  <input
+                    value={settings.websiteUrl ?? ""}
+                    onChange={(e) => update({ websiteUrl: e.target.value })}
+                    placeholder="https://eyasdrapist.shop/"
+                    className="input mt-1.5"
+                  />
+                </div>
               </Section>
+            )}
 
-              {/* Date & Time Settings Section */}
-              <Section title="Date & Time Formats">
-                <p className="text-[11px] text-muted-foreground mb-4">
-                  Configure how dates and times are formatted across the app.
-                </p>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground uppercase font-semibold">
-                      Date Format
-                    </label>
-                    <select
-                      value={settings.dateFormat || "DD-MM-YYYY"}
-                      onChange={(e) => update({ dateFormat: e.target.value })}
-                      className="input mt-1.5 cursor-pointer bg-secondary"
+            {profileSub === "logo" && (
+              <Section title="Brand & Logo">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={settings.logoDataUrl || logoAsset}
+                    alt="logo"
+                    className="size-16 rounded-full object-cover scale-[1.18] ring-2 ring-primary/20"
+                  />
+                  <div className="flex-1 min-w-0 flex flex-col gap-2">
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      className="inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-secondary text-xs font-semibold hover:bg-secondary/80 transition"
                     >
-                      <option value="DD-MM-YYYY">DD-MM-YYYY (e.g. 15-06-2026)</option>
-                      <option value="YYYY-MM-DD">YYYY-MM-DD (e.g. 2026-06-15)</option>
-                      <option value="MM/DD/YYYY">MM/DD/YYYY (e.g. 06/15/2026)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground uppercase font-semibold">
-                      Time Format
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 mt-1.5">
+                      <Upload className="size-3.5" /> Change logo
+                    </button>
+                    {settings.logoDataUrl && (
                       <button
-                        onClick={() => update({ timeFormat: "12" })}
-                        className={cn(
-                          "py-2 px-3 rounded-full text-xs font-semibold border transition cursor-pointer",
-                          (settings.timeFormat || "12") === "12"
-                            ? "saree-gradient text-white border-transparent"
-                            : "bg-secondary border-border/10 text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        12-Hour (e.g. 05:30 PM)
-                      </button>
-                      <button
-                        onClick={() => update({ timeFormat: "24" })}
-                        className={cn(
-                          "py-2 px-3 rounded-full text-xs font-semibold border transition cursor-pointer",
-                          settings.timeFormat === "24"
-                            ? "saree-gradient text-white border-transparent"
-                            : "bg-secondary border-border/10 text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        24-Hour (e.g. 17:30)
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </Section>
-
-              {/* Text & Display Size Section */}
-              <Section title="Text & Display Size">
-                <p className="text-[11px] text-muted-foreground mb-3">
-                  Adjust font scaling for best visibility across small and large screens (e.g. Samsung Ultra, Tablets).
-                </p>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: "compact" as const, label: "Compact", scale: "90%", desc: "Small & Dense" },
-                    { id: "standard" as const, label: "Standard", scale: "100%", desc: "Default" },
-                    { id: "large" as const, label: "Large", scale: "110%", desc: "Bigger text" },
-                    { id: "xlarge" as const, label: "Extra Large", scale: "120%", desc: "Max clarity" },
-                  ].map((item) => {
-                    const active = (settings.fontSize || "standard") === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
                         onClick={() => {
-                          update({ fontSize: item.id });
-                          toast.success(`Font size: ${item.label} (${item.scale})`, { duration: 1200 });
+                          update({ logoDataUrl: undefined });
+                          toast.success("Logo reset", { duration: 1200 });
                         }}
-                        className={cn(
-                          "p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 flex flex-col justify-between",
-                          active
-                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                            : "bg-secondary/60 hover:bg-secondary border-border/20 text-foreground",
-                        )}
+                        className="text-[11px] text-muted-foreground underline self-start"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className={cn("text-xs font-bold", active ? "text-primary-foreground" : "text-foreground")}>
-                            {item.label}
-                          </span>
-                          <span className={cn("text-[10px] font-mono px-1.5 py-0.5 rounded", active ? "bg-white/20 text-white" : "bg-background text-muted-foreground")}>
-                            {item.scale}
-                          </span>
-                        </div>
-                        <p className={cn("text-[10px] mt-2", active ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                          {item.desc}
-                        </p>
+                        Use default
                       </button>
-                    );
-                  })}
-                </div>
-
-                {/* Live Preview Box */}
-                <div className="mt-3.5 p-3.5 rounded-2xl bg-card border border-border/30 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Type className="size-3.5 text-primary" /> Live Text Size Preview
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
-                      {settings.fontSize === "compact"
-                        ? "Compact 90%"
-                        : settings.fontSize === "large"
-                        ? "Large 110%"
-                        : settings.fontSize === "xlarge"
-                        ? "Extra Large 120%"
-                        : "Standard 100%"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">Saree PrePleating · Bridal Draping</p>
-                      <p className="text-xs text-muted-foreground">Delivery: 15 Jun 2026 · 2 Sarees</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-success tabular-nums">₹1,250</p>
-                      <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Paid in Full</span>
-                    </div>
-                  </div>
-                </div>
-              </Section>
-
-              {/* Predefined Palettes Section */}
-              <Section title="Color Palettes">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Tap a preset palette to apply instantly.
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-in fade-in duration-255">
-                  {THEMES.map((t) => {
-                    const active = settings.theme === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        onClick={() => {
-                          update({ theme: t.id });
-                          toast.success(`${t.label} applied`, { duration: 1200 });
-                        }}
-                        className={`rounded-2xl p-3 text-left border-2 transition hover:opacity-90 active:scale-95 ${active ? "border-primary shadow-sm" : "border-transparent"}`}
-                        style={{ background: t.bg, color: t.fg }}
-                      >
-                        <div className="flex gap-1 mb-2">
-                          <span className="size-4 rounded-full" style={{ background: t.primary }} />
-                          <span className="size-4 rounded-full" style={{ background: t.accent }} />
-                          <span
-                            className="size-4 rounded-full border"
-                            style={{ background: t.card, borderColor: t.border }}
-                          />
-                        </div>
-                        <p className="text-sm font-semibold">{t.label}</p>
-                        {active && (
-                          <p className="text-[10px] opacity-70 uppercase tracking-wider mt-0.5 font-bold">
-                            Active
-                          </p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Section>
-
-              {/* Custom Theme Section */}
-              <Section title="Custom Theme Builder">
-                <div className="p-4 rounded-2xl border-2 border-dashed border-border bg-card/30">
-                  <div className="flex items-center justify-between mb-2.5">
-                    <p className="text-sm font-semibold">Build Your Own Theme</p>
-                    {settings.theme === "custom" && (
-                      <span className="text-[10px] uppercase tracking-wider text-primary font-bold bg-primary/10 px-2.5 py-0.5 rounded-full">
-                        Active Custom Theme
-                      </span>
                     )}
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(e) => e.target.files?.[0] && onLogoPick(e.target.files[0])}
+                    />
                   </div>
-                  <p className="text-[11px] text-muted-foreground mb-4">
-                    Pick a quick starting color combo, or customize each color below.
+                </div>
+              </Section>
+            )}
+
+            {profileSub === "colors" && (
+              <>
+                <Section title="Color Palettes">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Tap a preset palette to apply instantly.
                   </p>
-
-                  {/* Curated mood presets */}
-                  <div className="mb-4">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                      Curated Mood Presets
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        {
-                          label: "Teal Mint",
-                          primary: "#0f766e",
-                          accent: "#2dd4bf",
-                          background: "#f0fdfa",
-                          card: "#ffffff",
-                          foreground: "#115e59",
-                        },
-                        {
-                          label: "Indigo",
-                          primary: "#4338ca",
-                          accent: "#a5b4fc",
-                          background: "#eef2ff",
-                          card: "#ffffff",
-                          foreground: "#312e81",
-                        },
-                        {
-                          label: "Coral Rose",
-                          primary: "#e11d48",
-                          accent: "#fda4af",
-                          background: "#fff1f2",
-                          card: "#ffffff",
-                          foreground: "#881337",
-                        },
-                        {
-                          label: "Ocean Sky",
-                          primary: "#0369a1",
-                          accent: "#38bdf8",
-                          background: "#f0f9ff",
-                          card: "#ffffff",
-                          foreground: "#0c4a6e",
-                        },
-                        {
-                          label: "Sage Forest",
-                          primary: "#15803d",
-                          accent: "#4ade80",
-                          background: "#f0fdf4",
-                          card: "#ffffff",
-                          foreground: "#14532d",
-                        },
-                      ].map((p) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-in fade-in duration-255">
+                    {THEMES.map((t) => {
+                      const active = settings.theme === t.id;
+                      return (
                         <button
-                          key={p.label}
-                          type="button"
+                          key={t.id}
                           onClick={() => {
-                            update({
-                              theme: "custom",
-                              customColors: {
-                                primary: p.primary,
-                                accent: p.accent,
-                                background: p.background,
-                                card: p.card,
-                                foreground: p.foreground,
-                              },
-                              customPrimary: p.primary,
-                            });
-                            toast.success(`${p.label} preset loaded`, { duration: 1200 });
+                            update({ theme: t.id });
+                            toast.success(`${t.label} applied`, { duration: 1200 });
                           }}
-                          className="px-2.5 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 text-[11px] font-semibold transition active:scale-95 flex items-center gap-1.5 cursor-pointer border border-transparent"
+                          className={`rounded-2xl p-3 text-left border-2 transition hover:opacity-90 active:scale-95 ${active ? "border-primary shadow-sm" : "border-transparent"}`}
+                          style={{ background: t.bg, color: t.fg }}
                         >
-                          <span
-                            className="size-2.5 rounded-full"
-                            style={{ background: p.primary }}
-                          />
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Live Preview Card */}
-                  {(() => {
-                    const activeThemeObj = THEMES.find((t) => t.id === settings.theme) || THEMES[0];
-                    const customColorsState = {
-                      primary:
-                        settings.customColors?.primary ||
-                        settings.customPrimary ||
-                        activeThemeObj.primary,
-                      accent: settings.customColors?.accent || activeThemeObj.accent,
-                      background: settings.customColors?.background || activeThemeObj.bg,
-                      card: settings.customColors?.card || activeThemeObj.card,
-                      foreground: settings.customColors?.foreground || activeThemeObj.fg,
-                    };
-                    return (
-                      <>
-                        <div className="mb-4 p-3.5 rounded-xl border border-border bg-secondary/30">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
-                            Live Theme Preview
-                          </span>
-                          <div
-                            className="rounded-xl p-3 border border-border shadow-sm transition duration-200"
-                            style={{
-                              background: customColorsState.background,
-                              color: customColorsState.foreground,
-                            }}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="size-3.5 rounded-full"
-                                  style={{ background: customColorsState.primary }}
-                                />
-                                <span className="text-xs font-bold font-display">
-                                  Business Header
-                                </span>
-                              </div>
-                              <span
-                                className="text-[9px] px-2 py-0.5 rounded-full font-semibold"
-                                style={{
-                                  background: customColorsState.accent,
-                                  color: customColorsState.foreground,
-                                }}
-                              >
-                                Active Tab
-                              </span>
-                            </div>
-                            <div
-                              className="rounded-lg p-2.5 border border-border/80 shadow-xs"
-                              style={{
-                                background: customColorsState.card,
-                                color: customColorsState.foreground,
-                              }}
-                            >
-                              <p className="text-xs font-bold">Mock Saree Booking Card</p>
-                              <p className="text-[9px] opacity-75">
-                                Delivery: Mon, Jun 15 · 10:00 AM
-                              </p>
-                              <div className="flex justify-between items-center mt-2 pt-1 border-t border-border/30">
-                                <span
-                                  className="text-[10px] font-semibold"
-                                  style={{ color: customColorsState.primary }}
-                                >
-                                  ₹1,200 due
-                                </span>
-                                <button
-                                  type="button"
-                                  className="px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider text-white border-0"
-                                  style={{ background: customColorsState.primary }}
-                                >
-                                  Action Button
-                                </button>
-                              </div>
-                            </div>
+                          <div className="flex gap-1 mb-2">
+                            <span className="size-4 rounded-full" style={{ background: t.primary }} />
+                            <span className="size-4 rounded-full" style={{ background: t.accent }} />
+                            <span
+                              className="size-4 rounded-full border"
+                              style={{ background: t.card, borderColor: t.border }}
+                            />
                           </div>
-                        </div>
+                          <p className="text-sm font-semibold">{t.label}</p>
+                          {active && (
+                            <p className="text-[10px] opacity-70 uppercase tracking-wider mt-0.5 font-bold">
+                              Active
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Section>
 
-                        {/* Color pickers grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 mb-4">
-                          {[
-                            {
-                              key: "primary" as const,
-                              label: "Brand Primary",
-                              desc: "Buttons & highlights",
-                            },
-                            {
-                              key: "accent" as const,
-                              label: "Accent Tone",
-                              desc: "Pills & borders",
-                            },
-                            {
-                              key: "background" as const,
-                              label: "App Backdrop",
-                              desc: "Page background",
-                            },
-                            {
-                              key: "card" as const,
-                              label: "Cards & Sheets",
-                              desc: "Component background",
-                            },
-                            {
-                              key: "foreground" as const,
-                              label: "Text & Icons",
-                              desc: "Main copy color",
-                            },
-                          ].map((c) => {
-                            const currentVal = customColorsState[c.key];
-                            return (
-                              <div
-                                key={c.key}
-                                className="flex flex-col justify-between gap-1.5 p-2.5 rounded-xl bg-card border border-border shadow-xs hover:border-primary/50 transition"
-                              >
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-tight">
-                                  {c.label}
-                                </span>
-                                <div className="flex items-center gap-1.5 my-1.5">
-                                  <div className="relative size-8 rounded-full border border-border/80 overflow-hidden shadow-xs cursor-pointer">
-                                    <input
-                                      type="color"
-                                      value={currentVal}
-                                      onChange={(e) => {
-                                        const nextColors = {
-                                          ...customColorsState,
-                                          [c.key]: e.target.value,
-                                        };
-                                        update({
-                                          theme: "custom",
-                                          customColors: nextColors,
-                                          customPrimary: nextColors.primary,
-                                        });
-                                      }}
-                                      className="absolute inset-0 size-full border-0 cursor-pointer p-0 opacity-0 z-10"
-                                    />
-                                    <div
-                                      className="absolute inset-0 rounded-full border"
-                                      style={{ backgroundColor: currentVal }}
-                                    />
+                <Section title="Custom Theme Builder">
+                  <div className="p-4 rounded-2xl border-2 border-dashed border-border bg-card/30">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-sm font-semibold">Build Your Own Theme</p>
+                      {settings.theme === "custom" && (
+                        <span className="text-[10px] uppercase tracking-wider text-primary font-bold bg-primary/10 px-2.5 py-0.5 rounded-full">
+                          Active Custom Theme
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Create a personalized brand color palette. Tap any color circle to pick a shade.
+                    </p>
+
+                    {(() => {
+                      const customColorsState: CustomColors = settings.customColors || {
+                        primary: settings.customPrimary || "#5b3fc8",
+                        accent: "#cfc5f0",
+                        background: "#f0eefa",
+                        card: "#ffffff",
+                        foreground: "#1c1340",
+                      };
+
+                      return (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {CUSTOM_COLOR_KEYS.map((c) => {
+                              const currentVal = (customColorsState[c.key] as string) || c.defaultVal;
+                              return (
+                                <div
+                                  key={String(c.key)}
+                                  className="flex flex-col justify-between gap-1.5 p-2.5 rounded-xl bg-card border border-border shadow-xs hover:border-primary/50 transition"
+                                >
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-tight">
+                                    {c.label}
+                                  </span>
+                                  <div className="flex items-center gap-1.5 my-1.5">
+                                    <div className="relative size-8 rounded-full border border-border/80 overflow-hidden shadow-xs cursor-pointer">
+                                      <input
+                                        type="color"
+                                        value={currentVal}
+                                        onChange={(e) => {
+                                          const nextColors: CustomColors = {
+                                            ...customColorsState,
+                                            [c.key]: e.target.value,
+                                          };
+                                          update({
+                                            theme: "custom",
+                                            customColors: nextColors,
+                                            customPrimary: nextColors.primary,
+                                          });
+                                        }}
+                                        className="absolute inset-0 size-full border-0 cursor-pointer p-0 opacity-0 z-10"
+                                      />
+                                      <div
+                                        className="absolute inset-0 rounded-full border"
+                                        style={{ backgroundColor: currentVal }}
+                                      />
+                                    </div>
+                                    <span className="text-[9px] font-mono uppercase text-muted-foreground">
+                                      {currentVal}
+                                    </span>
                                   </div>
-                                  <span className="text-[9px] font-mono uppercase text-muted-foreground">
-                                    {currentVal}
+                                  <span className="text-[9px] text-muted-foreground/85 leading-tight">
+                                    {c.desc}
                                   </span>
                                 </div>
-                                <span className="text-[9px] text-muted-foreground/85 leading-tight">
-                                  {c.desc}
-                                </span>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
+
+                    {settings.theme === "custom" && (
+                      <button
+                        onClick={() => {
+                          update({
+                            customColors: undefined,
+                            customPrimary: undefined,
+                            theme: "royal",
+                          });
+                          toast.success("Custom theme reset to default", { duration: 1200 });
+                        }}
+                        className="mt-4 text-[11px] text-muted-foreground font-semibold hover:text-foreground underline cursor-pointer"
+                      >
+                        Reset to Royal Violet
+                      </button>
+                    )}
+                  </div>
+                </Section>
+
+                <Section title="Calendar Dot Colors">
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Customize the color of the small booking dots shown on the calendar cells.
+                  </p>
+
+                  <div className="mb-4 p-3.5 rounded-xl border border-border bg-secondary/30">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
+                      Day Dot Preview
+                    </span>
+                    <div className="flex justify-center">
+                      <div className="w-14 h-14 rounded-2xl bg-card border border-border shadow-xs flex flex-col items-center justify-between p-2">
+                        <span className="text-xs font-bold text-muted-foreground">15</span>
+                        <div className="flex gap-1 justify-center">
+                          <span
+                            className="size-2 rounded-full shadow-xs"
+                            style={{ background: settings.prepleatDotColor ?? "#06b6d4" }}
+                            title="PrePleat"
+                          />
+                          <span
+                            className="size-2 rounded-full shadow-xs"
+                            style={{ background: settings.directDrapeDotColor ?? "#d946ef" }}
+                            title="Direct Drape"
+                          />
+                          <span
+                            className="size-2 rounded-full shadow-xs"
+                            style={{ background: settings.artistDotColor ?? "#84cc16" }}
+                            title="Artist"
+                          />
                         </div>
-                      </>
-                    );
-                  })()}
-
-                  {settings.theme === "custom" && (
-                    <button
-                      onClick={() => {
-                        update({
-                          customColors: undefined,
-                          customPrimary: undefined,
-                          theme: "royal",
-                        });
-                        toast.success("Custom theme reset to default", { duration: 1200 });
-                      }}
-                      className="mt-4 text-[11px] text-muted-foreground font-semibold hover:text-foreground underline cursor-pointer"
-                    >
-                      Reset to Royal Violet
-                    </button>
-                  )}
-                </div>
-              </Section>
-
-              <Section title="Calendar Dot Colors">
-                <p className="text-xs text-muted-foreground mb-4">
-                  Customize the color of the small booking dots shown on the calendar cells.
-                </p>
-
-                {/* Interactive Day Cell Preview */}
-                <div className="mb-4 p-3.5 rounded-xl border border-border bg-secondary/30">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
-                    Day Dot Preview
-                  </span>
-                  <div className="flex justify-center">
-                    <div className="w-14 h-14 rounded-2xl bg-card border border-border shadow-xs flex flex-col items-center justify-between p-2">
-                      <span className="text-xs font-bold text-muted-foreground">15</span>
-                      <div className="flex gap-1 justify-center">
-                        <span
-                          className="size-2 rounded-full shadow-xs"
-                          style={{ background: settings.prepleatDotColor ?? "#06b6d4" }}
-                          title="PrePleat"
-                        />
-                        <span
-                          className="size-2 rounded-full shadow-xs"
-                          style={{ background: settings.directDrapeDotColor ?? "#d946ef" }}
-                          title="Direct Drape"
-                        />
-                        <span
-                          className="size-2 rounded-full shadow-xs"
-                          style={{ background: settings.artistDotColor ?? "#84cc16" }}
-                          title="Artist"
-                        />
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Pickers Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  {[
-                    {
-                      key: "prepleatDotColor" as const,
-                      label: "PrePleat Dot",
-                      def: "#ffa029",
-                      desc: "PrePleat bookings color",
-                    },
-                    {
-                      key: "directDrapeDotColor" as const,
-                      label: "Direct Drape Dot",
-                      def: "#10b981",
-                      desc: "Direct drape bookings color",
-                    },
-                    {
-                      key: "artistDotColor" as const,
-                      label: "Artist Dot",
-                      def: "#d4af37",
-                      desc: "Artist bookings color",
-                    },
-                  ].map((item) => {
-                    const val = settings[item.key] || item.def;
-                    return (
-                      <div
-                        key={item.key}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/50 transition"
-                      >
-                        <div className="relative size-9 rounded-full border border-border/85 overflow-hidden shadow-xs cursor-pointer">
-                          <input
-                            type="color"
-                            value={val}
-                            onChange={(e) => update({ [item.key]: e.target.value })}
-                            className="absolute inset-0 size-full border-0 cursor-pointer p-0 opacity-0 z-10"
-                          />
-                          <div
-                            className="absolute inset-0 rounded-full border"
-                            style={{ backgroundColor: val }}
-                          />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    {[
+                      {
+                        key: "prepleatDotColor" as const,
+                        label: "PrePleat Dot",
+                        def: "#ffa029",
+                        desc: "PrePleat bookings color",
+                      },
+                      {
+                        key: "directDrapeDotColor" as const,
+                        label: "Direct Drape Dot",
+                        def: "#10b981",
+                        desc: "Direct drape bookings color",
+                      },
+                      {
+                        key: "artistDotColor" as const,
+                        label: "Artist Dot",
+                        def: "#d4af37",
+                        desc: "Artist bookings color",
+                      },
+                    ].map((item) => {
+                      const val = settings[item.key] || item.def;
+                      return (
+                        <div
+                          key={item.key}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/50 transition"
+                        >
+                          <div className="relative size-9 rounded-full border border-border/85 overflow-hidden shadow-xs cursor-pointer">
+                            <input
+                              type="color"
+                              value={val}
+                              onChange={(e) => update({ [item.key]: e.target.value })}
+                              className="absolute inset-0 size-full border-0 cursor-pointer p-0 opacity-0 z-10"
+                            />
+                            <div
+                              className="absolute inset-0 rounded-full border"
+                              style={{ backgroundColor: val }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-xs font-bold text-foreground leading-tight">
+                              {item.label}
+                            </span>
+                            <span className="block text-[9px] text-muted-foreground font-mono uppercase mt-0.5">
+                              {val}
+                            </span>
+                            <span className="block text-[9px] text-muted-foreground/80 mt-0.5 leading-none">
+                              {item.desc}
+                            </span>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <span className="block text-xs font-bold text-foreground leading-tight">
-                            {item.label}
-                          </span>
-                          <span className="block text-[9px] text-muted-foreground font-mono uppercase mt-0.5">
-                            {val}
-                          </span>
-                          <span className="block text-[9px] text-muted-foreground/80 mt-0.5 leading-none">
+                      );
+                    })}
+                  </div>
+                </Section>
+              </>
+            )}
+
+            {profileSub === "font_time" && (
+              <>
+                <Section title="Text & Display Size">
+                  <p className="text-[11px] text-muted-foreground mb-3">
+                    Adjust font scaling for best visibility across small and large screens (e.g. Samsung Ultra, Tablets).
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: "compact" as const, label: "Compact", scale: "90%", desc: "Small & Dense" },
+                      { id: "standard" as const, label: "Standard", scale: "100%", desc: "Default" },
+                      { id: "large" as const, label: "Large", scale: "110%", desc: "Bigger text" },
+                      { id: "xlarge" as const, label: "Extra Large", scale: "120%", desc: "Max clarity" },
+                    ].map((item) => {
+                      const active = (settings.fontSize || "standard") === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            update({ fontSize: item.id });
+                            toast.success(`Font size: ${item.label} (${item.scale})`, { duration: 1200 });
+                          }}
+                          className={cn(
+                            "p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 flex flex-col justify-between",
+                            active
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "bg-secondary/60 hover:bg-secondary border-border/20 text-foreground",
+                          )}
+                        >
+                          <div>
+                            <p className="font-bold text-xs">{item.label}</p>
+                            <p className={cn("text-[10px] mt-0.5", active ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                              {item.scale}
+                            </p>
+                          </div>
+                          <span className={cn("text-[9px] mt-2 font-medium", active ? "text-primary-foreground/90" : "text-muted-foreground/70")}>
                             {item.desc}
                           </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Section>
-
-              <Section title="Device & Browser Push Notifications">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Receive native mobile / desktop push alerts for 1-day advance delivery reminders, today's saree events, and new app updates.
-                </p>
-                <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "size-2.5 rounded-full shrink-0",
-                            getNotificationPermission() === "granted" && !isNotificationsMuted()
-                              ? "bg-success animate-pulse"
-                              : getNotificationPermission() === "denied"
-                              ? "bg-destructive"
-                              : "bg-muted-foreground",
-                          )}
-                        />
-                        <span className="text-sm font-bold text-foreground truncate">
-                          {getNotificationPermission() === "granted" && !isNotificationsMuted()
-                            ? "Push Notifications (ON 🟢)"
-                            : getNotificationPermission() === "denied"
-                            ? "Notifications Blocked (🔴)"
-                            : "Push Notifications (OFF ⚪)"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {getNotificationPermission() === "granted" && !isNotificationsMuted()
-                          ? "Active: You will receive 1-day advance delivery alerts & updates."
-                          : getNotificationPermission() === "denied"
-                          ? "Permission blocked in browser settings. Please click lock icon in address bar to Allow."
-                          : "Disabled: Turn on to receive delivery reminders on your device."}
-                      </p>
-                    </div>
-
-                    {/* iOS-Style ON/OFF Switch */}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const currentPerm = getNotificationPermission();
-                        if (currentPerm === "denied") {
-                          toast.error("Notifications blocked in browser settings. Please allow notifications from your browser address bar.");
-                          return;
-                        }
-                        if (currentPerm === "granted") {
-                          const newMuted = !isNotificationsMuted();
-                          setNotificationsMuted(newMuted);
-                          if (newMuted) {
-                            toast.info("Notifications Turned OFF (Muted)");
-                          } else {
-                            toast.success("Notifications Turned ON 🔔");
-                          }
-                          setNotifRefresh((r) => r + 1);
-                        } else {
-                          const res = await requestNotificationPermission();
-                          if (res === "granted") {
-                            toast.success("Notifications Enabled! 🔔");
-                            void sendNativeNotification("Notifications Enabled! 🔔", {
-                              body: "Eyas delivery & event notifications are now active on this device.",
-                            });
-                          } else if (res === "denied") {
-                            toast.error("Permission denied in browser.");
-                          }
-                          setNotifRefresh((r) => r + 1);
-                        }
-                      }}
-                      className={cn(
-                        "w-12 h-7 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 relative",
-                        getNotificationPermission() === "granted" && !isNotificationsMuted()
-                          ? "bg-success"
-                          : "bg-muted-foreground/30",
-                      )}
-                      title="Toggle Notifications ON / OFF"
-                    >
-                      <div
-                        className={cn(
-                          "size-6 rounded-full bg-white shadow-md transition-transform duration-200",
-                          getNotificationPermission() === "granted" && !isNotificationsMuted()
-                            ? "translate-x-5"
-                            : "translate-x-0",
-                        )}
-                      />
-                    </button>
+                        </button>
+                      );
+                    })}
                   </div>
+                </Section>
 
-                  {getNotificationPermission() === "granted" && !isNotificationsMuted() && (
-                    <div className="pt-2 border-t border-border/20 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-muted-foreground">Test notification on this device:</span>
+                <Section title="Date & Time Formats">
+                  <p className="text-[11px] text-muted-foreground mb-4">
+                    Configure how dates and times are formatted across the app.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                        Date Format
+                      </label>
+                      <select
+                        value={settings.dateFormat || "DD-MM-YYYY"}
+                        onChange={(e) => update({ dateFormat: e.target.value })}
+                        className="input mt-1.5 cursor-pointer bg-secondary"
+                      >
+                        <option value="DD-MM-YYYY">DD-MM-YYYY (e.g. 15-06-2026)</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD (e.g. 2026-06-15)</option>
+                        <option value="MM/DD/YYYY">MM/DD/YYYY (e.g. 06/15/2026)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                        Time Format
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 mt-1.5">
+                        <button
+                          onClick={() => update({ timeFormat: "12" })}
+                          className={cn(
+                            "py-2 px-3 rounded-full text-xs font-semibold border transition cursor-pointer",
+                            (settings.timeFormat || "12") === "12"
+                              ? "saree-gradient text-white border-transparent"
+                              : "bg-secondary border-border/10 text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          12-Hour (e.g. 05:30 PM)
+                        </button>
+                        <button
+                          onClick={() => update({ timeFormat: "24" })}
+                          className={cn(
+                            "py-2 px-3 rounded-full text-xs font-semibold border transition cursor-pointer",
+                            settings.timeFormat === "24"
+                              ? "saree-gradient text-white border-transparent"
+                              : "bg-secondary border-border/10 text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          24-Hour (e.g. 17:30)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </Section>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ===================== 3. WHATSAPP & ALERTS ===================== */}
+        {tab === "whatsapp" && (
+          <>
+            {/* WhatsApp Sub-Tabs */}
+            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
+              {[
+                { id: "push" as const, label: "🔔 Push Alerts" },
+                { id: "templates" as const, label: "💬 Message Templates" },
+                { id: "audio" as const, label: "🔊 Sounds" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setWaSub(item.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                    waSub === item.id
+                      ? "bg-card text-primary shadow-xs border border-border/60"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {waSub === "push" && (
+              <>
+                <Section title="Device & Browser Push Notifications">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Receive native mobile / desktop push alerts for 1-day advance delivery reminders, today's saree events, and new app updates.
+                  </p>
+                  <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "size-2.5 rounded-full shrink-0",
+                              getNotificationPermission() === "granted" && !isNotificationsMuted()
+                                ? "bg-success animate-pulse"
+                                : getNotificationPermission() === "denied"
+                                ? "bg-destructive"
+                                : "bg-muted-foreground",
+                            )}
+                          />
+                          <span className="text-sm font-bold text-foreground truncate">
+                            {getNotificationPermission() === "granted" && !isNotificationsMuted()
+                              ? "Push Notifications (ON 🟢)"
+                              : getNotificationPermission() === "denied"
+                              ? "Notifications Blocked (🔴)"
+                              : "Push Notifications (OFF ⚪)"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {getNotificationPermission() === "granted" && !isNotificationsMuted()
+                            ? "Active: You will receive 1-day advance delivery alerts & updates."
+                            : getNotificationPermission() === "denied"
+                            ? "Permission blocked in browser settings. Please click lock icon in address bar to Allow."
+                            : "Disabled: Turn on to receive delivery reminders on your device."}
+                        </p>
+                      </div>
+
                       <button
                         type="button"
                         onClick={async () => {
-                          const sent = await sendNativeNotification("Eyas Saree Alert 🔔", {
-                            body: "Test notification working perfectly! You'll receive delivery reminders here.",
-                          });
-                          if (sent) toast.success("Test push notification sent!");
-                          else toast.error("Could not trigger notification.");
+                          const currentPerm = getNotificationPermission();
+                          if (currentPerm === "denied") {
+                            toast.error("Notifications blocked in browser settings.");
+                            return;
+                          }
+                          if (currentPerm === "granted") {
+                            const newMuted = !isNotificationsMuted();
+                            setNotificationsMuted(newMuted);
+                            if (newMuted) toast.info("Notifications Muted");
+                            else toast.success("Notifications Turned ON 🔔");
+                            setNotifRefresh((r) => r + 1);
+                          } else {
+                            const res = await requestNotificationPermission();
+                            if (res === "granted") {
+                              toast.success("Notifications Enabled! 🔔");
+                              void sendNativeNotification("Notifications Enabled! 🔔", {
+                                body: "Eyas delivery & event notifications are now active on this device.",
+                              });
+                            }
+                            setNotifRefresh((r) => r + 1);
+                          }
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-card border border-border text-foreground text-xs font-semibold hover:bg-secondary active:scale-95 transition cursor-pointer"
+                        className={cn(
+                          "w-12 h-7 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 relative",
+                          getNotificationPermission() === "granted" && !isNotificationsMuted()
+                            ? "bg-success"
+                            : "bg-muted-foreground/30",
+                        )}
+                        title="Toggle Notifications ON / OFF"
                       >
-                        Send Test Push 🔔
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Section>
-
-              <Section title="Pop-up Notification Preview">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Test how notifications look and animate in the center of the screen matching your
-                  active theme.
-                </p>
-                <div className="flex flex-wrap gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => toast.success("Success! Booking saved successfully.")}
-                    className="px-3 py-1.5 rounded-full bg-success/10 hover:bg-success/15 border border-success/20 text-success text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
-                  >
-                    <span className="size-2 rounded-full bg-success" /> Success Preview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toast.warning("Warning! Low measurement value detected.")}
-                    className="px-3 py-1.5 rounded-full bg-warning/10 hover:bg-warning/15 border border-warning/20 text-warning text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
-                  >
-                    <span className="size-2 rounded-full bg-warning" /> Warning Preview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toast.error("Error! Failed to authenticate session.")}
-                    className="px-3 py-1.5 rounded-full bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 text-destructive text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
-                  >
-                    <span className="size-2 rounded-full bg-destructive" /> Error Preview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Info! Backup file generated successfully.")}
-                    className="px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/15 border border-primary/20 text-primary text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
-                  >
-                    <span className="size-2 rounded-full bg-primary" /> Info Preview
-                  </button>
-                </div>
-              </Section>
-            </>
-          )}
-
-          {tab === "whatsapp" && (
-            <>
-              {/* Push Notifications Section */}
-              <Section title="Device & Browser Push Notifications">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Receive native mobile / desktop push alerts for 1-day advance delivery reminders, today's saree events, and new app updates.
-                </p>
-                <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
+                        <div
                           className={cn(
-                            "size-2.5 rounded-full shrink-0",
+                            "size-6 rounded-full bg-white shadow-md transition-transform duration-200",
                             getNotificationPermission() === "granted" && !isNotificationsMuted()
-                              ? "bg-success animate-pulse"
-                              : getNotificationPermission() === "denied"
-                              ? "bg-destructive"
-                              : "bg-muted-foreground",
+                              ? "translate-x-5"
+                              : "translate-x-0",
                           )}
                         />
-                        <span className="text-sm font-bold text-foreground truncate">
-                          {getNotificationPermission() === "granted" && !isNotificationsMuted()
-                            ? "Push Notifications (ON 🟢)"
-                            : getNotificationPermission() === "denied"
-                            ? "Notifications Blocked (🔴)"
-                            : "Push Notifications (OFF ⚪)"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {getNotificationPermission() === "granted" && !isNotificationsMuted()
-                          ? "Active: You will receive 1-day advance delivery alerts & updates."
-                          : getNotificationPermission() === "denied"
-                          ? "Permission blocked in browser settings. Please click lock icon in address bar to Allow."
-                          : "Disabled: Turn on to receive delivery reminders on your device."}
-                      </p>
+                      </button>
                     </div>
 
-                    {/* Switch */}
+                    {getNotificationPermission() === "granted" && !isNotificationsMuted() && (
+                      <div className="pt-2 border-t border-border/20 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-muted-foreground">Test notification on this device:</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const sent = await sendNativeNotification("Eyas Saree Alert 🔔", {
+                              body: "Test notification working perfectly! You'll receive delivery reminders here.",
+                            });
+                            if (sent) toast.success("Test push notification sent!");
+                            else toast.error("Could not trigger notification.");
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-card border border-border text-foreground text-xs font-semibold hover:bg-secondary active:scale-95 transition cursor-pointer"
+                        >
+                          Send Test Push 🔔
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </Section>
+
+                <Section title="Pop-up Notification Preview">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Test how notifications look and animate in the center of the screen matching your
+                    active theme.
+                  </p>
+                  <div className="flex flex-wrap gap-2.5">
                     <button
                       type="button"
-                      onClick={async () => {
-                        const currentPerm = getNotificationPermission();
-                        if (currentPerm === "denied") {
-                          toast.error("Notifications blocked in browser settings.");
-                          return;
-                        }
-                        if (currentPerm === "granted") {
-                          const newMuted = !isNotificationsMuted();
-                          setNotificationsMuted(newMuted);
-                          if (newMuted) toast.info("Notifications Muted");
-                          else toast.success("Notifications Turned ON 🔔");
-                          setNotifRefresh((r) => r + 1);
-                        } else {
-                          const res = await requestNotificationPermission();
-                          if (res === "granted") {
-                            toast.success("Notifications Enabled! 🔔");
-                            void sendNativeNotification("Notifications Enabled! 🔔", {
-                              body: "Eyas delivery & event notifications are now active on this device.",
-                            });
-                          }
-                          setNotifRefresh((r) => r + 1);
-                        }
-                      }}
-                      className={cn(
-                        "w-12 h-7 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 relative",
-                        getNotificationPermission() === "granted" && !isNotificationsMuted()
-                          ? "bg-success"
-                          : "bg-muted-foreground/30",
-                      )}
-                      title="Toggle Notifications ON / OFF"
+                      onClick={() => toast.success("Success! Booking saved successfully.")}
+                      className="px-3 py-1.5 rounded-full bg-success/10 hover:bg-success/15 border border-success/20 text-success text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
                     >
-                      <div
-                        className={cn(
-                          "size-6 rounded-full bg-white shadow-md transition-transform duration-200",
-                          getNotificationPermission() === "granted" && !isNotificationsMuted()
-                            ? "translate-x-5"
-                            : "translate-x-0",
-                        )}
-                      />
+                      <span className="size-2 rounded-full bg-success" /> Success Preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.warning("Warning! Low measurement value detected.")}
+                      className="px-3 py-1.5 rounded-full bg-warning/10 hover:bg-warning/15 border border-warning/20 text-warning text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                    >
+                      <span className="size-2 rounded-full bg-warning" /> Warning Preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.error("Error! Failed to authenticate session.")}
+                      className="px-3 py-1.5 rounded-full bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 text-destructive text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                    >
+                      <span className="size-2 rounded-full bg-destructive" /> Error Preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.info("Info! Backup file generated successfully.")}
+                      className="px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/15 border border-primary/20 text-primary text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                    >
+                      <span className="size-2 rounded-full bg-primary" /> Info Preview
                     </button>
                   </div>
-                </div>
-              </Section>
+                </Section>
+              </>
+            )}
 
-              {/* WhatsApp Fast Share Presets */}
+            {waSub === "templates" && (
               <Section title="WhatsApp Templates & Fast Sharing">
                 <p className="text-xs text-muted-foreground mb-3">
                   Quick message templates sent along with PDF bills and delivery updates.
@@ -1600,82 +1465,63 @@ function SettingsPage() {
                   </div>
                 </div>
               </Section>
-            </>
-          )}
+            )}
 
-          {tab === "staff" && (
-            <>
-              <Section title="Staff & Draping Artists">
+            {waSub === "audio" && (
+              <Section title="Sound Effects & Audio Feedback">
                 <p className="text-xs text-muted-foreground mb-3">
-                  Manage your boutique drapists, assistants, and makeup artist partners.
+                  Audio alerts for actions like booking confirmations, payments, and calendar swipes.
                 </p>
                 <div className="p-4 rounded-2xl bg-secondary/40 border border-border/30 space-y-3">
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">Artist / Staff Assignment</h4>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                      Assign specific staff members or partner artists to bookings to track pleating work, delivery status, and commissions.
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-card border border-border/40 text-xs text-muted-foreground flex items-center gap-2">
-                    <Lightbulb className="size-4 text-amber-500 shrink-0" />
-                    <span>You can select Artist partners when creating a booking or customer in the app.</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">Action Chime</h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Play chime audio when saving bookings or adding payments.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toast.success("Ding! Sound preview tested 🔔")}
+                      className="px-3 py-1.5 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xs font-bold hover:bg-primary/15 transition cursor-pointer"
+                    >
+                      Test Sound 🔔
+                    </button>
                   </div>
                 </div>
               </Section>
-            </>
-          )}
+            )}
+          </>
+        )}
 
-          {tab === "security" && (
-            <>
-              <Section title="Account & Cloud Sync">
-                <AccountBlock />
-              </Section>
+        {/* ===================== 4. DATA & SECURITY ===================== */}
+        {tab === "security" && (
+          <>
+            {/* Security Sub-Tabs */}
+            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
+              {[
+                { id: "backup" as const, label: "☁️ Backup & Export" },
+                { id: "demo_reset" as const, label: "📦 Demo & Reset" },
+                { id: "logs" as const, label: "📜 Logs & About" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSecSub(item.id as any)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                    secSub === item.id
+                      ? "bg-card text-primary shadow-xs border border-border/60"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
 
-              {/* Sample Demo Data Section */}
-              <Section title="Sample Demo Data (Testing)">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Load realistic sample bookings, sarees, customers, and payments to test all app features, or reset to a clean slate.
-                </p>
-                <div className="flex flex-wrap gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const { customers: sampleCust, bookings: sampleBook, payments: samplePay } = generateSampleData();
-                      useStore.setState((prev) => ({
-                        ...prev,
-                        customers: [...sampleCust],
-                        bookings: [...sampleBook],
-                        payments: [...samplePay],
-                      }));
-                      toast.success("Sample Demo Data Loaded! 🎉", {
-                        description: "4 Sample Bookings & Customers added for testing.",
-                        duration: 3000,
-                      });
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition"
-                  >
-                    <PackageCheck className="size-4" /> Load Sample Demo Data
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      useStore.setState((prev) => ({
-                        ...prev,
-                        customers: [],
-                        bookings: [],
-                        payments: [],
-                      }));
-                      toast.info("Data Cleared (Clean Slate)");
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 border border-border/40 text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition"
-                  >
-                    <Trash2 className="size-4 text-muted-foreground" /> Clear All Bookings
-                  </button>
-                </div>
-              </Section>
-
-              <Section title="Data Overview">
+            {secSub === "backup" && (
+              <Section title="Data Overview & Backup">
                 <p className="text-xs text-muted-foreground">
                   {customers.length} customers · {bookings.length} bookings ·{" "}
                   {fmtINR(bookings.reduce((s, b) => s + b.totalAmount, 0))} lifetime
@@ -1828,7 +1674,7 @@ function SettingsPage() {
                       <span className="truncate">Re-sequence Bill Numbers</span>
                     </div>
                     <span className="text-xs font-mono font-bold text-primary px-2 py-0.5 rounded-lg bg-primary/10 border border-primary/20">
-                      #1 → #{useStore.getState().bookings.length}
+                      {`#1 → #${useStore.getState().bookings.length}`}
                     </span>
                   </button>
                   <p className="text-[11px] text-muted-foreground mt-2 px-1">
@@ -1843,169 +1689,317 @@ function SettingsPage() {
                   className="hidden"
                 />
               </Section>
+            )}
 
-              {/* Recovery Accordion */}
-              <Accordion type="single" collapsible className="w-full mb-3">
-                <AccordionItem
-                  value="activity-log"
-                  className="border border-border bg-card rounded-2xl px-4 py-1 mb-2.5 card-shadow"
-                >
-                  <AccordionTrigger className="hover:no-underline py-3.5 cursor-pointer">
-                    <div className="flex flex-col text-left">
-                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                        <Activity className="size-4 text-primary" /> Activity Log & Undo / Redo
-                      </span>
-                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                        Undo last edit or revert specific changes
-                      </span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-2 pb-4">
-                    <ActivityBlock />
-                  </AccordionContent>
-                </AccordionItem>
+            {secSub === "demo_reset" && (
+              <>
+                <Section title="Sample Demo Data (Testing)">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Load realistic sample bookings, sarees, customers, and payments to test all app features, or reset to a clean slate.
+                  </p>
+                  <div className="flex flex-wrap gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const { customers: sampleCust, bookings: sampleBook, payments: samplePay } = generateSampleData();
+                        useStore.setState((prev) => ({
+                          ...prev,
+                          customers: [...sampleCust],
+                          bookings: [...sampleBook],
+                          payments: [...samplePay],
+                        }));
+                        toast.success("Sample Demo Data Loaded! 🎉", {
+                          description: "4 Sample Bookings & Customers added for testing.",
+                          duration: 3000,
+                        });
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition"
+                    >
+                      <PackageCheck className="size-4" /> Load Sample Demo Data
+                    </button>
 
-                <AccordionItem
-                  value="recently-deleted"
-                  className="border border-border bg-card rounded-2xl px-4 py-1 card-shadow"
-                >
-                  <AccordionTrigger className="hover:no-underline py-3.5 cursor-pointer">
-                    <div className="flex flex-col text-left">
-                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                        <Trash2 className="size-4 text-primary" /> Recently Deleted Bin (
-                        {trash.length +
-                          deletedCustomers.length +
-                          deletedPayments.length +
-                          deletedExpenses.length +
-                          deletedExtraIncomes.length}
-                        )
-                      </span>
-                      <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                        Restore deleted bookings, customers, payments, and financial items
-                      </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        useStore.setState((prev) => ({
+                          ...prev,
+                          customers: [],
+                          bookings: [],
+                          payments: [],
+                        }));
+                        toast.info("Data Cleared (Clean Slate)");
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 border border-border/40 text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition"
+                    >
+                      <Trash2 className="size-4 text-muted-foreground" /> Clear All Bookings
+                    </button>
+                  </div>
+                </Section>
+
+                <Section title="Reset & Danger Zone">
+                  {dataLocked ? (
+                    <div className="flex flex-col items-center justify-center py-6 bg-destructive/5 border border-dashed border-destructive/20 rounded-2xl text-center">
+                      <div className="size-11 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
+                        <Lock className="size-4.5" />
+                      </div>
+                      <p className="text-xs font-bold text-foreground mb-0.5">Danger Zone Locked</p>
+                      <p className="text-[10px] text-muted-foreground max-w-xs mb-3 px-4">
+                        Contains sensitive actions that can reset pricing, styles, or permanently
+                        delete data.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setDataLocked(false);
+                          toast.success("Danger zone unlocked", { duration: 1500 });
+                        }}
+                        className="px-4 py-2 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition"
+                      >
+                        <Unlock className="size-3.5" /> Unlock Actions
+                      </button>
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-2 pb-4">
-                    <div className="flex gap-1.5 overflow-x-auto pb-2 border-b border-border mb-3 scrollbar-none">
-                      {[
-                        { id: "bookings", label: "Bookings", count: trash.length },
-                        { id: "customers", label: "Customers", count: deletedCustomers.length },
-                        { id: "payments", label: "Payments", count: deletedPayments.length },
-                        {
-                          id: "finance",
-                          label: "Finance",
-                          count: deletedExpenses.length + deletedExtraIncomes.length,
-                        },
-                      ].map((t) => (
+                  ) : (
+                    <div className="space-y-2 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between bg-destructive/10 px-3.5 py-2.5 rounded-xl border border-destructive/25 mb-1">
+                        <span className="text-[10px] font-bold text-destructive flex items-center gap-1.5 uppercase tracking-wider">
+                          <Unlock className="size-3.5" /> Danger zone unlocked
+                        </span>
                         <button
-                          key={t.id}
-                          onClick={() => setBinTab(t.id as any)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition ${
-                            binTab === t.id
-                              ? "bg-primary text-primary-foreground font-bold"
-                              : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                          }`}
+                          onClick={() => {
+                            setDataLocked(true);
+                            toast.info("Danger zone locked", { duration: 1000 });
+                          }}
+                          className="text-[10px] font-bold text-muted-foreground underline cursor-pointer"
                         >
-                          {t.label} ({t.count})
+                          Lock again
                         </button>
-                      ))}
+                      </div>
+                      <button
+                        onClick={() => setConfirmAction("resetTheme")}
+                        className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+                      >
+                        <RotateCcw className="size-3.5" /> Reset theme
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction("resetPricing")}
+                        className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
+                      >
+                        <RotateCcw className="size-3.5" /> Reset pricing & measurements
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction("clearData")}
+                        className="w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-destructive/15"
+                      >
+                        <Trash2 className="size-3.5" /> Clear all data
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFactoryTyped("");
+                          setFactoryOpen(true);
+                        }}
+                        className="w-full px-3 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-destructive/90"
+                      >
+                        <AlertTriangle className="size-3.5" /> Factory reset (like new)
+                      </button>
+                      <p className="text-[11px] text-muted-foreground text-center mt-1">
+                        Clear-all-data supports Undo for ~8 seconds. Factory reset is permanent.
+                      </p>
                     </div>
+                  )}
+                </Section>
+              </>
+            )}
 
-                    {binTab === "bookings" && (
-                      (trash ?? []).filter((t) => t && t.booking).length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-3 text-center">
-                          No deleted bookings in recycle bin.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 mt-2">
-                          {(trash ?? []).filter((t) => t && t.booking).map((t) => {
-                            const b = t.booking;
-                            const c = customers.find((x) => x.id === b.customerId);
-                            return (
+            {secSub === "logs" && (
+              <>
+                <Section title="Undo / Redo edits">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Quickly undo or redo your recent edits to bookings, customers, and payments.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const undone = useStore.getState().undoLastEdit();
+                        if (undone) toast.success("Last action undone ↩️");
+                        else toast.info("No actions to undo");
+                      }}
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80 active:scale-95 transition"
+                    >
+                      <Undo2 className="size-3.5" /> Undo Last Action
+                    </button>
+                    <button
+                      onClick={() => {
+                        const redone = useStore.getState().redoLastEdit();
+                        if (redone) toast.success("Action redone ↪️");
+                        else toast.info("No actions to redo");
+                      }}
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80 active:scale-95 transition"
+                    >
+                      <Redo2 className="size-3.5" /> Redo Action
+                    </button>
+                  </div>
+                </Section>
+
+                {/* Recovery Accordion */}
+                <Accordion type="single" collapsible className="w-full mb-3">
+                  <AccordionItem
+                    value="activity-log"
+                    className="border border-border bg-card rounded-2xl px-4 py-1 mb-2.5 card-shadow"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-3.5 cursor-pointer">
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                          <Activity className="size-4 text-primary" /> Activity Log & Trail
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          View history and revert specific past changes
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pb-4">
+                      <ActivityBlock />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem
+                    value="recently-deleted"
+                    className="border border-border bg-card rounded-2xl px-4 py-1 card-shadow"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-3.5 cursor-pointer">
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                          <Trash2 className="size-4 text-primary" /> Recently Deleted Bin (
+                          {trash.length +
+                            deletedCustomers.length +
+                            deletedPayments.length +
+                            deletedExpenses.length +
+                            deletedExtraIncomes.length}
+                          )
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          Restore deleted bookings, customers, payments, and financial items
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pb-4">
+                      <div className="flex gap-1.5 overflow-x-auto pb-2 border-b border-border mb-3 scrollbar-none">
+                        {[
+                          { id: "bookings", label: "Bookings", count: trash.length },
+                          { id: "customers", label: "Customers", count: deletedCustomers.length },
+                          { id: "payments", label: "Payments", count: deletedPayments.length },
+                          {
+                            id: "finance",
+                            label: "Finance",
+                            count: deletedExpenses.length + deletedExtraIncomes.length,
+                          },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => setBinTab(t.id as any)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition ${
+                              binTab === t.id
+                                ? "bg-primary text-primary-foreground font-bold"
+                                : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                            }`}
+                          >
+                            {t.label} ({t.count})
+                          </button>
+                        ))}
+                      </div>
+
+                      {binTab === "bookings" && (
+                        (trash ?? []).filter((t) => t && t.booking).length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-3 text-center">
+                            No deleted bookings in recycle bin.
+                          </p>
+                        ) : (
+                          <ul className="space-y-2 mt-2">
+                            {(trash ?? []).filter((t) => t && t.booking).map((t) => {
+                              const b = t.booking;
+                              const c = customers.find((x) => x.id === b.customerId);
+                              return (
+                                <li
+                                  key={b.id}
+                                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold truncate">
+                                      {c?.name ?? "Unknown"} · {b.service}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                      {b.deliveryDate ? b.deliveryDate.slice(0, 10) : "—"} ·{" "}
+                                      {b.deliveryTime ? fmtTime12(b.deliveryTime) : "—"} ·{" "}
+                                      {fmtINR(b.totalAmount || 0)}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => setRestoreId(b.id)}
+                                    className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                                  >
+                                    <RotateCw className="size-3" /> Restore
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )
+                      )}
+
+                      {binTab === "customers" && (
+                        (deletedCustomers ?? []).filter((t) => t && t.customer).length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-3 text-center">
+                            No deleted customers in recycle bin.
+                          </p>
+                        ) : (
+                          <ul className="space-y-2 mt-2">
+                            {(deletedCustomers ?? []).filter((t) => t && t.customer).map((t) => (
                               <li
-                                key={b.id}
+                                key={t.customer.id}
                                 className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
                               >
                                 <div className="min-w-0">
                                   <p className="text-xs font-semibold truncate">
-                                    {c?.name ?? "Unknown"} · {b.service}
+                                    {t.customer.name} ({t.customer.kind ?? "client"})
                                   </p>
                                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    {b.deliveryDate ? b.deliveryDate.slice(0, 10) : "—"} ·{" "}
-                                    {b.deliveryTime ? fmtTime12(b.deliveryTime) : "—"} ·{" "}
-                                    {fmtINR(b.totalAmount || 0)}
+                                    {t.customer.phone || "No phone"} · Includes {(t.bookings || []).length} bookings, {(t.payments || []).length} payments
                                   </p>
                                 </div>
                                 <button
-                                  onClick={() => setRestoreId(b.id)}
+                                  onClick={() => {
+                                    restoreCustomer(t.customer.id);
+                                    toast.success("Customer and all related data restored");
+                                  }}
                                   className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
                                 >
                                   <RotateCw className="size-3" /> Restore
                                 </button>
                               </li>
-                            );
-                          })}
-                        </ul>
-                      )
-                    )}
+                            ))}
+                          </ul>
+                        )
+                      )}
 
-                    {binTab === "customers" && (
-                      (deletedCustomers ?? []).filter((t) => t && t.customer).length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-3 text-center">
-                          No deleted customers in recycle bin.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 mt-2">
-                          {(deletedCustomers ?? []).filter((t) => t && t.customer).map((t) => (
-                            <li
-                              key={t.customer.id}
-                              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
-                            >
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold truncate">
-                                  {t.customer.name} ({t.customer.kind ?? "client"})
-                                </p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {t.customer.phone || "No phone"} · Includes {(t.bookings || []).length} bookings, {(t.payments || []).length} payments
-                                </p>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  restoreCustomer(t.customer.id);
-                                  toast.success("Customer and all related data restored");
-                                }}
-                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
-                              >
-                                <RotateCw className="size-3" /> Restore
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )
-                    )}
-
-                    {binTab === "payments" && (
-                      (deletedPayments ?? []).filter((t) => t && t.payment).length === 0 ? (
-                        <p className="text-xs text-muted-foreground py-3 text-center">
-                          No deleted payments in recycle bin.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 mt-2">
-                          {(deletedPayments ?? []).filter((t) => t && t.payment).map((t) => {
-                            const b = bookings.find((x) => x.id === t.payment.bookingId);
-                            const c = customers.find((x) => x.id === t.payment.customerId);
-                            return (
+                      {binTab === "payments" && (
+                        (deletedPayments ?? []).filter((t) => t && t.payment).length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-3 text-center">
+                            No deleted payments in recycle bin.
+                          </p>
+                        ) : (
+                          <ul className="space-y-2 mt-2">
+                            {(deletedPayments ?? []).filter((t) => t && t.payment).map((t) => (
                               <li
                                 key={t.payment.id}
                                 className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
                               >
                                 <div className="min-w-0">
-                                  <p className="text-xs font-semibold truncate">
-                                    ₹{t.payment.amount} · {t.payment.mode ?? "gpay"}
+                                  <p className="text-xs font-semibold truncate text-success">
+                                    Payment: ₹{t.payment.amount} ({t.payment.mode})
                                   </p>
-                                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    Customer: {c?.name ?? "Unknown"} · Booking: {b?.billNumber ?? b?.service ?? "Unknown"}
-                                  </p>
+                                  {t.payment.note && (
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                      Note: {t.payment.note}
+                                    </p>
+                                  )}
                                 </div>
                                 <button
                                   onClick={() => {
@@ -2017,158 +2011,89 @@ function SettingsPage() {
                                   <RotateCw className="size-3" /> Restore
                                 </button>
                               </li>
-                            );
-                          })}
-                        </ul>
-                      )
-                    )}
+                            ))}
+                          </ul>
+                        )
+                      )}
 
-                    {binTab === "finance" && (
-                      ((deletedExpenses ?? []).length === 0 && (deletedExtraIncomes ?? []).length === 0) ? (
-                        <p className="text-xs text-muted-foreground py-3 text-center">
-                          No deleted finance records in recycle bin.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2 mt-2">
-                          {(deletedExpenses ?? []).filter((t) => t && t.expense).map((t) => (
-                            <li
-                              key={t.expense.id}
-                              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
-                            >
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold truncate text-destructive">
-                                  Expense: ₹{t.expense.amount} · {t.expense.category}
-                                </p>
-                                {t.expense.note && (
-                                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                                    Note: {t.expense.note}
-                                  </p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => {
-                                  restoreExpense(t.expense.id);
-                                  toast.success("Expense restored");
-                                }}
-                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                      {binTab === "finance" && (
+                        (deletedExpenses ?? []).length + (deletedExtraIncomes ?? []).length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-3 text-center">
+                            No deleted finance records in recycle bin.
+                          </p>
+                        ) : (
+                          <ul className="space-y-2 mt-2">
+                            {(deletedExpenses ?? []).filter((t) => t && t.expense).map((t) => (
+                              <li
+                                key={t.expense.id}
+                                className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
                               >
-                                <RotateCw className="size-3" /> Restore
-                              </button>
-                            </li>
-                          ))}
-                          {(deletedExtraIncomes ?? []).filter((t) => t && t.extraIncome).map((t) => (
-                            <li
-                              key={t.extraIncome.id}
-                              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
-                            >
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold truncate text-success">
-                                  Income: ₹{t.extraIncome.amount} · {t.extraIncome.category}
-                                </p>
-                                {t.extraIncome.note && (
-                                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                                    Note: {t.extraIncome.note}
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold truncate text-destructive">
+                                    Expense: ₹{t.expense.amount} · {t.expense.category}
                                   </p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => {
-                                  restoreExtraIncome(t.extraIncome.id);
-                                  toast.success("Income entry restored");
-                                }}
-                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                                  {t.expense.note && (
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                      Note: {t.expense.note}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    restoreExpense(t.expense.id);
+                                    toast.success("Expense restored");
+                                  }}
+                                  className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                                >
+                                  <RotateCw className="size-3" /> Restore
+                                </button>
+                              </li>
+                            ))}
+                            {(deletedExtraIncomes ?? []).filter((t) => t && t.extraIncome).map((t) => (
+                              <li
+                                key={t.extraIncome.id}
+                                className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-secondary/50"
                               >
-                                <RotateCw className="size-3" /> Restore
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold truncate text-success">
+                                    Income: ₹{t.extraIncome.amount} · {t.extraIncome.category}
+                                  </p>
+                                  {t.extraIncome.note && (
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                      Note: {t.extraIncome.note}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    restoreExtraIncome(t.extraIncome.id);
+                                    toast.success("Income entry restored");
+                                  }}
+                                  className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer active:scale-95 transition"
+                                >
+                                  <RotateCw className="size-3" /> Restore
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
 
-              <Section title="Reset & Danger Zone">
-                {dataLocked ? (
-                  <div className="flex flex-col items-center justify-center py-6 bg-destructive/5 border border-dashed border-destructive/20 rounded-2xl text-center">
-                    <div className="size-11 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
-                      <Lock className="size-4.5" />
-                    </div>
-                    <p className="text-xs font-bold text-foreground mb-0.5">Danger Zone Locked</p>
-                    <p className="text-[10px] text-muted-foreground max-w-xs mb-3 px-4">
-                      Contains sensitive actions that can reset pricing, styles, or permanently
-                      delete data.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setDataLocked(false);
-                        toast.success("Danger zone unlocked", { duration: 1500 });
-                      }}
-                      className="px-4 py-2 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition"
-                    >
-                      <Unlock className="size-3.5" /> Unlock Actions
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between bg-destructive/10 px-3.5 py-2.5 rounded-xl border border-destructive/25 mb-1">
-                      <span className="text-[10px] font-bold text-destructive flex items-center gap-1.5 uppercase tracking-wider">
-                        <Unlock className="size-3.5" /> Danger zone unlocked
-                      </span>
-                      <button
-                        onClick={() => {
-                          setDataLocked(true);
-                          toast.info("Danger zone locked", { duration: 1000 });
-                        }}
-                        className="text-[10px] font-bold text-muted-foreground underline cursor-pointer"
-                      >
-                        Lock again
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setConfirmAction("resetTheme")}
-                      className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
-                    >
-                      <RotateCcw className="size-3.5" /> Reset theme
-                    </button>
-                    <button
-                      onClick={() => setConfirmAction("resetPricing")}
-                      className="w-full px-3 py-2 rounded-full bg-secondary text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-secondary/80"
-                    >
-                      <RotateCcw className="size-3.5" /> Reset pricing & measurements
-                    </button>
-                    <button
-                      onClick={() => setConfirmAction("clearData")}
-                      className="w-full px-3 py-2 rounded-full bg-destructive/10 text-destructive text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-destructive/15"
-                    >
-                      <Trash2 className="size-3.5" /> Clear all data
-                    </button>
-                    <button
-                      onClick={() => {
-                        setFactoryTyped("");
-                        setFactoryOpen(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-destructive/90"
-                    >
-                      <AlertTriangle className="size-3.5" /> Factory reset (like new)
-                    </button>
-                    <p className="text-[11px] text-muted-foreground text-center mt-1">
-                      Clear-all-data supports Undo for ~8 seconds. Factory reset is permanent.
-                    </p>
-                  </div>
-                )}
-              </Section>
+                <Section title="About App">
+                  <AboutBlock />
+                </Section>
+              </>
+            )}
+          </>
+        )}
+      </div>
 
-              <Section title="About App">
-                <AboutBlock />
-              </Section>
-            </>
-          )}
-        </div>
-        <p className="mt-6 text-center text-[11px] text-muted-foreground/70 tabular-nums">
-          App version v{APP_VERSION}
-        </p>
+      <p className="mt-6 text-center text-[11px] text-muted-foreground/70 tabular-nums">
+        App version v{APP_VERSION}
+      </p>
 
       <style>{`.input { background: var(--color-secondary); border-radius: 9999px; padding: 0.6rem 0.9rem; font-size: 0.875rem; outline: none; width: 100%; color: var(--color-foreground); }
       .input:focus { box-shadow: 0 0 0 2px var(--color-primary); }`}</style>
