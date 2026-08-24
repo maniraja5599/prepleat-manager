@@ -8,11 +8,14 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
+  signInWithCredential,
   getRedirectResult,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   type User,
 } from "firebase/auth";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
+import { Capacitor } from "@capacitor/core";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -108,14 +111,41 @@ export function onAppAuthStateChanged(callback: (user: AppUser | null) => void) 
   return onAuthStateChanged(auth, (user) => callback(toAppUser(user) ?? getLocalGuestUser()));
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(): Promise<AppUser | null> {
   if (!auth) throw new Error("Firebase is not configured. Add VITE_FIREBASE_* values in .env.");
   localStorage.removeItem("local_guest_session");
+
+  // 1. If running on native mobile device (Android / iOS), use Native Google Sign-In dialog
+  if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+    try {
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      if (result?.credential?.idToken) {
+        const credential = GoogleAuthProvider.credential(result.credential.idToken);
+        const userCred = await signInWithCredential(auth, credential);
+        return toAppUser(userCred.user);
+      }
+      if (result?.user) {
+        return {
+          id: result.user.uid,
+          email: result.user.email ?? null,
+          isAnonymous: result.user.isAnonymous ?? false,
+        };
+      }
+    } catch (nativeErr: any) {
+      console.warn("Native Google sign-in failed, trying web fallback:", nativeErr);
+      if (nativeErr?.message?.includes("canceled") || nativeErr?.message?.includes("cancelled")) {
+        throw new Error("Google sign-in was cancelled");
+      }
+    }
+  }
+
+  // 2. Web browser popup / redirect flow
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
 
   try {
-    return await signInWithPopup(auth, provider);
+    const res = await signInWithPopup(auth, provider);
+    return toAppUser(res.user);
   } catch (error: any) {
     if (
       error.code === "auth/popup-blocked" ||
@@ -125,7 +155,8 @@ export async function signInWithGoogle() {
       error.code === "auth/operation-not-supported-in-this-environment"
     ) {
       console.warn("Popup blocked or unsupported, falling back to redirect:", error.code);
-      return await signInWithRedirect(auth, provider);
+      await signInWithRedirect(auth, provider);
+      return null;
     }
     throw error;
   }
@@ -172,6 +203,13 @@ export async function signInAsGuest() {
 
 export async function signOut() {
   localStorage.removeItem("local_guest_session");
+  if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+    try {
+      await FirebaseAuthentication.signOut();
+    } catch (e) {
+      console.warn("Native sign out error:", e);
+    }
+  }
   if (auth?.currentUser) await firebaseSignOut(auth);
   window.dispatchEvent(new Event("local-auth-change"));
 }

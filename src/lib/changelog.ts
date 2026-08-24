@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.7";
+export const APP_VERSION = "1.5.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.7",
+    version: "v1.5.8",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Official Eyas Drapist High-Res App Icon & Launcher Branding",
+    title: "Native Android Google Sign-In via Google Play Services",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🚀",
+        text: "Native 1-Tap Google Account Picker",
+        desc: "பிரவுசருக்கு செல்லாமல் உங்கள் மொபைல் திரையிலேயே கூகுள் கணக்குகளை காட்டி 1 நொடியில் லாகின் செய்யும் Native Google Play Services Authentication இணைக்கப்பட்டுள்ளது.",
+      },
+      {
+        emoji: "⚡",
+        text: "Zero-Redirect In-App Token Sync",
+        desc: "பிரவுசர் Redirect மற்றும் Storage Partitioning பிழைகள் ஏதுமின்றி நேரடியாக ஆப்-க்குள் லாகின் ஆகும் வகையில் கட்டமைக்கப்பட்டுள்ளது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.7",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Official Eyas Drapist High-Res App Icon & Launcher Branding",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🎨",
