@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.5";
+export const APP_VERSION = "1.5.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.5.5",
+    version: "v1.5.6",
     date: "24 Aug 2026",
     isLatest: true,
-    title: "Settings Sub-Tabs Architecture, Top Account Bar & WhatsApp Previews",
+    title: "Enhanced Mobile Auth, Intent-Filter Deep Links & Quick Guest Mode",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🔐",
+        text: "Direct In-App Email & Password Auth",
+        desc: "மொபைல் ஆப்-க்குள் பிரவுசருக்கு செல்லாமல் உடனே லாகின் / அக்கவுண்ட் உருவாக்கும் வசதி மற்றும் பாஸ்வேர்டு பார்க்கும் கண் ஐகான் சேர்க்கப்பட்டுள்ளது.",
+      },
+      {
+        emoji: "⚡",
+        text: "1-Tap Instant Guest Access",
+        desc: "எந்தவொரு லாகின் தேவையும் இன்றி உடனே ஆப்பை பயன்படுத்தி பில்லிங் மற்றும் புடவை கணக்குகளை பராமரிக்கும் வசதி.",
+      },
+      {
+        emoji: "🌐",
+        text: "Google Auth Redirect Handler & Deep Linking",
+        desc: "ஆப் மற்றும் பிரவுசர் இடையில் சீரான தகவல் தொடர்புக்கு Android Intent Filter மற்றும் Google Auth Redirect Listener சேர்க்கப்பட்டது.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.5",
+    date: "24 Aug 2026",
+    isLatest: false,
+    title: "Settings Sub-Tabs Architecture, Top Account Bar & WhatsApp Previews",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🗂️",

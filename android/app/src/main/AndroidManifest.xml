@@ -22,6 +22,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links for https://prepleat-manager.vercel.app -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="prepleat-manager.vercel.app" />
+            </intent-filter>
+
+            <!-- Custom Scheme for Auth Redirects -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.vercel.sareeprepleatmanager.twa" />
+            </intent-filter>
+
         </activity>
 
         <provider

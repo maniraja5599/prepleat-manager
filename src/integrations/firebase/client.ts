@@ -7,6 +7,8 @@ import {
   signInAnonymously,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   type User,
@@ -111,7 +113,36 @@ export async function signInWithGoogle() {
   localStorage.removeItem("local_guest_session");
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithPopup(auth, provider);
+
+  try {
+    return await signInWithPopup(auth, provider);
+  } catch (error: any) {
+    if (
+      error.code === "auth/popup-blocked" ||
+      error.code === "auth/popup-closed-by-user" ||
+      error.code === "auth/cancelled-popup-request" ||
+      error.code === "auth/unauthorized-domain" ||
+      error.code === "auth/operation-not-supported-in-this-environment"
+    ) {
+      console.warn("Popup blocked or unsupported, falling back to redirect:", error.code);
+      return await signInWithRedirect(auth, provider);
+    }
+    throw error;
+  }
+}
+
+export async function checkRedirectResult(): Promise<AppUser | null> {
+  if (!auth) return null;
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      localStorage.removeItem("local_guest_session");
+      return toAppUser(result.user);
+    }
+  } catch (error) {
+    console.error("Error processing Google redirect result:", error);
+  }
+  return null;
 }
 
 export async function signInWithEmail(email: string, password: string) {

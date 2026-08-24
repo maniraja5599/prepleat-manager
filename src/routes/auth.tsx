@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/eyas-logo.png";
-import { Loader2, Mail, Lock, UserRound } from "lucide-react";
+import { Loader2, Mail, Lock, UserRound, Eye, EyeOff, Sparkles } from "lucide-react";
 import {
   createAccountWithEmail,
   signInAsGuest,
@@ -10,6 +10,7 @@ import {
   signInWithGoogle,
   waitForAppUser,
   resetPassword,
+  checkRedirectResult,
 } from "@/integrations/firebase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -31,13 +32,25 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState<null | "email" | "google" | "guest">(null);
 
-  // If already signed in, bounce to home
+  // Check if returning from a Google redirect or if already signed in
   useEffect(() => {
-    waitForAppUser(300).then((user) => {
-      if (user) navigate({ to: "/" });
+    let mounted = true;
+    checkRedirectResult().then((user) => {
+      if (mounted && user) {
+        toast.success("Welcome back! Signed in with Google.");
+        navigate({ to: "/" });
+        return;
+      }
+      waitForAppUser(300).then((u) => {
+        if (mounted && u) navigate({ to: "/" });
+      });
     });
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
   async function handleEmail(e: React.FormEvent) {
@@ -47,7 +60,7 @@ function AuthPage() {
     try {
       if (mode === "signin") await signInWithEmail(email, password);
       else await createAccountWithEmail(email, password);
-      toast.success(mode === "signin" ? "Welcome back!" : "Account created");
+      toast.success(mode === "signin" ? "Welcome back!" : "Account created successfully!");
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign in failed");
@@ -59,11 +72,16 @@ function AuthPage() {
   async function handleGoogle() {
     setBusy("google");
     try {
-      await signInWithGoogle();
-      toast.success("Welcome back!");
-      navigate({ to: "/" });
+      const res = await signInWithGoogle();
+      if (res) {
+        toast.success("Welcome back!");
+        navigate({ to: "/" });
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
+      console.warn("Google sign-in error:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Google sign-in failed. Please use Email & Password or Guest Mode.",
+      );
     } finally {
       setBusy(null);
     }
@@ -150,15 +168,22 @@ function AuthPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   required
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full h-11 pl-10 pr-3 rounded-xl bg-secondary text-sm outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Password (min. 6 chars)"
+                  className="w-full h-11 pl-10 pr-10 rounded-xl bg-secondary text-sm outline-none focus:ring-2 focus:ring-primary"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none p-1"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
             </label>
             {mode === "signin" && (
@@ -166,7 +191,7 @@ function AuthPage() {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-xs text-primary hover:underline font-medium focus:outline-none"
+                  className="text-xs text-primary hover:underline font-medium focus:outline-none cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -175,14 +200,14 @@ function AuthPage() {
             <button
               type="submit"
               disabled={busy !== null}
-              className="w-full h-11 rounded-xl saree-gradient text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full h-11 rounded-xl saree-gradient text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition disabled:opacity-60 shadow-xs"
             >
               {busy === "email" ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : mode === "signin" ? (
-                "Sign in"
+                "Sign In"
               ) : (
-                "Create account"
+                "Create Account"
               )}
             </button>
           </form>
@@ -194,12 +219,12 @@ function AuthPage() {
           <button
             onClick={handleGoogle}
             disabled={busy !== null}
-            className="w-full h-11 rounded-xl bg-background border border-input text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
+            className="w-full h-11 rounded-xl bg-card hover:bg-secondary/70 border border-border text-foreground text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.99] transition cursor-pointer disabled:opacity-60 shadow-2xs"
           >
             {busy === "google" ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+              <svg viewBox="0 0 24 24" className="size-4 shrink-0" aria-hidden>
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -218,23 +243,23 @@ function AuthPage() {
                 />
               </svg>
             )}
-            Continue with Google
+            <span>Continue with Google</span>
           </button>
 
           <button
             onClick={handleGuest}
             disabled={busy !== null}
-            className="w-full h-11 rounded-xl bg-secondary text-secondary-foreground text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
+            className="w-full h-11 rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.99] transition cursor-pointer disabled:opacity-60"
           >
             {busy === "guest" ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <UserRound className="size-4" />
+              <Sparkles className="size-4 text-primary" />
             )}
-            Continue as guest
+            <span>⚡ Continue as Guest (Instant Access)</span>
           </button>
-          <p className="text-[11px] text-center text-muted-foreground">
-            Guest data stays on this device and syncs when you sign in.
+          <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+            Guest mode keeps data locally on your device. Sign in anytime to backup to cloud.
           </p>
         </div>
       </div>
