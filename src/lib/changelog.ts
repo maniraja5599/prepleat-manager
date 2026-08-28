@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.7";
+export const APP_VERSION = "1.7.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.7",
+    version: "v1.7.8",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "Expanded Horizontal Chart, Clean Cumulative Tooltip & Dedicated Monthly Matrix",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Horizontal Scrollable Revenue Chart",
+        desc: "Expanded chart width with smooth horizontal scrolling so all 12 months have wide, comfortable bars and spacing.",
+      },
+      {
+        emoji: "✨",
+        text: "Minimal Month & Cumulative Tooltip",
+        desc: "Streamlined touch tooltip to cleanly show only the Month/Year and Cumulative revenue total without cluttering the screen.",
+      },
+      {
+        emoji: "📅",
+        text: "Dedicated Monthly Breakdown Matrix",
+        desc: "Added a new 'Months' sub-tab under the chart featuring month-by-month and year-by-year income, expense, net profit, margin %, and run-rates.",
+      },
+      {
+        emoji: "🧹",
+        text: "Streamlined Clean Pending Dues & Payments",
+        desc: "Removed large collection stat boxes from Pending Dues and Payments tabs for a cleaner, direct layout.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.7",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "Completed Dues Default View, Safe Deletions & Enhanced Chart Inspection",
     badge: "LATEST UPDATE ✨",
     changes: [

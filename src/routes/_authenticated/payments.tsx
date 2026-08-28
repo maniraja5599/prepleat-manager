@@ -1461,29 +1461,7 @@ function IncomeView(p: {
       ) : (
         /* Enhanced Pending Payments Hub */
         <div className="space-y-3 mb-24">
-          {/* Single Unified Stats Banner for Pending Dues (Collected | Pending Due | Total Billed) */}
-          <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
-            <div className="grid grid-cols-3 divide-x divide-border/30 text-center">
-              <div className="px-1">
-                <p className="text-[9px] uppercase font-bold text-muted-foreground">Collected</p>
-                <p className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
-                  {fmtINR(p.lifetime)}
-                </p>
-              </div>
-              <div className="px-1">
-                <p className="text-[9px] uppercase font-bold text-destructive">Pending Due</p>
-                <p className="text-xs font-black text-destructive mt-0.5 tabular-nums">
-                  {fmtINR(p.totalPending)}
-                </p>
-              </div>
-              <div className="px-1">
-                <p className="text-[9px] uppercase font-bold text-muted-foreground">Total Billed</p>
-                <p className="text-xs font-extrabold text-foreground mt-0.5 tabular-nums">
-                  {fmtINR(p.totalBilled)}
-                </p>
-              </div>
-            </div>
-          </div>
+
 
           {/* Search & Filter Bar */}
           {pendingList.length > 0 && (
@@ -2268,7 +2246,7 @@ function SummaryView(p: {
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
 
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all" or "yyyy-MM"
-  const [summarySubTab, setSummarySubTab] = useState<"overview" | "services" | "clients" | "modes">("overview");
+  const [summarySubTab, setSummarySubTab] = useState<"overview" | "months" | "services" | "clients" | "modes">("overview");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [activeChartMonth, setActiveChartMonth] = useState<any | null>(null);
 
@@ -2417,108 +2395,97 @@ function SummaryView(p: {
           </div>
         )}
 
-        <div className="h-60 w-full -mx-1">
-          {trendDataWithCumulative.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
-              No financial data yet
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={trendDataWithCumulative}
-                margin={{ top: 8, right: 10, left: -20, bottom: 0 }}
-                onClick={(e: any) => {
-                  if (e && e.activePayload && e.activePayload.length) {
-                    setActiveChartMonth(e.activePayload[0].payload);
-                  }
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
-                <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
-                <YAxis
-                  yAxisId="left"
-                  stroke="currentColor"
-                  opacity={0.6}
-                  fontSize={10}
-                  tickLine={false}
-                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="currentColor"
-                  opacity={0.4}
-                  fontSize={9}
-                  tickLine={false}
-                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
-                />
-                <Tooltip
-                  cursor={{ fill: "currentColor", opacity: 0.05 }}
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0]?.payload || {};
-                      const inc = Number(data.amount) || 0;
-                      const exp = Number(data.expense) || 0;
-                      const net = inc - exp;
-                      const cum = Number(data.cumulative) || 0;
-                      return (
-                        <div className="rounded-xl bg-card/95 backdrop-blur border border-border p-2 shadow-lg text-[10.5px] space-y-0.5 pointer-events-none">
-                          <p className="font-bold text-foreground border-b border-border/30 pb-0.5">{label}</p>
-                          <div className="flex justify-between gap-3 text-emerald-600 font-semibold">
-                            <span>Income:</span> <strong>+{fmtINR(inc)}</strong>
-                          </div>
-                          <div className="flex justify-between gap-3 text-rose-600 font-semibold">
-                            <span>Expense:</span> <strong>-{fmtINR(exp)}</strong>
-                          </div>
-                          <div
-                            className={cn(
-                              "font-bold pt-0.5 border-t border-border/20 flex justify-between gap-3",
-                              net >= 0 ? "text-primary" : "text-destructive",
-                            )}
-                          >
-                            <span>Net:</span> <strong>{fmtINR(net)}</strong>
-                          </div>
-                          <div className="text-primary/90 font-bold pt-0.5 border-t border-border/20 flex justify-between gap-3">
-                            <span>Cumul:</span> <strong>{fmtINR(cum)}</strong>
-                          </div>
-                        </div>
-                      );
+        {/* Horizontal Scrollable Chart Area for Greater Length */}
+        <div className="overflow-x-auto no-scrollbar pb-1 -mx-1">
+          <div className="min-w-[620px] h-60">
+            {trendDataWithCumulative.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+                No financial data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={trendDataWithCumulative}
+                  margin={{ top: 8, right: 10, left: -20, bottom: 0 }}
+                  onClick={(e: any) => {
+                    if (e && e.activePayload && e.activePayload.length) {
+                      setActiveChartMonth(e.activePayload[0].payload);
                     }
-                    return null;
                   }}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="amount"
-                  name="Income"
-                  stackId="monthlyBar"
-                  fill="#10b981"
-                  barSize={14}
-                  radius={[0, 0, 2, 2]}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="expense"
-                  name="Expense"
-                  stackId="monthlyBar"
-                  fill="#f43f5e"
-                  barSize={14}
-                  radius={[3, 3, 0, 0]}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="cumulative"
-                  name="Cumulative"
-                  stroke="var(--color-primary)"
-                  strokeWidth={2}
-                  dot={{ r: 1.2, fill: "var(--color-primary)" }}
-                  activeDot={{ r: 3.5 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          )}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
+                  <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="currentColor"
+                    opacity={0.6}
+                    fontSize={10}
+                    tickLine={false}
+                    tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="currentColor"
+                    opacity={0.4}
+                    fontSize={9}
+                    tickLine={false}
+                    tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "currentColor", opacity: 0.05 }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0]?.payload || {};
+                        const cum = Number(data.cumulative) || 0;
+                        return (
+                          <div className="rounded-xl bg-card/95 backdrop-blur border border-border px-3 py-1.5 shadow-lg text-[11px] space-y-0.5 pointer-events-none">
+                            <p className="font-bold text-foreground">{label}</p>
+                            <p className="text-primary font-extrabold tabular-nums">
+                              Cumulative: {fmtINR(cum)}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="amount"
+                    name="Income"
+                    stackId="monthlyBar"
+                    fill="#10b981"
+                    barSize={16}
+                    radius={[0, 0, 2, 2]}
+                  />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="expense"
+                    name="Expense"
+                    stackId="monthlyBar"
+                    fill="#f43f5e"
+                    barSize={16}
+                    radius={[3, 3, 0, 0]}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="cumulative"
+                    name="Cumulative"
+                    stroke="var(--color-primary)"
+                    strokeWidth={2}
+                    dot={{ r: 1.2, fill: "var(--color-primary)" }}
+                    activeDot={{ r: 3.5 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
+        <p className="text-[8.5px] text-muted-foreground text-center mt-1">
+          ← Swipe horizontally to explore all 12 months →
+        </p>
 
         {/* Single Latest Milestone badge */}
         {latestMilestone && (
@@ -2537,19 +2504,31 @@ function SummaryView(p: {
             type="button"
             onClick={() => setSummarySubTab("overview")}
             className={cn(
-              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              "flex-1 min-w-[60px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
               summarySubTab === "overview"
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            📊 Overview
+            📊 Growth
+          </button>
+          <button
+            type="button"
+            onClick={() => setSummarySubTab("months")}
+            className={cn(
+              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
+              summarySubTab === "months"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            📅 Months
           </button>
           <button
             type="button"
             onClick={() => setSummarySubTab("services")}
             className={cn(
-              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              "flex-1 min-w-[60px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
               summarySubTab === "services"
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
@@ -2561,7 +2540,7 @@ function SummaryView(p: {
             type="button"
             onClick={() => setSummarySubTab("clients")}
             className={cn(
-              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              "flex-1 min-w-[55px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
               summarySubTab === "clients"
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
@@ -2573,7 +2552,7 @@ function SummaryView(p: {
             type="button"
             onClick={() => setSummarySubTab("modes")}
             className={cn(
-              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              "flex-1 min-w-[55px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
               summarySubTab === "modes"
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
@@ -2814,7 +2793,112 @@ function SummaryView(p: {
         </div>
       )}
 
-      {/* SUB-TAB 2: 🥻 Services & Volume */}
+            {/* SUB-TAB 2: 📅 Month & Year Detailed Ledger Matrix */}
+      {summarySubTab === "months" && (
+        <div className="space-y-3 mb-24 animate-in fade-in">
+          {/* Monthly KPI Summary Strip */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+              <span className="text-[8.5px] uppercase font-bold text-muted-foreground block">Active Months</span>
+              <p className="text-sm font-extrabold text-foreground mt-0.5 tabular-nums">
+                {periodData.validMonths.length}
+              </p>
+            </div>
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+              <span className="text-[8.5px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block">Avg Income/Mo</span>
+              <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
+                {fmtINR(periodData.avgMonthly)}
+              </p>
+            </div>
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+              <span className="text-[8.5px] uppercase font-bold text-primary block">Avg Profit/Mo</span>
+              <p className="text-sm font-extrabold text-primary mt-0.5 tabular-nums">
+                {fmtINR(periodData.validMonths.length > 0 ? Math.round(periodData.net / periodData.validMonths.length) : 0)}
+              </p>
+            </div>
+          </div>
+
+          {/* Month-by-Month Detailed Cards */}
+          <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/30 space-y-2.5">
+            <div className="flex items-center justify-between pb-1 border-b border-border/30">
+              <p className="text-[11px] uppercase tracking-wider text-foreground font-bold flex items-center gap-1.5">
+                <span>📅</span> Monthly Ledger Breakdown ({selectedYear === "all" ? "All Time" : selectedYear})
+              </p>
+              <span className="text-[9px] text-muted-foreground font-bold">
+                {periodData.validMonths.length} Months
+              </span>
+            </div>
+
+            {periodData.validMonths.length === 0 ? (
+              <p className="text-center py-6 text-xs text-muted-foreground">No monthly transaction records found.</p>
+            ) : (
+              <div className="space-y-2">
+                {[...periodData.validMonths]
+                  .sort((a, b) => b.month.localeCompare(a.month))
+                  .map((m, idx) => {
+                    const isProfitable = m.net >= 0;
+                    const mMargin = m.amount > 0 ? Math.round((m.net / m.amount) * 100) : 0;
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-secondary/40 hover:bg-secondary/70 transition rounded-2xl p-3 border border-border/20 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-foreground px-2 py-0.5 rounded-lg bg-card border border-border/40">
+                              {m.month}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-[9px] font-bold px-2 py-0.5 rounded-full",
+                                isProfitable
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : "bg-destructive/10 text-destructive",
+                              )}
+                            >
+                              {mMargin}% margin
+                            </span>
+                          </div>
+                          <p
+                            className={cn(
+                              "font-black text-sm tabular-nums",
+                              isProfitable ? "text-emerald-600 dark:text-emerald-400" : "text-destructive",
+                            )}
+                          >
+                            Net {fmtINR(m.net)}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/20 text-center">
+                          <div>
+                            <span className="text-[8px] uppercase font-bold text-muted-foreground">Income</span>
+                            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                              +{fmtINR(m.amount)}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[8px] uppercase font-bold text-muted-foreground">Expense</span>
+                            <p className="text-xs font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                              -{fmtINR(m.expense)}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-[8px] uppercase font-bold text-muted-foreground">Run Rate</span>
+                            <p className="text-xs font-bold text-foreground tabular-nums">
+                              ~{fmtINR(Math.round(m.amount / 30))}/d
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB 3: 🥻 Services & Volume */}
       {summarySubTab === "services" && (
         <div className="space-y-3 mb-24 animate-in fade-in">
           {(() => {
