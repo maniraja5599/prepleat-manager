@@ -28,11 +28,11 @@ import {
   Settings as SettingsIcon,
   BellRing,
   Lightbulb,
+  CalendarPlus,
 } from "lucide-react";
 import { getNotificationPermission, requestNotificationPermission, sendNativeNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import { WelcomeOnboardingModal } from "./WelcomeOnboardingModal";
 import { QuickTipsModal } from "./QuickTipsModal";
 
 interface Props {
@@ -642,6 +642,21 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               title="Settings & Business Profile"
             >
               <SettingsIcon className="size-4.5" />
+            </Link>
+
+            {/* Quick Book Button */}
+            <Link
+              to="/new"
+              className={cn(
+                "px-2.5 py-1.5 rounded-full saree-gradient text-white text-[11px] font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
+                showPill && currentNotification
+                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
+                  : "opacity-100 mr-1.5 scale-100",
+              )}
+              title="New Booking (புதிய பதிவு) 📅"
+            >
+              <CalendarPlus className="size-3.5" />
+              <span>Book</span>
             </Link>
 
             {/* Quick Tips & Shortcuts Button */}
@@ -1358,9 +1373,6 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
           </div>
         </div>
       )}
-
-      {/* First-Time User Onboarding & Sample Data Modal */}
-      <WelcomeOnboardingModal />
 
       {/* Quick Tips & Shortcuts Helper Modal */}
       <QuickTipsModal open={showTipsModal} onOpenChange={setShowTipsModal} />

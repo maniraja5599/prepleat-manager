@@ -32,7 +32,6 @@ import {
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/")({
   validateSearch: (s: Record<string, unknown>): { guide?: string } => ({
@@ -282,6 +281,21 @@ function CalendarPage() {
 
   const peekBookings = peek ? (byDay.get(peek) ?? []) : [];
 
+  // Touch / Double-tap detection for mobile & desktop
+  const lastTapRef = useRef<{ key: string; time: number }>({ key: "", time: 0 });
+
+  const handleDateTap = (d: Date, key: string) => {
+    const now = Date.now();
+    if (lastTapRef.current.key === key && now - lastTapRef.current.time < 380) {
+      // Double-tap detected!
+      navigate({ to: "/new", search: { date: key } });
+      lastTapRef.current = { key: "", time: 0 };
+      return;
+    }
+    lastTapRef.current = { key, time: now };
+    setSelected(d);
+  };
+
   useEffect(() => {
     const handleReset = () => {
       setCursor(new Date());
@@ -297,18 +311,18 @@ function CalendarPage() {
       <div className="no-select">
         <GrowthDashboard />
 
-        <MicroTipBanner
-          id="calendar_nav_tip"
-          badge="SHORTCUTS ⚡"
-          tamilTip="கேலெண்டர்"
-          chips={[
-            { emoji: "👆", tag: "1-Tap Date", desc: "View Deliveries" },
-            { emoji: "⚡", tag: "2-Tap Tab", desc: "Global Search" },
-            { emoji: "📅", tag: "1-Tap Tab", desc: "Today" },
-          ]}
-          actionLabel="All Tips"
-          onAction={() => window.dispatchEvent(new CustomEvent("trigger-quick-tips"))}
-        />
+        {/* Clean Calendar Quick Action Strip */}
+        <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-secondary/50 border border-border/25 my-2.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <span className="text-foreground font-bold">👆 1-Tap:</span>
+            <span>View Deliveries</span>
+          </div>
+          <div className="w-px h-3.5 bg-border/60" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-foreground font-bold">✌️ 2-Tap:</span>
+            <span className="text-primary font-bold">New Booking</span>
+          </div>
+        </div>
 
 
 
@@ -406,7 +420,7 @@ function CalendarPage() {
               return (
                 <button
                   key={key}
-                  onClick={() => setSelected(d)}
+                  onClick={() => handleDateTap(d, key)}
                   onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
                   onTouchStart={() => startPress(key)}
                   onTouchEnd={cancelPress}

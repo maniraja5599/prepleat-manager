@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.3";
+export const APP_VERSION = "1.6.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v1.6.4",
+    date: "28 Aug 2026",
+    isLatest: true,
+    title: "1-Click Web App Install, Double-Tap Calendar Book & Zero Popup Clutter",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📱",
+        text: "1-Click App Install & iOS Guide",
+        desc: "Android-ல் 1-கிளிக்கில் ஆப் இன்ஸ்டால் மற்றும் iPhone பயனர்களுக்கு எளிய Share ➔ Add to Home Screen வழிகாட்டி சேர்க்கப்பட்டது.",
+      },
+      {
+        emoji: "📅",
+        text: "Calendar Double-Tap to Book & Quick Icon",
+        desc: "காலெண்டரில் எந்த தேதியிலும் 2 முறை தட்டினால் (Double Tap) அல்லது மேலே உள்ள Book ஐகானைத் தொட்டால் உடனடியாக புதிய புக்கிங் தொடங்கும்.",
+      },
+      {
+        emoji: "⚡",
+        text: "Zero Popup Clutter",
+        desc: "ஆப் திறந்ததும் வரும் தேவையற்ற பாப்-அப்கள் நீக்கப்பட்டு, புதிய வெர்ஷன் அப்டேட் வரும்போது மட்டும் 1 முறை காட்டும் வகையில் சீரமைக்கப்பட்டது.",
+      },
+    ],
+  },
+  {
     version: "v1.6.3",
     date: "24 Aug 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Smart Clipboard Phone Auto-Fill & Logo Settings Link",
-    badge: "LATEST UPDATE ✨",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "📋",
