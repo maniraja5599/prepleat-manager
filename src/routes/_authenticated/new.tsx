@@ -460,7 +460,9 @@ function NewBooking() {
     }
     if (!sareeCount || sareeCount < 1) return toast.error("Saree count required");
     if (!deliveryDate || !deliveryTime) return toast.error("Delivery date & time required");
-    if (advNum > total) return toast.error("Advance cannot exceed total");
+    setDateOpen(false);
+    setShowMapPicker(false);
+    setIsEditingPhone(false);
     setReviewOpen(true);
   };
 

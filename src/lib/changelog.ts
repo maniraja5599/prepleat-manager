@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.0";
+export const APP_VERSION = "1.7.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.0",
+    version: "v1.7.1",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "Firestore Sync Stability & Total Local Data Protection",
+    title: "Income/Expense Sub-Tabs, Clean Details & Earning Bar Chart",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Monthly Earning Bar Chart",
+        desc: "Added interactive monthly Income vs Expense comparison bar chart in Financial Summary.",
+      },
+      {
+        emoji: "💳",
+        text: "Income & Expense Sub-Tabs",
+        desc: "Organized Payments into clean Income and Expense sub-tabs with quick search and clean essential details.",
+      },
+      {
+        emoji: "✨",
+        text: "Quick Review Modal Shield",
+        desc: "Protected Quick Review sheet from any background calendar bleed-through.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.0",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "Firestore Sync Stability & Total Local Data Protection",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🛡️",

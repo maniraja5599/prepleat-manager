@@ -871,6 +871,11 @@ function PaymentsPage() {
           monthlyYearlyReport={monthlyYearlyReport}
           onAddPayment={addPayment}
           settings={settings}
+          expenses={expenses}
+          totalExpense={totalExpense}
+          categories={categories}
+          onDeleteExpense={(id) => setPendingDelete({ type: "expense", id })}
+          onEditTx={setEditingTx}
         />
       )}
 
@@ -1031,7 +1036,15 @@ function IncomeView(p: {
   monthlyYearlyReport: { year: string; totalCollected: number; totalBooked: number; months: { label: string; collected: number; booked: number }[] }[];
   onAddPayment?: (payment: any) => void;
   settings?: any;
+  expenses?: any[];
+  totalExpense?: number;
+  categories?: string[];
+  onDeleteExpense?: (id: string) => void;
+  onEditTx?: (tx: any) => void;
 }) {
+  const [paymentSubTab, setPaymentSubTab] = useState<"income" | "expenses">("income");
+  const [searchIncome, setSearchIncome] = useState("");
+  const [searchExpense, setSearchExpense] = useState("");
   const [searchPending, setSearchPending] = useState("");
   const [pendingCategoryFilter, setPendingCategoryFilter] = useState<"all" | "prepleat" | "draping" | "high">("all");
   const [collectTarget, setCollectTarget] = useState<any | null>(null);
@@ -1109,6 +1122,75 @@ function IncomeView(p: {
     });
   }, [pendingList, searchPending, pendingCategoryFilter]);
 
+  const allIncomesList = useMemo(() => {
+    const list: Array<{
+      id: string;
+      type: "booking" | "extra";
+      title: string;
+      subtitle: string;
+      date: string;
+      mode: PaymentMode;
+      amount: number;
+      bookingId?: string;
+    }> = [];
+
+    for (const item of p.recent) {
+      const pay = item.p;
+      const cust = item.c;
+      const book = item.b;
+      list.push({
+        id: pay.id,
+        type: "booking",
+        title: cust?.name || "Customer",
+        subtitle: book
+          ? `${formatShortBillNumber(book.billNumber, book.id)} · ${book.service === "drape" ? "Drape" : "PrePleat"} · ${book.sareeCount || 1} Sarees`
+          : "Order Payment",
+        date: pay.date,
+        mode: (pay.mode as PaymentMode) || "other",
+        amount: pay.amount,
+        bookingId: book?.id,
+      });
+    }
+
+    for (const ext of p.recentExtra || []) {
+      list.push({
+        id: ext.id,
+        type: "extra",
+        title: ext.category || "Other Income",
+        subtitle: ext.note || "Extra Income",
+        date: ext.date,
+        mode: ext.mode || "other",
+        amount: ext.amount,
+      });
+    }
+
+    list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    return list;
+  }, [p.recent, p.recentExtra]);
+
+  const filteredIncomes = useMemo(() => {
+    const q = searchIncome.trim().toLowerCase();
+    if (!q) return allIncomesList;
+    return allIncomesList.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.subtitle.toLowerCase().includes(q) ||
+        String(item.amount).includes(q),
+    );
+  }, [allIncomesList, searchIncome]);
+
+  const filteredExpenses = useMemo(() => {
+    const expensesList = (p.expenses || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const q = searchExpense.trim().toLowerCase();
+    if (!q) return expensesList;
+    return expensesList.filter(
+      (item) =>
+        (item.category || "").toLowerCase().includes(q) ||
+        (item.note || "").toLowerCase().includes(q) ||
+        String(item.amount).includes(q),
+    );
+  }, [p.expenses, searchExpense]);
+
   return (
     <>
       <div className="grid grid-cols-2 gap-2 mb-3">
@@ -1138,412 +1220,213 @@ function IncomeView(p: {
         />
       </div>
 
-      {/* Segmented Filter Toggle Button */}
-      <div className="flex bg-secondary p-1 rounded-xl gap-1 mb-4">
-        <button
-          onClick={() => p.onSubFilterChange("collected")}
-          className={cn(
-            "flex-grow py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition cursor-pointer text-center",
-            p.subFilter === "collected"
-              ? "bg-card text-foreground shadow-xs border border-border/10"
-              : "text-muted-foreground hover:bg-secondary/40"
-          )}
-        >
-          Collected Payments
-        </button>
-        <button
-          onClick={() => p.onSubFilterChange("pending")}
-          className={cn(
-            "flex-grow py-1.5 rounded-lg text-xs font-semibold active:scale-95 transition cursor-pointer text-center",
-            p.subFilter === "pending"
-              ? "bg-card text-foreground shadow-xs border border-border/10"
-              : "text-muted-foreground hover:bg-secondary/40"
-          )}
-        >
-          Pending Payments ({pendingList.length})
-        </button>
-      </div>
-
       {p.subFilter === "collected" ? (
         <>
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  Earnings trend
-                </p>
-                <p className="text-[10px] text-muted-foreground">Last 12 months</p>
+          {/* Sub-Tabs: Income vs Expense */}
+          <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3.5 card-shadow">
+            <button
+              type="button"
+              onClick={() => setPaymentSubTab("income")}
+              className={cn(
+                "flex-grow py-2.5 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer text-center flex items-center justify-center gap-1.5",
+                paymentSubTab === "income"
+                  ? "bg-emerald-600 text-white shadow-md"
+                  : "text-muted-foreground hover:bg-secondary/40",
+              )}
+            >
+              <TrendingUp className="size-3.5" />
+              <span>Income ({allIncomesList.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentSubTab("expenses")}
+              className={cn(
+                "flex-grow py-2.5 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer text-center flex items-center justify-center gap-1.5",
+                paymentSubTab === "expenses"
+                  ? "bg-rose-600 text-white shadow-md"
+                  : "text-muted-foreground hover:bg-secondary/40",
+              )}
+            >
+              <TrendingDown className="size-3.5" />
+              <span>Expenses ({p.expenses?.length || 0})</span>
+            </button>
+          </div>
+
+          {paymentSubTab === "income" ? (
+            <div className="space-y-3 mb-24">
+              {/* Income Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchIncome}
+                  onChange={(e) => setSearchIncome(e.target.value)}
+                  placeholder="Search income by customer, bill, note..."
+                  className="w-full bg-card rounded-xl pl-9 pr-8 py-2 text-xs border border-border/40 focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+                />
+                {searchIncome && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchIncome("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 size-5 rounded-full text-muted-foreground hover:text-foreground flex items-center justify-center"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
               </div>
-              <p className="text-sm font-bold tabular-nums">
-                {fmtINR(p.trend12.reduce((s, m) => s + m.amount, 0))}
-              </p>
-            </div>
-            <div className="h-44 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={p.trend12} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.45} />
-                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    vertical={false}
-                    stroke="var(--color-border)"
-                    strokeDasharray="3 3"
-                    opacity={0.4}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                  />
-                  <YAxis hide />
-                  <Tooltip
-                    cursor={{ stroke: "var(--color-primary)", strokeOpacity: 0.3 }}
-                    contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                    }}
-                    formatter={(v: number) => [fmtINR(v), "Earned"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="var(--color-primary)"
-                    strokeWidth={2.5}
-                    fill="url(#earnGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <KpiCard
-              icon={<CalendarCheck className="size-3.5" />}
-              label="Payments"
-              value={String(p.kpis.count)}
-              sub={`avg ${fmtINR(p.kpis.avg)}`}
-              tint="primary"
-            />
-            <KpiCard
-              icon={<Users className="size-3.5" />}
-              label="Unique customers"
-              value={String(p.kpis.uniqueCustomers)}
-              sub="all time"
-              tint="accent"
-            />
-            <KpiCard
-              icon={<TrendingUp className="size-3.5" />}
-              label="Best month"
-              value={p.kpis.bestMonth ? fmtINR(p.kpis.bestMonth.amount) : "—"}
-              sub={p.kpis.bestMonth?.month ?? "—"}
-              tint="success"
-            />
-            <KpiCard
-              icon={<Crown className="size-3.5" />}
-              label="Top customer"
-              value={p.topCustomers[0] ? fmtINR(p.topCustomers[0].amount) : "—"}
-              sub={p.topCustomers[0]?.c?.name ?? "—"}
-              tint="gold"
-            />
-          </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-              Payment mode split
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {(["gpay", "cash", "other"] as const).map((m) => {
-                const pct = p.lifetime > 0 ? Math.round((p.modeSplit[m] / p.lifetime) * 100) : 0;
-                return (
-                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      {m}
-                    </p>
-                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(p.modeSplit[m])}</p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-              Service Split
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {(["prepleat", "drape"] as const).map((m) => {
-                const amount = p.serviceSplit?.[m] || 0;
-                const total = (p.serviceSplit?.drape || 0) + (p.serviceSplit?.prepleat || 0);
-                const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
-                return (
-                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      {m}
-                    </p>
-                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(amount)}</p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-              Client vs Artist Split
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {(["client", "artist"] as const).map((m) => {
-                const amount = p.customerKindSplit?.[m] || 0;
-                const total = (p.customerKindSplit?.client || 0) + (p.customerKindSplit?.artist || 0);
-                const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
-                return (
-                  <div key={m} className="bg-secondary rounded-xl p-2 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      {m}
-                    </p>
-                    <p className="font-bold tabular-nums text-sm mt-0.5">{fmtINR(amount)}</p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">{pct}%</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Monthly & Yearly Report
-              </p>
-              <Calendar className="size-3.5 text-primary" />
-            </div>
-            {!p.monthlyYearlyReport || p.monthlyYearlyReport.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No data available</p>
-            ) : (
-              <div className="space-y-4">
-                {p.monthlyYearlyReport.map((y) => (
-                  <div key={y.year}>
-                    <div className="flex items-center justify-between mb-2 border-b border-border/40 pb-1">
-                      <p className="font-bold text-sm">{y.year}</p>
-                      <div className="flex gap-3 text-right">
-                        <div>
-                          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Booked</p>
-                          <p className="font-bold text-xs text-primary tabular-nums">{fmtINR(y.totalBooked)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
-                          <p className="font-bold text-xs text-success tabular-nums">{fmtINR(y.totalCollected)}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      {y.months.map((m) => (
-                        <div key={m.label} className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
-                          <span className="text-xs font-semibold text-muted-foreground w-10">{m.label}</span>
-                          <div className="flex gap-4 text-right">
-                            <div>
-                              <p className="text-[9px] text-muted-foreground">Booked</p>
-                              <p className="text-xs font-semibold tabular-nums text-primary">{fmtINR(m.booked)}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] text-muted-foreground">Collected</p>
-                              <p className="text-xs font-semibold tabular-nums text-success">{fmtINR(m.collected)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Top customers
-              </p>
-              <Crown className="size-3.5 text-gold" />
-            </div>
-            {p.topCustomers.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {p.topCustomers.map((r, i) => (
-                  <li key={r.c!.id}>
-                    <Link
-                      to="/customers/$id"
-                      params={{ id: r.c!.id }}
-                      className="flex items-center gap-2 p-2 -mx-1 rounded-xl active:bg-secondary"
+              {/* Income Transactions List */}
+              {filteredIncomes.length === 0 ? (
+                <div className="bg-card card-shadow rounded-2xl p-6 text-center text-muted-foreground">
+                  <Wallet className="size-8 mx-auto mb-2 opacity-30 text-emerald-500" />
+                  <p className="text-xs font-bold">No income entries found</p>
+                </div>
+              ) : (
+                <div className="bg-card card-shadow rounded-2xl p-3 divide-y divide-border/20 border border-border/30">
+                  {filteredIncomes.map((inc) => (
+                    <div
+                      key={inc.id}
+                      className="flex items-center justify-between gap-3 py-2.5 first:pt-1 last:pb-1"
                     >
-                      <div
-                        className={cn(
-                          "size-7 rounded-full flex items-center justify-center text-[11px] font-bold",
-                          i === 0
-                            ? "bg-gold/20 text-gold"
-                            : i === 1
-                              ? "bg-secondary text-foreground"
-                              : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {i + 1}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-sm truncate">{r.c!.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{r.c!.phone}</p>
-                      </div>
-                      <p className="font-bold text-sm tabular-nums text-success">{fmtINR(r.amount)}</p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="bg-card card-shadow rounded-2xl p-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Recent payments
-              </p>
-              <span className="text-[10px] text-muted-foreground">last {p.recent.length}</span>
-            </div>
-            {p.recent.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No payments yet</p>
-            ) : (
-              <div className="max-h-[250px] overflow-y-auto pr-1">
-                <ul className="space-y-1.5">
-                  {p.recent.map(({ p: pay, c, b }) => (
-                    <li
-                      key={pay.id}
-                      className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-secondary/40 transition"
-                    >
-                      <div
-                        className={cn(
-                          "shrink-0 size-9 rounded-xl flex items-center justify-center text-[9px] font-bold uppercase",
-                          pay.mode === "gpay"
-                            ? "bg-[oklch(0.92_0.08_240)] text-[oklch(0.4_0.18_240)]"
-                            : pay.mode === "cash"
-                              ? "bg-[oklch(0.92_0.1_140)] text-[oklch(0.35_0.15_140)]"
-                              : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {(pay.mode ?? "other").slice(0, 4)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="font-semibold text-sm truncate">{c?.name ?? "Unknown"}</p>
-                          <p className="font-bold tabular-nums text-sm text-success">
-                            {fmtINR(pay.amount)}
-                          </p>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground truncate">
-                          {formatAppDateTime(pay.date)}
-                          {b ? ` · ${b.service}` : ""}
-                        </p>
-                      </div>
-                      {b && (
-                        <Link
-                          to="/bookings/$id"
-                          params={{ id: b.id }}
-                          className="shrink-0 text-primary"
-                        >
-                          <ArrowRight className="size-4" />
-                        </Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Extra income */}
-          <div className="bg-card card-shadow rounded-2xl p-3 mt-3 mb-20">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  Extra income
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  Not tied to bookings · tap + below to add
-                </p>
-              </div>
-              <p className="text-sm font-bold tabular-nums text-success">{fmtINR(p.extraTotal)}</p>
-            </div>
-            {p.extraByCategory.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-3">No extra income yet</p>
-            ) : (
-              <>
-                <ul className="space-y-1.5 mb-3">
-                  {p.extraByCategory.map((row, i) => (
-                    <li key={row.cat}>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-semibold flex items-center gap-1.5">
-                          <span
-                            className={cn(
-                              "size-2 rounded-full",
-                              i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
-                            )}
-                          />
-                          {row.cat}
-                        </span>
-                        <span className="tabular-nums font-bold">
-                          {fmtINR(row.amount)}{" "}
-                          <span className="text-muted-foreground font-normal">· {row.pct}%</span>
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div
                           className={cn(
-                            "h-full",
-                            i === 0 ? "bg-success" : i === 1 ? "bg-primary" : "bg-accent",
+                            "size-9 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-black uppercase",
+                            inc.mode === "gpay"
+                              ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                              : inc.mode === "cash"
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : "bg-purple-500/15 text-purple-600 dark:text-purple-400",
                           )}
-                          style={{ width: `${row.pct}%` }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <div className="max-h-[250px] overflow-y-auto pr-1 border-t border-border pt-2">
-                  <ul className="space-y-1.5">
-                    {p.recentExtra.map((e) => (
-                      <li
-                        key={e.id}
-                        className="flex items-center justify-between gap-3 p-1.5 rounded-xl hover:bg-secondary/40 transition"
-                      >
+                        >
+                          {inc.mode === "gpay" ? "UPI" : inc.mode === "cash" ? "Cash" : "Bank"}
+                        </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <span className="font-semibold text-sm truncate">{e.category}</span>
-                            <p className="font-bold tabular-nums text-sm text-success">
-                              +{fmtINR(e.amount)}
-                            </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-xs text-foreground truncate">{inc.title}</p>
+                            {inc.type === "extra" && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-bold">
+                                Extra
+                              </span>
+                            )}
                           </div>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {formatAppDateTime(e.date)}
-                            {e.note ? ` · ${e.note}` : ""}
+                          <p className="text-[10px] text-muted-foreground truncate">{inc.subtitle}</p>
+                          <p className="text-[9px] text-muted-foreground/80 mt-0.5">
+                            {formatAppDateTime(inc.date)}
                           </p>
                         </div>
-                        <button
-                          onClick={() => p.onDeleteExtra(e.id)}
-                          className="shrink-0 size-8 rounded-full hover:bg-destructive/10 text-destructive flex items-center justify-center cursor-pointer"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          +{fmtINR(inc.amount)}
+                        </span>
+                        {inc.bookingId ? (
+                          <Link
+                            to="/bookings/$id"
+                            params={{ id: inc.bookingId }}
+                            className="size-7 rounded-lg bg-secondary/80 text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-95 transition"
+                          >
+                            <ChevronRight className="size-3.5" />
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => p.onDeleteExtra(inc.id)}
+                            className="size-7 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center active:scale-95 transition cursor-pointer"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3 mb-24">
+              {/* Expenses Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchExpense}
+                  onChange={(e) => setSearchExpense(e.target.value)}
+                  placeholder="Search expenses by category, vendor, note..."
+                  className="w-full bg-card rounded-xl pl-9 pr-8 py-2 text-xs border border-border/40 focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+                />
+                {searchExpense && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchExpense("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 size-5 rounded-full text-muted-foreground hover:text-foreground flex items-center justify-center"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Expenses Transactions List */}
+              {filteredExpenses.length === 0 ? (
+                <div className="bg-card card-shadow rounded-2xl p-6 text-center text-muted-foreground">
+                  <Receipt className="size-8 mx-auto mb-2 opacity-30 text-rose-500" />
+                  <p className="text-xs font-bold">No expenses found</p>
+                </div>
+              ) : (
+                <div className="bg-card card-shadow rounded-2xl p-3 divide-y divide-border/20 border border-border/30">
+                  {filteredExpenses.map((exp: any) => (
+                    <div
+                      key={exp.id}
+                      className="flex items-center justify-between gap-3 py-2.5 first:pt-1 last:pb-1"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="size-9 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 font-bold text-xs">
+                          <Tag className="size-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-xs text-foreground truncate">{exp.category}</p>
+                          {exp.note && (
+                            <p className="text-[10px] text-muted-foreground truncate">{exp.note}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-[9px] text-muted-foreground/80 mt-0.5">
+                            <span>{formatAppDate(exp.date)}</span>
+                            <span className="uppercase font-bold">· {exp.mode || "cash"}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="font-extrabold text-xs text-rose-600 dark:text-rose-400 tabular-nums">
+                          -{fmtINR(exp.amount)}
+                        </span>
+                        {p.onEditTx && (
+                          <button
+                            type="button"
+                            onClick={() => p.onEditTx?.({ ...exp, txType: "expense" })}
+                            className="size-7 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-95 transition cursor-pointer text-[10px] font-bold"
+                            title="Edit"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {p.onDeleteExpense && (
+                          <button
+                            type="button"
+                            onClick={() => p.onDeleteExpense?.(exp.id)}
+                            className="size-7 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center active:scale-95 transition cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       ) : (
         /* Enhanced Pending Payments Hub */
@@ -2412,155 +2295,92 @@ function SummaryView(p: {
 
   return (
     <>
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        {/* Chart Header */}
-        <div className="flex items-center justify-between mb-2.5">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Lifetime Summary (All Time)
-          </p>
+      {/* 📊 Earning & Expense Bar Chart */}
+      <div className="bg-card card-shadow rounded-2xl p-4 mb-3 border border-border/40">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+              <TrendingUp className="size-3.5 text-primary" /> Earning & Expense Bar Chart
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Monthly Financial Overview</p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] font-bold">
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+              <span className="size-2 rounded-full bg-emerald-500 inline-block" /> Income
+            </span>
+            <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
+              <span className="size-2 rounded-full bg-rose-500 inline-block" /> Expense
+            </span>
+          </div>
         </div>
 
-        <div className="h-52 -mx-2">
-          {allTimeWithCumulative.length === 0 ? (
+        <div className="h-44 w-full">
+          {p.trend12.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
-              No transaction data yet
+              No financial data yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={allTimeWithCumulative}
-                margin={{ top: 6, right: 10, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="cumulativeAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  vertical={false}
-                  stroke="var(--color-border)"
-                  strokeDasharray="3 3"
-                  opacity={0.4}
-                />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
+              <BarChart data={p.trend12.slice(-6)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
+                <YAxis
+                  stroke="currentColor"
+                  opacity={0.6}
+                  fontSize={10}
                   tickLine={false}
-                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
                 />
-                {/* Y-axis for cumulative area (top layer) */}
-                <YAxis yAxisId="cumulative" hide domain={[0, allTimeDomains.maxCumulative]} />
-                {/* Y-axis for income/expense bars */}
-                <YAxis yAxisId="bars" hide domain={[0, allTimeDomains.maxBarStacked]} />
-
                 <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 12,
-                    fontSize: 12,
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const inc = Number(payload[0]?.value) || 0;
+                      const exp = Number(payload[1]?.value) || 0;
+                      const net = inc - exp;
+                      return (
+                        <div className="rounded-xl bg-card border border-border p-2.5 shadow-xl text-xs space-y-1">
+                          <p className="font-bold text-foreground border-b border-border/40 pb-1">{label}</p>
+                          <p className="text-emerald-600 font-semibold flex justify-between gap-4">
+                            <span>Income:</span> <strong>{fmtINR(inc)}</strong>
+                          </p>
+                          <p className="text-rose-600 font-semibold flex justify-between gap-4">
+                            <span>Expense:</span> <strong>{fmtINR(exp)}</strong>
+                          </p>
+                          <p
+                            className={cn(
+                              "font-bold pt-1 border-t border-border/30 flex justify-between gap-4",
+                              net >= 0 ? "text-primary" : "text-destructive",
+                            )}
+                          >
+                            <span>Net Profit:</span> <strong>{fmtINR(net)}</strong>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  formatter={(v: number, name: string) => {
-                    const label =
-                      name === "cumulative"
-                        ? "Cumulative Total"
-                        : name === "amount"
-                          ? "Income"
-                          : name === "expense"
-                            ? "Expense"
-                            : name;
-                    return [fmtINR(v), label];
-                  }}
                 />
-
-                {/* Cumulative area — background layer */}
-                <Area
-                  yAxisId="cumulative"
-                  type="monotone"
-                  dataKey="cumulative"
-                  stroke="var(--color-primary)"
-                  strokeWidth={2.5}
-                  strokeOpacity={1.0}
-                  fill="url(#cumulativeAreaGrad)"
-                  dot={{
-                    r: 2.5,
-                    fill: "var(--color-card)",
-                    stroke: "var(--color-primary)",
-                    strokeWidth: 1.5,
-                  }}
-                  activeDot={{ r: 4.5, fill: "var(--color-primary)" }}
-                />
-
-                {/* Stacked Income & Expense bars */}
-                <Bar
-                  yAxisId="bars"
-                  dataKey="amount"
-                  fill="#10b981"
-                  stackId="a"
-                  barSize={10}
-                  opacity={0.85}
-                />
-                <Bar
-                  yAxisId="bars"
-                  dataKey="expense"
-                  fill="#ef4444"
-                  stackId="a"
-                  barSize={10}
-                  radius={[3, 3, 0, 0]}
-                  opacity={0.85}
-                />
-              </ComposedChart>
+                <Bar dataKey="amount" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={24} />
+              </BarChart>
             </ResponsiveContainer>
           )}
         </div>
 
         {/* Milestone badges */}
         {milestones.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
+          <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-border/40">
             {milestones.map((v) => (
               <span
                 key={v}
                 className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary"
               >
-                ✓ {v >= 100000 ? `₹${v / 100000}L` : `₹${v / 1000}k`}
+                ✓ {v >= 100000 ? `₹${v / 100000}L` : `₹${v / 1000}k`} Milestone
               </span>
             ))}
           </div>
         )}
-        {/* Dynamic Helper Insight Banner under the Chart */}
-        <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
-          <span>{metrics}</span>
-        </div>
       </div>
-
-      {/* Outstanding Dues Alert Card */}
-      {p.totalPending > 0 && (
-        <div className="bg-destructive/10 border border-destructive/25 rounded-2xl p-3.5 mb-3 flex items-center justify-between gap-3 card-shadow">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="size-8 rounded-full bg-destructive/20 text-destructive flex items-center justify-center shrink-0 font-bold">
-              <AlertCircle className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">
-                {fmtINR(p.totalPending)} Outstanding Balance
-              </p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                From completed orders awaiting settlement
-              </p>
-            </div>
-          </div>
-          {p.onViewPending && (
-            <button
-              onClick={p.onViewPending}
-              className="px-3 py-1.5 rounded-xl bg-destructive text-destructive-foreground text-[11px] font-bold hover:brightness-95 active:scale-95 transition shrink-0 cursor-pointer flex items-center gap-1 shadow-xs"
-            >
-              <span>Collect</span>
-              <ArrowRight className="size-3" />
-            </button>
-          )}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-2 mb-3">
         <Stat
