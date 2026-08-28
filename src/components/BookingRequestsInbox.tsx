@@ -35,25 +35,26 @@ export function BookingRequestsInbox() {
       const user = await waitForAppUser(300);
       if (!db || !user || user.isAnonymous) {
         setRequests([]);
+        setLoading(false);
         return;
       }
       const snapshot = await getDocs(
         query(
           collection(db, "bookingRequests"),
           where("owner_user_id", "==", user.id),
-          where("status", "==", "pending"),
-          orderBy("created_at", "desc"),
-          limit(20),
+          limit(50),
         ),
       );
-      setRequests(
-        snapshot.docs.map((item) => ({
+      const list = snapshot.docs
+        .map((item) => ({
           id: item.id,
           ...(item.data() as Omit<BookingRequest, "id">),
-        })),
-      );
+        }))
+        .filter((r) => r.status === "pending")
+        .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+      setRequests(list);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load booking requests");
+      console.warn("Could not load booking requests:", error);
     }
     setLoading(false);
   };

@@ -16,7 +16,7 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Capacitor } from "@capacitor/core";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -40,11 +40,27 @@ const globalForFirebase = globalThis as unknown as {
   db: any;
 };
 
-export const db = app 
-  ? globalForFirebase.db || (globalForFirebase.db = initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-    }))
-  : null;
+let firestoreInstance: any = null;
+if (app) {
+  if (globalForFirebase.db) {
+    firestoreInstance = globalForFirebase.db;
+  } else {
+    try {
+      firestoreInstance = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentSingleTabManager({}) }),
+      });
+    } catch {
+      try {
+        firestoreInstance = getFirestore(app);
+      } catch {
+        firestoreInstance = null;
+      }
+    }
+    globalForFirebase.db = firestoreInstance;
+  }
+}
+
+export const db = firestoreInstance;
 
 export type AppUser = {
   id: string;

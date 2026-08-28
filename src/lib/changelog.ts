@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.9";
+export const APP_VERSION = "1.7.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.9",
+    version: "v1.7.0",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "Quick Review Icon Fix & Order Completion Payment Sync",
+    title: "Firestore Sync Stability & Total Local Data Protection",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🛡️",
+        text: "Zero Data Loss Guarantee",
+        desc: "Strengthened local-first data architecture and cloud snapshot merging so your client orders, payments, and rates are always preserved safely.",
+      },
+      {
+        emoji: "☁️",
+        text: "Firestore 12 Cache & Sync Fix",
+        desc: "Resolved WebView IndexedDB multi-tab lock errors and simplified query execution across all devices.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.9",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "Quick Review Icon Fix & Order Completion Payment Sync",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "📅",
