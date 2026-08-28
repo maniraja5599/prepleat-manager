@@ -501,14 +501,15 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
       });
     }
 
-    return items;
+    return items.filter((item) => item && item.text && item.text.trim().length > 0);
   };
 
   const triggerPillCycle = (item: typeof currentNotification, durationMs = 4000) => {
+    if (!item || !item.text || item.text.trim().length === 0) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     setCurrentNotification(item);
     setShowPill(true);
-    const duration = (item?.text.length || 0) > 20 ? 8000 : durationMs;
+    const duration = (item.text.length || 0) > 20 ? 8000 : durationMs;
     timerRef.current = setTimeout(() => {
       setShowPill(false);
     }, duration);
@@ -549,7 +550,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     };
   }, [bookings, sync.syncStatus, customers]);
 
-  const currentText = currentNotification?.text || "";
+  const currentText = currentNotification?.text?.trim() || "";
+  const hasValidText = currentText.length > 0;
   const isLongText = currentText.length > 20;
 
   return (
@@ -588,7 +590,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               }}
               className={cn(
                 "h-7 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden origin-right",
-                showPill && currentNotification
+                showPill && hasValidText
                   ? "max-w-[105px] xs:max-w-[130px] px-2 opacity-100 border-border/10 scale-100"
                   : "max-w-0 px-0 opacity-0 border-transparent scale-95 pointer-events-none",
                 currentNotification?.color,

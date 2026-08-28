@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.6";
+export const APP_VERSION = "1.6.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,40 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.6",
+    version: "v1.6.7",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "Finances Dashboard, Pending Dues Ledger, Complete Payment Alerts & Header Ticker Polish",
+    title: "Finances Default Summary, Smart +Transaction, Instant Autofill & Android Keyboard Polish",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Summary First on Finances",
+        desc: "Finances page now opens directly to the Revenue & Summary analytics tab with a unified +Transaction drawer.",
+      },
+      {
+        emoji: "⚡",
+        text: "Instant Clipboard Auto-Fill",
+        desc: "Instant 1-tap phone autofill without popups or extra confirmation dialogs.",
+      },
+      {
+        emoji: "📱",
+        text: "Android Keyboard Optimization",
+        desc: "Removed autoFocus on modal inputs and improved keyboard responsiveness so bottom navigation never overlaps keyboard.",
+      },
+      {
+        emoji: "✨",
+        text: "Customer Display & Quick Review Polish",
+        desc: "Prominent customer name styling, single-line mobile phone prompts, and structured Quick Review bottom sheet.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.6",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "Finances Dashboard, Pending Dues Ledger, Complete Payment Alerts & Header Ticker Polish",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "💰",

@@ -33,18 +33,29 @@ export function BottomNav() {
       );
       if (window.visualViewport) {
         const heightDiff = window.innerHeight - window.visualViewport.height;
-        setIsKeyboardOpen(heightDiff > 120 || (isInputFocused && heightDiff > 50));
+        setIsKeyboardOpen(heightDiff > 80 || isInputFocused);
       } else {
         setIsKeyboardOpen(isInputFocused);
       }
     };
 
-    const handleFocusIn = () => {
-      setTimeout(checkKeyboard, 100);
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+        setIsKeyboardOpen(true);
+      }
+      setTimeout(checkKeyboard, 50);
     };
 
     const handleFocusOut = () => {
-      setTimeout(() => setIsKeyboardOpen(false), 150);
+      setTimeout(() => {
+        const isInputFocused = ["INPUT", "TEXTAREA", "SELECT"].includes(
+          document.activeElement?.tagName || ""
+        );
+        if (!isInputFocused) {
+          setIsKeyboardOpen(false);
+        }
+      }, 100);
     };
 
     window.visualViewport?.addEventListener("resize", checkKeyboard);

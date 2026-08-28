@@ -911,48 +911,18 @@ function PaymentsPage() {
         />
       )}
 
-      {/* Floating Action Button */}
-      {tab === "income" && (
-        <button
-          onClick={() => {
-            setAddTransactionType("income");
-            setAddTransactionOpen(true);
-          }}
-          className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-success hover:bg-success/90 text-white shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
-          aria-label="Add income"
-        >
-          <Plus className="size-4" />
-          <span className="text-xs font-bold uppercase tracking-wider">Add Income</span>
-        </button>
-      )}
-
-      {tab === "expenses" && (
-        <button
-          onClick={() => {
-            setAddTransactionType("expense");
-            setAddTransactionOpen(true);
-          }}
-          className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-destructive hover:bg-destructive/90 text-white shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
-          aria-label="Add expense"
-        >
-          <Plus className="size-4" />
-          <span className="text-xs font-bold uppercase tracking-wider">Add Expense</span>
-        </button>
-      )}
-
-      {tab === "summary" && (
-        <button
-          onClick={() => {
-            setAddTransactionType("income"); // pre-select income on summary tab
-            setAddTransactionOpen(true);
-          }}
-          className="fixed bottom-28 right-4 z-30 h-10 px-4 bg-primary text-primary-foreground shadow-xl rounded-full flex items-center gap-1 active:scale-95 transition cursor-pointer"
-          aria-label="Add transaction"
-        >
-          <Plus className="size-4" />
-          <span className="text-xs font-bold uppercase tracking-wider">Add</span>
-        </button>
-      )}
+      {/* Floating Action Button (Smart Income / Expense entry) */}
+      <button
+        onClick={() => {
+          setAddTransactionType("income");
+          setAddTransactionOpen(true);
+        }}
+        className="fixed bottom-24 right-4 z-30 h-11 px-4 saree-gradient text-white shadow-xl rounded-full flex items-center gap-1.5 active:scale-95 transition cursor-pointer font-bold text-xs uppercase tracking-wider border border-white/20"
+        aria-label="Add transaction"
+      >
+        <Plus className="size-4 stroke-[3]" />
+        <span>+ Transaction</span>
+      </button>
 
       {addTransactionOpen && (
         <AddTransactionSheet
@@ -1918,7 +1888,6 @@ function IncomeView(p: {
                       onChange={(e) => setCollectAmount(e.target.value)}
                       className="bg-transparent flex-1 pl-1 text-xl font-bold tabular-nums focus:outline-none"
                       placeholder={String(collectTarget.due)}
-                      autoFocus
                     />
                     {Number(collectAmount) !== collectTarget.due && (
                       <button
@@ -3099,7 +3068,7 @@ function EditTransactionSheet({
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Amount</label>
         <div className={cn("relative mt-1 mb-3 transition-colors duration-300 border-2 rounded-2xl flex items-center px-3 py-2 bg-secondary", isIncome ? "focus-within:border-success/50 border-transparent" : "focus-within:border-destructive/50 border-transparent")}>
           <IndianRupee className="size-5 text-muted-foreground" />
-          <input type="number" inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="bg-transparent flex-1 pl-1 text-2xl font-bold tabular-nums focus:outline-none" />
+          <input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="bg-transparent flex-1 pl-1 text-2xl font-bold tabular-nums focus:outline-none" />
         </div>
 
         {/* Category Selection */}
@@ -3289,7 +3258,6 @@ function AddTransactionSheet({
           <input
             type="number"
             inputMode="decimal"
-            autoFocus
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"

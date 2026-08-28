@@ -36,6 +36,7 @@ import {
   RotateCcw,
   CheckCircle,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -867,26 +868,28 @@ function NewBooking() {
           {customerId && selectedCust ? (
             <div>
               <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-sm">{selectedCust.name}</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display font-bold text-base text-foreground tracking-tight truncate">
+                    {selectedCust.name}
+                  </h3>
                   {selectedCust.phone ? (
                     !isEditingPhone ? (
-                      <div className="mt-2.5 flex items-center gap-2 bg-secondary/50 px-3.5 py-2.5 rounded-2xl border border-border/10">
-                        <Phone className="size-4 text-muted-foreground" />
-                        <span className="text-sm font-semibold tabular-nums">{selectedCust.phone}</span>
+                      <div className="mt-2 flex items-center gap-2 bg-secondary/50 px-3 py-2 rounded-xl border border-border/10">
+                        <Phone className="size-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-xs font-semibold tabular-nums">{selectedCust.phone}</span>
                         <button
                           type="button"
                           onClick={() => {
                             setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
                             setIsEditingPhone(true);
                           }}
-                          className="ml-auto text-xs text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95"
+                          className="ml-auto text-[11px] text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95"
                         >
                           Edit
                         </button>
                       </div>
                     ) : (
-                      <div className="mt-2.5 relative">
+                      <div className="mt-2 relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                         <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
                           +91
@@ -897,7 +900,7 @@ function NewBooking() {
                           value={newPhone}
                           onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
                           placeholder="Mobile number"
-                          className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-3 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                         <button
                           type="button"
@@ -912,17 +915,20 @@ function NewBooking() {
                       </div>
                     )
                   ) : (
-                    <div className="mt-2.5">
+                    <div className="mt-2">
                       {!isEditingPhone ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-nowrap overflow-hidden">
                           <button
                             type="button"
                             onClick={() => setIsEditingPhone(true)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
                           >
-                            <Plus className="size-3.5" /> Add Mobile Number
+                            <Plus className="size-3.5 shrink-0" />
+                            <span>Add Mobile</span>
                           </button>
-                          <span className="text-[11px] text-muted-foreground">No mobile number saved</span>
+                          <span className="text-[11px] text-muted-foreground whitespace-nowrap truncate">
+                            (No mobile saved)
+                          </span>
                         </div>
                       ) : (
                         <div className="relative">
@@ -936,7 +942,7 @@ function NewBooking() {
                             value={newPhone}
                             onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
                             placeholder="Mobile number"
-                            className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-3 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                           <button
                             type="button"
@@ -1871,23 +1877,24 @@ function NewBooking() {
 
       {reviewOpen && (
         <div
-          className="fixed inset-0 z-[20000] bg-black/50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setReviewOpen(false)}
         >
           <div
-            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl overflow-hidden"
+            className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl overflow-hidden border border-border/40 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="saree-gradient -mx-5 -mt-5 px-5 py-4 text-primary-foreground mb-4 shadow-sm">
+            {/* Header Gradient Card */}
+            <div className="saree-gradient -mx-5 -mt-5 px-5 py-4 text-primary-foreground mb-4 shadow-sm relative overflow-hidden">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] uppercase tracking-wider opacity-90 font-black">
-                  Quick Review
+                <span className="text-[9px] uppercase tracking-wider opacity-90 font-black flex items-center gap-1">
+                  <Sparkles className="size-3" /> Quick Review
                 </span>
-                <span className="text-[9px] uppercase tracking-wider opacity-90 font-black bg-white/20 px-2 py-0.5 rounded-full">
-                  {bookingSource === "artist" ? "Artist" : "Direct"}
+                <span className="text-[9px] uppercase tracking-wider font-bold bg-white/20 px-2.5 py-0.5 rounded-full border border-white/10">
+                  {bookingSource === "artist" ? "Artist Booking" : "Direct Client"}
                 </span>
               </div>
-              <h4 className="text-lg font-display font-extrabold truncate mt-1.5 leading-tight">
+              <h4 className="text-xl font-display font-extrabold truncate mt-2 leading-tight">
                 {bookingSource === "artist"
                   ? (artists.find((a) => a.id === artistId)?.name ?? "Artist")
                   : selectedCust?.name || newName || "Walk-in Customer"}
@@ -1898,38 +1905,72 @@ function NewBooking() {
                 </p>
               )}
             </div>
-            <ReviewRow label="Service" value={service === "prepleat" ? "PrePleat" : "Drape"} />
-            <ReviewRow label="Customer" value={selectedCust?.name || newName} />
-            <ReviewRow label="Sarees" value={`${sareeCount} × ${fmtINR(effPrice)}`} />
-            <ReviewRow
-              label="Delivery"
-              value={`${formatAppDate(deliveryDate)} · ${fmtTime12(deliveryTime)}`}
-            />
-            {artistId && (
-              <ReviewRow
-                label="Artist"
-                value={artists.find((a) => a.id === artistId)?.name ?? ""}
-              />
-            )}
-            <ReviewRow label="Total" value={fmtINR(total)} bold />
-            <ReviewRow label="Advance" value={fmtINR(advNum)} />
-            <ReviewRow label="Remaining" value={fmtINR(remaining)} />
+
+            {/* Order Details Grid */}
+            <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/30 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Service:</span>
+                <span className="font-bold text-foreground uppercase tracking-wider text-[10px] px-2 py-0.5 bg-secondary rounded-lg border border-border/20">
+                  {service === "prepleat" ? "PrePleat Service" : "Saree Draping"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Sarees:</span>
+                <span className="font-bold text-foreground">
+                  {sareeCount} {sareeCount === 1 ? "Saree" : "Sarees"} × {fmtINR(effPrice)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Delivery:</span>
+                <span className="font-bold text-foreground flex items-center gap-1">
+                  <Calendar className="size-3.5 text-primary" />
+                  {formatAppDate(deliveryDate)} · {fmtTime12(deliveryTime)}
+                </span>
+              </div>
+              {artistId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">Artist:</span>
+                  <span className="font-bold text-foreground">
+                    {artists.find((a) => a.id === artistId)?.name ?? ""}
+                  </span>
+                </div>
+              )}
+              <div className="border-t border-border/30 pt-2 flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Total Bill:</span>
+                <span className="text-base font-extrabold text-foreground">{fmtINR(total)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Advance Paid:</span>
+                <span className="font-bold text-success">
+                  {advNum > 0 ? fmtINR(advNum) : "₹0 (No Advance)"}
+                </span>
+              </div>
+              <div className="border-t border-border/30 pt-2 flex justify-between items-center font-bold">
+                <span>Remaining Due:</span>
+                <span className={cn("text-base font-extrabold", remaining > 0 ? "text-destructive" : "text-success")}>
+                  {remaining > 0 ? fmtINR(remaining) : "₹0 (Fully Paid)"}
+                </span>
+              </div>
+            </div>
+
+            {/* Measurements Section */}
             {showMeasure && measurements.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                  Measurements (inch)
+              <div className="mt-3 bg-secondary/30 rounded-2xl p-3 border border-border/20">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-2">
+                  Measurements (Inches)
                 </p>
-                <div className="flex gap-3 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {measurements.map((m) => (
-                    <span key={m.label} className="text-xs">
-                      <span className="text-muted-foreground">{m.label}</span>{" "}
-                      <span className="font-bold tabular-nums">{m.value}″</span>
+                    <span key={m.label} className="text-xs px-2.5 py-1 rounded-xl bg-card border border-border/40 flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{m.label}:</span>
+                      <strong className="font-bold tabular-nums text-foreground">{m.value}″</strong>
                     </span>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* WhatsApp Confirmation Toggle */}
             {service === "prepleat" && (
               <div className="mt-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -1962,7 +2003,7 @@ function NewBooking() {
               <button
                 type="button"
                 onClick={() => setReviewOpen(false)}
-                className="py-2.5 rounded-xl bg-secondary text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95"
+                className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 cursor-pointer border border-border/40"
               >
                 Edit
               </button>
@@ -1976,7 +2017,7 @@ function NewBooking() {
                     confirmSave();
                   }
                 }}
-                className="py-2.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-sm shadow-primary/20"
+                className="py-3 rounded-xl saree-gradient text-white text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-md shadow-primary/25 cursor-pointer"
               >
                 Confirm & Save
               </button>
