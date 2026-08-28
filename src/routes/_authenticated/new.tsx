@@ -580,8 +580,7 @@ function NewBooking() {
           `• *Advance Paid*: ${fmtINR(paid)}`,
           dueBal > 0 ? `• *Balance Due*: *${fmtINR(dueBal)}*` : `• *Status*: ✅ *Paid in Full* ✅`,
           ``,
-          `✨ _Wear with confidence & elegance!_`,
-          `🙏 *Eyas Saree Drapist*`,
+          `🙏 *${settings.businessName || "Saree Studio"}*`,
         ].filter((l) => l !== "");
 
         const waText = encodeURIComponent(msgLines.join("\n"));

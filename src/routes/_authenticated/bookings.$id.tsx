@@ -186,9 +186,12 @@ function BookingDetail() {
       ].filter((l) => l !== "");
     }
 
+    const bizTitle = (settings.businessName || "Saree Studio").toUpperCase();
+    const bizSign = `${settings.businessName || "Saree Studio"} 🙏`;
+
     if (kind === "delivered") {
       parts = [
-        `🎊 *EYAS SAREE DRAPIST* 🎊`,
+        `🎊 *${bizTitle}* 🎊`,
         `_Order Delivered & Completed_ ✨`,
         ``,
         `Dear *${name}* 🙏`,
@@ -208,14 +211,14 @@ function BookingDetail() {
         `💖 _We hope you love your perfect pleats!_`,
         `📸 _Please share your saree drape photos with us!_`,
         ``,
-        `✨ *Thank you for choosing Eyas!* 🙏`,
+        `✨ *Thank you for choosing ${settings.businessName || "us"}!* 🙏`,
       ].filter((l) => l !== "");
     }
 
     if (kind === "status") {
       if (booking.status === "completed") {
         parts = [
-          `🥻 *EYAS SAREE DRAPIST* 🥻`,
+          `🥻 *${bizTitle}* 🥻`,
           ``,
           ``,
           `Hi *${name}* 🙏`,
@@ -236,11 +239,11 @@ function BookingDetail() {
           ``,
           ``,
           `Wear with confidence & elegance! ✨`,
-          `Eyas Saree Drapist 🙏`,
+          bizSign,
         ].filter((l) => l !== "");
       } else {
         parts = [
-          `🥻 *EYAS SAREE DRAPIST* 🥻`,
+          `🥻 *${bizTitle}* 🥻`,
           ``,
           ``,
           `Hi *${name}* 🙏`,
@@ -261,14 +264,14 @@ function BookingDetail() {
           ``,
           ``,
           `Wear with confidence & elegance! ✨`,
-          `Eyas Saree Drapist 🙏`,
+          bizSign,
         ].filter((l) => l !== "");
       }
     }
     
     if (kind === "balance") {
       parts = [
-        `🥻 *EYAS SAREE DRAPIST* 🥻`,
+        `🥻 *${bizTitle}* 🥻`,
         ``,
         ``,
         `Hi *${name}* 🙏`,
@@ -293,13 +296,13 @@ function BookingDetail() {
         ``,
         ``,
         `Wear with confidence & elegance! ✨`,
-        `Eyas Saree Drapist 🙏`,
+        bizSign,
       ].filter((l) => l !== "");
     }
     
     if (kind === "bill") {
       parts = [
-        `🥻 *EYAS SAREE DRAPIST* 🥻`,
+        `🥻 *${bizTitle}* 🥻`,
         ``,
         ``,
         `Hi *${name}* 🙏`,
@@ -321,7 +324,7 @@ function BookingDetail() {
         ``,
         ``,
         `Wear with confidence & elegance! ✨`,
-        `Eyas Saree Drapist 🙏`,
+        bizSign,
       ].filter((l) => l !== "");
     }
 
@@ -1770,7 +1773,7 @@ function BookingDetail() {
                         `💖 _We hope you love your perfect pleats!_`,
                         `📸 _Please share your saree drape photos with us!_`,
                         ``,
-                        `✨ *Thank you for choosing Eyas!* 🙏`,
+                        `✨ *Thank you for choosing ${settings.businessName || "us"}!* 🙏`,
                       ].filter((l) => l !== "");
 
                       setCompletionDeliveryPreview({
@@ -1971,7 +1974,7 @@ function BookingDetail() {
                 <a
                   href={`https://wa.me/${cleanPhoneForWhatsApp(recordedPaymentSuccess.phone)}?text=${encodeURIComponent(
                     [
-                      `💵 *EYAS SAREE DRAPIST* 💵`,
+                      `💵 *${settings.businessName || "EYAS SAREE DRAPIST"}* 💵`,
                       `_Payment Confirmation Receipt_ 🧾`,
                       ``,
                       `Hi *${recordedPaymentSuccess.customerName}* 🙏`,
@@ -1989,7 +1992,7 @@ function BookingDetail() {
                         : `• *Remaining Balance*: *${fmtINR(recordedPaymentSuccess.newRemainingDue)}*`,
                       ``,
                       `✨ _Wear with confidence & elegance!_`,
-                      `🙏 *Eyas Saree Drapist*`,
+                      `🙏 *${settings.businessName || "Eyas Saree Drapist"}*`,
                     ].join("\n")
                   )}`}
                   target="_blank"

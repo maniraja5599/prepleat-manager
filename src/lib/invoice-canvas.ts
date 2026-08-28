@@ -359,12 +359,12 @@ export function drawInvoiceCanvas(opts: InvoiceDrawOptions): HTMLCanvasElement {
   ctx.fillStyle = "#334155";
   ctx.font = "bold 13px 'Segoe UI', Tahoma, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(settings.businessName || "EYAS SAREE DRAPIST", 36, footerY + 32);
+  ctx.fillText(settings.businessName ? settings.businessName.toUpperCase() : "SAREE STUDIO", 36, footerY + 32);
 
   ctx.fillStyle = "#64748b";
   ctx.font = "italic 13px Georgia, serif";
   ctx.textAlign = "right";
-  ctx.fillText("Thank you for choosing Eyas! 🙏", W - 36, footerY + 32);
+  ctx.fillText(`Thank you for choosing ${settings.businessName || "us"}! 🙏`, W - 36, footerY + 32);
 
   return canvas;
 }

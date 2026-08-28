@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.1";
+export const APP_VERSION = "1.7.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.1",
+    version: "v1.7.2",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "Digital Bill Book, White-Label Branding & Revenue Trend Line",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🧾",
+        text: "Smart Digital Bill Book Cards",
+        desc: "Redesigned bookings and bill register into distinct invoice ledger cards with bill badges, instant call/WhatsApp, and live payment status.",
+      },
+      {
+        emoji: "🏷️",
+        text: "100% White-Label Business Branding",
+        desc: "All PDF invoices, rubber stamps, WhatsApp messages, and receipts dynamically adapt to your business name and brand logo from Settings.",
+      },
+      {
+        emoji: "📈",
+        text: "Monthly Revenue & Cashflow Trend",
+        desc: "Enhanced financial summary with smooth revenue area and line charts, plus clean milestone highlights.",
+      },
+      {
+        emoji: "🔔",
+        text: "Delivered Today Header Ticker",
+        desc: "Optimized notification bar with clear font visibility and smooth ticker transitions.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.1",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "Income/Expense Sub-Tabs, Clean Details & Earning Bar Chart",
     badge: "LATEST UPDATE ✨",
     changes: [

@@ -1806,9 +1806,6 @@ function SettingsPage() {
                       {`#1 → #${useStore.getState().bookings.length}`}
                     </span>
                   </button>
-                  <p className="text-[11px] text-muted-foreground mt-2 px-1">
-                    Re-sorts all bookings chronologically and renumbers them sequentially from #1 onwards without duplicates.
-                  </p>
                 </div>
                 <input
                   type="file"

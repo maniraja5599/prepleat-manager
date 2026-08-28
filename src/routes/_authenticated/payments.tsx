@@ -916,17 +916,18 @@ function PaymentsPage() {
         />
       )}
 
-      {/* Floating Action Button (Smart Income / Expense entry) */}
+      {/* Floating Action Button (Compact Extra Income / Expense entry) */}
       <button
         onClick={() => {
           setAddTransactionType("income");
           setAddTransactionOpen(true);
         }}
-        className="fixed bottom-24 right-4 z-30 h-11 px-4 saree-gradient text-white shadow-xl rounded-full flex items-center gap-1.5 active:scale-95 transition cursor-pointer font-bold text-xs uppercase tracking-wider border border-white/20"
-        aria-label="Add transaction"
+        className="fixed bottom-24 right-4 z-30 h-9 px-3.5 saree-gradient text-white shadow-xl rounded-full flex items-center gap-1.5 active:scale-95 transition cursor-pointer font-bold text-[11px] tracking-wide border border-white/20"
+        aria-label="Add extra income or shop expense"
+        title="Add Extra Income or Shop Expense (Booking payments are tracked automatically)"
       >
-        <Plus className="size-4 stroke-[3]" />
-        <span>+ Transaction</span>
+        <Plus className="size-3.5 stroke-[3]" />
+        <span>+ Quick Entry</span>
       </button>
 
       {addTransactionOpen && (
@@ -1222,6 +1223,43 @@ function IncomeView(p: {
 
       {p.subFilter === "collected" ? (
         <>
+          {/* Income & Expense Live Financial Summary Cards */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="bg-card card-shadow rounded-2xl p-3 border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                  <TrendingUp className="size-3 text-emerald-500" /> Total Income
+                </span>
+                <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.2 rounded-full">
+                  {allIncomesList.length} txs
+                </span>
+              </div>
+              <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                +{fmtINR(p.lifetime)}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">
+                Avg: {fmtINR(allIncomesList.length > 0 ? Math.round(p.lifetime / allIncomesList.length) : 0)} / receipt
+              </p>
+            </div>
+
+            <div className="bg-card card-shadow rounded-2xl p-3 border border-rose-500/20 bg-gradient-to-br from-card to-rose-500/5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                  <TrendingDown className="size-3 text-rose-500" /> Total Expenses
+                </span>
+                <span className="text-[9px] bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold px-1.5 py-0.2 rounded-full">
+                  {p.expenses?.length || 0} txs
+                </span>
+              </div>
+              <p className="text-base font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
+                -{fmtINR(p.totalExpense || 0)}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">
+                Net: {fmtINR(p.lifetime - (p.totalExpense || 0))}
+              </p>
+            </div>
+          </div>
+
           {/* Sub-Tabs: Income vs Expense */}
           <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3.5 card-shadow">
             <button
@@ -1529,8 +1567,9 @@ function IncomeView(p: {
                       ? "Draping"
                       : "PrePleat + Drape";
 
+                const bizName = p.settings?.businessName || "Saree Studio";
                 const waMessage = [
-                  `🥻 *EYAS SAREE DRAPIST* 🥻`,
+                  `🥻 *${bizName.toUpperCase()}* 🥻`,
                   ``,
                   ``,
                   `Hi *${item.name}* 🙏`,
@@ -1557,7 +1596,7 @@ function IncomeView(p: {
                   ``,
                   ``,
                   `Wear with confidence & elegance! ✨`,
-                  `Eyas Saree Drapist 🙏`,
+                  `${bizName} 🙏`,
                 ]
                   .filter((l) => l !== "")
                   .join("\n");
@@ -1968,7 +2007,7 @@ function IncomeView(p: {
                     <a
                       href={`https://wa.me/${cleanPhoneForWhatsApp(recordedSuccess.phone)}?text=${encodeURIComponent(
                         [
-                          `💵 *EYAS SAREE DRAPIST* 💵`,
+                          `💵 *${(p.settings?.businessName || "Saree Studio").toUpperCase()}* 💵`,
                           `_Payment Confirmation Receipt_ 🧾`,
                           ``,
                           `Hi *${recordedSuccess.customerName}* 🙏`,
@@ -1986,7 +2025,7 @@ function IncomeView(p: {
                             : `• *Remaining Balance*: *${fmtINR(recordedSuccess.newRemainingDue)}*`,
                           ``,
                           `✨ _Wear with confidence & elegance!_`,
-                          `🙏 *Eyas Saree Drapist*`,
+                          `🙏 *${p.settings?.businessName || "Saree Studio"}*`,
                         ].join("\n")
                       )}`}
                       target="_blank"
@@ -2279,14 +2318,12 @@ function SummaryView(p: {
     };
   }, [p.allTimeTrend]);
 
-  // Milestone badges for cumulative
-  const milestones = useMemo(
-    () =>
-      [25000, 50000, 75000, 100000, 150000, 200000, 300000, 500000].filter(
-        (v) => v <= lifetimeCumulative,
-      ),
-    [lifetimeCumulative],
-  );
+  // Single latest milestone badge
+  const latestMilestone = useMemo(() => {
+    const list = [25000, 50000, 75000, 100000, 150000, 200000, 300000, 500000, 1000000];
+    const achieved = list.filter((v) => v <= lifetimeCumulative);
+    return achieved.length > 0 ? achieved[achieved.length - 1] : null;
+  }, [lifetimeCumulative]);
 
   // Memos for dynamic helper metrics under the chart
   const metrics = useMemo(() => {
@@ -2295,14 +2332,14 @@ function SummaryView(p: {
 
   return (
     <>
-      {/* 📊 Earning & Expense Bar Chart */}
+      {/* 📈 Earning & Expense Trend Line Chart */}
       <div className="bg-card card-shadow rounded-2xl p-4 mb-3 border border-border/40">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-              <TrendingUp className="size-3.5 text-primary" /> Earning & Expense Bar Chart
+              <TrendingUp className="size-3.5 text-primary" /> Monthly Revenue Trend
             </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Monthly Financial Overview</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Last 12 Months Cashflow</p>
           </div>
           <div className="flex items-center gap-3 text-[10px] font-bold">
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
@@ -2314,14 +2351,20 @@ function SummaryView(p: {
           </div>
         </div>
 
-        <div className="h-44 w-full">
+        <div className="h-44 w-full -mx-1">
           {p.trend12.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={p.trend12.slice(-6)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={p.trend12} margin={{ top: 8, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="incAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                 <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
                 <YAxis
@@ -2360,24 +2403,35 @@ function SummaryView(p: {
                     return null;
                   }}
                 />
-                <Bar dataKey="amount" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={24} />
-              </BarChart>
+                <Area
+                  type="monotone"
+                  dataKey="amount"
+                  name="Income"
+                  stroke="#10b981"
+                  strokeWidth={2.5}
+                  fill="url(#incAreaGrad)"
+                  dot={{ r: 2.5, fill: "#10b981" }}
+                  activeDot={{ r: 4.5, fill: "#10b981" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="expense"
+                  name="Expense"
+                  stroke="#f43f5e"
+                  strokeWidth={2}
+                  dot={{ r: 2, fill: "#f43f5e" }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        {/* Milestone badges */}
-        {milestones.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-border/40">
-            {milestones.map((v) => (
-              <span
-                key={v}
-                className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary"
-              >
-                ✓ {v >= 100000 ? `₹${v / 100000}L` : `₹${v / 1000}k`} Milestone
-              </span>
-            ))}
+        {/* Single Latest Milestone badge */}
+        {latestMilestone && (
+          <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between">
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              🎉 Latest Milestone: {latestMilestone >= 100000 ? `₹${latestMilestone / 100000} Lakh` : `₹${latestMilestone / 1000}k`} Lifetime Revenue!
+            </span>
           </div>
         )}
       </div>
@@ -3010,18 +3064,23 @@ function AddTransactionSheet({
       <div className="fixed inset-0 z-[19999] bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-[20000] bg-card rounded-t-3xl p-4 pb-6 max-h-[85vh] overflow-y-auto card-shadow transition-all duration-300 border-t border-border">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h3
-            className={cn(
-              "font-display font-bold text-lg transition-colors duration-300",
-              isIncome ? "text-success" : "text-destructive",
-            )}
-          >
-            New {isIncome ? "Income" : "Expense"}
-          </h3>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3
+              className={cn(
+                "font-display font-bold text-base transition-colors duration-300",
+                isIncome ? "text-success" : "text-destructive",
+              )}
+            >
+              Log Extra {isIncome ? "Income" : "Expense"}
+            </h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              For manual extra earnings & shop spending only (Order payments are automatically recorded).
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+            className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer shrink-0"
           >
             <X className="size-4" />
           </button>

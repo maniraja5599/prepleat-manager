@@ -100,7 +100,7 @@ export function PDFPreviewModal({
         : `✅ *Payment Status*: *PAID IN FULL* ✓`,
       ``,
       `✨ _Wear with confidence & elegance!_`,
-      `🙏 *Eyas Saree Drapist*`,
+      `🙏 *${settings.businessName || "Saree Studio"}*`,
     ].join("\n");
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
@@ -376,9 +376,9 @@ export function PDFPreviewModal({
               style={{ backgroundColor: "#f8fafc", borderTop: "1px solid #e2e8f0", color: "#64748b" }}
             >
               <span className="font-semibold text-slate-700">
-                {settings.businessName || "Eyas Saree Drapist"}
+                {settings.businessName || "Saree Studio"}
               </span>
-              <span className="italic">Thank you for choosing Eyas! 🙏</span>
+              <span className="italic">Thank you for choosing {settings.businessName || "us"}! 🙏</span>
             </div>
           </div>
         </div>

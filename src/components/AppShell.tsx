@@ -589,34 +589,34 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 setActiveTab("all");
               }}
               className={cn(
-                "h-7 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden origin-right",
+                "h-7.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden origin-right",
                 showPill && hasValidText
-                  ? "max-w-[105px] xs:max-w-[130px] px-2 opacity-100 border-border/10 scale-100"
+                  ? "max-w-[170px] xs:max-w-[210px] px-2.5 opacity-100 border-border/20 scale-100 shadow-xs"
                   : "max-w-0 px-0 opacity-0 border-transparent scale-95 pointer-events-none",
                 currentNotification?.color,
               )}
             >
               {currentNotification?.icon === "syncing" && (
-                <RefreshCw className="size-2.5 animate-spin shrink-0" />
+                <RefreshCw className="size-3 animate-spin shrink-0" />
               )}
-              {currentNotification?.icon === "offline" && <CloudOff className="size-2.5 shrink-0" />}
+              {currentNotification?.icon === "offline" && <CloudOff className="size-3 shrink-0" />}
               {currentNotification?.icon === "error" && (
-                <AlertCircle className="size-2.5 animate-shake-sm text-red-500 shrink-0" />
+                <AlertCircle className="size-3 animate-shake-sm text-red-500 shrink-0" />
               )}
-              {currentNotification?.icon === "synced" && <Check className="size-2.5 shrink-0" />}
+              {currentNotification?.icon === "synced" && <Check className="size-3 shrink-0" />}
               {currentNotification?.icon === "calendar" && (
-                <Calendar className="size-2.5 text-primary shrink-0" />
+                <Calendar className="size-3 text-primary shrink-0" />
               )}
               {currentNotification?.icon === "clock" && (
-                <Clock className="size-2.5 text-indigo-500 shrink-0" />
+                <Clock className="size-3 text-indigo-500 shrink-0" />
               )}
               {currentNotification?.icon === "wallet" && (
-                <Wallet className="size-2.5 text-rose-500 shrink-0" />
+                <Wallet className="size-3 text-rose-500 shrink-0" />
               )}
               {isLongText ? (
-                <div key={currentText} className="w-[75px] xs:w-[95px] overflow-hidden h-7 relative shrink-0">
+                <div key={currentText} className="w-[130px] xs:w-[165px] overflow-hidden h-7.5 relative shrink-0">
                   <div className="absolute inset-x-0 w-full animate-scroll-up-slow flex flex-col justify-start">
-                    <span className="whitespace-normal leading-tight text-[8px] pt-[28px] pb-1 font-bold">
+                    <span className="whitespace-normal leading-snug text-[8.5px] pt-[28px] pb-1 font-bold">
                       {currentText}
                     </span>
                   </div>
@@ -624,7 +624,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               ) : (
                 <span 
                   key={currentText} 
-                  className="truncate whitespace-nowrap text-[8px] animate-slide-up-single"
+                  className="truncate whitespace-nowrap text-[8.5px] font-bold animate-slide-up-single"
                 >
                   {currentText}
                 </span>

@@ -118,8 +118,7 @@ function CustomerDetail() {
 
     lines.push(``);
     lines.push(``);
-    lines.push(`Wear with confidence & elegance! ✨`);
-    lines.push(`Eyas Saree Drapist 🙏`);
+    lines.push(`${businessName} 🙏`);
 
     if (withLink) {
       lines.push("");
