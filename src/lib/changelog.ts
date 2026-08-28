@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.7";
+export const APP_VERSION = "1.6.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.7",
+    version: "v1.6.8",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "Finances Default Summary, Smart +Transaction, Instant Autofill & Android Keyboard Polish",
+    title: "Settings Navigation Overhaul: 4-Card Category Switcher & High-Contrast Sub-Sections",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🎛️",
+        text: "4-Card Settings Category Grid",
+        desc: "Replaced flat setting pills with a modern 2x2 grid featuring icons, hints, active glowing badges, and instant category switching.",
+      },
+      {
+        emoji: "📑",
+        text: "High-Contrast Sub-Sections Bar",
+        desc: "All setting sub-tabs now feature high-contrast gradient active pills, category guide headers, and smooth switching for effortless discovery.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.7",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "Finances Default Summary, Smart +Transaction, Instant Autofill & Android Keyboard Polish",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "📊",

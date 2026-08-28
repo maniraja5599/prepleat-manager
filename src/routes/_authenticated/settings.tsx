@@ -91,10 +91,10 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 type TabId = "profile" | "rates" | "whatsapp" | "security";
 const TABS: { id: TabId; label: string; hint: string; icon: typeof Palette }[] = [
-  { id: "profile", label: "🏢 Business Profile", hint: "Shop, Logo & Theme", icon: Palette },
-  { id: "rates", label: "💰 Rates & Services", hint: "Pricing & Measures", icon: IndianRupee },
-  { id: "whatsapp", label: "💬 WhatsApp & Alerts", hint: "Templates & Sounds", icon: MessageCircle },
-  { id: "security", label: "🔒 Data & Security", hint: "Backup, PIN & Demo", icon: Database },
+  { id: "profile", label: "Business Profile", hint: "Shop, Logo & Themes", icon: Palette },
+  { id: "rates", label: "Rates & Services", hint: "Pricing & Measures", icon: IndianRupee },
+  { id: "whatsapp", label: "WhatsApp & Alerts", hint: "Templates & Sounds", icon: MessageCircle },
+  { id: "security", label: "Data & Security", hint: "Backup, PIN & Logs", icon: Database },
 ];
 
 const THEMES: {
@@ -414,8 +414,8 @@ function SettingsPage() {
         </button>
       </div>
 
-      {/* Sticky Top Main Tab Selector Bar */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+52px)] z-30 bg-background/95 backdrop-blur-md -mx-5 px-5 py-2 border-b border-border/30 mb-3 flex gap-1.5 overflow-x-auto no-scrollbar shadow-2xs">
+      {/* Main 4-Card Category Switcher Grid */}
+      <div className="grid grid-cols-2 gap-2.5 mb-4">
         {TABS.map((t) => {
           const active = tab === t.id;
           const Icon = t.icon;
@@ -424,14 +424,35 @@ function SettingsPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95",
+                "p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer active:scale-98 flex flex-col justify-between border-2 relative overflow-hidden",
                 active
-                  ? "bg-primary text-primary-foreground shadow-xs border border-primary"
-                  : "bg-card border border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                  ? "saree-gradient text-white shadow-md border-primary/50 ring-2 ring-primary/30"
+                  : "bg-card hover:bg-secondary/40 text-foreground border-border/70 shadow-2xs hover:border-primary/40",
               )}
             >
-              <Icon className="size-3.5" />
-              <span>{t.label}</span>
+              <div className="flex items-center justify-between w-full mb-2">
+                <div
+                  className={cn(
+                    "size-8 rounded-xl flex items-center justify-center transition-colors shadow-2xs",
+                    active ? "bg-white/20 text-white" : "bg-primary/10 text-primary",
+                  )}
+                >
+                  <Icon className="size-4" />
+                </div>
+                {active && (
+                  <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/20">
+                    Active
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className={cn("text-xs font-bold leading-tight", active ? "text-white" : "text-foreground")}>
+                  {t.label}
+                </p>
+                <p className={cn("text-[10px] mt-0.5 truncate", active ? "text-white/80" : "text-muted-foreground")}>
+                  {t.hint}
+                </p>
+              </div>
             </button>
           );
         })}
@@ -442,27 +463,37 @@ function SettingsPage() {
         {tab === "rates" && (
           <>
             {/* Rates Sub-Tabs */}
-            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
-              {[
-                { id: "pricing" as const, label: "🥻 Saree Rates" },
-                { id: "measures" as const, label: "📏 Measurements" },
-                { id: "presets" as const, label: "🏷️ Presets & Categories" },
-                { id: "calendar" as const, label: "📅 Calendar Display" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setRatesSub(item.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
-                    ratesSub === item.id
-                      ? "bg-card text-primary shadow-xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="bg-card/80 backdrop-blur-sm p-2.5 rounded-2xl border-2 border-border/70 mb-4 shadow-sm">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="text-[10px] uppercase font-black tracking-widest text-primary flex items-center gap-1">
+                  <Sparkles className="size-3" /> Rates & Services Sub-Sections
+                </span>
+                <span className="text-[9px] font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  Tap to switch
+                </span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {[
+                  { id: "pricing" as const, label: "🥻 Saree Rates" },
+                  { id: "measures" as const, label: "📏 Measurements" },
+                  { id: "presets" as const, label: "🏷️ Presets & Categories" },
+                  { id: "calendar" as const, label: "📅 Calendar Display" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setRatesSub(item.id)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                      ratesSub === item.id
+                        ? "saree-gradient text-white shadow-sm ring-1 ring-primary/50"
+                        : "bg-secondary/60 hover:bg-secondary text-foreground border border-border/40",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {ratesSub === "pricing" && (
@@ -766,26 +797,36 @@ function SettingsPage() {
         {tab === "profile" && (
           <>
             {/* Profile Sub-Tabs */}
-            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
-              {[
-                { id: "shop_brand" as const, label: "🏷️ Shop & Logo" },
-                { id: "colors" as const, label: "🎨 Theme Colors" },
-                { id: "font_time" as const, label: "🔤 Font & Clock" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setProfileSub(item.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
-                    profileSub === item.id
-                      ? "bg-card text-primary shadow-xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="bg-card/80 backdrop-blur-sm p-2.5 rounded-2xl border-2 border-border/70 mb-4 shadow-sm">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="text-[10px] uppercase font-black tracking-widest text-primary flex items-center gap-1">
+                  <Sparkles className="size-3" /> Business Profile Sub-Sections
+                </span>
+                <span className="text-[9px] font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  Tap to switch
+                </span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {[
+                  { id: "shop_brand" as const, label: "🏷️ Shop Name & Logo" },
+                  { id: "colors" as const, label: "🎨 Themes & Colors" },
+                  { id: "font_time" as const, label: "🔤 Font & Clock" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setProfileSub(item.id)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                      profileSub === item.id
+                        ? "saree-gradient text-white shadow-sm ring-1 ring-primary/50"
+                        : "bg-secondary/60 hover:bg-secondary text-foreground border border-border/40",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {profileSub === "shop_brand" && (
@@ -1212,26 +1253,36 @@ function SettingsPage() {
         {tab === "whatsapp" && (
           <>
             {/* WhatsApp Sub-Tabs */}
-            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
-              {[
-                { id: "push" as const, label: "🔔 Push Alerts" },
-                { id: "templates" as const, label: "💬 Message Templates" },
-                { id: "audio" as const, label: "🔊 Sounds" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setWaSub(item.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
-                    waSub === item.id
-                      ? "bg-card text-primary shadow-xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="bg-card/80 backdrop-blur-sm p-2.5 rounded-2xl border-2 border-border/70 mb-4 shadow-sm">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="text-[10px] uppercase font-black tracking-widest text-primary flex items-center gap-1">
+                  <Sparkles className="size-3" /> WhatsApp & Alerts Sub-Sections
+                </span>
+                <span className="text-[9px] font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  Tap to switch
+                </span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {[
+                  { id: "push" as const, label: "🔔 Push Alerts" },
+                  { id: "templates" as const, label: "💬 Message Templates" },
+                  { id: "audio" as const, label: "🔊 Sounds" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setWaSub(item.id)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                      waSub === item.id
+                        ? "saree-gradient text-white shadow-sm ring-1 ring-primary/50"
+                        : "bg-secondary/60 hover:bg-secondary text-foreground border border-border/40",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {waSub === "push" && (
@@ -1566,26 +1617,36 @@ function SettingsPage() {
         {tab === "security" && (
           <>
             {/* Security Sub-Tabs */}
-            <div className="flex gap-1.5 p-1 bg-secondary/50 rounded-2xl border border-border/40 overflow-x-auto no-scrollbar mb-3 shadow-2xs">
-              {[
-                { id: "backup" as const, label: "☁️ Backup & Export" },
-                { id: "demo_reset" as const, label: "📦 Demo & Reset" },
-                { id: "logs" as const, label: "📜 Logs & About" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSecSub(item.id as any)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
-                    secSub === item.id
-                      ? "bg-card text-primary shadow-xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/40",
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="bg-card/80 backdrop-blur-sm p-2.5 rounded-2xl border-2 border-border/70 mb-4 shadow-sm">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="text-[10px] uppercase font-black tracking-widest text-primary flex items-center gap-1">
+                  <Sparkles className="size-3" /> Data & Security Sub-Sections
+                </span>
+                <span className="text-[9px] font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  Tap to switch
+                </span>
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {[
+                  { id: "backup" as const, label: "☁️ Backup & Export" },
+                  { id: "demo_reset" as const, label: "📦 Demo & Reset" },
+                  { id: "logs" as const, label: "📜 Logs & About" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSecSub(item.id as any)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95",
+                      secSub === item.id
+                        ? "saree-gradient text-white shadow-sm ring-1 ring-primary/50"
+                        : "bg-secondary/60 hover:bg-secondary text-foreground border border-border/40",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {secSub === "backup" && (
