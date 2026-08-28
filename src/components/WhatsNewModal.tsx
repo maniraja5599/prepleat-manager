@@ -159,9 +159,10 @@ export function WhatsNewModal() {
           <button
             type="button"
             onClick={(e) => handleDismiss(e)}
+            onPointerDown={(e) => handleDismiss(e)}
             className="w-full py-3 px-4 rounded-2xl saree-gradient text-white text-sm font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>புரிந்துவிட்டது (Got it!)</span>
+            <span>Got it!</span>
             <Check className="size-4 stroke-[3]" />
           </button>
         </div>

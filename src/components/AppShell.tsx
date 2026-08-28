@@ -70,11 +70,12 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
     if (typeof window !== "undefined") {
       const perm = getNotificationPermission();
       const dismissed = sessionStorage.getItem("eyas_dismiss_notif_banner");
-      if (perm === "default" && dismissed !== "true") {
+      const hasEntry = localStorage.getItem("eyas_has_made_first_entry") === "true" || bookings.length > 0;
+      if (perm === "default" && dismissed !== "true" && hasEntry) {
         setShowNotifBanner(true);
       }
     }
-  }, []);
+  }, [bookings.length]);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -554,13 +555,13 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   return (
     <div className="min-h-[100dvh] bg-background pb-28">
       <div className={wide ? "max-w-3xl mx-auto" : "max-w-md mx-auto"}>
-        {/* Uniform brand strip — every page */}
-        <div className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-5 pb-2.5 flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
+        {/* Uniform brand strip — strictly single-row without wrapping */}
+        <div className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-4 h-14 flex items-center justify-between gap-2 overflow-hidden flex-nowrap">
+          <div className="flex items-center gap-2 min-w-0 shrink">
             <Link
               to="/settings"
               title="Open Settings"
-              className="flex items-center gap-2.5 min-w-0 group cursor-pointer active:scale-95 transition"
+              className="flex items-center gap-2 min-w-0 group cursor-pointer active:scale-95 transition"
             >
               <img
                 src={logo}
@@ -573,13 +574,12 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 </p>
                 <HeaderClock
                   dateFormat={settings.dateFormat || "DD-MM-YYYY"}
-                  timeFormat={settings.timeFormat || "12"}
                 />
               </div>
             </Link>
           </div>
 
-          <div className="flex items-center ml-auto shrink-0 min-w-0">
+          <div className="flex items-center ml-auto shrink-0 flex-nowrap gap-1.5">
             {/* Sliding expanding pill */}
             <div
               onClick={() => {
@@ -587,10 +587,10 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 setActiveTab("all");
               }}
               className={cn(
-                "h-8.5 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all duration-500 ease-in-out cursor-pointer overflow-hidden origin-right",
+                "h-8 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden origin-right",
                 showPill && currentNotification
-                  ? "max-w-[150px] xs:max-w-[180px] px-3 opacity-100 mr-2 border-border/10 scale-100"
-                  : "max-w-0 px-0 opacity-0 mr-0 border-transparent scale-95",
+                  ? "max-w-[110px] xs:max-w-[140px] px-2.5 opacity-100 border-border/10 scale-100"
+                  : "max-w-0 px-0 opacity-0 border-transparent scale-95 pointer-events-none",
                 currentNotification?.color,
               )}
             >
@@ -611,81 +611,22 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               {currentNotification?.icon === "wallet" && (
                 <Wallet className="size-2.5 text-rose-500 shrink-0" />
               )}
-              {isLongText ? (
-                <div key={currentText + Math.random()} className="w-[110px] xs:w-[135px] overflow-hidden h-8.5 relative shrink-0">
-                  <div className="absolute inset-x-0 w-full animate-scroll-up-continuous flex flex-col justify-start">
-                    <span className="whitespace-normal leading-tight text-[9px] pt-[34px] pb-1 font-medium">
-                      {currentText}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <span 
-                  key={currentText} 
-                  className="truncate whitespace-nowrap inline-block animate-slide-up-single"
-                >
-                  {currentText}
-                </span>
-              )}
+              <span className="truncate whitespace-nowrap text-[9px]">
+                {currentText}
+              </span>
             </div>
 
             {/* Settings Button */}
             <Link
               to="/settings"
               className={cn(
-                "rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
-                showPill && currentNotification
-                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
-                  : "size-9 opacity-100 mr-1.5 scale-100",
+                "size-8.5 rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition cursor-pointer shrink-0",
                 pathname === "/settings" && "text-primary bg-primary/10 border-primary/30",
               )}
               title="Settings & Business Profile"
             >
-              <SettingsIcon className="size-4.5" />
+              <SettingsIcon className="size-4" />
             </Link>
-
-            {/* Quick Book Button */}
-            <Link
-              to="/new"
-              className={cn(
-                "px-2.5 py-1.5 rounded-full saree-gradient text-white text-[11px] font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
-                showPill && currentNotification
-                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
-                  : "opacity-100 mr-1.5 scale-100",
-              )}
-              title="New Booking (புதிய பதிவு) 📅"
-            >
-              <CalendarPlus className="size-3.5" />
-              <span>Book</span>
-            </Link>
-
-            {/* Quick Tips & Shortcuts Button */}
-            <button
-              onClick={() => setShowTipsModal(true)}
-              className={cn(
-                "rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-amber-500 active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
-                showPill && currentNotification
-                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
-                  : "size-9 opacity-100 mr-1.5 scale-100",
-              )}
-              title="Quick Tips & Shortcuts 💡"
-            >
-              <Lightbulb className="size-4 text-amber-500" />
-            </button>
-
-            {/* What's New Updates Button - Hides smoothly when notification pill is active */}
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent("trigger-whats-new"))}
-              className={cn(
-                "rounded-full bg-secondary/70 hover:bg-secondary border border-border/10 flex items-center justify-center text-primary active:scale-95 transition-all duration-300 cursor-pointer shrink-0",
-                showPill && currentNotification
-                  ? "w-0 h-0 p-0 m-0 opacity-0 border-0 pointer-events-none scale-75 overflow-hidden"
-                  : "size-9 opacity-100 mr-1.5 scale-100",
-              )}
-              title="What's New (App Updates)"
-            >
-              <Sparkles className="size-4 text-primary" />
-            </button>
 
             {/* Global Search Button */}
             <button
@@ -1380,30 +1321,19 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   );
 }
 
-function HeaderClock({ dateFormat, timeFormat }: { dateFormat: string; timeFormat: string }) {
-  const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const currentDateTimeStr = useMemo(() => {
+function HeaderClock({ dateFormat }: { dateFormat: string; timeFormat?: string }) {
+  const currentDateStr = useMemo(() => {
     let dFmt = dateFormat || "DD-MM-YYYY";
     if (dFmt === "DD-MM-YYYY") dFmt = "dd-MM-yyyy";
     if (dFmt === "YYYY-MM-DD") dFmt = "yyyy-MM-dd";
     if (dFmt === "MM/DD/YYYY") dFmt = "MM/dd/yyyy";
 
-    const datePart = format(currentDateTime, dFmt);
-    const timePart = format(currentDateTime, timeFormat === "24" ? "HH:mm:ss" : "hh:mm:ss a");
-    return `${datePart} · ${timePart}`;
-  }, [currentDateTime, dateFormat, timeFormat]);
+    return format(new Date(), dFmt);
+  }, [dateFormat]);
 
   return (
-    <p className="text-[8.5px] text-muted-foreground/90 font-mono font-medium tracking-tight mt-0.5 leading-none shrink-0">
-      {currentDateTimeStr}
+    <p className="text-[9px] text-muted-foreground/90 font-mono font-medium tracking-tight mt-0.5 leading-none shrink-0">
+      {currentDateStr}
     </p>
   );
 }

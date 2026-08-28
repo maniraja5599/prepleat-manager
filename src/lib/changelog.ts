@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.4";
+export const APP_VERSION = "1.6.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,26 +11,60 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.4",
+    version: "v1.6.5",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "1-Click Web App Install, Double-Tap Calendar Book & Zero Popup Clutter",
+    title: "International English UI, Timeline View, Smart Booking & Header Polish",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🌐",
+        text: "Global English-Only Interface",
+        desc: "All buttons, dialogs, badges, and guides have been converted to clear, standard English for international boutique operations.",
+      },
+      {
+        emoji: "⏳",
+        text: "Vertical Delivery Timeline on Calendar",
+        desc: "Day bookings now render as an elegant chronological vertical timeline with contact shortcuts, bill numbers, and balance status.",
+      },
+      {
+        emoji: "✨",
+        text: "Smart Booking Form & Optional Time / Advance",
+        desc: "Added optional delivery time with 12-Hour AM/PM picker, optional advance payment toggle, grand total distinction, and in-place tag management.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Single-Row Fixed Header (Zero Layout Shift)",
+        desc: "Fixed header height without second-line wrapping jumps, displaying clean business date.",
+      },
+      {
+        emoji: "📱",
+        text: "1-Click Web App Install with Animated Guide",
+        desc: "Animated installation feedback for Android Chrome and interactive 2-step Add-to-Home guide for iOS Safari.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.4",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "1-Click Web App Install, Double-Tap Calendar Book & Zero Popup Clutter",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "📱",
         text: "1-Click App Install & iOS Guide",
-        desc: "Android-ல் 1-கிளிக்கில் ஆப் இன்ஸ்டால் மற்றும் iPhone பயனர்களுக்கு எளிய Share ➔ Add to Home Screen வழிகாட்டி சேர்க்கப்பட்டது.",
+        desc: "Added 1-click home screen installation for Android and Safari Share -> Add to Home Screen guide for iPhone users.",
       },
       {
         emoji: "📅",
-        text: "Calendar Double-Tap to Book & Quick Icon",
-        desc: "காலெண்டரில் எந்த தேதியிலும் 2 முறை தட்டினால் (Double Tap) அல்லது மேலே உள்ள Book ஐகானைத் தொட்டால் உடனடியாக புதிய புக்கிங் தொடங்கும்.",
+        text: "Calendar Double-Tap to Book",
+        desc: "Double-tapping any date on the calendar immediately opens the new booking form for that specific delivery date.",
       },
       {
         emoji: "⚡",
-        text: "Zero Popup Clutter",
-        desc: "ஆப் திறந்ததும் வரும் தேவையற்ற பாப்-அப்கள் நீக்கப்பட்டு, புதிய வெர்ஷன் அப்டேட் வரும்போது மட்டும் 1 முறை காட்டும் வகையில் சீரமைக்கப்பட்டது.",
+        text: "Zero Startup Popup Clutter",
+        desc: "Eliminated automatic startup popups so existing users only see relevant version releases.",
       },
     ],
   },
@@ -44,55 +78,12 @@ export const RECENT_UPDATES: ChangelogEntry[] = [
       {
         emoji: "📋",
         text: "Smart Clipboard Auto-Fill",
-        desc: "போன் Call Log அல்லது வாட்ஸ்அப்பில் Copy செய்த 10-இலக்க மொபைல் எண்ணை தானாகக் கண்டறிந்து 1-டச்சில் பூர்த்தி செய்யும் வசதி.",
+        desc: "Automatically detects copied 10-digit mobile numbers from call logs or WhatsApp and fills with 1 tap.",
       },
       {
         emoji: "🏷️",
         text: "Direct Logo Tap to Settings",
-        desc: "ஹெடரில் உள்ள Eyas Drapist லோகோ அல்லது பெயரைத் தொட்டவுடன் உடனடியாக Settings பக்கத்திற்கு செல்லும் வசதி.",
-      },
-    ],
-  },
-  {
-    version: "v1.6.2",
-    date: "24 Aug 2026",
-    isLatest: false,
-    title: "1-Time Update Alerts, Easy-View Micro-Tips & Clean Shortcuts",
-    badge: "PREVIOUS",
-    changes: [
-      {
-        emoji: "🔔",
-        text: "Strict 1-Time Update Alert & Instant Dismiss",
-        desc: "புதிய அப்டேட் வரும்போது ஒரே ஒரு முறை மட்டுமே பாப்-அப் தோன்றும்; 'Got it' பட்டனைத் தொட்டவுடன் உடனடியாக மறைந்துவிடும்.",
-      },
-      {
-        emoji: "💡",
-        text: "Easy-View Visual Action Chips",
-        desc: "பக்கங்களில் உள்ள நீண்ட வாக்கியங்கள் நீக்கப்பட்டு, 1 நொடியில் பார்த்து புரிந்துகொள்ளும் எளிய தகவல் பில் பேட்ஜ்களாக மாற்றப்பட்டது.",
-      },
-      {
-        emoji: "⚡",
-        text: "Updated Tour & Shortcuts Guide",
-        desc: "பழைய Settings Swipe குறிப்புகள் அகற்றப்பட்டு, 1-Tap PDF பில், வாட்ஸ்அப் பகிர்வு மற்றும் Double-Tap Search குறுக்குவழிகள் சேர்க்கப்பட்டது.",
-      },
-    ],
-  },
-  {
-    version: "v1.6.1",
-    date: "24 Aug 2026",
-    isLatest: false,
-    title: "Streamlined 12-Hour Time Picker & Responsive Mobile UI",
-    badge: "PREVIOUS",
-    changes: [
-      {
-        emoji: "🎯",
-        text: "Clean 1-Tap Hour & Minute Selection",
-        desc: "குழப்பமான +/- பட்டன்கள் அகற்றப்பட்டு, 1 முதல் 12 மணி மற்றும் நிமிடங்கள் நேரடி 1-Tap கிரிட் மூலம் தேர்ந்தெடுக்க எளிமையாக்கப்பட்டது.",
-      },
-      {
-        emoji: "📱",
-        text: "Zero-Overflow Responsive Design",
-        desc: "சிறிய மொபைல் திரைகளிலும் எழுத்துக்கள் மறைந்துவிடாமல் அல்லது பிசிறின்றி கச்சிதமாக பொருந்தும் வண்ணம் வடிவமைக்கப்பட்டுள்ளது.",
+        desc: "Tapping the header logo or business name opens Settings instantly.",
       },
     ],
   },

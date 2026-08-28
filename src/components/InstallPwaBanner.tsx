@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, X, Share2, PlusSquare, Sparkles, Smartphone, Check } from "lucide-react";
+import { Download, X, Share2, PlusSquare, Sparkles, Smartphone, Check, Loader2, MoreVertical } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -15,6 +15,8 @@ export function InstallPwaBanner() {
   const [isStandalone, setIsStandalone] = useState(true);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
+  const [showAndroidHelp, setShowAndroidHelp] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export function InstallPwaBanner() {
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       try {
+        setIsInstalling(true);
         await deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
         if (choice.outcome === "accepted") {
@@ -65,10 +68,15 @@ export function InstallPwaBanner() {
         }
       } catch {
         // user cancelled or prompt failed
+      } finally {
+        setIsInstalling(false);
+        setDeferredPrompt(null);
       }
-      setDeferredPrompt(null);
     } else if (isIOS) {
       setShowIOSHelp((prev) => !prev);
+    } else {
+      // Android/Desktop fallback if prompt not fired yet
+      setShowAndroidHelp((prev) => !prev);
     }
   };
 
@@ -91,7 +99,7 @@ export function InstallPwaBanner() {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-bold text-foreground truncate">
-                  Eyas Drapist App
+                  Eyas Saree Manager
                 </p>
                 <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-primary/20 text-primary shrink-0">
                   {isIOS ? "iOS" : "WEB APP"}
@@ -99,8 +107,8 @@ export function InstallPwaBanner() {
               </div>
               <p className="text-[11px] text-muted-foreground truncate">
                 {isIOS
-                  ? "ஹோம் ஸ்கிரீனில் சேர்க்கவும் (Add to Home)"
-                  : "மொபைலில் 1-கிளிக்கில் Install செய்யவும்"}
+                  ? "Add to Home Screen for best experience"
+                  : "Install on phone in 1-Click"}
               </p>
             </div>
           </div>
@@ -109,12 +117,18 @@ export function InstallPwaBanner() {
             <button
               type="button"
               onClick={handleInstallClick}
-              className="px-3 py-1.5 rounded-xl saree-gradient text-white text-xs font-bold shadow-sm hover:opacity-95 active:scale-95 transition cursor-pointer flex items-center gap-1.5"
+              disabled={isInstalling}
+              className="px-3 py-1.5 rounded-xl saree-gradient text-white text-xs font-bold shadow-sm hover:opacity-95 active:scale-95 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-75"
             >
-              {isIOS ? (
+              {isInstalling ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Installing...</span>
+                </>
+              ) : isIOS ? (
                 <>
                   <Share2 className="size-3.5" />
-                  <span>Install வழிகாட்டி</span>
+                  <span>Install Guide</span>
                 </>
               ) : (
                 <>
@@ -139,7 +153,7 @@ export function InstallPwaBanner() {
           <div className="mt-3 pt-3 border-t border-border/40 text-xs space-y-2 animate-in fade-in zoom-in-95">
             <p className="font-bold text-foreground flex items-center gap-1.5 text-[11px]">
               <Sparkles className="size-3.5 text-primary" />
-              <span>iPhone / iPad-ல் App ஆக பயன்படுத்த எளிய 2 படிகள்:</span>
+              <span>Install on iPhone / iPad in 2 easy steps:</span>
             </p>
             <div className="grid grid-cols-1 gap-1.5 bg-background/80 dark:bg-background/60 p-2.5 rounded-xl border border-border/30 text-[11px]">
               <div className="flex items-center gap-2">
@@ -147,7 +161,7 @@ export function InstallPwaBanner() {
                   1
                 </span>
                 <span className="text-foreground">
-                  கீழே உள்ள Safari <b>Share <Share2 className="size-3 inline mx-0.5" /></b> ஐகானைத் தொடவும்.
+                  Tap the Safari <b>Share <Share2 className="size-3 inline mx-0.5" /></b> button at the bottom.
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -155,7 +169,7 @@ export function InstallPwaBanner() {
                   2
                 </span>
                 <span className="text-foreground">
-                  கீழே உருட்டி <b>"Add to Home Screen" <PlusSquare className="size-3 inline mx-0.5" /></b> என்பதைத் தொடவும்.
+                  Scroll down and select <b>"Add to Home Screen" <PlusSquare className="size-3 inline mx-0.5" /></b>.
                 </span>
               </div>
             </div>
@@ -166,7 +180,35 @@ export function InstallPwaBanner() {
                 className="text-[10px] font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
               >
                 <Check className="size-3" />
-                <span>புரிந்தது (Done)</span>
+                <span>Got it</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Android / Chrome Manual Fallback Guide */}
+        {!isIOS && showAndroidHelp && (
+          <div className="mt-3 pt-3 border-t border-border/40 text-xs space-y-2 animate-in fade-in zoom-in-95">
+            <p className="font-bold text-foreground flex items-center gap-1.5 text-[11px]">
+              <Sparkles className="size-3.5 text-primary" />
+              <span>Install via Chrome Menu:</span>
+            </p>
+            <div className="bg-background/80 dark:bg-background/60 p-2.5 rounded-xl border border-border/30 text-[11px] space-y-1.5">
+              <p className="text-foreground">
+                1. Tap the Chrome menu button <MoreVertical className="size-3 inline mx-0.5 text-foreground" /> in the top-right corner.
+              </p>
+              <p className="text-foreground">
+                2. Tap <b>"Install app"</b> or <b>"Add to Home screen"</b>.
+              </p>
+            </div>
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAndroidHelp(false)}
+                className="text-[10px] font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <Check className="size-3" />
+                <span>Got it</span>
               </button>
             </div>
           </div>

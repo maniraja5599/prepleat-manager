@@ -27,7 +27,6 @@ import { generateBillPDF } from "@/lib/pdf-bill";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
-import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/bills")({
   component: BillsPage,
@@ -284,17 +283,6 @@ export function BillsPage() {
             ))}
           </div>
         </div>
-
-        <MicroTipBanner
-          id="bills_due_filter_tip"
-          badge="SHORTCUTS 🧾"
-          tamilTip="பில் குறிப்புகள்"
-          chips={[
-            { emoji: "🔴", tag: "Due Filter", desc: "Pending Balances" },
-            { emoji: "🧾", tag: "Bill Card", desc: "A5 Canvas PDF" },
-            { emoji: "💳", tag: "UPI QR", desc: "Instant Scan" },
-          ]}
-        />
 
         {groupedByMonth.length === 0 ? (
           <div className="p-12 text-center bg-card rounded-2xl border border-border/30">

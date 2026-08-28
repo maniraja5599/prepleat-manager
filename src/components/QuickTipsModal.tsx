@@ -25,7 +25,6 @@ interface TipCategory {
   color: string;
   tips: {
     title: string;
-    tamilTitle?: string;
     desc: string;
     badge?: string;
     icon: typeof Zap;
@@ -41,28 +40,24 @@ const TIP_CATEGORIES: TipCategory[] = [
     tips: [
       {
         title: "1-Tap Instant Bill # Preview",
-        tamilTitle: "பில் எண்ணைத் தட்டி PDF பார்க்க",
         desc: "Tap any Bill # (e.g. EYAS-101) to open the zero-lag Canvas invoice preview with 1-click WhatsApp and PDF download.",
         badge: "HOT ✨",
         icon: Receipt,
       },
       {
         title: "Sticky Search & Live Tickers",
-        tamilTitle: "Search & Month Header நிலைத்தன்மை",
         desc: "When scrolling down, the search bar and the current Month Header stay pinned at the top so you never lose context.",
         badge: "NEW 📌",
         icon: Search,
       },
       {
         title: "Last 4-Digit Quick Phone Search",
-        tamilTitle: "போன் நம்பரின் கடைசி 4 எண்கள்",
         desc: "Just type the last 4 digits of a customer's phone number into the search bar to instantly find their booking.",
         icon: Smartphone,
       },
       {
         title: "Tap Top Header Clock for Calendar",
-        tamilTitle: "Header நேரத்தைத் தட்டினால் கேலெண்டர்",
-        desc: "Tap the live ticking clock next to the shop title to jump quickly to the date-picker or calendar view.",
+        desc: "Tap the live date next to the shop title to jump quickly to the date-picker or calendar view.",
         icon: Clock,
       },
     ],
@@ -75,20 +70,17 @@ const TIP_CATEGORIES: TipCategory[] = [
     tips: [
       {
         title: "Native Canvas High-Speed Invoices",
-        tamilTitle: "மின்னல் வேக PDF / PNG பில்",
         desc: "Invoices render in <5ms on a native HTML5 2D Canvas with crystal clarity, ready for A5 print or WhatsApp image.",
         badge: "0-LAG ⚡",
         icon: Receipt,
       },
       {
         title: "Smart Rubber Stamp Seals",
-        tamilTitle: "ஸ்மார்ட் ரப்பர் ஸ்டாம்ப்கள்",
         desc: "Paid bills get 'PAID & VERIFIED', advances get 'ADVANCE RECEIVED', and unpaid get 'PAYMENT PENDING' seals automatically.",
         icon: CheckCircle2,
       },
       {
         title: "No-Save Direct WhatsApp Share",
-        tamilTitle: "நம்பரை Save செய்யாமல் வாட்ஸ்அப்",
         desc: "Share booking details and PDF bills to WhatsApp directly without needing to save the customer's phone number in your contacts.",
         badge: "DIRECT 💬",
         icon: MessageCircle,
@@ -103,20 +95,17 @@ const TIP_CATEGORIES: TipCategory[] = [
     tips: [
       {
         title: "Automated Advance & Balance Due",
-        tamilTitle: "முன்பணம் & மீதித் தொகை கணக்கீடு",
         desc: "Entering an advance automatically computes remaining balance due and adds a payment entry to the customer's ledger.",
         icon: IndianRupee,
       },
       {
         title: "Instant UPI QR Code on Bill",
-        tamilTitle: "பில்லில் நேரடி UPI QR குறியீடு",
         desc: "Save your UPI ID in Settings to print a dynamic UPI QR code on invoices so customers can scan and pay instantly.",
         badge: "GPay / PhonePe",
         icon: Sparkles,
       },
       {
         title: "One-Tap Payment Settlement",
-        tamilTitle: "டெலிவரியின் போது மீதித் தொகை பெற",
         desc: "When marking a booking completed/delivered, the app prompts you to collect remaining balance in 1 tap.",
         icon: CheckCircle2,
       },
@@ -222,11 +211,6 @@ export function QuickTipsModal({ open, onOpenChange }: QuickTipsModalProps) {
                       <h4 className="text-xs font-bold text-foreground">
                         {tip.title}
                       </h4>
-                      {tip.tamilTitle && (
-                        <p className="text-[10px] text-primary font-semibold">
-                          {tip.tamilTitle}
-                        </p>
-                      )}
                     </div>
                   </div>
 

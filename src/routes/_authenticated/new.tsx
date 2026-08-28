@@ -45,7 +45,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { MapPicker } from "@/components/MapPicker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { MicroTipBanner } from "@/components/MicroTipBanner";
 import { TimePicker12 } from "@/components/TimePicker12";
 
 function roundUpToQuarter(d = new Date()) {
@@ -148,6 +147,7 @@ function NewBooking() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [deliveryDate, setDeliveryDate] = useState(presetDate || today);
   const [deliveryTime, setDeliveryTime] = useState(roundUpToQuarter());
+  const [hasSpecificTime, setHasSpecificTime] = useState(false);
   // Popover open state for tap-once calendar / clock pickers (works on iOS & Android).
   const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
@@ -157,11 +157,15 @@ function NewBooking() {
     if (presetDate) setDeliveryDate(presetDate);
   }, [presetDate]);
 
+  const [hasAdvance, setHasAdvance] = useState(false);
   const [advance, setAdvance] = useState("");
   const advNum = Number(advance) || 0;
   const remaining = Math.max(0, total - advNum);
 
   const [notes, setNotes] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [customTagInput, setCustomTagInput] = useState("");
+  const [showAddTagInput, setShowAddTagInput] = useState(false);
   const [showMeasure, setShowMeasure] = useState(false);
   const [measurements, setMeasurements] = useState<Measurement[]>(settings.defaultMeasurements);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
@@ -512,6 +516,8 @@ function NewBooking() {
     }
     if (!cid) return toast.error("Customer required");
 
+    const finalNotes = [...selectedTags, notes.trim()].filter(Boolean).join(" · ");
+
     const b = addBooking({
       customerId: cid,
       artistId: artistId || undefined,
@@ -521,14 +527,17 @@ function NewBooking() {
       totalAmount: sareeSubtotal,
       extraCharges: extraNum > 0 ? extraNum : undefined,
       extraChargesNote: extraNum > 0 ? (extraChargesNote.trim() || "Travel") : undefined,
-      advancePaid: advNum,
+      advancePaid: hasAdvance ? advNum : 0,
       deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
-      deliveryTime,
-      notes: notes.trim() || undefined,
+      deliveryTime: hasSpecificTime ? deliveryTime : "",
+      notes: finalNotes || undefined,
       measurements: showMeasure ? measurements : undefined,
     });
     isSavedRef.current = true;
     sessionStorage.removeItem("eyas_new_booking_draft");
+    try {
+      localStorage.setItem("eyas_has_made_first_entry", "true");
+    } catch {}
     toast.success("Booking created successfully! 🎉");
 
     // If WhatsApp confirmation toggle is ON
@@ -541,14 +550,14 @@ function NewBooking() {
 
       if (phoneWA) {
         const dateStr = formatAppDate(b.deliveryDate);
-        const timeStr = fmtTime12(b.deliveryTime);
+        const timeStr = hasSpecificTime ? fmtTime12(b.deliveryTime) : "Anytime";
         const billNo = formatShortBillNumber(b.billNumber, b.id);
         const netTotal = total;
-        const paid = advNum;
+        const paid = hasAdvance ? advNum : 0;
         const dueBal = Math.max(0, netTotal - paid);
 
         const extraLine = extraNum > 0 ? `• *Extra/Travel*: ${fmtINR(extraNum)} (${extraChargesNote.trim() || "Travel"})` : "";
-        const noteLine = notes.trim() ? `• *Note*: ${notes.trim()}` : "";
+        const noteLine = finalNotes ? `• *Note*: ${finalNotes}` : "";
 
         const msgLines = [
           `🥻 *EYAS SAREE DRAPIST* 🥻`,
@@ -630,17 +639,6 @@ function NewBooking() {
           </button>
         </div>
       )}
-
-      <MicroTipBanner
-        id="new_booking_phone_tip"
-        badge="SHORTCUTS ⚡"
-        tamilTip="புதிய புக்கிங்"
-        chips={[
-          { emoji: "🔍", tag: "Last 4-digit", desc: "Autofill Client" },
-          { emoji: "🕒", tag: "12-Hour", desc: "AM/PM Delivery" },
-          { emoji: "📏", tag: "Size Chart", desc: "Measurements" },
-        ]}
-      />
 
       {/* Booking source — always decide this first because pricing differs. */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
@@ -1364,22 +1362,22 @@ function NewBooking() {
           </div>
         )}
 
-        <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
+        <div className="mt-3 pt-3 border-t border-border/50 bg-primary/5 dark:bg-primary/10 rounded-2xl p-3.5 border border-primary/20 flex justify-between items-center">
           <div>
-            <span className="text-sm font-semibold text-foreground">Total Bill</span>
-            {extraNum > 0 && (
-              <p className="text-[10px] text-muted-foreground">
-                Sarees {fmtINR(sareeSubtotal)} + {extraChargesNote || "Extra"} {fmtINR(extraNum)}
-              </p>
-            )}
+            <span className="text-xs font-extrabold uppercase tracking-wider text-primary">
+              Grand Total Amount
+            </span>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {sareeCount} saree{sareeCount > 1 ? "s" : ""} × ₹{priceTouched ? pricePerSaree : effPrice} {extraNum > 0 ? `+ ₹${extraNum} ${extraChargesNote || "extra"}` : ""}
+            </p>
           </div>
-          <div className="relative w-28">
+          <div className="relative w-32">
             <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-primary" />
             <input
               type="number"
               value={manualTotal !== null ? manualTotal : total}
               onChange={(e) => setManualTotal(e.target.value ? Number(e.target.value) : null)}
-              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xl font-display font-bold text-primary text-right focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-background rounded-xl pl-7 pr-3 py-1.5 text-xl font-display font-black text-primary text-right focus:outline-none focus:ring-2 focus:ring-primary border border-border/40"
             />
           </div>
         </div>
@@ -1388,7 +1386,7 @@ function NewBooking() {
       {/* Delivery */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-          Delivery
+          Delivery Date & Time
         </p>
         <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
           <CalendarDays className="size-3.5 text-primary/70" />
@@ -1427,11 +1425,8 @@ function NewBooking() {
           items={(() => {
             const base = new Date();
             base.setHours(0, 0, 0, 0);
-            // Default window: 7 days before today → 82 days after.
             let start = addDays(base, -7);
             let end = addDays(base, 82);
-            // Ensure the currently selected date is inside the strip so the
-            // picker can centre on it (otherwise it would snap to today).
             const picked = parseISO(deliveryDate);
             if (picked < start) start = addDays(picked, -3);
             if (picked > end) end = addDays(picked, 30);
@@ -1447,53 +1442,57 @@ function NewBooking() {
             });
           })()}
         />
-        <div className="mt-3">
-          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-            <Clock className="size-3.5 text-primary/70" />
-            <span>Time · 12-Hour format</span>
-            <Popover open={timeOpen} onOpenChange={setTimeOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Open 12-hr time picker"
-                  className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-bold flex items-center gap-1 cursor-pointer active:scale-95 transition"
-                >
-                  <Clock className="size-3" />
-                  <span>{fmtTime12(deliveryTime)}</span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-32px)] max-w-xs p-3 bg-card rounded-2xl border border-border shadow-2xl z-50">
-                <TimePicker12
-                  value={deliveryTime}
-                  onChange={(t) => {
-                    setDeliveryTime(t);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
 
-          <HorizontalPicker
-            itemWidth={86}
-            value={deliveryTime}
-            onChange={setDeliveryTime}
-            onDoubleTap={() => setTimeOpen(true)}
-            items={Array.from({ length: 24 * 4 }, (_, i) => {
-              const h = Math.floor(i / 4);
-              const m = (i % 4) * 15;
-              const key = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-              const hr12 = ((h + 11) % 12) + 1;
-              const ampm = h < 12 ? "AM" : "PM";
-              return { key, primary: `${hr12}:${String(m).padStart(2, "0")}`, secondary: ampm };
-            })}
-          />
-        </div>
+        {/* Optional Specific Delivery Time Toggle & 12hr TimePicker */}
+        {!hasSpecificTime ? (
+          <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <Clock className="size-3.5" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-foreground block">Specific Delivery Time?</span>
+                <span className="text-[10px] text-muted-foreground">Default: Anytime on delivery date</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHasSpecificTime(true)}
+              className="px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1"
+            >
+              <Plus className="size-3 stroke-[2.5]" />
+              <span>Add Time</span>
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 pt-3 border-t border-border/30 animate-in fade-in">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                <Clock className="size-3.5 text-primary" />
+                <span>Delivery Time: <span className="text-primary font-mono">{fmtTime12(deliveryTime)}</span></span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHasSpecificTime(false)}
+                className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full bg-secondary cursor-pointer"
+              >
+                Remove (Anytime)
+              </button>
+            </div>
+            
+            <div className="p-3 bg-secondary/30 rounded-2xl border border-border/40">
+              <TimePicker12
+                value={deliveryTime}
+                onChange={(t) => setDeliveryTime(t)}
+              />
+            </div>
+          </div>
+        )}
+
         <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
-          {formatAppDate(deliveryDate)} · {fmtTime12(deliveryTime)}
+          {formatAppDate(deliveryDate)} {hasSpecificTime ? `· ${fmtTime12(deliveryTime)}` : "· Anytime"}
         </p>
-        <p className="text-[10px] text-muted-foreground/70 mt-1 text-center">
-          Tip · tap the 📅 / 🕒 icon for a full picker
-        </p>
+
         {(() => {
           const same = bookingsOnDate(new Date(deliveryDate + "T12:00:00").toISOString(), bookings);
           if (same.length === 0) return null;
@@ -1514,45 +1513,81 @@ function NewBooking() {
 
       {/* Advance */}
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <div className="flex items-baseline justify-between mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Advance
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Remaining <span className="font-semibold text-foreground">{fmtINR(remaining)}</span>
-          </p>
-        </div>
-        <div className="relative">
-          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            type="number"
-            value={advance}
-            onChange={(e) => setAdvance(e.target.value)}
-            placeholder="0"
-            className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-        <div className="grid grid-cols-4 gap-2.5 mt-2.5">
-          {[
-            { label: "Clear", v: 0 },
-            { label: "50%", v: Math.round(total / 2) },
-            { label: "Full", v: total },
-            { label: "+₹100", v: advNum + 100 },
-          ].map((b) => (
+        {!hasAdvance && advNum === 0 ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <IndianRupee className="size-3.5" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-foreground block">Advance Payment (Optional)</span>
+                <span className="text-[10px] text-muted-foreground">Record token payment if received</span>
+              </div>
+            </div>
             <button
-              key={b.label}
               type="button"
-              onClick={() => setAdvance(String(b.v))}
-              className="py-2 rounded-xl bg-secondary/50 border border-border/20 text-xs font-bold transition-all duration-150 active:scale-95 hover:bg-secondary"
+              onClick={() => setHasAdvance(true)}
+              className="px-3 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1"
             >
-              {b.label}
+              <Plus className="size-3 stroke-[2.5]" />
+              <span>Add Advance</span>
             </button>
-          ))}
-        </div>
-        {advNum > total && (
-          <div className="mt-2.5 p-2.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-bold flex items-center gap-1.5 animate-in shake duration-200">
-            <AlertCircle className="size-4 shrink-0" />
-            <span>⚠️ Advance amount ({fmtINR(advNum)}) cannot exceed total bill ({fmtINR(total)})!</span>
+          </div>
+        ) : (
+          <div className="animate-in fade-in">
+            <div className="flex items-baseline justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Advance Payment
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHasAdvance(false);
+                    setAdvance("");
+                  }}
+                  className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full bg-secondary cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Remaining <span className="font-semibold text-foreground">{fmtINR(remaining)}</span>
+              </p>
+            </div>
+            <div className="relative">
+              <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type="number"
+                value={advance}
+                onChange={(e) => setAdvance(e.target.value)}
+                placeholder="0"
+                className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-2.5 mt-2.5">
+              {[
+                { label: "Clear", v: 0 },
+                { label: "50%", v: Math.round(total / 2) },
+                { label: "Full", v: total },
+                { label: "+₹100", v: advNum + 100 },
+              ].map((b) => (
+                <button
+                  key={b.label}
+                  type="button"
+                  onClick={() => setAdvance(String(b.v))}
+                  className="py-2 rounded-xl bg-secondary/50 border border-border/20 text-xs font-bold transition-all duration-150 active:scale-95 hover:bg-secondary"
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
+            {advNum > total && (
+              <div className="mt-2.5 p-2.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-xs font-bold flex items-center gap-1.5 animate-in shake duration-200">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>⚠️ Advance amount ({fmtINR(advNum)}) cannot exceed total bill ({fmtINR(total)})!</span>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -1714,32 +1749,114 @@ function NewBooking() {
       </section>
 
       <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-          Notes
-        </p>
-        {(settings.occasionPresets ?? []).length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {(settings.occasionPresets ?? []).map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => {
-                  const current = notes.trim();
-                  if (current.toLowerCase().includes(preset.toLowerCase())) return;
-                  setNotes(current ? `${current} · ${preset}` : preset);
-                }}
-                className="px-2.5 py-1 rounded-full bg-secondary text-[11px] font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition"
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Notes & Occasions
+          </p>
+          {!showAddTagInput && (
+            <button
+              type="button"
+              onClick={() => setShowAddTagInput(true)}
+              className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+            >
+              + Add Custom Tag
+            </button>
+          )}
+        </div>
+
+        {/* Selected Tags in place with X removal */}
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2.5 animate-in fade-in">
+            {selectedTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-xs"
               >
-                + {preset}
-              </button>
+                <span>{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTags(selectedTags.filter((t) => t !== tag))}
+                  className="hover:opacity-80 cursor-pointer ml-0.5"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
             ))}
           </div>
         )}
+
+        {/* Preset Suggestions to click and add */}
+        {(settings.occasionPresets ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2.5">
+            {(settings.occasionPresets ?? []).map((preset) => {
+              const isSelected = selectedTags.includes(preset);
+              if (isSelected) return null;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setSelectedTags([...selectedTags, preset])}
+                  className="px-2.5 py-1 rounded-full bg-secondary text-[11px] font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition active:scale-95 cursor-pointer"
+                >
+                  + {preset}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Inline Add Custom Tag Form */}
+        {showAddTagInput && (
+          <div className="flex items-center gap-1.5 mb-2.5 bg-secondary/60 p-1.5 rounded-2xl border border-border/40 animate-in fade-in">
+            <input
+              type="text"
+              placeholder="Tag name (e.g. Engagement, Reception)..."
+              value={customTagInput}
+              onChange={(e) => setCustomTagInput(e.target.value)}
+              className="flex-1 bg-transparent px-2.5 py-1 text-xs focus:outline-none"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (customTagInput.trim()) {
+                    setSelectedTags([...selectedTags, customTagInput.trim()]);
+                    setCustomTagInput("");
+                    setShowAddTagInput(false);
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (customTagInput.trim()) {
+                  setSelectedTags([...selectedTags, customTagInput.trim()]);
+                  setCustomTagInput("");
+                  setShowAddTagInput(false);
+                }
+              }}
+              className="px-2.5 py-1 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddTagInput(false);
+                setCustomTagInput("");
+              }}
+              className="px-2 py-1 rounded-xl bg-secondary text-muted-foreground text-[10px] font-bold cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          placeholder="Optional remarks…"
+          placeholder="Optional remarks (e.g. Box folding, pin securely)..."
           className="w-full bg-secondary rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
         />
       </section>

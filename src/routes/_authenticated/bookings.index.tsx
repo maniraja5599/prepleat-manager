@@ -27,18 +27,20 @@ import {
   MessageCircle,
   AlertTriangle,
   ChevronRight,
+  Plus,
+  CalendarPlus,
 } from "lucide-react";
 import { BookingRequestsInbox } from "@/components/BookingRequestsInbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { MicroTipBanner } from "@/components/MicroTipBanner";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   validateSearch: (search: Record<string, unknown>): { past?: boolean } => {
@@ -117,6 +119,7 @@ function BookingsPage() {
   const [range, setRange] = useState<Range>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [showBookRecommendation, setShowBookRecommendation] = useState(false);
 
   // Sync showPast with the query parameter
   useEffect(() => {
@@ -347,15 +350,21 @@ function BookingsPage() {
   return (
     <AppShell showFloatingSearch={true}>      {/* Sticky Top Control Deck (Title/Ticker + Search + Filters) */}
       <div className="sticky-search-deck bg-background/95 backdrop-blur-md -mx-5 px-5 pt-2 pb-2 border-b border-border/40 mb-3 space-y-2 shadow-2xs">
-        {/* Row 1: Title + Ticker */}
-        <div className="flex items-center justify-between gap-4 h-7">
-          <div>
+        {/* Row 1: Title + Action + Ticker */}
+        <div className="flex items-center justify-between gap-3 h-7">
+          <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-lg font-display font-semibold tracking-tight text-foreground leading-tight">
               Bookings
             </h1>
-            <p className="text-[10px] text-muted-foreground">
-              {showPast ? `${counts.history} Completed Orders` : `${counts.active} Active Orders`}
-            </p>
+            <button
+              type="button"
+              onClick={() => setShowBookRecommendation(true)}
+              className="px-2.5 py-1 rounded-full saree-gradient text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95 transition cursor-pointer shrink-0"
+              title="New Booking Options"
+            >
+              <Plus className="size-3.5 stroke-[2.5]" />
+              <span>Book</span>
+            </button>
           </div>
 
           {/* Scrolling Stats Ticker */}
@@ -753,17 +762,6 @@ function BookingsPage() {
       )}
 
       <BookingRequestsInbox />
-
-      <MicroTipBanner
-        id="bookings_invoice_tip"
-        badge="SHORTCUTS ⚡"
-        tamilTip="புக்கிங் குறிப்புகள்"
-        chips={[
-          { emoji: "⚡", tag: "Bill #", desc: "Instant PDF Bill" },
-          { emoji: "💬", tag: "WhatsApp", desc: "Direct Share" },
-          { emoji: "👆", tag: "Long-Press", desc: "Quick Actions" },
-        ]}
-      />
 
       {list.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
@@ -1436,6 +1434,74 @@ function BookingsPage() {
           </div>
         </div>
       )}
+
+      {/* Smart New Booking Recommendation Dialog */}
+      <Dialog open={showBookRecommendation} onOpenChange={setShowBookRecommendation}>
+        <DialogContent className="max-w-sm rounded-3xl p-5">
+          <DialogHeader className="mb-2 text-left">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="size-8 rounded-full saree-gradient flex items-center justify-center text-white">
+                <CalendarPlus className="size-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold">New Booking</DialogTitle>
+                <p className="text-xs text-muted-foreground">Choose how you want to create your booking</p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-2.5 pt-2">
+            {/* Option 1: Calendar (Recommended) */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowBookRecommendation(false);
+                navigate({ to: "/" });
+              }}
+              className="w-full text-left p-3.5 rounded-2xl bg-primary/10 border-2 border-primary/40 hover:border-primary active:scale-[0.98] transition cursor-pointer flex items-start gap-3 relative overflow-hidden"
+            >
+              <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
+                <Calendar className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="text-xs font-bold text-foreground">
+                    Pick from Calendar
+                  </span>
+                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground">
+                    Recommended
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  View scheduled bookings and choose a delivery date without workload clashes.
+                </p>
+              </div>
+            </button>
+
+            {/* Option 2: Direct Booking */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowBookRecommendation(false);
+                navigate({ to: "/new" });
+              }}
+              className="w-full text-left p-3.5 rounded-2xl bg-secondary/50 border border-border/40 hover:bg-secondary active:scale-[0.98] transition cursor-pointer flex items-start gap-3"
+            >
+              <div className="size-9 rounded-xl bg-secondary text-foreground flex items-center justify-center shrink-0">
+                <Plus className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-xs font-bold text-foreground block mb-0.5">
+                  Direct Form Entry
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Open blank booking form and fill customer & saree details immediately.
+                </p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

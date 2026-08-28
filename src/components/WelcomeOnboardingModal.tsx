@@ -69,7 +69,6 @@ export function WelcomeOnboardingModal() {
     {
       id: "calendar",
       title: "Smart Calendar & Saree Dots",
-      tamilTitle: "கேலெண்டர் & கலர் புள்ளிகள்",
       icon: Calendar,
       color: "text-purple-500 bg-purple-500/10 border-purple-500/30",
       content: (
@@ -79,7 +78,7 @@ export function WelcomeOnboardingModal() {
               <span>👆 Single Tap any Date:</span>
             </p>
             <p className="text-[11px] text-muted-foreground">
-              அந்த தேதியைத் தொட்டால், அன்றைய டெலிவரி புக்கிங், வாடிக்கையாளர் பெயர், சேலை எண்ணிக்கை மற்றும் நிலுவைத் தொகை உடனடியாகத் தெரியும்.
+              Tap any date to instantly view scheduled delivery bookings, customer name, saree count, and pending balance.
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40 space-y-1.5">
@@ -105,7 +104,6 @@ export function WelcomeOnboardingModal() {
     {
       id: "gestures",
       title: "BottomNav Calendar Shortcuts",
-      tamilTitle: "கீழ் Calendar பட்டன் ரகசிய குறுக்குவழி",
       icon: Zap,
       color: "text-amber-500 bg-amber-500/10 border-amber-500/30",
       content: (
@@ -116,7 +114,7 @@ export function WelcomeOnboardingModal() {
               <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-500/20">HOT</span>
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              கீழே உள்ள **Calendar ஐகானை இரண்டு முறை தட்டினால் (Double Tap)**, எங்கிருந்தாலும் **Global Search** திறக்கும்! வாடிக்கையாளர் பெயர் அல்லது பில் நம்பரை நொடியில் தேடலாம்.
+              Double-tap the **Calendar icon** in the bottom navigation bar to open **Global Search** from anywhere! Find customer names or bill numbers in a flash.
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40 space-y-1">
@@ -124,7 +122,7 @@ export function WelcomeOnboardingModal() {
               <span>📅 Single-Tap Calendar Tab:</span>
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              கேலெண்டரில் வேறு மாதத்தில் இருந்தாலும், ஒரு முறை தட்டினால் உடனடியாக **இன்றைய தேதிக்கு (Today)** வந்துவிடும்!
+              Whenever you're viewing past or future months, tapping the Calendar tab returns you directly to **Today's date**!
             </p>
           </div>
         </div>
@@ -133,7 +131,6 @@ export function WelcomeOnboardingModal() {
     {
       id: "invoices",
       title: "1-Tap Canvas Invoices & Rubber Seals",
-      tamilTitle: "மின்னல் வேக PDF பில் & ரப்பர் ஸ்டாம்ப்கள்",
       icon: Receipt,
       color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
       content: (
@@ -143,7 +140,7 @@ export function WelcomeOnboardingModal() {
               <span>⚡ 1-Tap Bill # Preview:</span>
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              எந்தவொரு பில் எண்ணைத் (e.g. EYAS-101) தொட்டாலும் 5 மில்லிசெகண்டில் Crystal-Clear PDF Preview தோன்றும்.
+              Tap any Bill # (e.g. EYAS-101) to open a crystal-clear invoice preview rendered in less than 5ms.
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40 space-y-1">
@@ -151,7 +148,7 @@ export function WelcomeOnboardingModal() {
               <span>🏷️ Dynamic Rubber Stamp Seals:</span>
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              முழுவதும் செலுத்திய பில்களுக்கு **PAID & VERIFIED**, முன்பணத்திற்கு **ADVANCE RECEIVED** சீல்கள் பில்லில் தானாக விழும். வாட்ஸ்அப்பில் எண்களைச் சேமிக்காமலே நேரடி பகிர்வு செய்யலாம்!
+              Fully paid bills receive **PAID & VERIFIED**, and advances receive **ADVANCE RECEIVED** seals automatically. Share directly to WhatsApp without saving phone numbers!
             </p>
           </div>
         </div>
@@ -212,9 +209,6 @@ export function WelcomeOnboardingModal() {
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-foreground">
                 {features[activeSlide].title}
-              </span>
-              <span className="text-[10px] text-primary font-semibold">
-                · {features[activeSlide].tamilTitle}
               </span>
             </div>
             {features[activeSlide].content}

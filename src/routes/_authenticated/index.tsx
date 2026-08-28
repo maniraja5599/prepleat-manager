@@ -309,7 +309,6 @@ function CalendarPage() {
   return (
     <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
-        <GrowthDashboard />
 
         {/* Clean Calendar Quick Action Strip */}
         <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-secondary/50 border border-border/25 my-2.5 text-xs text-muted-foreground">
@@ -628,104 +627,125 @@ const BookingRow = memo(function BookingRow({
       ? (settings.prepleatDotColor ?? "#06b6d4")
       : (settings.directDrapeDotColor ?? "#d946ef");
 
-  const cardCls = cn(
-    "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition relative overflow-hidden text-left w-full border-l-4",
-    isArtistBooking
-      ? "border-gold bg-gradient-to-br from-card to-gold/5 ring-1 ring-gold/30"
-      : b.service === "prepleat"
-        ? "border-[oklch(0.78_0.13_75)] bg-gradient-to-br from-card to-[oklch(0.92_0.08_75)]/5"
-        : "border-[oklch(0.55_0.13_150)] bg-gradient-to-br from-card to-[oklch(0.9_0.06_150)]/5 pb-6",
-    b.status === "cancelled" && "opacity-60",
-  );
-
   return (
-    <li>
-      <Link to="/bookings/$id" params={{ id: b.id }} className={cardCls}>
+    <li className="relative pl-6 pb-4 last:pb-1 group">
+      {/* Vertical timeline connector line */}
+      <div className="absolute left-[9px] top-4 bottom-0 w-0.5 bg-border/40 group-last:hidden" />
+
+      {/* Timeline Node Dot */}
+      <div
+        style={{ backgroundColor: tagColor }}
+        className="absolute left-0 top-3.5 size-5 rounded-full border-2 border-background shadow-xs flex items-center justify-center text-white"
+      >
+        <span className="size-1.5 rounded-full bg-white" />
+      </div>
+
+      {/* Timeline Card */}
+      <Link
+        to="/bookings/$id"
+        params={{ id: b.id }}
+        className={cn(
+          "block bg-card card-shadow rounded-2xl p-3.5 active:scale-[0.99] transition relative overflow-hidden text-left w-full border border-border/30 hover:border-primary/40",
+          isArtistBooking && "ring-1 ring-gold/30 bg-gradient-to-br from-card to-gold/5",
+          b.status === "cancelled" && "opacity-60",
+        )}
+      >
         {isArtistBooking && (
-          <span className="absolute top-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white z-10">
+          <span className="absolute top-0 right-0 px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wider rounded-bl-xl bg-gold text-white z-10">
             ★ Artist
           </span>
         )}
-        {!isArtistBooking && b.service === "drape" && (
-          <span className="absolute bottom-0 right-0 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-tl-xl bg-[oklch(0.55_0.13_150)] text-white z-10">
-            Direct Drape
-          </span>
-        )}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          <div className="min-w-0">
+
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {/* Top row: Client Name & Quick Contact */}
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
-              <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-none">
+              <span className="font-bold text-sm text-foreground truncate max-w-[130px] sm:max-w-none">
                 {c?.name ?? "Unknown"}
               </span>
+
               {c?.phone && (
                 <span
-                  className="inline-flex gap-1.5 items-center shrink-0"
+                  className="inline-flex gap-1 items-center shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <a
                     href={`tel:${cleanPhoneForDialing(c.phone)}`}
-                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                    className="size-5.5 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
                     title="Call Customer"
                   >
-                    <Phone className="size-3 text-muted-foreground" />
+                    <Phone className="size-2.5 text-muted-foreground" />
                   </a>
                   <a
                     href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
+                    className="size-5.5 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90"
                     title="WhatsApp Chat"
                   >
-                    <MessageCircle className="size-3 text-muted-foreground" />
+                    <MessageCircle className="size-2.5 text-muted-foreground" />
                   </a>
                 </span>
               )}
+
               <span
                 style={{ backgroundColor: tagColor }}
-                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white shrink-0"
+                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md text-white shrink-0"
               >
-                {b.service === "prepleat" ? "PRE" : b.service}
+                {b.service === "prepleat" ? "PrePleat" : "Drape"}
               </span>
+
               {(b.billNumber || b.id) && (
-                <span className="text-[8px] font-mono font-bold text-muted-foreground/80 shrink-0 bg-secondary/80 px-1.5 py-0.5 rounded">
+                <span className="text-[8px] font-mono font-bold text-muted-foreground bg-secondary/80 px-1.5 py-0.2 rounded-md shrink-0">
                   {formatShortBillNumber(b.billNumber, b.id)}
                 </span>
               )}
+
               {b.status === "delivered" && (
-                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-muted text-muted-foreground shrink-0">
                   Delivered
                 </span>
               )}
-              {b.status === "cancelled" && (
-                <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/15 text-destructive shrink-0">
-                  Cancelled
-                </span>
-              )}
             </div>
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
-              <span>
-                {showDate ? `${formatAppDate(b.deliveryDate)} · ` : ""}
-                {fmtTime12(b.deliveryTime)} · {b.sareeCount} saree{b.sareeCount > 1 && "s"}
+
+            {/* Time & Count */}
+            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
+              <span className="font-semibold text-foreground">
+                ⏰ {fmtTime12(b.deliveryTime) || "Anytime"}
               </span>
-              {b.createdAt && (
-                <span className="text-[9px] font-mono text-muted-foreground/75 bg-secondary/80 px-1.5 py-0.5 rounded shrink-0">
-                  Booked {formatAppDate(b.createdAt)}
-                </span>
+              <span>·</span>
+              <span>
+                {b.sareeCount} saree{b.sareeCount > 1 ? "s" : ""}
+              </span>
+              {showDate && (
+                <>
+                  <span>·</span>
+                  <span className="text-primary font-medium">{formatAppDate(b.deliveryDate)}</span>
+                </>
               )}
             </div>
+
             {a && (
-              <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">via {a.name}</p>
+              <p className="text-[10px] text-gold font-semibold mt-0.5 truncate">
+                via {a.name}
+              </p>
             )}
           </div>
-          <div className="text-right shrink-0 pt-1">
-            <p className="text-sm font-semibold tabular-nums">{fmtINR(netBookingAmount(b))}</p>
+
+          {/* Right Side: Total & Due */}
+          <div className="text-right shrink-0 pt-0.5">
+            <p className="text-sm font-bold tabular-nums text-foreground">
+              {fmtINR(netBookingAmount(b))}
+            </p>
             {due > 0 ? (
-              <p className="text-xs text-destructive font-semibold flex items-center justify-end">
-                <IndianRupee className="size-3" />
+              <p className="text-[11px] text-destructive font-bold flex items-center justify-end">
+                <IndianRupee className="size-2.5" />
                 {Math.round(due).toLocaleString("en-IN")} due
               </p>
             ) : (
-              <p className="text-xs text-success font-semibold">Paid</p>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                ✓ Paid
+              </p>
             )}
           </div>
         </div>
