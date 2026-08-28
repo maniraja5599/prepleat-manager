@@ -157,6 +157,17 @@ function CalendarPage() {
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const daySwipeRef = useRef<HTMLDivElement>(null);
+  const monthStripRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (monthStripRef.current) {
+      const activeBtn = monthStripRef.current.querySelector<HTMLElement>('[data-active="true"]');
+      if (activeBtn) {
+        const targetScroll = Math.max(0, activeBtn.offsetLeft - 36);
+        monthStripRef.current.scrollTo({ left: targetScroll, behavior: "smooth" });
+      }
+    }
+  }, [cursor]);
 
   useEffect(() => {
     const el = calendarRef.current;
@@ -357,7 +368,7 @@ function CalendarPage() {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1.5 px-0.5">
+          <div ref={monthStripRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1.5 px-0.5 scroll-smooth">
             {yearMonthsForecast.map((m, idx) => (
               <button
                 key={idx}
@@ -374,6 +385,7 @@ function CalendarPage() {
                     ? "bg-primary/10 text-primary border border-primary/25 font-bold"
                     : "bg-secondary/60 text-muted-foreground hover:text-foreground font-semibold",
                 )}
+                data-active={m.isViewedMonth ? "true" : undefined}
                 title={`${m.label} ${cursor.getFullYear()}: ${m.count} deliveries`}
               >
                 <span className="text-[10px] uppercase">{m.label}</span>
@@ -394,18 +406,7 @@ function CalendarPage() {
           </div>
         </div>
 
-        {/* Clean Calendar Quick Action Strip */}
-        <div className="flex items-center justify-between px-3.5 py-1.5 rounded-2xl bg-secondary/50 border border-border/25 mb-2.5 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <span className="text-foreground font-bold">👆 1-Tap:</span>
-            <span>View Deliveries</span>
-          </div>
-          <div className="w-px h-3.5 bg-border/60" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-foreground font-bold">✌️ 2-Tap:</span>
-            <span className="text-primary font-bold">New Booking</span>
-          </div>
-        </div>
+
 
         {guide === "book" && (
           <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-2xl text-xs text-primary font-medium flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
@@ -573,9 +574,19 @@ function CalendarPage() {
               );
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-            Long-press peek · double-tap to book · swipe ← → or hold arrows for months
-          </p>
+
+          {/* Clean Calendar Quick Action Hints (Below Calendar Grid) */}
+          <div className="flex items-center justify-between px-3.5 py-1.5 rounded-2xl bg-secondary/50 border border-border/25 mt-2.5 mb-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <span className="text-foreground font-bold">👆 1-Tap:</span>
+              <span>Pick Date to View</span>
+            </div>
+            <div className="w-px h-3.5 bg-border/60" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-foreground font-bold">✌️ 2-Tap:</span>
+              <span className="text-primary font-bold">New Booking</span>
+            </div>
+          </div>
 
           {isSameMonth(selected, cursor) && (
             <div className="mt-5">

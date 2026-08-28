@@ -92,7 +92,7 @@ export function getCurrentAppUser(): AppUser | null {
   return toAppUser(auth?.currentUser ?? null) ?? getLocalGuestUser();
 }
 
-export function waitForAppUser(timeoutMs = 1200): Promise<AppUser | null> {
+export function waitForAppUser(timeoutMs = 3500): Promise<AppUser | null> {
   const localGuest = getLocalGuestUser();
   if (localGuest) return Promise.resolve(localGuest);
   if (!auth) return Promise.resolve(null);

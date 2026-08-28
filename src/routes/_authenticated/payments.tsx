@@ -1049,7 +1049,7 @@ function IncomeView(p: {
   const [searchIncome, setSearchIncome] = useState("");
   const [searchExpense, setSearchExpense] = useState("");
   const [searchPending, setSearchPending] = useState("");
-  const [pendingCategoryFilter, setPendingCategoryFilter] = useState<"all" | "prepleat" | "draping" | "high">("all");
+  const [pendingCategoryFilter, setPendingCategoryFilter] = useState<"completed" | "all" | "upcoming" | "high">("completed");
   const [collectTarget, setCollectTarget] = useState<any | null>(null);
   const [collectAmount, setCollectAmount] = useState("");
   const [collectMode, setCollectMode] = useState<PaymentMode>("gpay");
@@ -1106,6 +1106,14 @@ function IncomeView(p: {
       .sort((a, b) => b.due - a.due);
   }, [p.bookings, p.customers]);
 
+  const completedPendingCount = useMemo(() => {
+    return pendingList.filter((item) => item.booking?.status === "completed" || item.booking?.status === "delivered").length;
+  }, [pendingList]);
+
+  const upcomingPendingCount = useMemo(() => {
+    return pendingList.filter((item) => item.booking?.status !== "completed" && item.booking?.status !== "delivered").length;
+  }, [pendingList]);
+
   const filteredPending = useMemo(() => {
     return pendingList.filter((item) => {
       const q = searchPending.trim().toLowerCase();
@@ -1117,9 +1125,12 @@ function IncomeView(p: {
         String(item.billNumber).toLowerCase().includes(q);
 
       if (!matchesQuery) return false;
-      if (pendingCategoryFilter === "prepleat") return item.service === "prepleat";
-      if (pendingCategoryFilter === "draping")
-        return item.service === "drape" || item.service === "draping" || item.service === "both";
+      if (pendingCategoryFilter === "completed") {
+        return item.booking?.status === "completed" || item.booking?.status === "delivered";
+      }
+      if (pendingCategoryFilter === "upcoming") {
+        return item.booking?.status !== "completed" && item.booking?.status !== "delivered";
+      }
       if (pendingCategoryFilter === "high") return item.due >= 500;
       return true;
     });
@@ -1500,9 +1511,9 @@ function IncomeView(p: {
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                 {(
                   [
-                    { id: "all", label: `All (${pendingList.length})` },
-                    { id: "prepleat", label: "Pre-Pleat" },
-                    { id: "draping", label: "Draping" },
+                    { id: "completed", label: `Completed Work (${completedPendingCount})` },
+                    { id: "all", label: `All Pending (${pendingList.length})` },
+                    { id: "upcoming", label: `Upcoming (${upcomingPendingCount})` },
                     { id: "high", label: "High Due (≥ ₹500)" },
                   ] as const
                 ).map((f) => (
@@ -2259,6 +2270,7 @@ function SummaryView(p: {
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all" or "yyyy-MM"
   const [summarySubTab, setSummarySubTab] = useState<"overview" | "services" | "clients" | "modes">("overview");
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [activeChartMonth, setActiveChartMonth] = useState<any | null>(null);
 
   const availableYears = useMemo(() => {
     const years = new Set<string>();
@@ -2382,14 +2394,45 @@ function SummaryView(p: {
           </div>
         </div>
 
-        <div className="h-44 w-full -mx-1">
+        {/* Active Month Inspection Pinned Bar */}
+        {activeChartMonth && (
+          <div className="bg-secondary/70 border border-border/40 rounded-xl p-2 mb-2 flex items-center justify-between text-xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-foreground">{activeChartMonth.month}:</span>
+              <span className="text-emerald-600 font-bold">+{fmtINR(activeChartMonth.amount)}</span>
+              <span className="text-rose-600 font-bold">-{fmtINR(activeChartMonth.expense)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-primary">
+                Net {fmtINR(activeChartMonth.amount - activeChartMonth.expense)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveChartMonth(null)}
+                className="size-5 rounded-full hover:bg-card flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="h-60 w-full -mx-1">
           {trendDataWithCumulative.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={trendDataWithCumulative} margin={{ top: 8, right: 10, left: -20, bottom: 0 }}>
+              <ComposedChart
+                data={trendDataWithCumulative}
+                margin={{ top: 8, right: 10, left: -20, bottom: 0 }}
+                onClick={(e: any) => {
+                  if (e && e.activePayload && e.activePayload.length) {
+                    setActiveChartMonth(e.activePayload[0].payload);
+                  }
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
                 <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
                 <YAxis
@@ -2410,6 +2453,7 @@ function SummaryView(p: {
                   tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
                 />
                 <Tooltip
+                  cursor={{ fill: "currentColor", opacity: 0.05 }}
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0]?.payload || {};
@@ -2418,25 +2462,25 @@ function SummaryView(p: {
                       const net = inc - exp;
                       const cum = Number(data.cumulative) || 0;
                       return (
-                        <div className="rounded-xl bg-card border border-border p-2.5 shadow-xl text-xs space-y-1">
-                          <p className="font-bold text-foreground border-b border-border/40 pb-1">{label}</p>
-                          <p className="text-emerald-600 font-semibold flex justify-between gap-4">
-                            <span>Income (Bar):</span> <strong>+{fmtINR(inc)}</strong>
-                          </p>
-                          <p className="text-rose-600 font-semibold flex justify-between gap-4">
-                            <span>Expense (Bar):</span> <strong>-{fmtINR(exp)}</strong>
-                          </p>
-                          <p
+                        <div className="rounded-xl bg-card/95 backdrop-blur border border-border p-2 shadow-lg text-[10.5px] space-y-0.5 pointer-events-none">
+                          <p className="font-bold text-foreground border-b border-border/30 pb-0.5">{label}</p>
+                          <div className="flex justify-between gap-3 text-emerald-600 font-semibold">
+                            <span>Income:</span> <strong>+{fmtINR(inc)}</strong>
+                          </div>
+                          <div className="flex justify-between gap-3 text-rose-600 font-semibold">
+                            <span>Expense:</span> <strong>-{fmtINR(exp)}</strong>
+                          </div>
+                          <div
                             className={cn(
-                              "font-bold pt-1 border-t border-border/30 flex justify-between gap-4",
+                              "font-bold pt-0.5 border-t border-border/20 flex justify-between gap-3",
                               net >= 0 ? "text-primary" : "text-destructive",
                             )}
                           >
-                            <span>Net Profit:</span> <strong>{fmtINR(net)}</strong>
-                          </p>
-                          <p className="text-primary font-bold pt-1 border-t border-border/30 flex justify-between gap-4">
-                            <span>Cumulative Total:</span> <strong>{fmtINR(cum)}</strong>
-                          </p>
+                            <span>Net:</span> <strong>{fmtINR(net)}</strong>
+                          </div>
+                          <div className="text-primary/90 font-bold pt-0.5 border-t border-border/20 flex justify-between gap-3">
+                            <span>Cumul:</span> <strong>{fmtINR(cum)}</strong>
+                          </div>
                         </div>
                       );
                     }

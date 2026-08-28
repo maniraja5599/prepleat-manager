@@ -375,10 +375,16 @@ export function CloudSync() {
       setSyncStatus("offline");
       setShowStatus(true);
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        retry();
+      }
+    };
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
     window.addEventListener("focus", retry);
     window.addEventListener("sync-retry", retry);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       unsubscribeAuth();
@@ -387,6 +393,7 @@ export function CloudSync() {
       window.removeEventListener("offline", offline);
       window.removeEventListener("focus", retry);
       window.removeEventListener("sync-retry", retry);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       clearHideTimer();
     };
   }, [pullAndMerge, pushNow]);

@@ -1344,7 +1344,7 @@ function BookingsPage() {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title={`Delete ${selected.size} booking${selected.size > 1 ? "s" : ""}?`}
-        description="Deleted bookings move to Recently Deleted (Settings → Data) for 7 days."
+        description="⚠️ Warning: Deleting bookings will permanently delete their associated payments as well. If you wish to preserve payment history in your accounts, cancel the orders instead."
         confirmLabel="Delete"
         tone="danger"
         onConfirm={() => {

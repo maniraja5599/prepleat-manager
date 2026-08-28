@@ -129,6 +129,7 @@ function BookingDetail() {
   } | null>(null);
   const [readyModalOpen, setReadyModalOpen] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   if (!booking) {
     return (
@@ -611,22 +612,9 @@ function BookingDetail() {
             {editing ? <X className="size-5" /> : <Pencil className="size-5" />}
           </button>
           <button
-            onClick={() => {
-              const bid = booking.id;
-              deleteBooking(bid);
-              toast.success("Booking deleted", {
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    restoreBooking(bid);
-                    toast.success("Restored");
-                  },
-                },
-                duration: 6000,
-              });
-              navigate({ to: "/bookings" });
-            }}
+            onClick={() => setDeleteConfirmOpen(true)}
             className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 active:scale-95 transition cursor-pointer"
+            title="Delete Booking"
           >
             <Trash2 className="size-5" />
           </button>
@@ -2116,6 +2104,99 @@ function BookingDetail() {
                   No Phone
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Warning Sheet */}
+      {deleteConfirmOpen && booking && (
+        <div
+          className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          onClick={() => setDeleteConfirmOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-3xl p-5 border border-border/40 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-border/30">
+              <div className="flex items-center gap-2 text-destructive font-display font-bold text-base">
+                <AlertCircle className="size-5" />
+                <span>Delete Booking & Payments?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="size-7 rounded-full bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-3.5 space-y-2 text-xs">
+              <p className="font-bold text-destructive flex items-center gap-1.5">
+                <span>⚠️</span> Warning: Payments will also be deleted!
+              </p>
+              <p className="text-foreground/90 leading-relaxed">
+                Deleting this booking will <strong>permanently erase this order</strong> along with all of its <strong>{payments.length} associated payment receipts</strong> ({fmtINR(booking.advancePaid || 0)} recorded).
+              </p>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 text-xs space-y-1">
+              <p className="font-bold text-amber-700 dark:text-amber-300">
+                💡 Want to keep the payment history?
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                If you only want to stop work or drop the order without losing payment records from your financial accounts, choose <strong>Cancel Booking</strong> instead.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              {booking.status !== "cancelled" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    cancelBooking(booking.id);
+                    setDeleteConfirmOpen(false);
+                    toast.success("Booking cancelled. Payments preserved in records.");
+                  }}
+                  className="w-full py-2.5 rounded-2xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 border border-border/40"
+                >
+                  <Ban className="size-4 text-amber-500" />
+                  <span>Cancel Booking Instead (Keep Payments)</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const bid = booking.id;
+                  deleteBooking(bid);
+                  setDeleteConfirmOpen(false);
+                  toast.success("Booking & payments deleted", {
+                    action: {
+                      label: "Undo",
+                      onClick: () => {
+                        restoreBooking(bid);
+                        toast.success("Restored");
+                      },
+                    },
+                    duration: 6000,
+                  });
+                  navigate({ to: "/bookings" });
+                }}
+                className="w-full py-2.5 rounded-2xl bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 shadow-sm"
+              >
+                <Trash2 className="size-4" />
+                <span>Delete Everything (Booking & Payments)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="w-full py-2 text-center text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Keep Booking (Don't Delete)
+              </button>
             </div>
           </div>
         </div>

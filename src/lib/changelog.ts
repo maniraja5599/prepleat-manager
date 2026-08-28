@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.6";
+export const APP_VERSION = "1.7.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,43 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.6",
+    version: "v1.7.7",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "Completed Dues Default View, Safe Deletions & Enhanced Chart Inspection",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📋",
+        text: "Completed Work Pending Dues (Default View)",
+        desc: "Pending Dues now defaults to showing delivered/completed jobs with outstanding balances, with instant filters for All Pending, Upcoming, and High Dues.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Booking & Payments Deletion Safety Guard",
+        desc: "Added smart safety confirmation warning that payments will be deleted, and provides a 1-tap option to Cancel Booking instead to keep financial records intact.",
+      },
+      {
+        emoji: "📈",
+        text: "Expanded Chart Height & Pinned Inspection Bar",
+        desc: "Increased revenue chart height and added a pinned monthly detail bar that doesn't obscure the chart when tapped on mobile.",
+      },
+      {
+        emoji: "🔄",
+        text: "Instant Multi-Device Sync on Resume",
+        desc: "Added visibility-change and extended startup auth resolution for seamless real-time sync across phones and computers with email login.",
+      },
+      {
+        emoji: "📅",
+        text: "Repositioned Calendar Hints & Smooth Month Bar Scroll",
+        desc: "Moved date selection hints below the calendar grid and auto-scrolls the 12-month schedule bar comfortably to the left.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.6",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "Side-by-Side Financial Overview, Report Downloads & Large-Screen Fit",
     badge: "LATEST UPDATE ✨",
     changes: [
