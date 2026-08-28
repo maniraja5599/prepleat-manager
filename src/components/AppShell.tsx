@@ -555,7 +555,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const isLongText = currentText.length > 20;
 
   return (
-    <div className="min-h-[100dvh] bg-background pb-28">
+    <div className="min-h-[100dvh] bg-background pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]">
       <div className={wide ? "max-w-3xl mx-auto" : "max-w-md mx-auto"}>
         {/* Uniform brand strip — strictly single-row without wrapping */}
         <div className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-4 pb-2.5 flex items-center justify-between gap-2 flex-nowrap">

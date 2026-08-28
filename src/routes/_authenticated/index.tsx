@@ -333,7 +333,7 @@ function CalendarPage() {
   }, []);
 
   return (
-    <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
+    <AppShell showBrand showFloatingSearch={true}>
       <div className="no-select">
 
         {/* Top 12-Month Year-Round Delivery Schedule Strip */}

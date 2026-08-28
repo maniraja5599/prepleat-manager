@@ -876,6 +876,7 @@ function PaymentsPage() {
           categories={categories}
           onDeleteExpense={(id) => setPendingDelete({ type: "expense", id })}
           onEditTx={setEditingTx}
+          onExport={() => setExportOpen(true)}
         />
       )}
 
@@ -927,7 +928,7 @@ function PaymentsPage() {
         title="Add Extra Income or Shop Expense (Booking payments are tracked automatically)"
       >
         <Plus className="size-3.5 stroke-[3]" />
-        <span>+ Quick Entry</span>
+        <span>Quick Entry</span>
       </button>
 
       {addTransactionOpen && (
@@ -1042,6 +1043,7 @@ function IncomeView(p: {
   categories?: string[];
   onDeleteExpense?: (id: string) => void;
   onEditTx?: (tx: any) => void;
+  onExport?: () => void;
 }) {
   const [paymentSubTab, setPaymentSubTab] = useState<"income" | "expenses">("income");
   const [searchIncome, setSearchIncome] = useState("");
@@ -1196,34 +1198,76 @@ function IncomeView(p: {
     <>
       {p.subFilter === "collected" ? (
         <>
-          {/* Sub-Tabs: Income vs Expense (Always Top) */}
-          <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3 card-shadow">
-            <button
-              type="button"
-              onClick={() => setPaymentSubTab("income")}
-              className={cn(
-                "flex-grow py-2.5 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer text-center flex items-center justify-center gap-1.5",
-                paymentSubTab === "income"
-                  ? "bg-emerald-600 text-white shadow-md"
-                  : "text-muted-foreground hover:bg-secondary/40",
-              )}
-            >
-              <TrendingUp className="size-3.5" />
-              <span>Income ({allIncomesList.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentSubTab("expenses")}
-              className={cn(
-                "flex-grow py-2.5 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer text-center flex items-center justify-center gap-1.5",
-                paymentSubTab === "expenses"
-                  ? "bg-rose-600 text-white shadow-md"
-                  : "text-muted-foreground hover:bg-secondary/40",
-              )}
-            >
-              <TrendingDown className="size-3.5" />
-              <span>Expenses ({p.expenses?.length || 0})</span>
-            </button>
+          {/* Sub-Tabs: Income vs Expense + Download Button (Always Top) */}
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <div className="flex-1 flex bg-secondary p-1 rounded-2xl gap-1 card-shadow">
+              <button
+                type="button"
+                onClick={() => setPaymentSubTab("income")}
+                className={cn(
+                  "flex-1 py-2 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer text-center flex items-center justify-center gap-1.5",
+                  paymentSubTab === "income"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-muted-foreground hover:bg-secondary/40",
+                )}
+              >
+                <TrendingUp className="size-3.5" />
+                <span>Income ({allIncomesList.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentSubTab("expenses")}
+                className={cn(
+                  "flex-1 py-2 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer text-center flex items-center justify-center gap-1.5",
+                  paymentSubTab === "expenses"
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "text-muted-foreground hover:bg-secondary/40",
+                )}
+              >
+                <TrendingDown className="size-3.5" />
+                <span>Expenses ({p.expenses?.length || 0})</span>
+              </button>
+            </div>
+            {p.onExport && (
+              <button
+                type="button"
+                onClick={p.onExport}
+                className="px-3 py-2 rounded-2xl bg-card border border-border/40 text-xs font-bold text-foreground flex items-center gap-1.5 shadow-xs hover:bg-secondary active:scale-95 transition cursor-pointer shrink-0"
+                title="Download / Export Financial Reports"
+              >
+                <Download className="size-3.5 text-primary" />
+                <span>Download</span>
+              </button>
+            )}
+          </div>
+
+          {/* 2 Compact Side-by-Side Metric Boxes (Income vs Expense) */}
+          <div className="grid grid-cols-2 gap-2 mb-3 text-center">
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-emerald-500/25 bg-emerald-500/5 flex flex-col items-center justify-center">
+              <div className="flex items-center justify-center gap-1 text-[9.5px] uppercase font-bold text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="size-3" />
+                <span>Income</span>
+              </div>
+              <p className="text-base font-display font-extrabold mt-0.5 tabular-nums text-emerald-600 dark:text-emerald-400">
+                +{fmtINR(p.lifetime)}
+              </p>
+              <span className="text-[8.5px] text-muted-foreground mt-0.5">
+                {allIncomesList.length} total receipts
+              </span>
+            </div>
+
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-rose-500/25 bg-rose-500/5 flex flex-col items-center justify-center">
+              <div className="flex items-center justify-center gap-1 text-[9.5px] uppercase font-bold text-rose-600 dark:text-rose-400">
+                <TrendingDown className="size-3" />
+                <span>Expenses</span>
+              </div>
+              <p className="text-base font-display font-extrabold mt-0.5 tabular-nums text-rose-600 dark:text-rose-400">
+                -{fmtINR(p.totalExpense || 0)}
+              </p>
+              <span className="text-[8.5px] text-muted-foreground mt-0.5">
+                {p.expenses?.length || 0} total spent
+              </span>
+            </div>
           </div>
 
           {paymentSubTab === "income" ? (
@@ -1399,42 +1443,7 @@ function IncomeView(p: {
                   ))}
                 </div>
               )}
-                      {/* Income & Expense Live Financial Summary Cards (Placed below transactions list) */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <div className="bg-card card-shadow rounded-2xl p-2.5 border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="size-2.5 text-emerald-500" /> Income
-                    </span>
-                    <span className="text-[8.5px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.2 rounded-full">
-                      {allIncomesList.length} txs
-                    </span>
-                  </div>
-                  <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    +{fmtINR(p.lifetime)}
-                  </p>
-                  <p className="text-[8.5px] text-muted-foreground mt-0.5">
-                    Avg: {fmtINR(allIncomesList.length > 0 ? Math.round(p.lifetime / allIncomesList.length) : 0)} / receipt
-                  </p>
-                </div>
 
-                <div className="bg-card card-shadow rounded-2xl p-2.5 border border-rose-500/20 bg-gradient-to-br from-card to-rose-500/5">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                      <TrendingDown className="size-2.5 text-rose-500" /> Expenses
-                    </span>
-                    <span className="text-[8.5px] bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold px-1.5 py-0.2 rounded-full">
-                      {p.expenses?.length || 0} txs
-                    </span>
-                  </div>
-                  <p className="text-sm font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
-                    -{fmtINR(p.totalExpense || 0)}
-                  </p>
-                  <p className="text-[8.5px] text-muted-foreground mt-0.5">
-                    Net: {fmtINR(p.lifetime - (p.totalExpense || 0))}
-                  </p>
-                </div>
-              </div>
             </div>
           )}
         </>
@@ -2587,7 +2596,7 @@ function SummaryView(p: {
               <div className="grid grid-cols-2 gap-2">
                 {/* Peak Month */}
                 {periodData.peak && (
-                  <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-2">
+                  <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-2 text-center flex flex-col items-center justify-center">
                     <span className="text-[8.5px] uppercase font-bold text-emerald-700 dark:text-emerald-300 block">
                       🔥 Best Performing Month
                     </span>
@@ -2600,7 +2609,7 @@ function SummaryView(p: {
 
                 {/* Slowest Month */}
                 {periodData.slowest && (
-                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-xl p-2">
+                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-xl p-2 text-center flex flex-col items-center justify-center">
                     <span className="text-[8.5px] uppercase font-bold text-amber-700 dark:text-amber-300 block">
                       🔻 Slowest / Low Month
                     </span>
@@ -2612,7 +2621,7 @@ function SummaryView(p: {
                 )}
 
                 {/* Avg Per Month */}
-                <div className="bg-primary/8 border border-primary/15 rounded-xl p-2">
+                <div className="bg-primary/8 border border-primary/15 rounded-xl p-2 text-center flex flex-col items-center justify-center">
                   <span className="text-[8.5px] uppercase font-bold text-primary block">
                     📈 Monthly Average
                   </span>
@@ -2623,7 +2632,7 @@ function SummaryView(p: {
                 </div>
 
                 {/* Daily Earning */}
-                <div className="bg-secondary/60 border border-border/30 rounded-xl p-2">
+                <div className="bg-secondary/60 border border-border/30 rounded-xl p-2 text-center flex flex-col items-center justify-center">
                   <span className="text-[8.5px] uppercase font-bold text-muted-foreground block">
                     ⚡ Daily Run-Rate
                   </span>
@@ -2722,7 +2731,7 @@ function SummaryView(p: {
 
           {/* Top Sources */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30 text-center flex flex-col items-center justify-center">
               <p className="text-[9.5px] uppercase tracking-wider text-muted-foreground font-bold">
                 Top Income Source
               </p>
@@ -2740,7 +2749,7 @@ function SummaryView(p: {
               )}
             </div>
 
-            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30 text-center flex flex-col items-center justify-center">
               <p className="text-[9.5px] uppercase tracking-wider text-muted-foreground font-bold">
                 Top Spending
               </p>
@@ -2845,7 +2854,7 @@ function SummaryView(p: {
 
                 {/* Saree Metrics & Add-ons Grid */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30 text-center flex flex-col items-center justify-center">
                     <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
                       🥻 Saree Density
                     </span>
@@ -2854,7 +2863,7 @@ function SummaryView(p: {
                     </p>
                     <p className="text-[8.5px] text-muted-foreground mt-0.5">Avg per booking order</p>
                   </div>
-                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30 text-center flex flex-col items-center justify-center">
                     <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
                       🚗 Travel / Extra Charges
                     </span>
@@ -3054,14 +3063,14 @@ function SummaryView(p: {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col items-center justify-center text-center">
                     <span className="text-[9.5px] font-bold text-blue-600">📱 UPI / GPay / Digital</span>
                     <p className="text-sm font-extrabold text-blue-700 mt-1 tabular-nums">
                       {fmtINR(gpayTotal)}{" "}
                       <span className="text-[9px] font-medium opacity-80">({gpayPct}%)</span>
                     </p>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center text-center">
                     <span className="text-[9.5px] font-bold text-emerald-600">💵 Cash</span>
                     <p className="text-sm font-extrabold text-emerald-700 mt-1 tabular-nums">
                       {fmtINR(cashTotal)}{" "}
@@ -3619,9 +3628,9 @@ function Stat({
           ? "text-destructive"
           : "text-muted-foreground";
   return (
-    <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+    <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30 text-center flex flex-col items-center justify-center">
       <div
-        className={`flex items-center gap-1 text-[9.5px] uppercase tracking-wider font-bold ${tintCls}`}
+        className={`flex items-center justify-center gap-1 text-[9.5px] uppercase tracking-wider font-bold ${tintCls}`}
       >
         {icon}
         <span>{label}</span>

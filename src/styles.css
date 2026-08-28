@@ -432,7 +432,7 @@
     padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
   }
   .safe-pb {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   }
   .sticky-search-deck {
     position: -webkit-sticky;

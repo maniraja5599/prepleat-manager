@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.5";
+export const APP_VERSION = "1.7.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.5",
+    version: "v1.7.6",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "Side-by-Side Financial Overview, Report Downloads & Large-Screen Fit",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "💳",
+        text: "Dual Income/Expense Overview & Reports Download",
+        desc: "Instant side-by-side Income & Expense metric boxes with 1-tap Download button on the Payments dashboard.",
+      },
+      {
+        emoji: "📱",
+        text: "Standardized Multi-Device Fit & Nav Clearance",
+        desc: "Optimized Calendar and App layout with standardized phone bounds and ample bottom clearance on large screens like Samsung Galaxy Ultra / Edge.",
+      },
+      {
+        emoji: "✨",
+        text: "Centered Symmetry & Clean Quick Entry",
+        desc: "Symmetrically centered financial metric cards in Summary sub-tabs and single clean Quick Entry floating trigger.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.5",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "12-Month Year-Round Calendar Schedule, Deep Financial Analytics & Micro Dots",
     badge: "LATEST UPDATE ✨",
     changes: [
