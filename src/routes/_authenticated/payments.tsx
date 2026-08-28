@@ -2249,6 +2249,48 @@ function SummaryView(p: {
 
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all" or "yyyy-MM"
   const [summarySubTab, setSummarySubTab] = useState<"overview" | "services" | "clients" | "modes">("overview");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    for (const t of p.allTimeTrend || []) {
+      if (t.month && t.month.length >= 4) {
+        years.add(t.month.slice(0, 4));
+      }
+    }
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [p.allTimeTrend]);
+
+  // Compute period-specific analytics
+  const periodData = useMemo(() => {
+    const months = (p.allTimeTrend || []).filter((m) =>
+      selectedYear === "all" ? true : m.month.startsWith(selectedYear),
+    );
+    const validMonths = months.filter((m) => m.amount > 0 || m.expense > 0);
+    const income = months.reduce((s, m) => s + m.amount, 0);
+    const expense = months.reduce((s, m) => s + m.expense, 0);
+    const net = income - expense;
+    const marginPct = income > 0 ? Math.round((net / income) * 100) : 0;
+
+    const sortedByIncome = [...validMonths].sort((a, b) => b.amount - a.amount);
+    const peak = sortedByIncome.length > 0 ? sortedByIncome[0] : null;
+    const slowest = sortedByIncome.length > 0 ? sortedByIncome[sortedByIncome.length - 1] : null;
+    const avgMonthly = validMonths.length > 0 ? Math.round(income / validMonths.length) : 0;
+    const avgDaily = validMonths.length > 0 ? Math.round(income / (validMonths.length * 30)) : 0;
+
+    return {
+      months,
+      validMonths,
+      income,
+      expense,
+      net,
+      marginPct,
+      peak,
+      slowest,
+      avgMonthly,
+      avgDaily,
+    };
+  }, [p.allTimeTrend, selectedYear]);
 
   // Build cumulative data and compute domains
   const { allTimeWithCumulative, allTimeDomains, lifetimeCumulative } = useMemo(() => {
@@ -2297,11 +2339,6 @@ function SummaryView(p: {
     return achieved.length > 0 ? achieved[achieved.length - 1] : null;
   }, [lifetimeCumulative]);
 
-  // Memos for dynamic helper metrics under the chart
-  const metrics = useMemo(() => {
-    return `Lifetime Margin: ${margin}% · Total Net Profit: ${fmtINR(p.netProfit)}`;
-  }, [margin, p.netProfit]);
-
   const trendDataWithCumulative = useMemo(() => {
     const list = p.trend12 || [];
     let cumulative = 0;
@@ -2317,28 +2354,26 @@ function SummaryView(p: {
   return (
     <>
       {/* 📈 Monthly Stacked Bars + Cumulative Line Chart */}
-      <div className="bg-card card-shadow rounded-2xl p-4 mb-3 border border-border/40">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-              <TrendingUp className="size-3.5 text-primary" /> Monthly Revenue & Trend
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Stacked Income/Expense Bars + Cumulative Growth</p>
-          </div>
-          <div className="flex items-center gap-2.5 text-[9px] font-bold">
+      <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
+        {/* Single Smart Header Line */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5 truncate">
+            <TrendingUp className="size-3.5 text-primary shrink-0" /> Revenue & Trend
+          </p>
+          <div className="flex items-center gap-2 text-[8.5px] font-bold shrink-0">
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <span className="size-2 rounded-xs bg-emerald-500 inline-block" /> Income
+              <span className="size-1.5 rounded-xs bg-emerald-500 inline-block" /> Income
             </span>
             <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
-              <span className="size-2 rounded-xs bg-rose-500 inline-block" /> Expense
+              <span className="size-1.5 rounded-xs bg-rose-500 inline-block" /> Expense
             </span>
             <span className="flex items-center gap-1 text-primary">
-              <span className="size-2 rounded-full bg-primary inline-block" /> Cumulative
+              <span className="size-1.5 rounded-full bg-primary inline-block" /> Cumulative
             </span>
           </div>
         </div>
 
-        <div className="h-48 w-full -mx-1">
+        <div className="h-44 w-full -mx-1">
           {trendDataWithCumulative.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
@@ -2423,9 +2458,9 @@ function SummaryView(p: {
                   dataKey="cumulative"
                   name="Cumulative"
                   stroke="var(--color-primary)"
-                  strokeWidth={2.5}
-                  dot={{ r: 2.5, fill: "var(--color-primary)" }}
-                  activeDot={{ r: 4.5 }}
+                  strokeWidth={2}
+                  dot={{ r: 1.2, fill: "var(--color-primary)" }}
+                  activeDot={{ r: 3.5 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -2442,56 +2477,74 @@ function SummaryView(p: {
         )}
       </div>
 
-      {/* Summary Sub-Tabs Navigation (Categorized Analytics) */}
-      <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3 card-shadow overflow-x-auto no-scrollbar">
-        <button
-          type="button"
-          onClick={() => setSummarySubTab("overview")}
-          className={cn(
-            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
-            summarySubTab === "overview"
-              ? "bg-card text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          📊 Overview
-        </button>
-        <button
-          type="button"
-          onClick={() => setSummarySubTab("services")}
-          className={cn(
-            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
-            summarySubTab === "services"
-              ? "bg-card text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          🥻 Services
-        </button>
-        <button
-          type="button"
-          onClick={() => setSummarySubTab("clients")}
-          className={cn(
-            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
-            summarySubTab === "clients"
-              ? "bg-card text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          👑 VIP Clients
-        </button>
-        <button
-          type="button"
-          onClick={() => setSummarySubTab("modes")}
-          className={cn(
-            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
-            summarySubTab === "modes"
-              ? "bg-card text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          💳 Modes & Cash
-        </button>
+      {/* Summary Sub-Tabs Navigation & Year Period Selector */}
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <div className="flex-1 flex bg-secondary p-1 rounded-2xl gap-1 card-shadow overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setSummarySubTab("overview")}
+            className={cn(
+              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              summarySubTab === "overview"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            📊 Overview
+          </button>
+          <button
+            type="button"
+            onClick={() => setSummarySubTab("services")}
+            className={cn(
+              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              summarySubTab === "services"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            🥻 Services
+          </button>
+          <button
+            type="button"
+            onClick={() => setSummarySubTab("clients")}
+            className={cn(
+              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              summarySubTab === "clients"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            👑 VIPs
+          </button>
+          <button
+            type="button"
+            onClick={() => setSummarySubTab("modes")}
+            className={cn(
+              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer text-center",
+              summarySubTab === "modes"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            💳 Cash
+          </button>
+        </div>
+
+        {/* Year Filter Pill */}
+        {availableYears.length > 1 && (
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="text-[10px] font-bold bg-card border border-border/40 rounded-2xl px-2 py-2 text-foreground cursor-pointer outline-none shrink-0"
+          >
+            <option value="all">All Years</option>
+            {availableYears.map((yr) => (
+              <option key={yr} value={yr}>
+                {yr}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* SUB-TAB 1: 📊 Overview & Performance */}
@@ -2503,27 +2556,142 @@ function SummaryView(p: {
               tint="success"
               icon={<Wallet className="size-3" />}
               label="Income"
-              value={fmtINR(p.lifetime)}
+              value={fmtINR(selectedYear === "all" ? p.lifetime : periodData.income)}
             />
             <Stat
               tint="danger"
               icon={<Receipt className="size-3" />}
               label="Expense"
-              value={fmtINR(p.totalExpense)}
+              value={fmtINR(selectedYear === "all" ? p.totalExpense : periodData.expense)}
             />
             <Stat
               tint="primary"
               icon={<TrendingUp className="size-3" />}
               label="Net profit"
-              value={fmtINR(p.netProfit)}
+              value={fmtINR(selectedYear === "all" ? p.netProfit : periodData.net)}
             />
             <Stat
               tint="muted"
               icon={<IndianRupee className="size-3" />}
               label="Margin"
-              value={`${margin}%`}
+              value={`${selectedYear === "all" ? margin : periodData.marginPct}%`}
             />
           </div>
+
+          {/* Performance Highlights (Peak, Slowest, Avg/Mo, Avg/Day) */}
+          {periodData.validMonths.length > 0 && (
+            <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-2">
+                Monthly Performance Benchmarks
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {/* Peak Month */}
+                {periodData.peak && (
+                  <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-2">
+                    <span className="text-[8.5px] uppercase font-bold text-emerald-700 dark:text-emerald-300 block">
+                      🔥 Best Performing Month
+                    </span>
+                    <p className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
+                      +{fmtINR(periodData.peak.amount)}
+                    </p>
+                    <p className="text-[8px] text-muted-foreground mt-0.5">{periodData.peak.month}</p>
+                  </div>
+                )}
+
+                {/* Slowest Month */}
+                {periodData.slowest && (
+                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-xl p-2">
+                    <span className="text-[8.5px] uppercase font-bold text-amber-700 dark:text-amber-300 block">
+                      🔻 Slowest / Low Month
+                    </span>
+                    <p className="font-extrabold text-xs text-amber-600 dark:text-amber-400 tabular-nums mt-0.5">
+                      {fmtINR(periodData.slowest.amount)}
+                    </p>
+                    <p className="text-[8px] text-muted-foreground mt-0.5">{periodData.slowest.month}</p>
+                  </div>
+                )}
+
+                {/* Avg Per Month */}
+                <div className="bg-primary/8 border border-primary/15 rounded-xl p-2">
+                  <span className="text-[8.5px] uppercase font-bold text-primary block">
+                    📈 Monthly Average
+                  </span>
+                  <p className="font-extrabold text-xs text-primary tabular-nums mt-0.5">
+                    {fmtINR(periodData.avgMonthly)}
+                  </p>
+                  <p className="text-[8px] text-muted-foreground mt-0.5">{periodData.validMonths.length} active mos</p>
+                </div>
+
+                {/* Daily Earning */}
+                <div className="bg-secondary/60 border border-border/30 rounded-xl p-2">
+                  <span className="text-[8.5px] uppercase font-bold text-muted-foreground block">
+                    ⚡ Daily Run-Rate
+                  </span>
+                  <p className="font-extrabold text-xs text-foreground tabular-nums mt-0.5">
+                    ~{fmtINR(periodData.avgDaily)} / day
+                  </p>
+                  <p className="text-[8px] text-muted-foreground mt-0.5">{periodData.validMonths.length * 30} days est.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Month-by-Month Comparative Ledger */}
+          {periodData.validMonths.length > 0 && (
+            <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                  Month-by-Month Analysis
+                </p>
+                <span className="text-[9px] text-muted-foreground">
+                  {periodData.validMonths.length} Months Tracked
+                </span>
+              </div>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                {[...periodData.validMonths]
+                  .sort((a, b) => b.month.localeCompare(a.month))
+                  .map((m, idx) => {
+                    const isProfitable = m.net >= 0;
+                    const mMargin = m.amount > 0 ? Math.round((m.net / m.amount) * 100) : 0;
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 rounded-xl bg-secondary/35 border border-border/15 text-xs"
+                      >
+                        <div>
+                          <p className="font-bold text-foreground">{m.month}</p>
+                          <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.2">
+                            <span className="text-emerald-600 font-semibold">+{fmtINR(m.amount)}</span>
+                            <span>·</span>
+                            <span className="text-rose-600 font-semibold">-{fmtINR(m.expense)}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p
+                            className={cn(
+                              "font-black text-xs tabular-nums",
+                              isProfitable ? "text-emerald-600 dark:text-emerald-400" : "text-destructive",
+                            )}
+                          >
+                            {fmtINR(m.net)}
+                          </p>
+                          <span
+                            className={cn(
+                              "text-[8px] font-bold px-1.5 py-0.2 rounded-full inline-block mt-0.5",
+                              isProfitable
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : "bg-destructive/10 text-destructive",
+                            )}
+                          >
+                            {mMargin}% margin
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
 
           {/* Collection Health Progress */}
           <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
@@ -2551,52 +2719,6 @@ function SummaryView(p: {
               </span>
             </div>
           </div>
-
-          {/* Monthly Analytics (Average, Peak, Lowest) */}
-          {p.allTimeTrend.length > 0 &&
-            (() => {
-              const months = p.allTimeTrend.filter((m) => m.amount > 0);
-              const totalIncome = months.reduce((s, m) => s + m.amount, 0);
-              const avgPerMonth = months.length > 0 ? totalIncome / months.length : 0;
-              const peak = months.reduce((a, b) => (b.amount > a.amount ? b : a), months[0]);
-              const lowest = months.reduce((a, b) => (b.amount < a.amount ? b : a), months[0]);
-              return (
-                <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-2">
-                    Monthly Performance Averages
-                  </p>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <div className="bg-primary/8 rounded-xl p-2 text-center">
-                      <p className="text-[8.5px] uppercase font-semibold text-muted-foreground">
-                        Avg / Month
-                      </p>
-                      <p className="font-extrabold text-xs text-primary tabular-nums mt-0.5">
-                        {fmtINR(avgPerMonth)}
-                      </p>
-                      <p className="text-[8px] text-muted-foreground mt-0.5">{months.length} mos</p>
-                    </div>
-                    <div className="bg-emerald-500/8 rounded-xl p-2 text-center">
-                      <p className="text-[8.5px] uppercase font-semibold text-muted-foreground">
-                        Peak Month
-                      </p>
-                      <p className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
-                        {fmtINR(peak.amount)}
-                      </p>
-                      <p className="text-[8px] text-muted-foreground mt-0.5">{peak.month}</p>
-                    </div>
-                    <div className="bg-destructive/8 rounded-xl p-2 text-center">
-                      <p className="text-[8.5px] uppercase font-semibold text-muted-foreground">
-                        Low Month
-                      </p>
-                      <p className="font-extrabold text-xs text-destructive tabular-nums mt-0.5">
-                        {fmtINR(lowest.amount)}
-                      </p>
-                      <p className="text-[8px] text-muted-foreground mt-0.5">{lowest.month}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
           {/* Top Sources */}
           <div className="grid grid-cols-2 gap-2">
@@ -2643,26 +2765,35 @@ function SummaryView(p: {
       {summarySubTab === "services" && (
         <div className="space-y-3 mb-24 animate-in fade-in">
           {(() => {
-            const prepleatBookings = bookings.filter((b) => b.service === "prepleat" && b.status !== "cancelled");
-            const drapeBookings = bookings.filter((b) => b.service === "drape" && b.status !== "cancelled");
-            const totalValidSarees = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.sareeCount || 1), 0);
+            const filteredBookings = bookings.filter((b) => {
+              if (b.status === "cancelled") return false;
+              if (selectedYear === "all") return true;
+              return b.deliveryDate.startsWith(selectedYear);
+            });
+
+            const prepleatBookings = filteredBookings.filter((b) => b.service === "prepleat");
+            const drapeBookings = filteredBookings.filter((b) => b.service === "drape");
+            const totalValidSarees = filteredBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
             const prepleatSarees = prepleatBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
             const drapeSarees = drapeBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
             const prepleatPct = totalValidSarees > 0 ? Math.round((prepleatSarees / totalValidSarees) * 100) : 0;
             const drapePct = totalValidSarees > 0 ? Math.round((drapeSarees / totalValidSarees) * 100) : 0;
-            const avgSareePrice = totalValidSarees > 0 ? Math.round(p.totalBilled / totalValidSarees) : 0;
 
             const prepleatRevenue = prepleatBookings.reduce((s, b) => s + b.totalAmount, 0);
             const drapeRevenue = drapeBookings.reduce((s, b) => s + b.totalAmount, 0);
-            const totalExtraCharges = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.extraCharges || 0), 0);
-            const totalDiscounts = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.discount || 0), 0);
+            const totalRevenue = prepleatRevenue + drapeRevenue;
+            const avgSareePrice = totalValidSarees > 0 ? Math.round(totalRevenue / totalValidSarees) : 0;
+            const avgSareesPerBooking = filteredBookings.length > 0 ? (totalValidSarees / filteredBookings.length).toFixed(1) : "0";
+
+            const totalExtraCharges = filteredBookings.reduce((s, b) => s + (b.extraCharges || 0), 0);
+            const totalDiscounts = filteredBookings.reduce((s, b) => s + (b.discount || 0), 0);
 
             return (
               <>
                 <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
-                      Saree Service Volume & Share
+                      Saree Service Volume & Share {selectedYear !== "all" ? `(${selectedYear})` : ""}
                     </p>
                     <span className="text-[9.5px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
                       {totalValidSarees} Total Sarees
@@ -2712,8 +2843,17 @@ function SummaryView(p: {
                   </div>
                 </div>
 
-                {/* Add-ons & Adjustments Card */}
+                {/* Saree Metrics & Add-ons Grid */}
                 <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
+                      🥻 Saree Density
+                    </span>
+                    <p className="text-sm font-extrabold text-foreground mt-1 tabular-nums">
+                      ~{avgSareesPerBooking} sarees
+                    </p>
+                    <p className="text-[8.5px] text-muted-foreground mt-0.5">Avg per booking order</p>
+                  </div>
                   <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
                     <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
                       🚗 Travel / Extra Charges
@@ -2723,14 +2863,20 @@ function SummaryView(p: {
                     </p>
                     <p className="text-[8.5px] text-muted-foreground mt-0.5">Collected from bookings</p>
                   </div>
-                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
-                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
-                      🏷️ Discounts Given
-                    </span>
-                    <p className="text-sm font-extrabold text-destructive mt-1 tabular-nums">
-                      -{fmtINR(totalDiscounts)}
-                    </p>
-                    <p className="text-[8.5px] text-muted-foreground mt-0.5">Special client savings</p>
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30 col-span-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
+                          🏷️ Total Client Savings & Discounts
+                        </span>
+                        <p className="text-sm font-extrabold text-destructive mt-0.5 tabular-nums">
+                          -{fmtINR(totalDiscounts)}
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-bold bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
+                        {filteredBookings.filter((b) => (b.discount || 0) > 0).length} discounted orders
+                      </span>
+                    </div>
                   </div>
                 </div>
               </>
@@ -2739,16 +2885,21 @@ function SummaryView(p: {
         </div>
       )}
 
-      {/* SUB-TAB 3: 👑 VIP Clients & Artists */}
+      {/* SUB-TAB 3: 👑 VIP Clients & Retention */}
       {summarySubTab === "clients" && (
         <div className="space-y-3 mb-24 animate-in fade-in">
           {(() => {
-            const custStats = new Map<string, { name: string; phone?: string; sareeCount: number; spent: number }>();
+            const filteredBookings = bookings.filter((b) => {
+              if (b.status === "cancelled") return false;
+              if (selectedYear === "all") return true;
+              return b.deliveryDate.startsWith(selectedYear);
+            });
+
+            const custStats = new Map<string, { name: string; phone?: string; sareeCount: number; spent: number; bookingCount: number }>();
             let directCount = 0;
             let artistCount = 0;
 
-            for (const b of bookings) {
-              if (b.status === "cancelled") continue;
+            for (const b of filteredBookings) {
               if (b.artistId) artistCount++;
               else directCount++;
 
@@ -2756,26 +2907,53 @@ function SummaryView(p: {
               const name = c?.name || "Client";
               const phone = c?.phone;
               const key = b.customerId || name;
-              const ex = custStats.get(key) || { name, phone, sareeCount: 0, spent: 0 };
+              const ex = custStats.get(key) || { name, phone, sareeCount: 0, spent: 0, bookingCount: 0 };
               ex.sareeCount += b.sareeCount || 1;
               ex.spent += b.totalAmount || 0;
+              ex.bookingCount += 1;
               custStats.set(key, ex);
             }
-            const top5 = Array.from(custStats.values())
+
+            const allClients = Array.from(custStats.values());
+            const top5 = [...allClients]
               .sort((a, b) => b.spent - a.spent || b.sareeCount - a.sareeCount)
               .slice(0, 5);
 
+            const repeatClients = allClients.filter((c) => c.bookingCount > 1);
+            const repeatRate = allClients.length > 0 ? Math.round((repeatClients.length / allClients.length) * 100) : 0;
             const totalBookingsCount = directCount + artistCount;
             const directPct = totalBookingsCount > 0 ? Math.round((directCount / totalBookingsCount) * 100) : 0;
             const artistPct = totalBookingsCount > 0 ? Math.round((artistCount / totalBookingsCount) * 100) : 0;
 
             return (
               <>
+                {/* Acquisition & Retention Stats */}
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                    <span className="text-[9px] uppercase font-bold text-muted-foreground block">
+                      🔁 Client Repeat Rate
+                    </span>
+                    <p className="text-sm font-extrabold text-primary mt-1 tabular-nums">
+                      {repeatRate}%
+                    </p>
+                    <p className="text-[8px] text-muted-foreground mt-0.5">{repeatClients.length} repeat clients</p>
+                  </div>
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                    <span className="text-[9px] uppercase font-bold text-muted-foreground block">
+                      👥 Active Client Base
+                    </span>
+                    <p className="text-sm font-extrabold text-foreground mt-1 tabular-nums">
+                      {allClients.length} clients
+                    </p>
+                    <p className="text-[8px] text-muted-foreground mt-0.5">{totalBookingsCount} bookings</p>
+                  </div>
+                </div>
+
                 {/* Acquisition Channel Breakdown */}
                 <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
-                      Booking Channels
+                      Booking Referral Channels
                     </p>
                     <span className="text-[9.5px] font-bold text-muted-foreground">
                       {totalBookingsCount} Total Orders
@@ -2784,7 +2962,7 @@ function SummaryView(p: {
                   <div className="grid grid-cols-2 gap-2 text-center">
                     <div className="bg-secondary/40 rounded-xl p-2 border border-border/20">
                       <span className="text-[9px] uppercase font-bold text-muted-foreground block">
-                        Direct Clients
+                        Direct Walk-in
                       </span>
                       <p className="text-sm font-extrabold text-foreground tabular-nums">
                         {directCount} ({directPct}%)
@@ -2856,6 +3034,7 @@ function SummaryView(p: {
             let cashTotal = 0;
             let otherTotal = 0;
             for (const pmt of payments) {
+              if (selectedYear !== "all" && pmt.date && !pmt.date.startsWith(selectedYear)) continue;
               if (pmt.mode === "gpay" || pmt.mode === "upi" || pmt.mode === "online") gpayTotal += pmt.amount;
               else if (pmt.mode === "cash") cashTotal += pmt.amount;
               else otherTotal += pmt.amount;
@@ -2868,7 +3047,7 @@ function SummaryView(p: {
               <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
-                    Payment Collection Modes
+                    Payment Collection Modes {selectedYear !== "all" ? `(${selectedYear})` : ""}
                   </p>
                   <span className="text-[9.5px] font-extrabold text-foreground tabular-nums">
                     Total {fmtINR(totalCollected)}
@@ -2876,7 +3055,7 @@ function SummaryView(p: {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
-                    <span className="text-[9.5px] font-bold text-blue-600">📱 UPI / GPay</span>
+                    <span className="text-[9.5px] font-bold text-blue-600">📱 UPI / GPay / Digital</span>
                     <p className="text-sm font-extrabold text-blue-700 mt-1 tabular-nums">
                       {fmtINR(gpayTotal)}{" "}
                       <span className="text-[9px] font-medium opacity-80">({gpayPct}%)</span>

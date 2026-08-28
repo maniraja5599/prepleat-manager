@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.4";
+export const APP_VERSION = "1.7.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.4",
+    version: "v1.7.5",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "12-Month Year-Round Calendar Schedule, Deep Financial Analytics & Micro Dots",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📅",
+        text: "12-Month Year-Round Calendar Schedule",
+        desc: "Interactive year-round 12-month delivery forecast strip placed directly at the top of the Calendar page with live delivery counters for every month.",
+      },
+      {
+        emoji: "📊",
+        text: "Deep Multi-Year & Monthly Financial Analytics",
+        desc: "Filter finances by year, compare Best vs Slowest performing months, inspect MoM margins, daily run-rate, and saree revenue realization.",
+      },
+      {
+        emoji: "✨",
+        text: "Sleek Single-Line Chart Header & Micro Dots",
+        desc: "Compact unified single-line chart header and sleek micro-dots for smooth cumulative revenue curve visualization.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.4",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "Financial Sub-Tabs, 3-Month Calendar Forecast & Alphabet Directory",
     badge: "LATEST UPDATE ✨",
     changes: [

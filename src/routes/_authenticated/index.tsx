@@ -129,27 +129,31 @@ function CalendarPage() {
       );
   }, [bookings, cursor]);
 
-  const threeMonthForecast = useMemo(() => {
+  const yearMonthsForecast = useMemo(() => {
+    const currentYear = cursor.getFullYear();
     const today = new Date();
-    const m0 = startOfMonth(today);
-    const m1 = startOfMonth(addMonths(today, 1));
-    const m2 = startOfMonth(addMonths(today, 2));
+    const months = [];
 
-    const countFor = (startM: Date) => {
-      const endM = endOfMonth(startM);
-      return bookings.filter((b) => {
+    for (let m = 0; m < 12; m++) {
+      const monthDate = new Date(currentYear, m, 1);
+      const endM = endOfMonth(monthDate);
+      const count = bookings.filter((b) => {
         if (b.status === "cancelled") return false;
         const d = parseISO(b.deliveryDate);
-        return d >= startM && d <= endM;
+        return d >= monthDate && d <= endM;
       }).length;
-    };
 
-    return [
-      { date: m0, label: format(m0, "MMM"), count: countFor(m0) },
-      { date: m1, label: format(m1, "MMM"), count: countFor(m1) },
-      { date: m2, label: format(m2, "MMM"), count: countFor(m2) },
-    ];
-  }, [bookings]);
+      months.push({
+        date: monthDate,
+        label: format(monthDate, "MMM"),
+        count,
+        isCurrentMonth: isSameMonth(monthDate, today),
+        isViewedMonth: isSameMonth(monthDate, cursor),
+      });
+    }
+
+    return months;
+  }, [bookings, cursor]);
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const daySwipeRef = useRef<HTMLDivElement>(null);
@@ -332,8 +336,66 @@ function CalendarPage() {
     <AppShell showBrand showFloatingSearch={true} title="Calendar" subtitle={format(cursor, "MMMM yyyy")}>
       <div className="no-select">
 
+        {/* Top 12-Month Year-Round Delivery Schedule Strip */}
+        <div className="bg-card card-shadow rounded-2xl p-1.5 border border-border/40 my-2.5">
+          <div className="flex items-center justify-between px-1.5 pb-1 border-b border-border/20 text-[9.5px]">
+            <span className="font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              📅 {cursor.getFullYear()} Delivery Schedule
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] text-muted-foreground">
+                {bookings.filter((b) => b.status !== "cancelled" && parseISO(b.deliveryDate).getFullYear() === cursor.getFullYear()).length} Total
+              </span>
+              <button
+                onClick={() => {
+                  setCursor(new Date());
+                  setSelected(new Date());
+                }}
+                className="font-bold text-primary hover:underline cursor-pointer flex items-center gap-0.5"
+              >
+                Today
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1.5 px-0.5">
+            {yearMonthsForecast.map((m, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setCursor(m.date);
+                  setSelected(m.date);
+                }}
+                className={cn(
+                  "px-2 py-1 rounded-xl text-center transition cursor-pointer flex items-center gap-1 shrink-0 active:scale-95",
+                  m.isViewedMonth
+                    ? "bg-primary text-white shadow-2xs font-bold"
+                    : m.isCurrentMonth
+                    ? "bg-primary/10 text-primary border border-primary/25 font-bold"
+                    : "bg-secondary/60 text-muted-foreground hover:text-foreground font-semibold",
+                )}
+                title={`${m.label} ${cursor.getFullYear()}: ${m.count} deliveries`}
+              >
+                <span className="text-[10px] uppercase">{m.label}</span>
+                <span
+                  className={cn(
+                    "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full tabular-nums",
+                    m.count > 0
+                      ? m.isViewedMonth
+                        ? "bg-white/20 text-white"
+                        : "bg-background text-foreground"
+                      : "opacity-40",
+                  )}
+                >
+                  {m.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Clean Calendar Quick Action Strip */}
-        <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-secondary/50 border border-border/25 my-2.5 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between px-3.5 py-1.5 rounded-2xl bg-secondary/50 border border-border/25 mb-2.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <span className="text-foreground font-bold">👆 1-Tap:</span>
             <span>View Deliveries</span>
@@ -344,9 +406,6 @@ function CalendarPage() {
             <span className="text-primary font-bold">New Booking</span>
           </div>
         </div>
-
-
-
 
         {guide === "book" && (
           <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-2xl text-xs text-primary font-medium flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
@@ -371,82 +430,43 @@ function CalendarPage() {
         )}
 
         <>
-          <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <button
+              onClick={() => setCursor(subMonths(cursor, 1))}
+              onPointerDown={() => startMonthHold(-1)}
+              onPointerUp={stopMonthHold}
+              onPointerLeave={stopMonthHold}
+              onPointerCancel={stopMonthHold}
+              className="size-9 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none cursor-pointer"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+            <div className="text-center">
+              <p className="text-base font-display font-bold leading-tight">
+                {format(cursor, "MMMM yyyy")}
+              </p>
+            </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setCursor(subMonths(cursor, 1))}
-                onPointerDown={() => startMonthHold(-1)}
-                onPointerUp={stopMonthHold}
-                onPointerLeave={stopMonthHold}
-                onPointerCancel={stopMonthHold}
-                className="size-8 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none cursor-pointer"
-                aria-label="Previous month"
+                onClick={() => {
+                  setCursor(new Date());
+                  setSelected(new Date());
+                }}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer mr-1"
               >
-                <ChevronLeft className="size-4.5" />
+                Today
               </button>
-              <div className="min-w-[70px]">
-                <p className="text-sm font-display font-bold leading-tight truncate">
-                  {format(cursor, "MMM yyyy")}
-                </p>
-              </div>
               <button
                 onClick={() => setCursor(addMonths(cursor, 1))}
                 onPointerDown={() => startMonthHold(1)}
                 onPointerUp={stopMonthHold}
                 onPointerLeave={stopMonthHold}
                 onPointerCancel={stopMonthHold}
-                className="size-8 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none cursor-pointer"
+                className="size-9 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none cursor-pointer"
                 aria-label="Next month"
               >
-                <ChevronRight className="size-4.5" />
-              </button>
-            </div>
-
-            {/* Smart 3-Month Booking Forecast Chips */}
-            <div className="flex items-center gap-1 bg-secondary/60 p-0.5 rounded-2xl border border-border/30">
-              {threeMonthForecast.map((m, idx) => {
-                const isCurrentView = isSameMonth(cursor, m.date);
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setCursor(m.date);
-                      setSelected(m.date);
-                    }}
-                    className={cn(
-                      "px-2 py-1 rounded-xl text-center transition cursor-pointer flex items-center gap-1 active:scale-95",
-                      isCurrentView
-                        ? "bg-card text-primary font-bold shadow-2xs border border-primary/25"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                    title={`Jump to ${m.label}`}
-                  >
-                    <span className="text-[10px] uppercase font-semibold">{m.label}</span>
-                    <span
-                      className={cn(
-                        "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full tabular-nums",
-                        m.count > 0
-                          ? isCurrentView
-                            ? "bg-primary text-white"
-                            : "bg-secondary text-foreground"
-                          : "text-muted-foreground/60",
-                      )}
-                    >
-                      {m.count}
-                    </span>
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => {
-                  setCursor(new Date());
-                  setSelected(new Date());
-                }}
-                className="text-[9.5px] font-bold px-2 py-1 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
-                title="Jump to Today"
-              >
-                Today
+                <ChevronRight className="size-5" />
               </button>
             </div>
           </div>
