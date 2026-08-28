@@ -18,10 +18,11 @@ import {
   ArrowUpDown,
   TrendingUp,
   CalendarPlus,
-  Map,
+  Map as MapIcon,
   Clipboard,
+  MessageCircle,
 } from "lucide-react";
-import { cn, cleanPhoneForDialing, sanitizeIndianPhone, isValidIndianMobile } from "@/lib/utils";
+import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp, sanitizeIndianPhone, isValidIndianMobile } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -178,16 +179,39 @@ function CustomersPage() {
     return res;
   }, [customers, bookings, q, tab, dueOnly, sortBy, showTopOnly]);
 
+  const [selectedAlphabet, setSelectedAlphabet] = useState<string>("ALL");
+
+  const alphabetCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of list) {
+      const firstChar = (c.name.trim()[0] || "#").toUpperCase();
+      const key = /[A-Z]/.test(firstChar) ? firstChar : "#";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return counts;
+  }, [list]);
+
+  const displayedList = useMemo(() => {
+    if (selectedAlphabet === "ALL") return list;
+    return list.filter((c) => {
+      const firstChar = (c.name.trim()[0] || "#").toUpperCase();
+      const key = /[A-Z]/.test(firstChar) ? firstChar : "#";
+      return key === selectedAlphabet;
+    });
+  }, [list, selectedAlphabet]);
+
+  const allAlphabets = ["ALL", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), "#"];
+
   const clientCount = customers.filter((c) => (c.kind ?? "client") === "client").length;
   const artistCount = customers.filter((c) => c.kind === "artist").length;
 
   const visibleSummary = useMemo(() => {
-    const totalDueAll = list.reduce((s, c) => s + c.due, 0);
-    const totalOrders = list.reduce((s, c) => s + c.count, 0);
-    const withDue = list.filter((c) => c.due > 0).length;
-    const totalCollectedAll = list.reduce((s, c) => s + c.collected, 0);
-    return { count: list.length, totalDueAll, totalOrders, withDue, totalCollectedAll };
-  }, [list]);
+    const totalDueAll = displayedList.reduce((s, c) => s + c.due, 0);
+    const totalOrders = displayedList.reduce((s, c) => s + c.count, 0);
+    const withDue = displayedList.filter((c) => c.due > 0).length;
+    const totalCollectedAll = displayedList.reduce((s, c) => s + c.collected, 0);
+    return { count: displayedList.length, totalDueAll, totalOrders, withDue, totalCollectedAll };
+  }, [displayedList]);
 
   const tickerItems = useMemo(() => {
     return [
@@ -494,6 +518,43 @@ function CustomersPage() {
             </SheetContent>
           </Sheet>
         </div>
+
+        {/* Alphabet Quick-Jump Index Strip */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
+          {allAlphabets.map((char) => {
+            const hasMatches = char === "ALL" || (alphabetCounts.get(char) || 0) > 0;
+            const isSelected = selectedAlphabet === char;
+            const count = char === "ALL" ? list.length : alphabetCounts.get(char) || 0;
+            return (
+              <button
+                key={char}
+                type="button"
+                disabled={!hasMatches}
+                onClick={() => setSelectedAlphabet(isSelected && char !== "ALL" ? "ALL" : char)}
+                className={cn(
+                  "h-6 px-2 shrink-0 rounded-lg text-[10.5px] font-bold flex items-center justify-center transition cursor-pointer active:scale-90",
+                  isSelected
+                    ? "bg-primary text-white shadow-2xs font-extrabold"
+                    : hasMatches
+                    ? "bg-secondary text-foreground hover:bg-secondary/80 font-semibold"
+                    : "text-muted-foreground/30 cursor-not-allowed opacity-35",
+                )}
+              >
+                {char}
+                {char !== "ALL" && hasMatches && (
+                  <span
+                    className={cn(
+                      "ml-1 text-[8.5px] opacity-80",
+                      isSelected ? "text-white font-black" : "text-primary font-bold",
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Removed duplicate tabs */}
@@ -579,7 +640,7 @@ function CustomersPage() {
               className="flex-1 bg-secondary rounded-full px-3 py-2 text-sm focus:outline-none"
             />
             <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
-              <Map className="size-4" />
+              <MapIcon className="size-4" />
             </button>
           </div>
           {tab === "client" && (
@@ -745,80 +806,119 @@ function CustomersPage() {
         </div>
       )}
 
-      {list.length === 0 ? (
+      {displayedList.length === 0 ? (
         <div className="bg-card card-shadow rounded-2xl p-8 text-center text-sm text-muted-foreground">
-          No {tab}s yet.
+          {selectedAlphabet !== "ALL"
+            ? `No ${tab}s starting with '${selectedAlphabet}'.`
+            : `No ${tab}s yet.`}
         </div>
       ) : (
         <ul className="space-y-2">
-          {list.map((c) => {
+          {displayedList.map((c, idx) => {
             const isSelected = selected.has(c.id);
+            const firstChar = (c.name.trim()[0] || "#").toUpperCase();
+            const prevChar =
+              idx > 0
+                ? (displayedList[idx - 1].name.trim()[0] || "#").toUpperCase()
+                : null;
+            const isNewLetter =
+              selectedAlphabet === "ALL" && sortBy === "name" && firstChar !== prevChar;
+
             const inner = (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-start justify-between gap-3">
                 {selectMode && (
                   <input
                     type="checkbox"
                     readOnly
                     checked={isSelected}
-                    className="size-5 accent-primary shrink-0"
+                    className="size-5 accent-primary shrink-0 mt-1"
                   />
                 )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold truncate">{c.name}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Phone className="size-3" />
-                    <a
-                      href={`tel:${cleanPhoneForDialing(c.phone)}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="hover:underline hover:text-primary transition inline-flex items-center gap-0.5 cursor-pointer font-medium"
-                    >
-                      {c.phone}
-                    </a>
-                  </p>
-                  {c.address && (
-                    <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
-                      {c.address}
-                    </p>
-                  )}
-                  {c.reference && (
-                    <p className="text-[10px] text-primary/80 truncate mt-0.5">
-                      ref: {c.reference}
-                    </p>
-                  )}
-                  {c.measurements && c.measurements.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
-                      {c.measurements.map((m, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
+                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                  {/* Letter Initial Avatar */}
+                  <div className="size-9 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-sm shrink-0 shadow-2xs">
+                    {firstChar}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-sm text-foreground truncate">{c.name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-muted-foreground tabular-nums font-medium">
+                        {c.phone}
+                      </span>
+                      {/* Fast 1-Tap Call & WhatsApp */}
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        <a
+                          href={`tel:${cleanPhoneForDialing(c.phone)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="size-5.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center transition cursor-pointer"
+                          title="Call customer"
                         >
-                          {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
-                        </span>
-                      ))}
+                          <Phone className="size-2.5" />
+                        </a>
+                        <a
+                          href={`https://wa.me/${cleanPhoneForWhatsApp(c.phone)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="size-5.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center transition cursor-pointer"
+                          title="WhatsApp chat"
+                        >
+                          <MessageCircle className="size-2.5" />
+                        </a>
+                      </div>
                     </div>
-                  )}
+                    {c.address && (
+                      <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
+                        {c.address}
+                      </p>
+                    )}
+                    {c.reference && (
+                      <p className="text-[10px] text-primary/80 truncate mt-0.5">
+                        ref: {c.reference}
+                      </p>
+                    )}
+                    {c.measurements && c.measurements.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/10">
+                        {c.measurements.map((m, mIdx) => (
+                          <span
+                            key={mIdx}
+                            className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold"
+                          >
+                            {m.label}: <span className="text-foreground font-bold">{m.value}"</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs text-muted-foreground">
+                  <span className="text-[9.5px] font-bold bg-secondary/80 px-2 py-0.5 rounded-full text-muted-foreground">
                     {c.count} order{c.count !== 1 && "s"}
-                  </p>
+                  </span>
                   {c.collected > 0 && (
-                    <p className="text-xs text-success font-semibold">
-                      {fmtINR(c.collected)} collected
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold mt-1 tabular-nums">
+                      {fmtINR(c.collected)}
                     </p>
                   )}
                   {c.due > 0 && (
-                    <p className="text-xs text-destructive font-semibold">{fmtINR(c.due)} due</p>
+                    <p className="text-xs text-destructive font-black mt-0.5 tabular-nums">
+                      {fmtINR(c.due)} due
+                    </p>
                   )}
                 </div>
               </div>
             );
             const cls = cn(
-              "block bg-card card-shadow rounded-2xl p-4 active:scale-[0.99] transition w-full text-left",
+              "block bg-card card-shadow rounded-2xl p-3.5 active:scale-[0.99] transition w-full text-left border border-border/30",
               isSelected && "ring-2 ring-primary",
             );
             return (
               <li key={c.id}>
+                {isNewLetter && (
+                  <div className="sticky top-[175px] z-10 font-black text-[10px] text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full inline-block mb-1.5 mt-1 backdrop-blur-xs">
+                    {firstChar}
+                  </div>
+                )}
                 {selectMode ? (
                   <button
                     type="button"

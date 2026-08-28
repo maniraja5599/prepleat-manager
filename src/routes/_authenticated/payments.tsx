@@ -1399,39 +1399,38 @@ function IncomeView(p: {
                   ))}
                 </div>
               )}
-
-              {/* Income & Expense Live Financial Summary Cards (Placed below transactions list) */}
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <div className="bg-card card-shadow rounded-2xl p-3 border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="size-3 text-emerald-500" /> Total Income
+                      {/* Income & Expense Live Financial Summary Cards (Placed below transactions list) */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="bg-card card-shadow rounded-2xl p-2.5 border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                      <TrendingUp className="size-2.5 text-emerald-500" /> Income
                     </span>
-                    <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.2 rounded-full">
+                    <span className="text-[8.5px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.2 rounded-full">
                       {allIncomesList.length} txs
                     </span>
                   </div>
-                  <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
                     +{fmtINR(p.lifetime)}
                   </p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                  <p className="text-[8.5px] text-muted-foreground mt-0.5">
                     Avg: {fmtINR(allIncomesList.length > 0 ? Math.round(p.lifetime / allIncomesList.length) : 0)} / receipt
                   </p>
                 </div>
 
-                <div className="bg-card card-shadow rounded-2xl p-3 border border-rose-500/20 bg-gradient-to-br from-card to-rose-500/5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                      <TrendingDown className="size-3 text-rose-500" /> Total Expenses
+                <div className="bg-card card-shadow rounded-2xl p-2.5 border border-rose-500/20 bg-gradient-to-br from-card to-rose-500/5">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                      <TrendingDown className="size-2.5 text-rose-500" /> Expenses
                     </span>
-                    <span className="text-[9px] bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold px-1.5 py-0.2 rounded-full">
+                    <span className="text-[8.5px] bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold px-1.5 py-0.2 rounded-full">
                       {p.expenses?.length || 0} txs
                     </span>
                   </div>
-                  <p className="text-base font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
+                  <p className="text-sm font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
                     -{fmtINR(p.totalExpense || 0)}
                   </p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                  <p className="text-[8.5px] text-muted-foreground mt-0.5">
                     Net: {fmtINR(p.lifetime - (p.totalExpense || 0))}
                   </p>
                 </div>
@@ -1443,23 +1442,23 @@ function IncomeView(p: {
         /* Enhanced Pending Payments Hub */
         <div className="space-y-3 mb-24">
           {/* Single Unified Stats Banner for Pending Dues (Collected | Pending Due | Total Billed) */}
-          <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/40">
-            <div className="grid grid-cols-3 divide-x divide-border/40 text-center">
+          <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+            <div className="grid grid-cols-3 divide-x divide-border/30 text-center">
               <div className="px-1">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">Collected</p>
-                <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
+                <p className="text-[9px] uppercase font-bold text-muted-foreground">Collected</p>
+                <p className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
                   {fmtINR(p.lifetime)}
                 </p>
               </div>
               <div className="px-1">
-                <p className="text-[10px] uppercase font-bold text-destructive">Pending Due</p>
-                <p className="text-sm font-black text-destructive mt-0.5 tabular-nums">
+                <p className="text-[9px] uppercase font-bold text-destructive">Pending Due</p>
+                <p className="text-xs font-black text-destructive mt-0.5 tabular-nums">
                   {fmtINR(p.totalPending)}
                 </p>
               </div>
               <div className="px-1">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">Total Billed</p>
-                <p className="text-sm font-extrabold text-foreground mt-0.5 tabular-nums">
+                <p className="text-[9px] uppercase font-bold text-muted-foreground">Total Billed</p>
+                <p className="text-xs font-extrabold text-foreground mt-0.5 tabular-nums">
                   {fmtINR(p.totalBilled)}
                 </p>
               </div>
@@ -2249,6 +2248,7 @@ function SummaryView(p: {
   const margin = p.lifetime > 0 ? Math.round((p.netProfit / p.lifetime) * 100) : 0;
 
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all" or "yyyy-MM"
+  const [summarySubTab, setSummarySubTab] = useState<"overview" | "services" | "clients" | "modes">("overview");
 
   // Build cumulative data and compute domains
   const { allTimeWithCumulative, allTimeDomains, lifetimeCumulative } = useMemo(() => {
@@ -2434,442 +2434,588 @@ function SummaryView(p: {
 
         {/* Single Latest Milestone badge */}
         {latestMilestone && (
-          <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between">
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
+            <span className="text-[9.5px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               🎉 Latest Milestone: {latestMilestone >= 100000 ? `₹${latestMilestone / 100000} Lakh` : `₹${latestMilestone / 1000}k`} Lifetime Revenue!
             </span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat
-          tint="success"
-          icon={<Wallet className="size-3.5" />}
-          label="Income"
-          value={fmtINR(p.lifetime)}
-        />
-        <Stat
-          tint="danger"
-          icon={<Receipt className="size-3.5" />}
-          label="Expense"
-          value={fmtINR(p.totalExpense)}
-        />
-        <Stat
-          tint="primary"
-          icon={<TrendingUp className="size-3.5" />}
-          label="Net profit"
-          value={fmtINR(p.netProfit)}
-        />
-        <Stat
-          tint="muted"
-          icon={<IndianRupee className="size-3.5" />}
-          label="Margin"
-          value={`${margin}%`}
-        />
-      </div>
-
-      {/* Side-by-side Top Sources */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Top Earning Source
-          </p>
-          {p.incomeByCategory.length > 0 ? (
-            <div className="mt-1">
-              <p className="font-semibold text-sm truncate text-success">
-                {p.incomeByCategory[0].cat}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                {fmtINR(p.incomeByCategory[0].amount)} ({p.incomeByCategory[0].pct}%)
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-1">No earnings yet</p>
+      {/* Summary Sub-Tabs Navigation (Categorized Analytics) */}
+      <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3 card-shadow overflow-x-auto no-scrollbar">
+        <button
+          type="button"
+          onClick={() => setSummarySubTab("overview")}
+          className={cn(
+            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
+            summarySubTab === "overview"
+              ? "bg-card text-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground",
           )}
-        </div>
-
-        <div className="bg-card card-shadow rounded-2xl p-3 border border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Top Spending Category
-          </p>
-          {p.expenseByCategory.length > 0 ? (
-            <div className="mt-1">
-              <p className="font-semibold text-sm truncate text-destructive">
-                {p.expenseByCategory[0].cat}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                {fmtINR(p.expenseByCategory[0].amount)} ({p.expenseByCategory[0].pct}%)
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-1">No expenses yet</p>
+        >
+          📊 Overview
+        </button>
+        <button
+          type="button"
+          onClick={() => setSummarySubTab("services")}
+          className={cn(
+            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
+            summarySubTab === "services"
+              ? "bg-card text-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground",
           )}
-        </div>
+        >
+          🥻 Services
+        </button>
+        <button
+          type="button"
+          onClick={() => setSummarySubTab("clients")}
+          className={cn(
+            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
+            summarySubTab === "clients"
+              ? "bg-card text-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          👑 VIP Clients
+        </button>
+        <button
+          type="button"
+          onClick={() => setSummarySubTab("modes")}
+          className={cn(
+            "flex-1 min-w-[70px] py-2 rounded-xl text-xs font-bold transition cursor-pointer text-center",
+            summarySubTab === "modes"
+              ? "bg-card text-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          💳 Modes & Cash
+        </button>
       </div>
 
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Collection
-          </p>
-          <p className="text-[11px] font-bold tabular-nums">{p.collectionRate}%</p>
-        </div>
-        <div className="h-3 rounded-full overflow-hidden bg-secondary flex">
-          <div className="bg-success h-full" style={{ width: `${p.collectionRate}%` }} />
-          <div
-            className="bg-destructive/60 h-full"
-            style={{ width: `${100 - p.collectionRate}%` }}
-          />
-        </div>
-        <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
-          <span>
-            Paid <span className="font-bold text-success tabular-nums">{fmtINR(p.lifetime)}</span>
-          </span>
-          <span>
-            Pending{" "}
-            <span className="font-bold text-destructive tabular-nums">
-              {fmtINR(p.totalPending)}
-            </span>
-          </span>
-        </div>
-      </div>
+      {/* SUB-TAB 1: 📊 Overview & Performance */}
+      {summarySubTab === "overview" && (
+        <div className="space-y-3 mb-24 animate-in fade-in">
+          {/* Compact 4-Stat Grid */}
+          <div className="grid grid-cols-2 gap-2">
+            <Stat
+              tint="success"
+              icon={<Wallet className="size-3" />}
+              label="Income"
+              value={fmtINR(p.lifetime)}
+            />
+            <Stat
+              tint="danger"
+              icon={<Receipt className="size-3" />}
+              label="Expense"
+              value={fmtINR(p.totalExpense)}
+            />
+            <Stat
+              tint="primary"
+              icon={<TrendingUp className="size-3" />}
+              label="Net profit"
+              value={fmtINR(p.netProfit)}
+            />
+            <Stat
+              tint="muted"
+              icon={<IndianRupee className="size-3" />}
+              label="Margin"
+              value={`${margin}%`}
+            />
+          </div>
 
-      {/* Monthly Analytics Card */}
-      {p.allTimeTrend.length > 0 &&
-        (() => {
-          const months = p.allTimeTrend.filter((m) => m.amount > 0);
-          const totalIncome = months.reduce((s, m) => s + m.amount, 0);
-          const avgPerMonth = months.length > 0 ? totalIncome / months.length : 0;
-          const peak = months.reduce((a, b) => (b.amount > a.amount ? b : a), months[0]);
-          const lowest = months.reduce((a, b) => (b.amount < a.amount ? b : a), months[0]);
-          return (
-            <div className="bg-card card-shadow rounded-2xl p-3 mb-3">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2.5">
-                Monthly Analytics
+          {/* Collection Health Progress */}
+          <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                Collection Health
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-primary/8 rounded-xl p-2.5 text-center">
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                    Avg / Month
-                  </p>
-                  <p className="font-bold text-sm text-primary tabular-nums">
-                    {fmtINR(avgPerMonth)}
-                  </p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">{months.length} months</p>
-                </div>
-                <div className="bg-success/8 rounded-xl p-2.5 text-center">
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                    Peak Month
-                  </p>
-                  <p className="font-bold text-sm text-success tabular-nums">
-                    {fmtINR(peak.amount)}
-                  </p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">{peak.month}</p>
-                </div>
-                <div className="bg-destructive/8 rounded-xl p-2.5 text-center">
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                    Low Month
-                  </p>
-                  <p className="font-bold text-sm text-destructive tabular-nums">
-                    {fmtINR(lowest.amount)}
-                  </p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">{lowest.month}</p>
-                </div>
-              </div>
+              <p className="text-[10px] font-extrabold text-foreground tabular-nums">
+                {p.collectionRate}% Cleared
+              </p>
             </div>
-          );
-        })()}
-
-      {/* Saree Service Split & Demand */}
-      {(() => {
-        const prepleatBookings = bookings.filter((b) => b.service === "prepleat" && b.status !== "cancelled");
-        const drapeBookings = bookings.filter((b) => b.service === "drape" && b.status !== "cancelled");
-        const totalValidSarees = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.sareeCount || 1), 0);
-        const prepleatSarees = prepleatBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
-        const drapeSarees = drapeBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
-        const prepleatPct = totalValidSarees > 0 ? Math.round((prepleatSarees / totalValidSarees) * 100) : 0;
-        const drapePct = totalValidSarees > 0 ? Math.round((drapeSarees / totalValidSarees) * 100) : 0;
-        const avgSareePrice = totalValidSarees > 0 ? Math.round(p.totalBilled / totalValidSarees) : 0;
-
-        return (
-          <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Saree Service Volume & Split
-              </p>
-              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
-                {totalValidSarees} Total Sarees
+            <div className="h-2 rounded-full overflow-hidden bg-secondary flex">
+              <div className="bg-emerald-500 h-full" style={{ width: `${p.collectionRate}%` }} />
+              <div
+                className="bg-destructive/60 h-full"
+                style={{ width: `${100 - p.collectionRate}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1 text-[9.5px] text-muted-foreground">
+              <span>
+                Paid: <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{fmtINR(p.lifetime)}</span>
+              </span>
+              <span>
+                Pending: <span className="font-bold text-destructive tabular-nums">{fmtINR(p.totalPending)}</span>
               </span>
             </div>
-
-            {/* Visual split progress bar */}
-            <div className="h-2.5 rounded-full overflow-hidden bg-secondary flex mb-3">
-              <div
-                className="h-full bg-[oklch(0.78_0.13_75)]"
-                style={{ width: `${prepleatPct}%` }}
-                title={`PrePleat: ${prepleatPct}%`}
-              />
-              <div
-                className="h-full bg-[oklch(0.55_0.13_150)]"
-                style={{ width: `${drapePct}%` }}
-                title={`Direct Drape: ${drapePct}%`}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-secondary/40 rounded-xl p-2">
-                <span className="text-[9px] uppercase font-bold text-muted-foreground block">
-                  Pre-Pleat
-                </span>
-                <span className="text-xs font-extrabold text-foreground tabular-nums">
-                  {prepleatSarees} ({prepleatPct}%)
-                </span>
-              </div>
-              <div className="bg-secondary/40 rounded-xl p-2">
-                <span className="text-[9px] uppercase font-bold text-muted-foreground block">
-                  Direct Drape
-                </span>
-                <span className="text-xs font-extrabold text-foreground tabular-nums">
-                  {drapeSarees} ({drapePct}%)
-                </span>
-              </div>
-              <div className="bg-secondary/40 rounded-xl p-2">
-                <span className="text-[9px] uppercase font-bold text-muted-foreground block">
-                  Avg / Saree
-                </span>
-                <span className="text-xs font-extrabold text-primary tabular-nums">
-                  {fmtINR(avgSareePrice)}
-                </span>
-              </div>
-            </div>
           </div>
-        );
-      })()}
 
-      {/* Top Repeat / VIP Customers */}
-      {(() => {
-        const custStats = new Map<string, { name: string; phone?: string; sareeCount: number; spent: number }>();
-        for (const b of bookings) {
-          if (b.status === "cancelled") continue;
-          const c = customers.find((x) => x.id === b.customerId);
-          const name = c?.name || "Client";
-          const phone = c?.phone;
-          const key = b.customerId || name;
-          const ex = custStats.get(key) || { name, phone, sareeCount: 0, spent: 0 };
-          ex.sareeCount += b.sareeCount || 1;
-          ex.spent += b.totalAmount || 0;
-          custStats.set(key, ex);
-        }
-        const top3 = Array.from(custStats.values())
-          .sort((a, b) => b.spent - a.spent || b.sareeCount - a.sareeCount)
-          .slice(0, 3);
-
-        if (top3.length === 0) return null;
-
-        return (
-          <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
-            <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-                <Crown className="size-3.5 text-gold" /> Top Repeat / VIP Customers
-              </p>
-            </div>
-            <div className="space-y-2">
-              {top3.map((cust, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-secondary/30 border border-border/10"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className={cn(
-                        "size-5.5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0",
-                        idx === 0
-                          ? "bg-gold text-white"
-                          : idx === 1
-                          ? "bg-slate-300 text-slate-800"
-                          : "bg-amber-600/30 text-amber-900",
-                      )}
-                    >
-                      #{idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-foreground truncate">{cust.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{cust.sareeCount} sarees draped</p>
+          {/* Monthly Analytics (Average, Peak, Lowest) */}
+          {p.allTimeTrend.length > 0 &&
+            (() => {
+              const months = p.allTimeTrend.filter((m) => m.amount > 0);
+              const totalIncome = months.reduce((s, m) => s + m.amount, 0);
+              const avgPerMonth = months.length > 0 ? totalIncome / months.length : 0;
+              const peak = months.reduce((a, b) => (b.amount > a.amount ? b : a), months[0]);
+              const lowest = months.reduce((a, b) => (b.amount < a.amount ? b : a), months[0]);
+              return (
+                <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-2">
+                    Monthly Performance Averages
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div className="bg-primary/8 rounded-xl p-2 text-center">
+                      <p className="text-[8.5px] uppercase font-semibold text-muted-foreground">
+                        Avg / Month
+                      </p>
+                      <p className="font-extrabold text-xs text-primary tabular-nums mt-0.5">
+                        {fmtINR(avgPerMonth)}
+                      </p>
+                      <p className="text-[8px] text-muted-foreground mt-0.5">{months.length} mos</p>
+                    </div>
+                    <div className="bg-emerald-500/8 rounded-xl p-2 text-center">
+                      <p className="text-[8.5px] uppercase font-semibold text-muted-foreground">
+                        Peak Month
+                      </p>
+                      <p className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
+                        {fmtINR(peak.amount)}
+                      </p>
+                      <p className="text-[8px] text-muted-foreground mt-0.5">{peak.month}</p>
+                    </div>
+                    <div className="bg-destructive/8 rounded-xl p-2 text-center">
+                      <p className="text-[8.5px] uppercase font-semibold text-muted-foreground">
+                        Low Month
+                      </p>
+                      <p className="font-extrabold text-xs text-destructive tabular-nums mt-0.5">
+                        {fmtINR(lowest.amount)}
+                      </p>
+                      <p className="text-[8px] text-muted-foreground mt-0.5">{lowest.month}</p>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-extrabold text-success tabular-nums">{fmtINR(cust.spent)}</p>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+              );
+            })()}
 
-      {/* Payment Modes Distribution */}
-      {(() => {
-        let gpayTotal = 0;
-        let cashTotal = 0;
-        let otherTotal = 0;
-        for (const pmt of payments) {
-          if (pmt.mode === "gpay" || pmt.mode === "upi" || pmt.mode === "online") gpayTotal += pmt.amount;
-          else if (pmt.mode === "cash") cashTotal += pmt.amount;
-          else otherTotal += pmt.amount;
-        }
-        const totalCollected = gpayTotal + cashTotal + otherTotal;
-        if (totalCollected === 0) return null;
-
-        const gpayPct = Math.round((gpayTotal / totalCollected) * 100);
-        const cashPct = Math.round((cashTotal / totalCollected) * 100);
-
-        return (
-          <div className="bg-card card-shadow rounded-2xl p-3.5 mb-3 border border-border/40">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Payment Collection Modes
+          {/* Top Sources */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+              <p className="text-[9.5px] uppercase tracking-wider text-muted-foreground font-bold">
+                Top Income Source
               </p>
-              <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
-                Total {fmtINR(totalCollected)}
-              </span>
+              {p.incomeByCategory.length > 0 ? (
+                <div className="mt-1">
+                  <p className="font-bold text-xs truncate text-emerald-600 dark:text-emerald-400">
+                    {p.incomeByCategory[0].cat}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5 tabular-nums">
+                    {fmtINR(p.incomeByCategory[0].amount)} ({p.incomeByCategory[0].pct}%)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-1">No earnings yet</p>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-blue-600">📱 UPI / GPay</span>
-                <p className="text-sm font-extrabold text-blue-700 mt-1 tabular-nums">
-                  {fmtINR(gpayTotal)}{" "}
-                  <span className="text-[10px] font-medium opacity-80">({gpayPct}%)</span>
-                </p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-emerald-600">💵 Cash</span>
-                <p className="text-sm font-extrabold text-emerald-700 mt-1 tabular-nums">
-                  {fmtINR(cashTotal)}{" "}
-                  <span className="text-[10px] font-medium opacity-80">({cashPct}%)</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
-      {/* Unified Recent Cash Flow Timeline */}
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-20">
-        {/* Date filter header */}
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Recent Cash Flow
-          </p>
-          <div className="flex items-center gap-1.5">
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="text-[10px] font-semibold bg-secondary border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer outline-none"
-            >
-              <option value="all">All Time</option>
-              {Array.from(new Set(p.unifiedRecentTransactions.map((tx) => tx.date.slice(0, 7))))
-                .sort((a, b) => b.localeCompare(a))
-                .map((ym) => (
-                  <option key={ym} value={ym}>
-                    {format(parseISO(ym + "-01"), "MMM yyyy")}
-                  </option>
-                ))}
-            </select>
+            <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+              <p className="text-[9.5px] uppercase tracking-wider text-muted-foreground font-bold">
+                Top Spending
+              </p>
+              {p.expenseByCategory.length > 0 ? (
+                <div className="mt-1">
+                  <p className="font-bold text-xs truncate text-rose-600 dark:text-rose-400">
+                    {p.expenseByCategory[0].cat}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5 tabular-nums">
+                    {fmtINR(p.expenseByCategory[0].amount)} ({p.expenseByCategory[0].pct}%)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-1">No expenses yet</p>
+              )}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* filtered list */}
-        {(() => {
-          const filtered =
-            dateFilter === "all"
-              ? p.unifiedRecentTransactions
-              : p.unifiedRecentTransactions.filter((tx) => tx.date.startsWith(dateFilter));
-          return filtered.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">
-              No transactions for this period
-            </p>
-          ) : (
-            <div className="max-h-[400px] overflow-y-auto pr-1">
-              {/* filtered summary row */}
-              {dateFilter !== "all" && (
-                <div className="flex justify-between text-[10px] font-semibold mb-2 px-1">
-                  <span className="text-success">
-                    In:{" "}
-                    {fmtINR(
-                      filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
-                    )}
-                  </span>
-                  <span className="text-destructive">
-                    Out:{" "}
-                    {fmtINR(
-                      filtered
-                        .filter((t) => t.type === "expense")
-                        .reduce((s, t) => s + t.amount, 0),
-                    )}
-                  </span>
-                  <span className="text-muted-foreground">{filtered.length} txns</span>
+      {/* SUB-TAB 2: 🥻 Services & Volume */}
+      {summarySubTab === "services" && (
+        <div className="space-y-3 mb-24 animate-in fade-in">
+          {(() => {
+            const prepleatBookings = bookings.filter((b) => b.service === "prepleat" && b.status !== "cancelled");
+            const drapeBookings = bookings.filter((b) => b.service === "drape" && b.status !== "cancelled");
+            const totalValidSarees = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.sareeCount || 1), 0);
+            const prepleatSarees = prepleatBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
+            const drapeSarees = drapeBookings.reduce((s, b) => s + (b.sareeCount || 1), 0);
+            const prepleatPct = totalValidSarees > 0 ? Math.round((prepleatSarees / totalValidSarees) * 100) : 0;
+            const drapePct = totalValidSarees > 0 ? Math.round((drapeSarees / totalValidSarees) * 100) : 0;
+            const avgSareePrice = totalValidSarees > 0 ? Math.round(p.totalBilled / totalValidSarees) : 0;
+
+            const prepleatRevenue = prepleatBookings.reduce((s, b) => s + b.totalAmount, 0);
+            const drapeRevenue = drapeBookings.reduce((s, b) => s + b.totalAmount, 0);
+            const totalExtraCharges = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.extraCharges || 0), 0);
+            const totalDiscounts = bookings.filter((b) => b.status !== "cancelled").reduce((s, b) => s + (b.discount || 0), 0);
+
+            return (
+              <>
+                <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                      Saree Service Volume & Share
+                    </p>
+                    <span className="text-[9.5px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                      {totalValidSarees} Total Sarees
+                    </span>
+                  </div>
+
+                  {/* Visual split bar */}
+                  <div className="h-2 rounded-full overflow-hidden bg-secondary flex mb-2.5">
+                    <div
+                      className="h-full bg-amber-500"
+                      style={{ width: `${prepleatPct}%` }}
+                    />
+                    <div
+                      className="h-full bg-emerald-500"
+                      style={{ width: `${drapePct}%` }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 text-center">
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2">
+                      <span className="text-[8.5px] uppercase font-bold text-amber-700 dark:text-amber-300 block">
+                        Pre-Pleat
+                      </span>
+                      <span className="text-xs font-black text-foreground tabular-nums">
+                        {prepleatSarees} ({prepleatPct}%)
+                      </span>
+                      <p className="text-[8px] text-muted-foreground mt-0.5">{fmtINR(prepleatRevenue)}</p>
+                    </div>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2">
+                      <span className="text-[8.5px] uppercase font-bold text-emerald-700 dark:text-emerald-300 block">
+                        Direct Drape
+                      </span>
+                      <span className="text-xs font-black text-foreground tabular-nums">
+                        {drapeSarees} ({drapePct}%)
+                      </span>
+                      <p className="text-[8px] text-muted-foreground mt-0.5">{fmtINR(drapeRevenue)}</p>
+                    </div>
+                    <div className="bg-primary/10 border border-primary/20 rounded-xl p-2">
+                      <span className="text-[8.5px] uppercase font-bold text-primary block">
+                        Avg / Saree
+                      </span>
+                      <span className="text-xs font-black text-primary tabular-nums">
+                        {fmtINR(avgSareePrice)}
+                      </span>
+                      <p className="text-[8px] text-muted-foreground mt-0.5">Realization</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-              <ul className="space-y-2.5 relative border-l border-border pl-3 ml-2.5">
-                {filtered.map((tx) => {
-                  const isInc = tx.type === "income";
-                  return (
-                    <li key={tx.id} className="relative">
+
+                {/* Add-ons & Adjustments Card */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
+                      🚗 Travel / Extra Charges
+                    </span>
+                    <p className="text-sm font-extrabold text-foreground mt-1 tabular-nums">
+                      +{fmtINR(totalExtraCharges)}
+                    </p>
+                    <p className="text-[8.5px] text-muted-foreground mt-0.5">Collected from bookings</p>
+                  </div>
+                  <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground block">
+                      🏷️ Discounts Given
+                    </span>
+                    <p className="text-sm font-extrabold text-destructive mt-1 tabular-nums">
+                      -{fmtINR(totalDiscounts)}
+                    </p>
+                    <p className="text-[8.5px] text-muted-foreground mt-0.5">Special client savings</p>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* SUB-TAB 3: 👑 VIP Clients & Artists */}
+      {summarySubTab === "clients" && (
+        <div className="space-y-3 mb-24 animate-in fade-in">
+          {(() => {
+            const custStats = new Map<string, { name: string; phone?: string; sareeCount: number; spent: number }>();
+            let directCount = 0;
+            let artistCount = 0;
+
+            for (const b of bookings) {
+              if (b.status === "cancelled") continue;
+              if (b.artistId) artistCount++;
+              else directCount++;
+
+              const c = customers.find((x) => x.id === b.customerId);
+              const name = c?.name || "Client";
+              const phone = c?.phone;
+              const key = b.customerId || name;
+              const ex = custStats.get(key) || { name, phone, sareeCount: 0, spent: 0 };
+              ex.sareeCount += b.sareeCount || 1;
+              ex.spent += b.totalAmount || 0;
+              custStats.set(key, ex);
+            }
+            const top5 = Array.from(custStats.values())
+              .sort((a, b) => b.spent - a.spent || b.sareeCount - a.sareeCount)
+              .slice(0, 5);
+
+            const totalBookingsCount = directCount + artistCount;
+            const directPct = totalBookingsCount > 0 ? Math.round((directCount / totalBookingsCount) * 100) : 0;
+            const artistPct = totalBookingsCount > 0 ? Math.round((artistCount / totalBookingsCount) * 100) : 0;
+
+            return (
+              <>
+                {/* Acquisition Channel Breakdown */}
+                <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                      Booking Channels
+                    </p>
+                    <span className="text-[9.5px] font-bold text-muted-foreground">
+                      {totalBookingsCount} Total Orders
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="bg-secondary/40 rounded-xl p-2 border border-border/20">
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground block">
+                        Direct Clients
+                      </span>
+                      <p className="text-sm font-extrabold text-foreground tabular-nums">
+                        {directCount} ({directPct}%)
+                      </p>
+                    </div>
+                    <div className="bg-indigo-500/10 rounded-xl p-2 border border-indigo-500/20">
+                      <span className="text-[9px] uppercase font-bold text-indigo-700 dark:text-indigo-300 block">
+                        Artist Referrals
+                      </span>
+                      <p className="text-sm font-extrabold text-indigo-700 dark:text-indigo-300 tabular-nums">
+                        {artistCount} ({artistPct}%)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top VIP Clients Leaderboard */}
+                <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5 mb-2.5">
+                    <Crown className="size-3.5 text-amber-500" /> Top VIP Repeat Customers
+                  </p>
+                  <div className="space-y-1.5">
+                    {top5.map((cust, idx) => (
                       <div
-                        className={cn(
-                          "absolute -left-[17px] top-1.5 size-2 rounded-full border bg-card transition-all duration-300",
-                          isInc ? "border-success bg-success" : "border-destructive bg-destructive",
-                        )}
-                      />
-                      <button type="button" onClick={() => p.onEditTx(tx)} className="w-full text-left flex items-center justify-between gap-3 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition duration-200 cursor-pointer">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={cn(
-                                "px-1 py-0.5 rounded text-[8px] font-bold uppercase shrink-0",
-                                isInc
-                                  ? "bg-success/10 text-success"
-                                  : "bg-destructive/10 text-destructive",
-                              )}
-                            >
-                              {isInc ? "In" : "Out"}
-                            </span>
-                            <p className="font-semibold text-sm truncate text-foreground">
-                              {tx.customerName || tx.category}
-                            </p>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {tx.customerName ? `${tx.category} · ` : ""}
-                            {formatAppDateTime(tx.date)}
-                            {tx.note ? ` · ${tx.note}` : ""}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p
+                        key={idx}
+                        className="flex items-center justify-between p-2 rounded-xl bg-secondary/30 border border-border/15"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
                             className={cn(
-                              "font-bold text-sm tabular-nums",
-                              isInc ? "text-success" : "text-destructive",
+                              "size-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0",
+                              idx === 0
+                                ? "bg-amber-400 text-amber-950 shadow-2xs"
+                                : idx === 1
+                                ? "bg-slate-300 text-slate-900"
+                                : idx === 2
+                                ? "bg-amber-700/30 text-amber-900 dark:text-amber-200"
+                                : "bg-secondary text-muted-foreground",
                             )}
                           >
-                            {isInc ? "+" : "−"}
-                            {fmtINR(tx.amount)}
-                          </p>
-                          {tx.mode && (
-                            <span className="text-[9px] uppercase font-semibold text-muted-foreground block leading-none mt-0.5">
-                              {tx.mode}
-                            </span>
-                          )}
+                            #{idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-foreground truncate">{cust.name}</p>
+                            <p className="text-[9.5px] text-muted-foreground">{cust.sareeCount} sarees draped</p>
+                          </div>
                         </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                            {fmtINR(cust.spent)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* SUB-TAB 4: 💳 Modes & Cash Flow */}
+      {summarySubTab === "modes" && (
+        <div className="space-y-3 mb-24 animate-in fade-in">
+          {/* Payment Collection Modes Breakdown */}
+          {(() => {
+            let gpayTotal = 0;
+            let cashTotal = 0;
+            let otherTotal = 0;
+            for (const pmt of payments) {
+              if (pmt.mode === "gpay" || pmt.mode === "upi" || pmt.mode === "online") gpayTotal += pmt.amount;
+              else if (pmt.mode === "cash") cashTotal += pmt.amount;
+              else otherTotal += pmt.amount;
+            }
+            const totalCollected = gpayTotal + cashTotal + otherTotal;
+            const gpayPct = totalCollected > 0 ? Math.round((gpayTotal / totalCollected) * 100) : 0;
+            const cashPct = totalCollected > 0 ? Math.round((cashTotal / totalCollected) * 100) : 0;
+
+            return (
+              <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                    Payment Collection Modes
+                  </p>
+                  <span className="text-[9.5px] font-extrabold text-foreground tabular-nums">
+                    Total {fmtINR(totalCollected)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
+                    <span className="text-[9.5px] font-bold text-blue-600">📱 UPI / GPay</span>
+                    <p className="text-sm font-extrabold text-blue-700 mt-1 tabular-nums">
+                      {fmtINR(gpayTotal)}{" "}
+                      <span className="text-[9px] font-medium opacity-80">({gpayPct}%)</span>
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+                    <span className="text-[9.5px] font-bold text-emerald-600">💵 Cash</span>
+                    <p className="text-sm font-extrabold text-emerald-700 mt-1 tabular-nums">
+                      {fmtINR(cashTotal)}{" "}
+                      <span className="text-[9px] font-medium opacity-80">({cashPct}%)</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Unified Recent Cash Flow Timeline */}
+          <div className="bg-card card-shadow rounded-2xl p-3 border border-border/30">
+            {/* Date filter header */}
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                Cash Flow Stream
+              </p>
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="text-[9.5px] font-semibold bg-secondary border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer outline-none"
+                >
+                  <option value="all">All Time</option>
+                  {Array.from(new Set(p.unifiedRecentTransactions.map((tx) => tx.date.slice(0, 7))))
+                    .sort((a, b) => b.localeCompare(a))
+                    .map((ym) => (
+                      <option key={ym} value={ym}>
+                        {format(parseISO(ym + "-01"), "MMM yyyy")}
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
-          );
-        })()}
-      </div>
+
+            {/* filtered list */}
+            {(() => {
+              const filtered =
+                dateFilter === "all"
+                  ? p.unifiedRecentTransactions
+                  : p.unifiedRecentTransactions.filter((tx) => tx.date.startsWith(dateFilter));
+              return filtered.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">
+                  No transactions for this period
+                </p>
+              ) : (
+                <div className="max-h-[360px] overflow-y-auto pr-1">
+                  {/* filtered summary row */}
+                  {dateFilter !== "all" && (
+                    <div className="flex justify-between text-[9.5px] font-semibold mb-2 px-1">
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        In:{" "}
+                        {fmtINR(
+                          filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
+                        )}
+                      </span>
+                      <span className="text-rose-600 dark:text-rose-400">
+                        Out:{" "}
+                        {fmtINR(
+                          filtered
+                            .filter((t) => t.type === "expense")
+                            .reduce((s, t) => s + t.amount, 0),
+                        )}
+                      </span>
+                      <span className="text-muted-foreground">{filtered.length} txns</span>
+                    </div>
+                  )}
+                  <ul className="space-y-2 relative border-l border-border pl-3 ml-2">
+                    {filtered.map((tx) => {
+                      const isInc = tx.type === "income";
+                      return (
+                        <li key={tx.id} className="relative">
+                          <div
+                            className={cn(
+                              "absolute -left-[16px] top-1.5 size-2 rounded-full border bg-card",
+                              isInc ? "border-emerald-500 bg-emerald-500" : "border-rose-500 bg-rose-500",
+                            )}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => p.onEditTx(tx)}
+                            className="w-full text-left flex items-center justify-between gap-2.5 bg-secondary/35 hover:bg-secondary/60 p-2 rounded-xl transition cursor-pointer"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={cn(
+                                    "px-1 py-0.2 rounded text-[7.5px] font-black uppercase shrink-0",
+                                    isInc
+                                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                      : "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+                                  )}
+                                >
+                                  {isInc ? "In" : "Out"}
+                                </span>
+                                <p className="font-semibold text-xs truncate text-foreground">
+                                  {tx.customerName || tx.category}
+                                </p>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground truncate mt-0.5">
+                                {tx.customerName ? `${tx.category} · ` : ""}
+                                {formatAppDateTime(tx.date)}
+                                {tx.note ? ` · ${tx.note}` : ""}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p
+                                className={cn(
+                                  "font-extrabold text-xs tabular-nums",
+                                  isInc ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400",
+                                )}
+                              >
+                                {isInc ? "+" : "-"}
+                                {fmtINR(tx.amount)}
+                              </p>
+                              {tx.mode && (
+                                <span className="text-[8.5px] uppercase font-semibold text-muted-foreground block leading-none mt-0.5">
+                                  {tx.mode}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -3289,19 +3435,19 @@ function Stat({
     tint === "primary"
       ? "text-primary"
       : tint === "success"
-        ? "text-success"
+        ? "text-emerald-600 dark:text-emerald-400"
         : tint === "danger"
           ? "text-destructive"
           : "text-muted-foreground";
   return (
-    <div className="bg-card card-shadow rounded-2xl p-3">
+    <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
       <div
-        className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}
+        className={`flex items-center gap-1 text-[9.5px] uppercase tracking-wider font-bold ${tintCls}`}
       >
         {icon}
         <span>{label}</span>
       </div>
-      <p className="text-lg font-display font-semibold mt-1 tabular-nums">{value}</p>
+      <p className="text-base font-display font-extrabold mt-0.5 tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
@@ -3316,27 +3462,25 @@ function KpiCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  sub: string;
-  tint: "primary" | "success" | "accent" | "gold";
+  sub?: string;
+  tint?: "primary" | "success" | "danger";
 }) {
   const tintCls =
     tint === "primary"
-      ? "text-primary"
+      ? "text-primary bg-primary/10"
       : tint === "success"
-        ? "text-success"
-        : tint === "gold"
-          ? "text-gold"
-          : "text-accent-foreground";
+        ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+        : tint === "danger"
+          ? "text-destructive bg-destructive/10"
+          : "text-muted-foreground bg-secondary";
   return (
-    <div className="bg-card card-shadow rounded-2xl p-3">
-      <div
-        className={`flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold ${tintCls}`}
-      >
-        {icon}
-        <span className="truncate">{label}</span>
+    <div className="bg-card card-shadow rounded-2xl p-2.5 border border-border/30">
+      <div className="flex items-center justify-between">
+        <span className="text-[9.5px] uppercase tracking-wider text-muted-foreground font-bold">{label}</span>
+        <span className={`p-1 rounded-lg ${tintCls}`}>{icon}</span>
       </div>
-      <p className="text-base font-display font-bold mt-1 tabular-nums truncate">{value}</p>
-      <p className="text-[10px] text-muted-foreground truncate">{sub}</p>
+      <p className="text-sm font-display font-extrabold mt-1 tabular-nums text-foreground">{value}</p>
+      {sub && <p className="text-[8.5px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
 }

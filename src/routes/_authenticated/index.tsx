@@ -129,6 +129,28 @@ function CalendarPage() {
       );
   }, [bookings, cursor]);
 
+  const threeMonthForecast = useMemo(() => {
+    const today = new Date();
+    const m0 = startOfMonth(today);
+    const m1 = startOfMonth(addMonths(today, 1));
+    const m2 = startOfMonth(addMonths(today, 2));
+
+    const countFor = (startM: Date) => {
+      const endM = endOfMonth(startM);
+      return bookings.filter((b) => {
+        if (b.status === "cancelled") return false;
+        const d = parseISO(b.deliveryDate);
+        return d >= startM && d <= endM;
+      }).length;
+    };
+
+    return [
+      { date: m0, label: format(m0, "MMM"), count: countFor(m0) },
+      { date: m1, label: format(m1, "MMM"), count: countFor(m1) },
+      { date: m2, label: format(m2, "MMM"), count: countFor(m2) },
+    ];
+  }, [bookings]);
+
   const calendarRef = useRef<HTMLDivElement>(null);
   const daySwipeRef = useRef<HTMLDivElement>(null);
 
@@ -349,46 +371,82 @@ function CalendarPage() {
         )}
 
         <>
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setCursor(subMonths(cursor, 1))}
-              onPointerDown={() => startMonthHold(-1)}
-              onPointerUp={stopMonthHold}
-              onPointerLeave={stopMonthHold}
-              onPointerCancel={stopMonthHold}
-              className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
-              aria-label="Previous month"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-            <div className="flex-1 text-center">
-              <p className="text-base font-display font-semibold leading-tight">
-                {format(cursor, "MMMM")}
-              </p>
-              <p className="text-[11px] text-muted-foreground tabular-nums leading-tight">
-                {format(cursor, "yyyy")}
-              </p>
-            </div>
+          <div className="flex items-center justify-between mb-3 gap-2">
             <div className="flex items-center gap-1">
               <button
-                onClick={() => {
-                  setCursor(new Date());
-                  setSelected(new Date());
-                }}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary mr-2"
+                onClick={() => setCursor(subMonths(cursor, 1))}
+                onPointerDown={() => startMonthHold(-1)}
+                onPointerUp={stopMonthHold}
+                onPointerLeave={stopMonthHold}
+                onPointerCancel={stopMonthHold}
+                className="size-8 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none cursor-pointer"
+                aria-label="Previous month"
               >
-                Today
+                <ChevronLeft className="size-4.5" />
               </button>
+              <div className="min-w-[70px]">
+                <p className="text-sm font-display font-bold leading-tight truncate">
+                  {format(cursor, "MMM yyyy")}
+                </p>
+              </div>
               <button
                 onClick={() => setCursor(addMonths(cursor, 1))}
                 onPointerDown={() => startMonthHold(1)}
                 onPointerUp={stopMonthHold}
                 onPointerLeave={stopMonthHold}
                 onPointerCancel={stopMonthHold}
-                className="size-10 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none"
+                className="size-8 rounded-full hover:bg-secondary flex items-center justify-center no-select touch-none cursor-pointer"
                 aria-label="Next month"
               >
-                <ChevronRight className="size-5" />
+                <ChevronRight className="size-4.5" />
+              </button>
+            </div>
+
+            {/* Smart 3-Month Booking Forecast Chips */}
+            <div className="flex items-center gap-1 bg-secondary/60 p-0.5 rounded-2xl border border-border/30">
+              {threeMonthForecast.map((m, idx) => {
+                const isCurrentView = isSameMonth(cursor, m.date);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setCursor(m.date);
+                      setSelected(m.date);
+                    }}
+                    className={cn(
+                      "px-2 py-1 rounded-xl text-center transition cursor-pointer flex items-center gap-1 active:scale-95",
+                      isCurrentView
+                        ? "bg-card text-primary font-bold shadow-2xs border border-primary/25"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    title={`Jump to ${m.label}`}
+                  >
+                    <span className="text-[10px] uppercase font-semibold">{m.label}</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full tabular-nums",
+                        m.count > 0
+                          ? isCurrentView
+                            ? "bg-primary text-white"
+                            : "bg-secondary text-foreground"
+                          : "text-muted-foreground/60",
+                      )}
+                    >
+                      {m.count}
+                    </span>
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => {
+                  setCursor(new Date());
+                  setSelected(new Date());
+                }}
+                className="text-[9.5px] font-bold px-2 py-1 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
+                title="Jump to Today"
+              >
+                Today
               </button>
             </div>
           </div>

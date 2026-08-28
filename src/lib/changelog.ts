@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.3";
+export const APP_VERSION = "1.7.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.3",
+    version: "v1.7.4",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "Financial Sub-Tabs, 3-Month Calendar Forecast & Alphabet Directory",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Categorized Financial Analytics Sub-Tabs",
+        desc: "Organized Summary dashboard into 4 specialized sub-tabs: Overview & Margins, Saree Services, VIP Clients, and Payment Modes.",
+      },
+      {
+        emoji: "📅",
+        text: "3-Month Booking Forecast Chips",
+        desc: "Quickly view upcoming bookings count for Current, Next, and 3rd month with instant 1-tap navigation directly in the Calendar header.",
+      },
+      {
+        emoji: "🔤",
+        text: "Alphabet Quick-Jump Customer Directory",
+        desc: "Browse customers with a fast A-Z index bar, initial avatars, and 1-tap Call & WhatsApp shortcuts.",
+      },
+      {
+        emoji: "📐",
+        text: "Compact Low-Profile Financial Metric Boxes",
+        desc: "Slim, streamlined stat boxes across Summary, Payments, and Pending Dues views.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.3",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "Cumulative Revenue Composed Chart, Soft Pastels & Seamless Ledger",
     badge: "LATEST UPDATE ✨",
     changes: [
