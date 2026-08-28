@@ -429,7 +429,7 @@
     scrollbar-width: none;
   }
   .safe-header-top {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
   }
   .safe-pb {
     padding-bottom: env(safe-area-inset-bottom);
