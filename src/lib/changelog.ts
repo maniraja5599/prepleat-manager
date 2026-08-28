@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.5";
+export const APP_VERSION = "1.6.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,40 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.5",
+    version: "v1.6.6",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "International English UI, Timeline View, Smart Booking & Header Polish",
+    title: "Finances Dashboard, Pending Dues Ledger, Complete Payment Alerts & Header Ticker Polish",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "💰",
+        text: "Finances Dashboard & Outstanding Dues",
+        desc: "Renamed Payments to Finances with dedicated tabs for Payments Ledger, Pending Dues (all unpaid clients), and Revenue Analytics.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Strict Payment Verification on Complete",
+        desc: "Added verification alerts before marking orders complete to confirm Cash/GPay payment or preserve balance due.",
+      },
+      {
+        emoji: "📜",
+        text: "Slow-Scrolling Header Ticker & Micro-Typography",
+        desc: "Refined notification pill with compact text-[8px] typography and continuous slow vertical text scrolling.",
+      },
+      {
+        emoji: "📱",
+        text: "Verified Android WhatsApp Integration",
+        desc: "All WhatsApp receipt and reminder links verified for instant 1-tap dispatch on Android, iOS, and desktop browsers.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.5",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "International English UI, Timeline View, Smart Booking & Header Polish",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🌐",

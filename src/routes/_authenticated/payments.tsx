@@ -73,10 +73,10 @@ export const Route = createFileRoute("/_authenticated/payments")({
   },
   head: () => ({
     meta: [
-      { title: "Payments — Eyas Saree Drapist" },
+      { title: "Finances — Eyas Saree Drapist" },
       {
         name: "description",
-        content: "Lifetime income, expenses by category, net profit analytics.",
+        content: "Revenue, payments register, pending customer dues, and financial summary.",
       },
     ],
   }),
@@ -670,7 +670,7 @@ function PaymentsPage() {
       <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
         <div className="flex items-center justify-between gap-4 h-9">
           <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
-            Payments
+            Finances
           </h1>
 
           {/* Cute Vertical Scrolling Earning/Spend Ticker */}
@@ -702,35 +702,45 @@ function PaymentsPage() {
         <div className="bg-card card-shadow rounded-full p-1 mt-2.5 grid grid-cols-3 gap-1">
           {(
             [
+              { id: "payments", label: "Payments", icon: Wallet },
+              { id: "dues", label: "Pending Dues", icon: AlertCircle },
               { id: "summary", label: "Summary", icon: PieChart },
-              { id: "income", label: "Income", icon: Wallet },
-              { id: "expenses", label: "Expenses", icon: Receipt },
             ] as const
           ).map((t) => {
             const Icon = t.icon;
-            const active = tab === t.id;
-            const animationClass =
-              t.id === "income"
-                ? "animate-pump-income"
-                : t.id === "expenses"
-                  ? "animate-pump-expense"
-                  : "";
+            const isTabActive =
+              t.id === "dues"
+                ? tab === "income" && subFilter === "pending"
+                : t.id === "payments"
+                ? tab === "income" && subFilter === "collected"
+                : tab === "summary";
+
             return (
               <button
                 key={t.id}
-                onClick={() => setTab(t.id)}
+                onClick={() => {
+                  if (t.id === "payments") {
+                    setTab("income");
+                    handleSubFilterChange("collected");
+                  } else if (t.id === "dues") {
+                    setTab("income");
+                    handleSubFilterChange("pending");
+                  } else {
+                    setTab("summary");
+                  }
+                }}
                 className={cn(
                   "py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95",
-                  active
-                    ? t.id === "income"
+                  isTabActive
+                    ? t.id === "dues"
+                      ? "bg-amber-600 text-white shadow"
+                      : t.id === "payments"
                       ? "bg-success text-white shadow"
-                      : t.id === "expenses"
-                        ? "bg-destructive text-white shadow"
-                        : "bg-primary text-primary-foreground shadow"
+                      : "bg-primary text-primary-foreground shadow"
                     : "text-muted-foreground hover:bg-secondary/40",
                 )}
               >
-                <Icon className={cn("size-3.5", animationClass)} /> {t.label}
+                <Icon className="size-3.5" /> {t.label}
               </button>
             );
           })}
@@ -1074,7 +1084,7 @@ function IncomeView(p: {
   const pendingList = useMemo(() => {
     return p.bookings
       .filter((b) => {
-        if (b.status !== "completed" && b.status !== "delivered") return false;
+        if (b.status === "cancelled") return false;
         return totalDue(b) > 0;
       })
       .map((b) => {

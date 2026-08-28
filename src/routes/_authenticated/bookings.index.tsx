@@ -1036,6 +1036,14 @@ function BookingsPage() {
                 </p>
               </div>
 
+              {/* Payment Verification Alert Banner */}
+              <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-left">
+                <AlertCircle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-900 dark:text-amber-200 font-semibold leading-snug">
+                  Payment Verification: Please verify Cash / GPay payment received before marking this order as completed.
+                </p>
+              </div>
+
               {/* Payment Collection Type Tabs */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">

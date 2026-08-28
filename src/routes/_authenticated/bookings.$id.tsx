@@ -1436,9 +1436,17 @@ function BookingDetail() {
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-1 flex items-center gap-1.5">
                 <span>✅</span> Complete Booking
               </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                Apply optional charges/discounts and choose whether to record full, partial, or no payment.
+              <p className="text-xs text-muted-foreground leading-relaxed mb-2.5">
+                Apply optional charges/discounts and verify payment received.
               </p>
+
+              {/* Payment Verification Alert Banner */}
+              <div className="p-2.5 mb-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-left">
+                <AlertCircle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-900 dark:text-amber-200 font-semibold leading-snug">
+                  Payment Verification: Please confirm Cash / GPay payment received or select "Keep Due" before completing.
+                </p>
+              </div>
               
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs font-semibold bg-secondary/50 rounded-xl p-3">

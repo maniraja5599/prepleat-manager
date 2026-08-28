@@ -587,9 +587,9 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 setActiveTab("all");
               }}
               className={cn(
-                "h-8 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden origin-right",
+                "h-7 rounded-full border text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden origin-right",
                 showPill && currentNotification
-                  ? "max-w-[110px] xs:max-w-[140px] px-2.5 opacity-100 border-border/10 scale-100"
+                  ? "max-w-[105px] xs:max-w-[130px] px-2 opacity-100 border-border/10 scale-100"
                   : "max-w-0 px-0 opacity-0 border-transparent scale-95 pointer-events-none",
                 currentNotification?.color,
               )}
@@ -611,9 +611,22 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               {currentNotification?.icon === "wallet" && (
                 <Wallet className="size-2.5 text-rose-500 shrink-0" />
               )}
-              <span className="truncate whitespace-nowrap text-[9px]">
-                {currentText}
-              </span>
+              {isLongText ? (
+                <div key={currentText} className="w-[75px] xs:w-[95px] overflow-hidden h-7 relative shrink-0">
+                  <div className="absolute inset-x-0 w-full animate-scroll-up-slow flex flex-col justify-start">
+                    <span className="whitespace-normal leading-tight text-[8px] pt-[28px] pb-1 font-bold">
+                      {currentText}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span 
+                  key={currentText} 
+                  className="truncate whitespace-nowrap text-[8px] animate-slide-up-single"
+                >
+                  {currentText}
+                </span>
+              )}
             </div>
 
             {/* Settings Button */}
@@ -698,6 +711,13 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             }
             .animate-slide-up-single {
               animation: slide-up-single 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            @keyframes scroll-up-slow {
+              0% { transform: translateY(0); }
+              100% { transform: translateY(-100%); }
+            }
+            .animate-scroll-up-slow {
+              animation: scroll-up-slow 9s linear forwards;
             }
             @keyframes scroll-up-continuous {
               0% { transform: translateY(0); }

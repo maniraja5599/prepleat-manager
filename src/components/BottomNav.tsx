@@ -5,7 +5,7 @@ import { useRef, useEffect, useState } from "react";
 
 type Tab = { to: string; label: string; icon: typeof Calendar; primary?: boolean };
 const tabs: Tab[] = [
-  { to: "/payments", label: "Payments", icon: Wallet },
+  { to: "/payments", label: "Finances", icon: Wallet },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/bills", label: "Bills", icon: ReceiptText, primary: true },
   { to: "/bookings", label: "Bookings", icon: ListChecks },
