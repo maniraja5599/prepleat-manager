@@ -898,10 +898,15 @@ function NewBooking() {
                         <input
                           type="tel"
                           inputMode="numeric"
+                          pattern="[0-9]*"
+                          autoComplete="tel-national"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          maxLength={10}
                           value={newPhone}
                           onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
                           placeholder="Mobile number"
-                          className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary select-text"
                         />
                         <button
                           type="button"
@@ -940,10 +945,15 @@ function NewBooking() {
                           <input
                             type="tel"
                             inputMode="numeric"
+                            pattern="[0-9]*"
+                            autoComplete="tel-national"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            maxLength={10}
                             value={newPhone}
                             onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
                             placeholder="Mobile number"
-                            className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary select-text"
                           />
                           <button
                             type="button"
@@ -1102,17 +1112,17 @@ function NewBooking() {
                       +91
                     </span>
                     <input
+                      type="tel"
                       value={newPhone}
                       onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
-                      onPaste={(e) => {
-                        e.preventDefault();
-                        const txt = e.clipboardData.getData("text");
-                        setNewPhone(sanitizeIndianPhone(txt));
-                      }}
                       placeholder="10-digit mobile"
                       inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="tel-national"
+                      autoCorrect="off"
+                      spellCheck={false}
                       maxLength={10}
-                      className="flex-1 min-w-0 bg-transparent pl-3 pr-16 py-2.5 text-sm tabular-nums focus:outline-none"
+                      className="flex-1 min-w-0 bg-transparent pl-3 pr-16 py-2.5 text-sm tabular-nums focus:outline-none select-text"
                     />
                     <button
                       type="button"

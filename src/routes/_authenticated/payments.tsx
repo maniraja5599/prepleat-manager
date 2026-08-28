@@ -1194,74 +1194,10 @@ function IncomeView(p: {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <Stat
-          tint="success"
-          icon={<Wallet className="size-3.5" />}
-          label="Collected"
-          value={fmtINR(p.lifetime)}
-        />
-        <Stat
-          tint="danger"
-          icon={<AlertCircle className="size-3.5" />}
-          label="Pending"
-          value={fmtINR(p.totalPending)}
-        />
-        <Stat
-          tint="primary"
-          icon={<TrendingUp className="size-3.5" />}
-          label="Billed"
-          value={fmtINR(p.totalBilled)}
-        />
-        <Stat
-          tint="muted"
-          icon={<IndianRupee className="size-3.5" />}
-          label="Collection %"
-          value={`${p.collectionRate}%`}
-        />
-      </div>
-
       {p.subFilter === "collected" ? (
         <>
-          {/* Income & Expense Live Financial Summary Cards */}
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <div className="bg-card card-shadow rounded-2xl p-3 border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                  <TrendingUp className="size-3 text-emerald-500" /> Total Income
-                </span>
-                <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.2 rounded-full">
-                  {allIncomesList.length} txs
-                </span>
-              </div>
-              <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                +{fmtINR(p.lifetime)}
-              </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">
-                Avg: {fmtINR(allIncomesList.length > 0 ? Math.round(p.lifetime / allIncomesList.length) : 0)} / receipt
-              </p>
-            </div>
-
-            <div className="bg-card card-shadow rounded-2xl p-3 border border-rose-500/20 bg-gradient-to-br from-card to-rose-500/5">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                  <TrendingDown className="size-3 text-rose-500" /> Total Expenses
-                </span>
-                <span className="text-[9px] bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold px-1.5 py-0.2 rounded-full">
-                  {p.expenses?.length || 0} txs
-                </span>
-              </div>
-              <p className="text-base font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
-                -{fmtINR(p.totalExpense || 0)}
-              </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">
-                Net: {fmtINR(p.lifetime - (p.totalExpense || 0))}
-              </p>
-            </div>
-          </div>
-
-          {/* Sub-Tabs: Income vs Expense */}
-          <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3.5 card-shadow">
+          {/* Sub-Tabs: Income vs Expense (Always Top) */}
+          <div className="flex bg-secondary p-1 rounded-2xl gap-1 mb-3 card-shadow">
             <button
               type="button"
               onClick={() => setPaymentSubTab("income")}
@@ -1463,34 +1399,70 @@ function IncomeView(p: {
                   ))}
                 </div>
               )}
+
+              {/* Income & Expense Live Financial Summary Cards (Placed below transactions list) */}
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <div className="bg-card card-shadow rounded-2xl p-3 border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                      <TrendingUp className="size-3 text-emerald-500" /> Total Income
+                    </span>
+                    <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.2 rounded-full">
+                      {allIncomesList.length} txs
+                    </span>
+                  </div>
+                  <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    +{fmtINR(p.lifetime)}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                    Avg: {fmtINR(allIncomesList.length > 0 ? Math.round(p.lifetime / allIncomesList.length) : 0)} / receipt
+                  </p>
+                </div>
+
+                <div className="bg-card card-shadow rounded-2xl p-3 border border-rose-500/20 bg-gradient-to-br from-card to-rose-500/5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                      <TrendingDown className="size-3 text-rose-500" /> Total Expenses
+                    </span>
+                    <span className="text-[9px] bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold px-1.5 py-0.2 rounded-full">
+                      {p.expenses?.length || 0} txs
+                    </span>
+                  </div>
+                  <p className="text-base font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">
+                    -{fmtINR(p.totalExpense || 0)}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">
+                    Net: {fmtINR(p.lifetime - (p.totalExpense || 0))}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </>
       ) : (
         /* Enhanced Pending Payments Hub */
         <div className="space-y-3 mb-24">
-          {/* Summary Alert Banner */}
-          <div className="bg-gradient-to-r from-destructive/15 via-destructive/10 to-amber-500/10 border border-destructive/30 rounded-2xl p-3.5 card-shadow">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="size-9 rounded-xl bg-destructive/20 text-destructive flex items-center justify-center font-bold shrink-0">
-                  <AlertCircle className="size-5" />
-                </span>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground">
-                    Completed Orders Pending Balance
-                  </h3>
-                  <p className="text-[10px] text-muted-foreground">
-                    {pendingList.length} order{pendingList.length > 1 ? "s" : ""} · Total Due:{" "}
-                    <span className="font-bold text-destructive tabular-nums">{fmtINR(p.totalPending)}</span>
-                  </p>
-                </div>
+          {/* Single Unified Stats Banner for Pending Dues (Collected | Pending Due | Total Billed) */}
+          <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/40">
+            <div className="grid grid-cols-3 divide-x divide-border/40 text-center">
+              <div className="px-1">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">Collected</p>
+                <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
+                  {fmtINR(p.lifetime)}
+                </p>
               </div>
-              {pendingList.length > 0 && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/20 text-destructive">
-                  Action Required
-                </span>
-              )}
+              <div className="px-1">
+                <p className="text-[10px] uppercase font-bold text-destructive">Pending Due</p>
+                <p className="text-sm font-black text-destructive mt-0.5 tabular-nums">
+                  {fmtINR(p.totalPending)}
+                </p>
+              </div>
+              <div className="px-1">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">Total Billed</p>
+                <p className="text-sm font-extrabold text-foreground mt-0.5 tabular-nums">
+                  {fmtINR(p.totalBilled)}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -2330,64 +2302,85 @@ function SummaryView(p: {
     return `Lifetime Margin: ${margin}% · Total Net Profit: ${fmtINR(p.netProfit)}`;
   }, [margin, p.netProfit]);
 
+  const trendDataWithCumulative = useMemo(() => {
+    const list = p.trend12 || [];
+    let cumulative = 0;
+    return list.map((item) => {
+      cumulative += item.amount;
+      return {
+        ...item,
+        cumulative,
+      };
+    });
+  }, [p.trend12]);
+
   return (
     <>
-      {/* 📈 Earning & Expense Trend Line Chart */}
+      {/* 📈 Monthly Stacked Bars + Cumulative Line Chart */}
       <div className="bg-card card-shadow rounded-2xl p-4 mb-3 border border-border/40">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-              <TrendingUp className="size-3.5 text-primary" /> Monthly Revenue Trend
+              <TrendingUp className="size-3.5 text-primary" /> Monthly Revenue & Trend
             </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Last 12 Months Cashflow</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Stacked Income/Expense Bars + Cumulative Growth</p>
           </div>
-          <div className="flex items-center gap-3 text-[10px] font-bold">
+          <div className="flex items-center gap-2.5 text-[9px] font-bold">
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <span className="size-2 rounded-full bg-emerald-500 inline-block" /> Income
+              <span className="size-2 rounded-xs bg-emerald-500 inline-block" /> Income
             </span>
             <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
-              <span className="size-2 rounded-full bg-rose-500 inline-block" /> Expense
+              <span className="size-2 rounded-xs bg-rose-500 inline-block" /> Expense
+            </span>
+            <span className="flex items-center gap-1 text-primary">
+              <span className="size-2 rounded-full bg-primary inline-block" /> Cumulative
             </span>
           </div>
         </div>
 
-        <div className="h-44 w-full -mx-1">
-          {p.trend12.length === 0 ? (
+        <div className="h-48 w-full -mx-1">
+          {trendDataWithCumulative.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={p.trend12} margin={{ top: 8, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="incAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+              <ComposedChart data={trendDataWithCumulative} margin={{ top: 8, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
                 <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
                 <YAxis
+                  yAxisId="left"
                   stroke="currentColor"
                   opacity={0.6}
                   fontSize={10}
                   tickLine={false}
                   tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
                 />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="currentColor"
+                  opacity={0.4}
+                  fontSize={9}
+                  tickLine={false}
+                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+                />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
-                      const inc = Number(payload[0]?.value) || 0;
-                      const exp = Number(payload[1]?.value) || 0;
+                      const data = payload[0]?.payload || {};
+                      const inc = Number(data.amount) || 0;
+                      const exp = Number(data.expense) || 0;
                       const net = inc - exp;
+                      const cum = Number(data.cumulative) || 0;
                       return (
                         <div className="rounded-xl bg-card border border-border p-2.5 shadow-xl text-xs space-y-1">
                           <p className="font-bold text-foreground border-b border-border/40 pb-1">{label}</p>
                           <p className="text-emerald-600 font-semibold flex justify-between gap-4">
-                            <span>Income:</span> <strong>{fmtINR(inc)}</strong>
+                            <span>Income (Bar):</span> <strong>+{fmtINR(inc)}</strong>
                           </p>
                           <p className="text-rose-600 font-semibold flex justify-between gap-4">
-                            <span>Expense:</span> <strong>{fmtINR(exp)}</strong>
+                            <span>Expense (Bar):</span> <strong>-{fmtINR(exp)}</strong>
                           </p>
                           <p
                             className={cn(
@@ -2397,31 +2390,44 @@ function SummaryView(p: {
                           >
                             <span>Net Profit:</span> <strong>{fmtINR(net)}</strong>
                           </p>
+                          <p className="text-primary font-bold pt-1 border-t border-border/30 flex justify-between gap-4">
+                            <span>Cumulative Total:</span> <strong>{fmtINR(cum)}</strong>
+                          </p>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Area
-                  type="monotone"
+                <Bar
+                  yAxisId="left"
                   dataKey="amount"
                   name="Income"
-                  stroke="#10b981"
-                  strokeWidth={2.5}
-                  fill="url(#incAreaGrad)"
-                  dot={{ r: 2.5, fill: "#10b981" }}
-                  activeDot={{ r: 4.5, fill: "#10b981" }}
+                  stackId="monthlyBar"
+                  fill="#10b981"
+                  barSize={14}
+                  radius={[0, 0, 2, 2]}
                 />
-                <Line
-                  type="monotone"
+                <Bar
+                  yAxisId="left"
                   dataKey="expense"
                   name="Expense"
-                  stroke="#f43f5e"
-                  strokeWidth={2}
-                  dot={{ r: 2, fill: "#f43f5e" }}
+                  stackId="monthlyBar"
+                  fill="#f43f5e"
+                  barSize={14}
+                  radius={[3, 3, 0, 0]}
                 />
-              </AreaChart>
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="cumulative"
+                  name="Cumulative"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2.5}
+                  dot={{ r: 2.5, fill: "var(--color-primary)" }}
+                  activeDot={{ r: 4.5 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           )}
         </div>

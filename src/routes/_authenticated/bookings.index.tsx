@@ -875,22 +875,25 @@ function BookingsPage() {
                           {/* 1. Smart Invoice Header Strip */}
                           <div
                             className={cn(
-                              "flex items-center justify-between gap-1.5 flex-wrap border-b border-border/40 pb-2",
+                              "flex items-center justify-between gap-1.5 flex-wrap border-b border-border/20 pb-2",
                               selectMode && "pl-7",
                             )}
                           >
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-primary/15 text-primary border border-primary/25 tracking-wider">
+                              <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg bg-secondary text-foreground/80 border border-border/40 tracking-wider">
                                 {billShort}
                               </span>
-                              <span
-                                style={{ backgroundColor: tagColor }}
-                                className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md text-white shadow-2xs"
-                              >
-                                {b.service === "prepleat" ? "🥻 PrePleat" : "✨ Drape"}
-                              </span>
+                              {b.service === "prepleat" ? (
+                                <span className="text-[9px] font-bold tracking-wide px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                                  🥻 Pre-Pleat
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold tracking-wide px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                  ✨ Drape
+                                </span>
+                              )}
                               {isArtistBooking && (
-                                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-gold/20 text-gold border border-gold/30">
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                                   ★ Artist
                                 </span>
                               )}
@@ -898,25 +901,25 @@ function BookingsPage() {
 
                             <div className="flex items-center gap-1.5">
                               {b.status === "delivered" ? (
-                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                                <span className="text-[9px] font-medium tracking-wider px-1.5 py-0.5 rounded-md bg-secondary text-muted-foreground">
                                   Delivered
                                 </span>
                               ) : b.status === "completed" ? (
-                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                <span className="text-[9px] font-medium tracking-wider px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                   Ready
                                 </span>
                               ) : b.status === "cancelled" ? (
-                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-destructive/15 text-destructive">
+                                <span className="text-[9px] font-medium tracking-wider px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive">
                                   Cancelled
                                 </span>
                               ) : null}
 
                               {due > 0 ? (
-                                <span className="text-[10px] font-black tracking-wide px-2 py-0.5 rounded-md bg-destructive/15 text-destructive border border-destructive/20 tabular-nums">
+                                <span className="text-[9.5px] font-bold tracking-wide px-2 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 tabular-nums">
                                   {fmtINR(due)} DUE
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <span className="text-[9.5px] font-semibold tracking-wide px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                   PAID ✓
                                 </span>
                               )}
@@ -932,7 +935,7 @@ function BookingsPage() {
                           >
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-sm text-foreground truncate">
+                                <span className="font-semibold text-sm text-foreground truncate">
                                   {c?.name ?? "Customer"}
                                 </span>
                                 {c?.phone && (
@@ -942,7 +945,7 @@ function BookingsPage() {
                                   >
                                     <a
                                       href={`tel:${cleanPhoneForDialing(c.phone)}`}
-                                      className="size-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition active:scale-90 text-muted-foreground hover:text-foreground"
+                                      className="size-6 rounded-full bg-secondary/80 hover:bg-secondary flex items-center justify-center transition active:scale-90 text-muted-foreground hover:text-foreground"
                                       title="Call Customer"
                                     >
                                       <Phone className="size-3" />
@@ -961,27 +964,27 @@ function BookingsPage() {
                               </div>
 
                               <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                                <span className="flex items-center gap-1 font-medium text-foreground/85">
+                                <span className="flex items-center gap-1 font-medium text-foreground/80">
                                   <Calendar className="size-3 text-muted-foreground shrink-0" />
                                   {formatAppDate(b.deliveryDate)} · {fmtTime12(b.deliveryTime)}
                                 </span>
-                                <span className="px-1.5 py-0.2 rounded bg-secondary text-[10px] font-bold text-foreground">
+                                <span className="px-1.5 py-0.2 rounded bg-secondary/70 text-[10px] font-semibold text-muted-foreground">
                                   {b.sareeCount} {b.sareeCount === 1 ? "Saree" : "Sarees"}
                                 </span>
                               </div>
                               {a && (
-                                <p className="text-[10px] text-gold font-semibold mt-1 truncate">
-                                  Referred by {a.name}
+                                <p className="text-[10px] text-muted-foreground font-medium mt-1 truncate">
+                                  via {a.name}
                                 </p>
                               )}
                             </div>
 
                             {/* Total Amount Pill */}
                             <div className="text-right shrink-0">
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                              <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium">
                                 Total Bill
                               </p>
-                              <p className="text-base font-black text-foreground tabular-nums">
+                              <p className="text-sm font-extrabold text-foreground tabular-nums">
                                 {fmtINR(netBookingAmount(b))}
                               </p>
                             </div>
@@ -989,12 +992,8 @@ function BookingsPage() {
                         </div>
                       );
                       const cardCls = cn(
-                        "block bg-card card-shadow rounded-2xl p-3.5 active:scale-[0.99] transition relative overflow-hidden text-left w-full border border-border/40 hover:border-border/80",
-                        isArtistBooking
-                          ? "ring-1 ring-gold/40 bg-gradient-to-br from-card to-gold/5"
-                          : b.service === "prepleat"
-                            ? "hover:ring-1 hover:ring-primary/20"
-                            : "hover:ring-1 hover:ring-emerald-500/20",
+                        "block bg-card card-shadow rounded-2xl p-3.5 active:scale-[0.99] transition relative overflow-hidden text-left w-full border border-border/30 hover:border-border/60",
+                        isArtistBooking && "bg-gradient-to-br from-card to-indigo-500/5",
                         b.status === "cancelled" && "opacity-60",
                         isSelected && "ring-2 ring-primary",
                       );

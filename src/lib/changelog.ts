@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.2";
+export const APP_VERSION = "1.7.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.2",
+    version: "v1.7.3",
     date: "28 Aug 2026",
     isLatest: true,
+    title: "Cumulative Revenue Composed Chart, Soft Pastels & Seamless Ledger",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Cumulative Revenue & Stacked Monthly Chart",
+        desc: "Interactive financial chart displaying cumulative revenue growth line alongside monthly Income/Expense breakdown in a single stacked bar.",
+      },
+      {
+        emoji: "🎨",
+        text: "Soft & Clean Pastel Badges",
+        desc: "Refined Bookings and Bills register with soft pastel service tags (Pre-Pleat, Drape, Artist) and clean minimal cards.",
+      },
+      {
+        emoji: "💳",
+        text: "Fast Transactions-First Ledger",
+        desc: "Payments sub-tabs and recent entries appear immediately at the top, with unified 3-column stats in Pending Dues.",
+      },
+      {
+        emoji: "📱",
+        text: "iOS Mobile Number Typing & Paste",
+        desc: "Enhanced phone input compatibility on iPhone preventing clipboard dialog blockages.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.2",
+    date: "28 Aug 2026",
+    isLatest: false,
     title: "Digital Bill Book, White-Label Branding & Revenue Trend Line",
     badge: "LATEST UPDATE ✨",
     changes: [
