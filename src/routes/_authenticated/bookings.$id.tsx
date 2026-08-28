@@ -1699,6 +1699,14 @@ function BookingDetail() {
                       patch.discount = (booking.discount || 0) + d;
                     }
                     
+                    const newNetTotal =
+                      (booking.totalAmount || 0) +
+                      (patch.extraCharges ?? (booking.extraCharges || 0)) -
+                      (patch.discount ?? (booking.discount || 0));
+                    const newTotalPaid = (Number(booking.advancePaid) || 0) + collectedNow;
+                    const newDueAfter = Math.max(0, newNetTotal - newTotalPaid);
+                    patch.advancePaid = newTotalPaid;
+
                     if (collectedNow > 0) {
                       addPayment({
                         bookingId: booking.id,
@@ -1711,13 +1719,6 @@ function BookingDetail() {
                     }
                     
                     updateBooking(booking.id, patch);
-
-                    const newNetTotal =
-                      (booking.totalAmount || 0) +
-                      (patch.extraCharges ?? (booking.extraCharges || 0)) -
-                      (patch.discount ?? (booking.discount || 0));
-                    const newTotalPaid = (booking.advancePaid || 0) + collectedNow;
-                    const newDueAfter = Math.max(0, newNetTotal - newTotalPaid);
                     const billNo = formatShortBillNumber(booking.billNumber, booking.id);
                     const phoneRaw = customer?.phone;
                     const phoneWA = phoneRaw ? cleanPhoneForWhatsApp(phoneRaw) : "";

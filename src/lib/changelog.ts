@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.8";
+export const APP_VERSION = "1.6.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,30 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.6.8",
+    version: "v1.6.9",
     date: "28 Aug 2026",
     isLatest: true,
-    title: "Settings Navigation Overhaul: 4-Card Category Switcher & High-Contrast Sub-Sections",
+    title: "Quick Review Icon Fix & Order Completion Payment Sync",
     badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📅",
+        text: "Quick Review Delivery Icon Fix",
+        desc: "Fixed date icon in Quick Review bottom sheet to render cleanly without opening date picker elements.",
+      },
+      {
+        emoji: "💳",
+        text: "Atomic Completion Payment Sync",
+        desc: "Guaranteed 100% mathematical precision and real-time synchronization between payment ledger and booking balance on order completion.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.8",
+    date: "28 Aug 2026",
+    isLatest: false,
+    title: "Settings Navigation Overhaul: 4-Card Category Switcher & High-Contrast Sub-Sections",
+    badge: "PREVIOUS",
     changes: [
       {
         emoji: "🎛️",

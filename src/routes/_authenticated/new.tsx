@@ -1922,8 +1922,8 @@ function NewBooking() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground font-medium">Delivery:</span>
-                <span className="font-bold text-foreground flex items-center gap-1">
-                  <Calendar className="size-3.5 text-primary" />
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <CalendarDays className="size-3.5 text-primary shrink-0" />
                   {formatAppDate(deliveryDate)} · {fmtTime12(deliveryTime)}
                 </span>
               </div>

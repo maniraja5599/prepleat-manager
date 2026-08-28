@@ -1220,6 +1220,7 @@ function BookingsPage() {
                       }
                     }
                     const b = bookings.find((x) => x.id === pendingComplete.id);
+                    const totalPaidAfter = (b ? (Number(b.advancePaid) || 0) : 0) + collectedNow;
                     if (b && collectedNow > 0) {
                       addPayment({
                         bookingId: b.id,
@@ -1230,9 +1231,12 @@ function BookingsPage() {
                         note: "On completion",
                       });
                     }
-                    updateBooking(pendingComplete.id, { status: "completed", completedAt: new Date().toISOString() });
+                    updateBooking(pendingComplete.id, {
+                      status: "completed",
+                      completedAt: new Date().toISOString(),
+                      advancePaid: totalPaidAfter,
+                    });
                     
-                    const totalPaidAfter = (b ? (b.advancePaid || 0) : 0) + collectedNow;
                     const finalDueAfter = remainingDueAfter;
 
                     if (b && pendingSendDeliveryWA) {

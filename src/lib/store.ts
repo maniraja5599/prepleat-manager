@@ -622,10 +622,12 @@ export const useStore = create<State>()(
       addPayment: (p) =>
         set((s) => {
           const now = new Date().toISOString();
-          const payment: Payment = { ...p, id: uid(), updatedAt: now };
+          const amountNum = Math.max(0, Number(p.amount) || 0);
+          const payment: Payment = { ...p, amount: amountNum, id: uid(), updatedAt: now };
           const bookings = s.bookings.map((b) => {
             if (b.id !== p.bookingId) return b;
-            const newPaid = b.advancePaid + p.amount;
+            const currentPaid = Math.max(0, Number(b.advancePaid) || 0);
+            const newPaid = currentPaid + amountNum;
             return {
               ...b,
               advancePaid: newPaid,
@@ -637,7 +639,7 @@ export const useStore = create<State>()(
             ts: now,
             kind: "payment-add",
             bookingId: p.bookingId,
-            summary: `paid ₹${p.amount} (${p.mode ?? "gpay"})`,
+            summary: `paid ₹${amountNum} (${p.mode ?? "gpay"})`,
           };
           return {
             payments: [payment, ...s.payments],
@@ -651,17 +653,23 @@ export const useStore = create<State>()(
           if (!oldPay) return s;
 
           const now = new Date().toISOString();
+          const cleanPatch = {
+            ...patch,
+            ...(patch.amount !== undefined ? { amount: Math.max(0, Number(patch.amount) || 0) } : {}),
+            updatedAt: now,
+          };
           const payments = s.payments.map((p) =>
-            p.id === id ? { ...p, ...patch, updatedAt: now } : p,
+            p.id === id ? { ...p, ...cleanPatch } : p,
           );
 
           // If the amount changed, we need to update the booking's advancePaid
           let bookings = s.bookings;
-          if (patch.amount !== undefined && patch.amount !== oldPay.amount) {
-            const diff = patch.amount - oldPay.amount;
+          if (cleanPatch.amount !== undefined && cleanPatch.amount !== oldPay.amount) {
+            const diff = cleanPatch.amount - oldPay.amount;
             bookings = s.bookings.map((b) => {
               if (b.id !== oldPay.bookingId) return b;
-              const newPaid = Math.max(0, b.advancePaid + diff);
+              const currentPaid = Math.max(0, Number(b.advancePaid) || 0);
+              const newPaid = Math.max(0, currentPaid + diff);
               return {
                 ...b,
                 advancePaid: newPaid,
@@ -675,7 +683,7 @@ export const useStore = create<State>()(
             ts: now,
             kind: "update",
             bookingId: oldPay.bookingId,
-            summary: `Updated payment of ₹${oldPay.amount} to ₹${patch.amount ?? oldPay.amount}`,
+            summary: `Updated payment of ₹${oldPay.amount} to ₹${cleanPatch.amount ?? oldPay.amount}`,
           };
 
           return {
@@ -691,7 +699,8 @@ export const useStore = create<State>()(
           const now = new Date().toISOString();
           const bookings = s.bookings.map((b) => {
             if (b.id !== pay.bookingId) return b;
-            const newPaid = Math.max(0, b.advancePaid - pay.amount);
+            const currentPaid = Math.max(0, Number(b.advancePaid) || 0);
+            const newPaid = Math.max(0, currentPaid - (Number(pay.amount) || 0));
             return {
               ...b,
               advancePaid: newPaid,
