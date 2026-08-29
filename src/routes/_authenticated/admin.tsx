@@ -89,6 +89,7 @@ function AdminPage() {
 
   // Inspect User Details Modal
   const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
+  const [inspectingCoupon, setInspectingCoupon] = useState<Coupon | null>(null);
 
   // Edit User Plan Modal
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -848,7 +849,8 @@ function AdminPage() {
                 {coupons.map((c) => (
                   <div
                     key={c.id}
-                    className="bg-card card-shadow rounded-3xl p-4 border border-border/40 flex flex-col justify-between space-y-3"
+                    onClick={() => setInspectingCoupon(c)}
+                    className="group bg-card card-shadow rounded-3xl p-4 border border-border/40 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between space-y-3"
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -893,17 +895,28 @@ function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-border/30 flex items-center justify-between gap-2">
+                    <div
+                      className="pt-2 border-t border-border/30 flex items-center justify-between gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => setInspectingCoupon(c)}
+                        className="px-2.5 py-1 rounded-xl bg-primary text-white text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="size-3" />
+                        <span>Analytics ({c.usedCount})</span>
+                      </button>
+
                       <button
                         onClick={() => toggleCouponStatus(c.id, !c.isActive)}
                         className={cn(
-                          "px-2.5 py-1 rounded-xl text-xs font-bold cursor-pointer transition",
+                          "px-2 py-1 rounded-xl text-xs font-bold cursor-pointer transition",
                           c.isActive
                             ? "bg-secondary hover:bg-secondary/80 text-muted-foreground"
                             : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",
                         )}
                       >
-                        {c.isActive ? "Disable Code" : "Activate Code"}
+                        {c.isActive ? "Disable" : "Activate"}
                       </button>
 
                       <button
@@ -1759,6 +1772,200 @@ function AdminPage() {
                   className="flex-1 py-2.5 rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs font-bold shadow-xs cursor-pointer"
                 >
                   Confirm Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= MODAL 6: COUPON USAGE ANALYTICS MODAL ================= */}
+        {inspectingCoupon && (
+          <div
+            className="fixed inset-0 z-[32500] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setInspectingCoupon(null)}
+            style={{ touchAction: "none" }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 text-left max-h-[90vh] overflow-y-auto"
+              style={{ touchAction: "auto" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-2xl saree-gradient text-white flex items-center justify-center font-bold text-base shadow-sm">
+                    <Tag className="size-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-mono font-black text-base sm:text-lg text-foreground tracking-wider">
+                        {inspectingCoupon.code}
+                      </h3>
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                          inspectingCoupon.isActive
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {inspectingCoupon.isActive ? "Active" : "Disabled"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {inspectingCoupon.type === "lifetime_free"
+                        ? "🎁 100% Lifetime VIP Free Access"
+                        : inspectingCoupon.type === "free_days"
+                          ? `🎁 +${inspectingCoupon.value} Days Free Extension`
+                          : `🏷️ ${inspectingCoupon.value}% Checkout Discount`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setInspectingCoupon(null)}
+                  className="size-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-secondary/40 p-3 rounded-2xl border border-border/40">
+                  <span className="text-[10px] text-muted-foreground font-bold uppercase block">Total Redemptions</span>
+                  <p className="text-2xl font-black font-display text-foreground my-0.5">
+                    {inspectingCoupon.usedCount}
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      {inspectingCoupon.maxUses > 0 ? `/ ${inspectingCoupon.maxUses} max` : "(Unlimited)"}
+                    </span>
+                  </p>
+                  <span className="text-[10.5px] text-muted-foreground">
+                    Created: {new Date(inspectingCoupon.createdAt).toLocaleDateString("en-IN")}
+                  </span>
+                </div>
+
+                <div className="bg-secondary/40 p-3 rounded-2xl border border-border/40">
+                  <span className="text-[10px] text-muted-foreground font-bold uppercase block">Benefit Type</span>
+                  <p className="text-sm font-bold text-foreground my-1 capitalize">
+                    {inspectingCoupon.type.replace("_", " ")}
+                  </p>
+                  <span className="text-[10.5px] text-muted-foreground">
+                    {inspectingCoupon.description || "General promotion"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Redeemed Users List */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="size-3.5 text-primary" />
+                    <span>Customers Who Redeemed ({inspectingCoupon.redeemedUsers?.length || inspectingCoupon.usedBy?.length || 0})</span>
+                  </span>
+                </div>
+
+                {(!inspectingCoupon.redeemedUsers || inspectingCoupon.redeemedUsers.length === 0) &&
+                (!inspectingCoupon.usedBy || inspectingCoupon.usedBy.length === 0) ? (
+                  <div className="bg-secondary/30 rounded-2xl p-6 text-center text-xs text-muted-foreground">
+                    No customers have redeemed this coupon yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {inspectingCoupon.redeemedUsers && inspectingCoupon.redeemedUsers.length > 0 ? (
+                      inspectingCoupon.redeemedUsers.map((ru, idx) => (
+                        <div
+                          key={ru.uid + idx}
+                          className="bg-secondary/40 p-3 rounded-2xl border border-border/40 text-xs flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-foreground truncate">{ru.email}</p>
+                            <p className="text-[10.5px] text-muted-foreground truncate">
+                              {ru.benefitApplied || "Coupon Benefit Applied"}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {new Date(ru.redeemedAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                            {ru.phone && (
+                              <a
+                                href={`https://wa.me/91${ru.phone.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold flex items-center gap-1"
+                              >
+                                <MessageCircle className="size-3" />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      inspectingCoupon.usedBy?.map((uid, idx) => {
+                        const matchedUser = users.find((u) => u.uid === uid);
+                        return (
+                          <div
+                            key={uid + idx}
+                            className="bg-secondary/40 p-3 rounded-2xl border border-border/40 text-xs flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-foreground truncate">
+                                {matchedUser?.email || `User UID: ${uid}`}
+                              </p>
+                              {matchedUser?.displayName && (
+                                <p className="text-[10.5px] text-muted-foreground truncate">{matchedUser.displayName}</p>
+                              )}
+                            </div>
+                            {matchedUser?.phone && (
+                              <a
+                                href={`https://wa.me/91${matchedUser.phone.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold flex items-center gap-1 shrink-0"
+                              >
+                                <MessageCircle className="size-3" />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex gap-2 pt-2 border-t border-border/40">
+                <button
+                  type="button"
+                  onClick={() => handleCopyCouponCode(inspectingCoupon.code)}
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold hover:bg-secondary/80 cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Copy className="size-3.5" />
+                  <span>Copy Code</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleCouponStatus(inspectingCoupon.id, !inspectingCoupon.isActive);
+                    setInspectingCoupon({ ...inspectingCoupon, isActive: !inspectingCoupon.isActive });
+                  }}
+                  className={cn(
+                    "flex-1 py-2.5 rounded-xl text-xs font-bold cursor-pointer",
+                    inspectingCoupon.isActive
+                      ? "bg-secondary text-muted-foreground hover:text-foreground"
+                      : "bg-emerald-600 text-white shadow-xs",
+                  )}
+                >
+                  {inspectingCoupon.isActive ? "Disable Code" : "Activate Code"}
                 </button>
               </div>
             </div>

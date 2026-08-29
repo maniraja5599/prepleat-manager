@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { createCashfreeOrderServer } from "@/lib/cashfreeServer";
 import { useStore } from "@/lib/store";
 import {
+  validateCoupon,
   redeemCoupon,
   updateUserPhone,
   updateUserPlan,
@@ -54,6 +55,7 @@ export function PricingPlansModal({
   const [couponCode, setCouponCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; percent: number } | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Lock body scroll and background touches when modal is active
@@ -81,8 +83,14 @@ export function PricingPlansModal({
   if (!open) return null;
 
   const currentStatus = checkSubscriptionStatus(user, userProfile);
-  const monthlyPrice = config.monthlyPrice || 299;
-  const yearlyPrice = config.yearlyPrice || 1999;
+  const rawMonthlyPrice = config.monthlyPrice || 299;
+  const rawYearlyPrice = config.yearlyPrice || 1999;
+  const monthlyPrice = appliedDiscount
+    ? Math.max(1, Math.round(rawMonthlyPrice * (1 - appliedDiscount.percent / 100)))
+    : rawMonthlyPrice;
+  const yearlyPrice = appliedDiscount
+    ? Math.max(1, Math.round(rawYearlyPrice * (1 - appliedDiscount.percent / 100)))
+    : rawYearlyPrice;
   const yearlyOriginalPrice = config.yearlyOriginalPrice || 3588;
   const discountPercent = Math.round(
     ((yearlyOriginalPrice - yearlyPrice) / yearlyOriginalPrice) * 100,
@@ -94,20 +102,51 @@ export function PricingPlansModal({
       toast.error("Please sign in to redeem coupons.");
       return;
     }
-    if (!couponCode.trim()) {
+    const cleanCode = couponCode.trim().toUpperCase();
+    if (!cleanCode) {
       toast.error("Enter a valid coupon code");
       return;
     }
 
     setIsApplyingCoupon(true);
     try {
-      const result = await redeemCoupon(couponCode, user);
-      if (result.success) {
-        toast.success(result.message, { duration: 4000 });
-        setCouponCode("");
-        onClose();
+      // 1. Check coupon validity first
+      const check = await validateCoupon(cleanCode, user.id);
+      if (!check.valid || !check.coupon) {
+        toast.error(check.message || "Invalid coupon code");
+        setIsApplyingCoupon(false);
+        return;
+      }
+
+      const coupon = check.coupon;
+
+      if (coupon.type === "percent_discount") {
+        const percent = Number(coupon.value) || 0;
+        if (percent >= 100) {
+          // 100% free voucher - instantly redeem!
+          const result = await redeemCoupon(cleanCode, user, selectedPlan);
+          if (result.success) {
+            toast.success(`🎉 100% Discount Applied! Your ${selectedPlan} plan is now active for free!`, { duration: 4000 });
+            setCouponCode("");
+            onClose();
+          } else {
+            toast.error(result.message);
+          }
+        } else {
+          // Partial discount (e.g. 50% off)
+          setAppliedDiscount({ code: cleanCode, percent });
+          toast.success(`🏷️ Code "${cleanCode}" applied! Enjoy ${percent}% OFF checkout prices.`, { duration: 3500 });
+        }
       } else {
-        toast.error(result.message);
+        // Free days or Lifetime VIP - redeem immediately!
+        const result = await redeemCoupon(cleanCode, user, selectedPlan);
+        if (result.success) {
+          toast.success(result.message, { duration: 4000 });
+          setCouponCode("");
+          onClose();
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to apply coupon");

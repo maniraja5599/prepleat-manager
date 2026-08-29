@@ -53,6 +53,16 @@ export interface UserProfile {
   paymentHistory?: PaymentHistoryItem[];
 }
 
+
+export interface CouponRedemption {
+  uid: string;
+  email: string;
+  displayName?: string;
+  phone?: string;
+  redeemedAt: string;
+  benefitApplied: string;
+}
+
 export interface Coupon {
   id: string;
   code: string; // uppercase
@@ -61,7 +71,8 @@ export interface Coupon {
   planScope?: "all" | "monthly" | "yearly";
   maxUses: number; // 0 for unlimited
   usedCount: number;
-  usedBy?: string[]; // user UIDs
+  usedBy?: string[];
+  redeemedUsers?: CouponRedemption[]; // user UIDs
   expiresAt?: string | null;
   isActive: boolean;
   description?: string;
@@ -466,11 +477,45 @@ export async function updateUserPlan(
 }
 
 /**
+ * Validate a coupon without immediately redeeming it (for % discount checks)
+ */
+export async function validateCoupon(
+  rawCode: string,
+  userId?: string,
+): Promise<{ valid: boolean; message?: string; coupon?: Coupon }> {
+  if (!db) return { valid: false, message: "Database offline" };
+  const cleanCode = rawCode.trim().toUpperCase();
+  if (!cleanCode) return { valid: false, message: "Enter coupon code" };
+
+  try {
+    const snap = await getDoc(doc(db, "coupons", cleanCode));
+    if (!snap.exists()) return { valid: false, message: `Coupon "${cleanCode}" is invalid.` };
+    const coupon = { id: snap.id, ...(snap.data() as Omit<Coupon, "id">) };
+
+    if (!coupon.isActive) return { valid: false, message: `Coupon "${cleanCode}" is disabled.` };
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+      return { valid: false, message: `Coupon "${cleanCode}" has expired.` };
+    }
+    if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
+      return { valid: false, message: `Coupon "${cleanCode}" usage limit reached.` };
+    }
+    if (userId && coupon.usedBy && coupon.usedBy.includes(userId)) {
+      return { valid: false, message: "You have already used this coupon." };
+    }
+
+    return { valid: true, coupon };
+  } catch (err: any) {
+    return { valid: false, message: err?.message || "Validation failed" };
+  }
+}
+
+/**
  * Redeem a coupon for the current user
  */
 export async function redeemCoupon(
   rawCode: string,
   user: AppUser,
+  targetPlan?: "monthly" | "yearly",
 ): Promise<{ success: boolean; message: string; daysAdded?: number }> {
   if (!db || !user.id) {
     return { success: false, message: "Database connection unavailable." };
@@ -518,12 +563,14 @@ export async function redeemCoupon(
       let newExpiry: string | null = userProfile.planExpiresAt || new Date().toISOString();
       let newPlan: SubscriptionPlan = userProfile.plan;
       let daysAdded = 0;
+      let benefitDesc = "";
 
       if (coupon.type === "lifetime_free") {
         newPlan = "lifetime_free";
         newExpiry = null;
+        benefitDesc = "100% Lifetime VIP Free Access";
       } else if (coupon.type === "free_days") {
-        daysAdded = coupon.value || 30;
+        daysAdded = Number(coupon.value) || 30;
         const baseDate =
           userProfile.planExpiresAt && new Date(userProfile.planExpiresAt) > new Date()
             ? new Date(userProfile.planExpiresAt)
@@ -533,21 +580,70 @@ export async function redeemCoupon(
         if (newPlan === "trial" || newPlan === "suspended") {
           newPlan = daysAdded >= 365 ? "yearly" : "monthly";
         }
+        benefitDesc = `+${daysAdded} Days Free Extension`;
+      } else if (coupon.type === "percent_discount") {
+        const discountVal = Number(coupon.value) || 100;
+        if (discountVal >= 100) {
+          // 100% free voucher
+          daysAdded = targetPlan === "yearly" ? 365 : 30;
+          const baseDate =
+            userProfile.planExpiresAt && new Date(userProfile.planExpiresAt) > new Date()
+              ? new Date(userProfile.planExpiresAt)
+              : new Date();
+          baseDate.setDate(baseDate.getDate() + daysAdded);
+          newExpiry = baseDate.toISOString();
+          newPlan = targetPlan === "yearly" ? "yearly" : "monthly";
+          benefitDesc = `100% Free ${targetPlan === "yearly" ? "Yearly (365d)" : "Monthly (30d)"} Plan`;
+        } else {
+          benefitDesc = `${discountVal}% Discount Voucher`;
+        }
       }
+
+      const redemptionRecord: CouponRedemption = {
+        uid: user.id,
+        email: user.email || "Unknown User",
+        displayName: userProfile.displayName || undefined,
+        phone: userProfile.phone || undefined,
+        redeemedAt: new Date().toISOString(),
+        benefitApplied: benefitDesc,
+      };
+
+      // Clean redemptionRecord to prevent undefined
+      const cleanRedemption: any = {
+        uid: redemptionRecord.uid,
+        email: redemptionRecord.email,
+        redeemedAt: redemptionRecord.redeemedAt,
+        benefitApplied: redemptionRecord.benefitApplied,
+      };
+      if (redemptionRecord.displayName) cleanRedemption.displayName = redemptionRecord.displayName;
+      if (redemptionRecord.phone) cleanRedemption.phone = redemptionRecord.phone;
 
       // Update coupon usage
       tx.update(couponRef, {
         usedCount: increment(1),
         usedBy: arrayUnion(user.id),
+        redeemedUsers: arrayUnion(cleanRedemption),
       });
 
-      // Update user subscription
-      tx.update(userRef, {
-        plan: newPlan,
-        planExpiresAt: newExpiry,
-        isApproved: true,
-        notes: `Redeemed coupon ${cleanCode} on ${new Date().toLocaleDateString()}`,
-      });
+      // Update user subscription if days or lifetime granted
+      if (coupon.type !== "percent_discount" || (Number(coupon.value) || 0) >= 100) {
+        const histItem: PaymentHistoryItem = {
+          id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          date: new Date().toISOString(),
+          plan: newPlan,
+          amount: 0,
+          method: "Promo Coupon",
+          notes: `Redeemed Coupon ${cleanCode}: ${benefitDesc}`,
+        };
+
+        tx.update(userRef, {
+          plan: newPlan,
+          planExpiresAt: newExpiry,
+          isApproved: true,
+          notes: `Redeemed coupon ${cleanCode} (${benefitDesc})`,
+          paymentHistory: arrayUnion(histItem),
+        });
+      }
 
       return {
         success: true,

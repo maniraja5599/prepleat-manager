@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.1";
+export const APP_VERSION = "2.0.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.1",
+    version: "v2.0.2",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Percent Discount Coupons, Checkout Price Deduction & Detailed Coupon Analytics",
+    badge: "LATEST UPDATE 🎟️",
+    changes: [
+      {
+        emoji: "🏷️",
+        text: "Percentage Discount Checkout Application",
+        desc: "Discount coupons (e.g. 50% OFF, 100% Free) now dynamically discount monthly and yearly prices during checkout.",
+      },
+      {
+        emoji: "📊",
+        text: "Deep Coupon Usage Analytics Modal",
+        desc: "Super Admin can inspect which users redeemed each coupon code, their emails, timestamps, and WhatsApp contacts.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.1",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Resolved Firestore Coupon setDoc Undefined Field Bug",
     badge: "HOTFIX ⚡",
     changes: [
