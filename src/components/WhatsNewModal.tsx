@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { X, Sparkles, Check, ChevronDown, ChevronUp, History, ArrowRight } from "lucide-react";
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
 import { cn } from "@/lib/utils";
 
 export function WhatsNewModal() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [showOlder, setShowOlder] = useState(false);
   const latestEntry = RECENT_UPDATES[0];
@@ -44,6 +46,7 @@ export function WhatsNewModal() {
       // ignore
     }
     setOpen(false);
+    navigate({ to: "/" });
   };
 
   if (!open || !latestEntry) return null;

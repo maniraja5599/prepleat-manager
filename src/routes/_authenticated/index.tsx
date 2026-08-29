@@ -514,11 +514,19 @@ function CalendarPage() {
                     "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition no-select",
                     !isCur && "text-muted-foreground/40",
                     isSel
-                      ? "bg-primary text-primary-foreground font-semibold"
+                      ? "bg-primary text-primary-foreground font-semibold ring-2 ring-primary/40 shadow-sm"
                       : "hover:bg-secondary",
                     isToday && !isSel && "ring-1 ring-primary/40",
                   )}
                 >
+                  {isSel && (
+                    <span
+                      className="absolute -top-1 -right-1 size-3.5 rounded-full bg-amber-400 text-amber-950 text-[7.5px] font-black flex items-center justify-center shadow-xs animate-bounce z-10 select-none"
+                      title="Double-tap to book"
+                    >
+                      2×
+                    </span>
+                  )}
                   <span
                     className={cn("tabular-nums", isToday && !isSel && "text-primary font-bold")}
                   >
@@ -575,16 +583,22 @@ function CalendarPage() {
             })}
           </div>
 
-          {/* Clean Calendar Quick Action Hints (Below Calendar Grid) */}
-          <div className="flex items-center justify-between px-3.5 py-1.5 rounded-2xl bg-secondary/50 border border-border/25 mt-2.5 mb-1 text-xs text-muted-foreground">
+          {/* Interactive Double-Tap Animated Hints (Below Calendar Grid) */}
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-2xl bg-secondary/50 border border-primary/20 mt-2.5 mb-1 text-xs text-muted-foreground shadow-2xs">
             <div className="flex items-center gap-1.5">
-              <span className="text-foreground font-bold">👆 1-Tap:</span>
-              <span>Pick Date to View</span>
+              <span className="text-foreground font-bold text-[11px]">👆 1-Tap:</span>
+              <span className="text-[11px]">View Day</span>
             </div>
             <div className="w-px h-3.5 bg-border/60" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-foreground font-bold">✌️ 2-Tap:</span>
-              <span className="text-primary font-bold">New Booking</span>
+            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-0.5 rounded-xl border border-primary/20">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              <span className="text-primary font-bold text-[11px] flex items-center gap-1">
+                <span>✌️ 2-Tap:</span>
+                <span>Double-Tap to Book!</span>
+              </span>
             </div>
           </div>
 
@@ -611,9 +625,9 @@ function CalendarPage() {
                 <Link
                   to="/new"
                   search={{ date: format(selected, "yyyy-MM-dd") }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full saree-gradient text-primary-foreground text-xs font-semibold shrink-0"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full saree-gradient text-primary-foreground text-xs font-bold shrink-0 shadow-2xs active:scale-95 transition"
                 >
-                  <Plus className="size-3.5" /> Book
+                  <Plus className="size-3.5 stroke-[2.5]" /> Book
                 </Link>
               </div>
               <div ref={daySwipeRef} className="touch-pan-y">

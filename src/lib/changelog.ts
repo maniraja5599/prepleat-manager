@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.3";
+export const APP_VERSION = "1.8.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.3",
+    version: "v1.8.4",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Default Calendar Landing & Interactive Double-Tap Booking Animation",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📅",
+        text: "Default Calendar Home Landing",
+        desc: "Ensured the app always launches and returns directly to the Calendar schedule page after updates, sign-in, or fresh launch.",
+      },
+      {
+        emoji: "⚡",
+        text: "Interactive 2-Tap Animated Guidance",
+        desc: "Added animated double-tap micro-badges and pulsing cue indicator on the calendar so first-time users easily discover instant double-tap booking.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.3",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "iOS Safari Touch Safety & Native Paste Prompt Elimination",
     badge: "LATEST UPDATE ✨",
     changes: [
