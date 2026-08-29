@@ -33,9 +33,27 @@ export function ThemeApplier() {
   const customColors = useStore((s) => s.settings.customColors);
   const fontSize = useStore((s) => s.settings.fontSize) || "standard";
 
+  const businessName = useStore((s) => s.settings.businessName);
+  const logoDataUrl = useStore((s) => s.settings.logoDataUrl);
+
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
+
+    // 1. Dynamic Browser Title
+    const bName = businessName?.trim();
+    document.title = bName ? `${bName} — Saree PrePleat Manager` : "Saree PrePleat Manager";
+
+    // 2. Dynamic Favicon
+    if (logoDataUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "shortcut icon";
+        document.getElementsByTagName("head")[0]?.appendChild(link);
+      }
+      link.href = logoDataUrl;
+    }
 
     // Apply font size scale
     root.setAttribute("data-font-size", fontSize);
@@ -56,6 +74,6 @@ export function ThemeApplier() {
       });
       if (colors.primary) root.style.setProperty("--ring", colors.primary);
     }
-  }, [theme, customPrimary, customColors, fontSize]);
+  }, [theme, customPrimary, customColors, fontSize, businessName, logoDataUrl]);
   return null;
 }

@@ -20,6 +20,16 @@ export const SUPER_ADMIN_EMAILS = ["manirajankg@gmail.com"];
 
 export type SubscriptionPlan = "trial" | "monthly" | "yearly" | "lifetime_free" | "suspended";
 
+
+export interface PaymentHistoryItem {
+  id: string;
+  date: string;
+  plan: SubscriptionPlan;
+  amount?: number;
+  method?: string;
+  notes?: string;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -40,6 +50,7 @@ export interface UserProfile {
   referredBy?: string | null;
   referralCount?: number;
   freeMonthsEarned?: number;
+  paymentHistory?: PaymentHistoryItem[];
 }
 
 export interface Coupon {

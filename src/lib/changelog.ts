@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.9";
+export const APP_VERSION = "2.0.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,43 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.9",
+    version: "v2.0.0",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Major Release: Revenue Analytics, Payment History, Dynamic Title/Favicon & Coupon Fix",
+    badge: "MAJOR RELEASE 🚀",
+    changes: [
+      {
+        emoji: "💰",
+        text: "Revenue Analytics & MRR Projections",
+        desc: "Developer overview now shows total collections, monthly run rate, active paying customers, and referral engine growth.",
+      },
+      {
+        emoji: "📜",
+        text: "User Payment & Activation History",
+        desc: "Full timeline of previous transactions, Cashfree orders, and admin grants in user details inspector.",
+      },
+      {
+        emoji: "⚠️",
+        text: "Action Confirmation Warnings",
+        desc: "Modal alerts before manual plan modifications or extensions to protect active paying subscribers.",
+      },
+      {
+        emoji: "🏷️",
+        text: "Fixed Coupon Creation & Mobile UI",
+        desc: "Clean empty input fields for days/uses, robust creation, and single-row responsive coupon action buttons.",
+      },
+      {
+        emoji: "🌐",
+        text: "Dynamic Browser Title & Favicon",
+        desc: "Browser tab title and logo now dynamically reflect the shop name and custom logo saved in settings.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.9",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Paid User Warning, Manual Days Calculator, Co-Admin Role & Compact Sub-Menu",
     badge: "LATEST UPDATE 🛡️",
     changes: [
