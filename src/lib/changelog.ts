@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.2";
+export const APP_VERSION = "1.9.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.2",
+    version: "v1.9.3",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Cashfree Modal Drop-in Checkout, Plan Stacking / Queueing & Touch Locking",
+    badge: "LATEST UPDATE ⚡",
+    changes: [
+      {
+        emoji: "💳",
+        text: "Real Cashfree Drop-in Checkout",
+        desc: "Integrated Cashfree SDK modal checkout for UPI QR, GPay, PhonePe, Cards, and NetBanking.",
+      },
+      {
+        emoji: "🥞",
+        text: "Plan Stacking & Queueing",
+        desc: "Purchased plans automatically stack on top of existing remaining days so users never lose prepaid time.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Background Touch & Scroll Lock",
+        desc: "Popups now completely prevent background clicks and unintended touches while open.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.2",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Interactive User Plan Editor, Custom Expiry Date Picker & Cashfree Guide",
     badge: "LATEST UPDATE 🛠️",
     changes: [

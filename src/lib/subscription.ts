@@ -676,3 +676,77 @@ export function checkSubscriptionStatus(
     freeMonthsEarned,
   };
 }
+
+/**
+ * Create a Cashfree Order and obtain payment_session_id
+ */
+export async function createCashfreeOrderSession(
+  user: AppUser,
+  plan: "monthly" | "yearly",
+  config: SystemSubscriptionConfig,
+): Promise<{ success: boolean; paymentSessionId?: string; orderId?: string; message?: string }> {
+  const appId = config.cashfreeAppId?.trim();
+  const secretKey = config.cashfreeSecretKey?.trim();
+
+  if (!appId || !secretKey) {
+    return {
+      success: false,
+      message: "Cashfree API keys are not configured yet. Please use Direct WhatsApp / UPI payment.",
+    };
+  }
+
+  const isProd = config.cashfreeEnv === "PROD";
+  const endpoint = isProd
+    ? "https://api.cashfree.com/pg/orders"
+    : "https://sandbox.cashfree.com/pg/orders";
+
+  const amount = plan === "yearly" ? config.yearlyPrice || 1999 : config.monthlyPrice || 299;
+  const cleanUid = user.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 45) || "cust_user";
+  const orderId = `order_${cleanUid}_${Date.now()}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "x-client-id": appId,
+        "x-client-secret": secretKey,
+        "x-api-version": "2023-08-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        order_id: orderId,
+        order_amount: amount,
+        order_currency: "INR",
+        customer_details: {
+          customer_id: cleanUid,
+          customer_email: user.email || "customer@sareeprepleat.com",
+          customer_phone: "9876543210",
+        },
+        order_meta: {
+          return_url: `https://sareeprepleatmanager.vercel.app?order_id=${orderId}`,
+        },
+        order_note: `Subscription ${plan.toUpperCase()} for ${user.email}`,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.payment_session_id) {
+      return {
+        success: true,
+        paymentSessionId: data.payment_session_id,
+        orderId: data.order_id,
+      };
+    } else {
+      return {
+        success: false,
+        message: data.message || "Failed to initialize Cashfree order session.",
+      };
+    }
+  } catch (err: any) {
+    console.error("Cashfree order creation error:", err);
+    return {
+      success: false,
+      message: err?.message || "Network error while connecting to Cashfree.",
+    };
+  }
+}

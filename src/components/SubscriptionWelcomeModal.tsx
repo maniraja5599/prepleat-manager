@@ -9,6 +9,19 @@ export function SubscriptionWelcomeModal() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    if (open) {
+      const prevOverflow = document.body.style.overflow;
+      const prevTouchAction = document.body.style.touchAction;
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        document.body.style.touchAction = prevTouchAction;
+      };
+    }
+  }, [open]);
+
+  useEffect(() => {
     const unsub = onAppAuthStateChanged((u) => {
       setUser(u);
       if (u && !u.isAnonymous) {
@@ -51,7 +64,7 @@ export function SubscriptionWelcomeModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[28000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 text-left animate-in fade-in duration-200"
+      className="fixed inset-0 z-[28000] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 text-left overscroll-contain animate-in fade-in duration-200" style={{ touchAction: "none" }}
       onClick={handleDismiss}
     >
       <div

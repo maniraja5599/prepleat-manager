@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   X,
@@ -8,16 +8,18 @@ import {
   ShieldCheck,
   CreditCard,
   MessageCircle,
-  HelpCircle,
   Clock,
-  ArrowRight,
   Zap,
   Loader2,
+  Calendar,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   redeemCoupon,
   updateUserPlan,
+  createCashfreeOrderSession,
+  checkSubscriptionStatus,
   type SystemSubscriptionConfig,
   type UserProfile,
   DEFAULT_CONFIG,
@@ -50,8 +52,23 @@ export function PricingPlansModal({
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // Lock body scroll and background touches when modal is active
+  useEffect(() => {
+    if (open) {
+      const prevOverflow = document.body.style.overflow;
+      const prevTouchAction = document.body.style.touchAction;
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        document.body.style.touchAction = prevTouchAction;
+      };
+    }
+  }, [open]);
+
   if (!open) return null;
 
+  const currentStatus = checkSubscriptionStatus(user, userProfile);
   const monthlyPrice = config.monthlyPrice || 299;
   const yearlyPrice = config.yearlyPrice || 1999;
   const yearlyOriginalPrice = config.yearlyOriginalPrice || 3588;
@@ -105,66 +122,82 @@ export function PricingPlansModal({
 
     setIsProcessingPayment(true);
     const amount = selectedPlan === "yearly" ? yearlyPrice : monthlyPrice;
-    const planName = selectedPlan === "yearly" ? "Yearly Plan (365 Days)" : "Monthly Plan (30 Days)";
+    const planDays = selectedPlan === "yearly" ? 365 : 30;
+    const planTitle = selectedPlan === "yearly" ? "Yearly Plan (365 Days)" : "Monthly Plan (30 Days)";
 
     try {
-      toast.info("Connecting to Cashfree Secure Checkout...", { duration: 3000 });
+      toast.info("Connecting to Cashfree Secure Checkout...", { duration: 2500 });
 
-      // Load Cashfree JS SDK if not present
+      // 1. Create real order session
+      const orderRes = await createCashfreeOrderSession(user, selectedPlan, config);
+
+      if (!orderRes.success || !orderRes.paymentSessionId) {
+        toast.error(orderRes.message || "Could not open online payment. Switching to WhatsApp UPI.");
+        handleWhatsAppPayment();
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // 2. Load Cashfree JS SDK if not already loaded
       if (!window.Cashfree) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
           script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
           script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load Cashfree checkout script"));
+          script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
           document.body.appendChild(script);
         });
       }
 
-      // Initialize Cashfree in sandbox/production mode
       const isProd = config.cashfreeEnv === "PROD";
-      const cashfreeMode = isProd ? "production" : "sandbox";
+      const cashfreeInstance = window.Cashfree({
+        mode: isProd ? "production" : "sandbox",
+      });
 
-      // If test mode or direct activation, simulate seamless checkout confirmation
-      if (config.cashfreeEnv === "TEST" || !isProd) {
-        setTimeout(async () => {
+      // 3. Open Cashfree Drop-in Checkout Popup
+      cashfreeInstance.checkout({
+        paymentSessionId: orderRes.paymentSessionId,
+        redirectTarget: "_modal",
+      }).then(async (result: any) => {
+        setIsProcessingPayment(false);
+        if (result.error) {
+          console.warn("Cashfree checkout closed/error:", result.error);
+          toast.info("Payment session was cancelled.");
+        } else if (result.paymentDetails) {
+          // Payment Successful! Stack/Queue days to existing plan
           try {
             await updateUserPlan(
               user.id,
               selectedPlan,
-              selectedPlan === "yearly" ? 365 : 30,
+              planDays,
               undefined,
               true,
-              `Activated via Cashfree ${config.cashfreeEnv || "TEST"} Gateway (₹${amount})`,
+              `Paid ₹${amount} via Cashfree (${orderRes.orderId})`,
             );
-            setIsProcessingPayment(false);
-            toast.success(`🎉 Payment Successful! Your ${planName} is now active!`, { duration: 5000 });
+            toast.success(`🎉 Payment Successful! Your ${planTitle} has been stacked to your account!`, { duration: 5000 });
             onClose();
           } catch (err: any) {
-            setIsProcessingPayment(false);
-            toast.error(err?.message || "Failed to activate subscription");
+            toast.error(err?.message || "Payment received! Please contact support to confirm activation.");
           }
-        }, 1500);
-      } else {
-        // Production flow fallback
-        handleWhatsAppPayment();
-        setIsProcessingPayment(false);
-      }
+        }
+      });
     } catch (err: any) {
+      console.error("Payment error:", err);
       setIsProcessingPayment(false);
-      toast.error("Cashfree gateway opening... Switching to WhatsApp UPI verification.");
-      handleWhatsAppPayment();
+      toast.error(err?.message || "Failed to initialize Cashfree. Please try WhatsApp payment.");
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-[26000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 text-left animate-in fade-in duration-200"
+      className="fixed inset-0 z-[26000] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 text-left overscroll-contain animate-in fade-in duration-200"
       onClick={!isExpired ? onClose : undefined}
+      style={{ touchAction: "none" }}
     >
       <div
-        className="bg-card w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-border/60 max-h-[90vh] overflow-y-auto space-y-4 animate-in zoom-in-95 duration-200"
+        className="bg-card w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-border/60 max-h-[90vh] overflow-y-auto space-y-4 animate-in zoom-in-95 duration-200 text-left select-text"
         onClick={(e) => e.stopPropagation()}
+        style={{ touchAction: "auto" }}
       >
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -189,6 +222,25 @@ export function PricingPlansModal({
             </button>
           )}
         </div>
+
+        {/* Current Active Plan Status & Queueing Banner */}
+        {userProfile && (
+          <div className="bg-secondary/50 rounded-2xl p-3 border border-border/50 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Layers className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">
+                  Current: <span className="text-primary">{currentStatus.planName}</span> ({currentStatus.daysRemaining} days left)
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  New plans are <strong className="text-foreground">queued & stacked</strong> onto your current expiry ({currentStatus.expiryDateStr}).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Plan Selection Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -233,13 +285,13 @@ export function PricingPlansModal({
                 <span className="text-[10px] text-muted-foreground">/ year</span>
               </div>
               <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-                Just ₹{Math.round(yearlyPrice / 12)}/month · Best for Professionals
+                Just ₹{Math.round(yearlyPrice / 12)}/month · +365 Days Stacked
               </p>
             </div>
 
             <ul className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
-              <li className="flex items-center gap-1.5 text-foreground">
-                <Check className="size-3 text-primary" /> Full 365 Days Access
+              <li className="flex items-center gap-1.5 text-foreground font-semibold">
+                <Check className="size-3 text-primary" /> Full 365 Days Extended
               </li>
               <li className="flex items-center gap-1.5">
                 <Check className="size-3 text-primary" /> Unlimited Bookings & Invoices
@@ -284,13 +336,13 @@ export function PricingPlansModal({
                 <span className="text-[10px] text-muted-foreground">/ month</span>
               </div>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Billed monthly · Cancel anytime
+                Billed monthly · +30 Days Stacked
               </p>
             </div>
 
             <ul className="mt-3 space-y-1 text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
-              <li className="flex items-center gap-1.5">
-                <Check className="size-3 text-primary" /> Full 30 Days Access
+              <li className="flex items-center gap-1.5 font-semibold text-foreground">
+                <Check className="size-3 text-primary" /> Full 30 Days Extended
               </li>
               <li className="flex items-center gap-1.5">
                 <Check className="size-3 text-primary" /> Unlimited Bookings
@@ -331,39 +383,39 @@ export function PricingPlansModal({
           </div>
         </form>
 
-        {/* Action Buttons: Cashfree Checkout & WhatsApp Fallback */}
+        {/* Action Buttons: Clean & Compact (Zero Overflow) */}
         <div className="space-y-2 pt-1">
           <button
             onClick={handleCashfreePayment}
             disabled={isProcessingPayment}
-            className="w-full py-3 rounded-2xl saree-gradient text-white text-xs font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider disabled:opacity-50"
+            className="w-full py-3 px-3 rounded-2xl saree-gradient text-white text-xs font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider disabled:opacity-50"
           >
             {isProcessingPayment ? (
               <>
-                <Loader2 className="size-4 animate-spin" />
-                <span>Processing Cashfree Checkout...</span>
+                <Loader2 className="size-4 animate-spin shrink-0" />
+                <span>Opening Cashfree Checkout...</span>
               </>
             ) : (
               <>
-                <CreditCard className="size-4" />
-                <span>Pay ₹{selectedPlan === "yearly" ? yearlyPrice : monthlyPrice} with Cashfree (Cards / UPI / NetBanking)</span>
+                <CreditCard className="size-4 shrink-0" />
+                <span>Pay ₹{selectedPlan === "yearly" ? yearlyPrice : monthlyPrice} Online (Cashfree)</span>
               </>
             )}
           </button>
 
           <button
             onClick={handleWhatsAppPayment}
-            className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <MessageCircle className="size-4" />
-            <span>Pay via Direct WhatsApp / GPay / PhonePe (0% Fee)</span>
+            <MessageCircle className="size-4 shrink-0" />
+            <span>Pay via UPI / WhatsApp (GPay / PhonePe)</span>
           </button>
         </div>
 
         {/* Guarantee Badge */}
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
           <ShieldCheck className="size-3.5 text-primary" />
-          <span>100% Secure Checkout · Instant Activation</span>
+          <span>100% Secure · Instant Queueing & Stacked Activation</span>
         </div>
       </div>
     </div>
