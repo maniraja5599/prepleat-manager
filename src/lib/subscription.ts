@@ -30,6 +30,22 @@ export interface PaymentHistoryItem {
   notes?: string;
 }
 
+
+export interface MonthlyBusinessStat {
+  monthKey: string; // "2026-08"
+  monthLabel: string; // "Aug 2026"
+  bookingsCount: number;
+  revenueCollected: number;
+}
+
+export interface UserBusinessStats {
+  totalBookings: number;
+  totalCustomers: number;
+  totalRevenueCollected: number;
+  monthlyBreakdown?: MonthlyBusinessStat[];
+  lastSyncedAt?: string;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -51,6 +67,7 @@ export interface UserProfile {
   referralCount?: number;
   freeMonthsEarned?: number;
   paymentHistory?: PaymentHistoryItem[];
+  businessStats?: UserBusinessStats;
 }
 
 
@@ -919,4 +936,21 @@ export async function updateUserRole(uid: string, role: "admin" | "user"): Promi
   if (!db || !uid) return;
   const userDocRef = doc(db, "user_profiles", uid);
   await updateDoc(userDocRef, { role });
+}
+
+/**
+ * Update user's private studio booking counts & revenue metrics in Cloud Firestore
+ */
+export async function syncUserBusinessMetrics(
+  uid: string,
+  stats: UserBusinessStats,
+): Promise<void> {
+  if (!db || !uid) return;
+  const userDocRef = doc(db, "user_profiles", uid);
+  await updateDoc(userDocRef, {
+    businessStats: {
+      ...stats,
+      lastSyncedAt: new Date().toISOString(),
+    },
+  });
 }

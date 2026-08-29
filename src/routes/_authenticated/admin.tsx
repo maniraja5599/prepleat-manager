@@ -610,48 +610,109 @@ function AdminPage() {
         {/* ================= TAB 1: OVERVIEW & REVENUE ANALYTICS ================= */}
         {activeTab === "overview" && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Revenue & MRR Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-emerald-500/30 flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CircleDollarSign className="size-3.5" />
-                  <span>Total Amount Collected</span>
-                </span>
-                <p className="text-3xl font-black font-display my-1 text-foreground">
+            {/* Smart, Compact & Beautiful 4 KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <div className="bg-card card-shadow rounded-2xl p-3 border border-emerald-500/30 flex flex-col justify-between space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Total Revenue</span>
+                  <div className="size-6 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                    <CircleDollarSign className="size-3.5" />
+                  </div>
+                </div>
+                <p className="text-xl sm:text-2xl font-black font-display text-foreground">
                   ₹{allTimeTotalCollections.toLocaleString("en-IN")}
                 </p>
-                <span className="text-xs text-muted-foreground">
-                  {allOrders.length} Paid Subscription Orders Total
-                </span>
+                <span className="text-[10px] text-muted-foreground truncate">{allOrders.length} Paid Subscriptions</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-blue-500/30 flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                  <TrendingUp className="size-3.5" />
-                  <span>Monthly Run-Rate (MRR)</span>
-                </span>
-                <p className="text-3xl font-black font-display my-1 text-foreground">
-                  ₹{mrrEstimate.toLocaleString("en-IN")}/mo
+              <div className="bg-card card-shadow rounded-2xl p-3 border border-blue-500/30 flex flex-col justify-between space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Monthly Run-Rate</span>
+                  <div className="size-6 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                    <TrendingUp className="size-3.5" />
+                  </div>
+                </div>
+                <p className="text-xl sm:text-2xl font-black font-display text-foreground">
+                  ₹{mrrEstimate.toLocaleString("en-IN")}<span className="text-xs font-normal text-muted-foreground">/mo</span>
                 </p>
-                <span className="text-xs text-muted-foreground">Projected monthly subscription cashflow</span>
+                <span className="text-[10px] text-muted-foreground truncate">Projected cashflow</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-amber-500/30 flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">
-                  <UserPlus className="size-3.5" />
-                  <span>Active 30d Free Trials</span>
-                </span>
-                <p className="text-3xl font-black font-display my-1 text-amber-500">{trialCount}</p>
-                <span className="text-xs text-muted-foreground">Prospective customers in evaluation</span>
+              <div className="bg-card card-shadow rounded-2xl p-3 border border-amber-500/30 flex flex-col justify-between space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Free Trials</span>
+                  <div className="size-6 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                    <UserPlus className="size-3.5" />
+                  </div>
+                </div>
+                <p className="text-xl sm:text-2xl font-black font-display text-amber-500">
+                  {trialCount}
+                </p>
+                <span className="text-[10px] text-muted-foreground truncate">Active 30d trial users</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-primary/30 flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
-                  <Share2 className="size-3.5" />
-                  <span>Referral Engine Growth</span>
-                </span>
-                <p className="text-3xl font-black font-display my-1 text-primary">{totalReferralsMade}</p>
-                <span className="text-xs text-muted-foreground">{totalBonusMonthsGiven} Free reward months distributed</span>
+              <div className="bg-card card-shadow rounded-2xl p-3 border border-primary/30 flex flex-col justify-between space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Referral Invites</span>
+                  <div className="size-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <Share2 className="size-3.5" />
+                  </div>
+                </div>
+                <p className="text-xl sm:text-2xl font-black font-display text-primary">
+                  {totalReferralsMade}
+                </p>
+                <span className="text-[10px] text-muted-foreground truncate">{totalBonusMonthsGiven} Free mos awarded</span>
+              </div>
+            </div>
+
+            {/* TOP SAREE STUDIOS LEADERBOARD & BUSINESS ACTIVITY */}
+            <div className="bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-border/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold font-display text-foreground flex items-center gap-1.5">
+                    <span>🏆</span>
+                    <span>Top Saree Studios Leaderboard (Client Bookings & Revenue)</span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Ranked by total saree draping/prepleating bookings & client payments collected.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {[...users]
+                  .sort((a, b) => (b.businessStats?.totalRevenueCollected || 0) - (a.businessStats?.totalRevenueCollected || 0))
+                  .slice(0, 6)
+                  .map((topUser, rankIdx) => {
+                    const stats = topUser.businessStats || { totalBookings: 0, totalRevenueCollected: 0, totalCustomers: 0 };
+                    const rankMedal = rankIdx === 0 ? "🥇" : rankIdx === 1 ? "🥈" : rankIdx === 2 ? "🥉" : `#${rankIdx + 1}`;
+                    return (
+                      <div
+                        key={topUser.uid}
+                        onClick={() => setInspectingUser(topUser)}
+                        className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-2xl border border-border/40 transition cursor-pointer flex items-center justify-between gap-2 text-xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-base font-black shrink-0">{rankMedal}</span>
+                          <div className="min-w-0">
+                            <p className="font-bold text-foreground truncate">
+                              {topUser.businessName || topUser.displayName || topUser.email.split("@")[0]}
+                            </p>
+                            <p className="text-[10.5px] text-muted-foreground truncate">{topUser.email}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="font-black text-emerald-600 dark:text-emerald-400 block">
+                            ₹{stats.totalRevenueCollected.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {stats.totalBookings} bookings
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
 
@@ -926,12 +987,20 @@ function AdminPage() {
                           </p>
                         )}
 
-                        {/* Amount Collected Badge */}
-                        <div className="mt-2 flex items-center justify-between bg-secondary/50 px-2.5 py-1 rounded-xl text-xs">
-                          <span className="text-[11px] text-muted-foreground">Total Paid:</span>
-                          <span className="font-black text-emerald-600 dark:text-emerald-400">
-                            ₹{totalCollected.toLocaleString("en-IN")}
-                          </span>
+                        {/* Saree Business GMV & Subscription Amount */}
+                        <div className="mt-2 grid grid-cols-2 gap-1.5 bg-secondary/40 p-2 rounded-xl text-xs">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block">Saree Orders:</span>
+                            <span className="font-bold text-foreground">
+                              {u.businessStats?.totalBookings || 0} (₹{(u.businessStats?.totalRevenueCollected || 0).toLocaleString("en-IN")})
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block">App Fee Paid:</span>
+                            <span className="font-black text-emerald-600 dark:text-emerald-400">
+                              ₹{totalCollected.toLocaleString("en-IN")}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Validity & Countdown */}

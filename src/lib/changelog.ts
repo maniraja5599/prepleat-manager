@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.3";
+export const APP_VERSION = "2.0.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.3",
+    version: "v2.0.4",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Compact Smart KPI Cards & Saree Business Leaderboard Growth Analytics",
+    badge: "LATEST UPDATE 🏆",
+    changes: [
+      {
+        emoji: "✨",
+        text: "Smart & Compact Overview KPI Cards",
+        desc: "Redesigned the 4 revenue & subscription KPI boxes to be sleek, stylish, and space-efficient on mobile and tablet.",
+      },
+      {
+        emoji: "🏆",
+        text: "Top Saree Studios Leaderboard",
+        desc: "Live rankings of top drapists and saree studios sorted by total client bookings completed and revenue collected.",
+      },
+      {
+        emoji: "👗",
+        text: "Individual Saree Business Performance & History",
+        desc: "Inspect any user's boutique stats, total client collections, and month-by-month saree booking performance.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.3",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Auth Branding Neutrality, Vector Favicon, Per-User Collections & Month-Wise Revenue",
     badge: "LATEST UPDATE 💎",
     changes: [

@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, netBookingAmount, formatShortBillNumber, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import { APP_VERSION } from "@/lib/changelog";
+import { syncUserBusinessMetrics, type UserBusinessStats } from "@/lib/subscription";
 import logoAsset from "@/assets/default-app-logo.svg";
 import { waitForAppUser } from "@/integrations/firebase/client";
 import {
@@ -58,6 +59,65 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const [showTipsModal, setShowTipsModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
+
+  // Auto-sync saree business metrics to cloud profile for developer leaderboard & growth tracking
+  useEffect(() => {
+    let timeoutId: any;
+    waitForAppUser().then((u) => {
+      if (!u || u.isAnonymous) return;
+      timeoutId = setTimeout(() => {
+        const totalBookings = bookings.length;
+        const totalCustomers = customers.length;
+
+        // Sum advance paid from bookings + payments received
+        let totalRevenue = 0;
+        bookings.forEach((b) => {
+          totalRevenue += Number(b.advancePaid) || 0;
+        });
+        payments.forEach((p) => {
+          totalRevenue += Number(p.amount) || 0;
+        });
+
+        // Group by month
+        const monthMap = new Map<string, { monthKey: string; monthLabel: string; bookingsCount: number; revenueCollected: number }>();
+        bookings.forEach((b) => {
+          const dateStr = b.deliveryDate || b.createdAt || new Date().toISOString();
+          const d = new Date(dateStr);
+          const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const mLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+          const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0 };
+          existing.bookingsCount += 1;
+          existing.revenueCollected += Number(b.advancePaid) || 0;
+          monthMap.set(mKey, existing);
+        });
+
+        payments.forEach((p) => {
+          const dateStr = p.date || new Date().toISOString();
+          const d = new Date(dateStr);
+          const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const mLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+          const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0 };
+          existing.revenueCollected += Number(p.amount) || 0;
+          monthMap.set(mKey, existing);
+        });
+
+        const monthlyBreakdown = Array.from(monthMap.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+
+        const stats: UserBusinessStats = {
+          totalBookings,
+          totalCustomers,
+          totalRevenueCollected: totalRevenue,
+          monthlyBreakdown,
+        };
+
+        syncUserBusinessMetrics(u.id, stats).catch(() => {});
+      }, 2000);
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [bookings.length, customers.length, payments.length]);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
 
   useEffect(() => {
