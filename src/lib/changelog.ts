@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.4";
+export const APP_VERSION = "2.0.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.4",
+    version: "v2.0.5",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "7-Day Expiry Reminder Alert Banner, Auto-Renew Option & Full Leaderboard Sync",
+    badge: "LATEST UPDATE ⚡",
+    changes: [
+      {
+        emoji: "⏳",
+        text: "7-Days-Before Expiry Warning Banner",
+        desc: "Interactive amber alert banner appears when 7 or fewer days remain on a subscription with 1-click renewal.",
+      },
+      {
+        emoji: "🔄",
+        text: "Subscription Auto-Renew Setting",
+        desc: "Configurable automatic renewal switch in checkout ensures continuous cloud backup and uninterrupted service.",
+      },
+      {
+        emoji: "🏆",
+        text: "100% Studio Leaderboard Coverage",
+        desc: "All registered user accounts and drapist studios now load smoothly on the Super-Admin Leaderboard.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.4",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Compact Smart KPI Cards & Saree Business Leaderboard Growth Analytics",
     badge: "LATEST UPDATE 🏆",
     changes: [

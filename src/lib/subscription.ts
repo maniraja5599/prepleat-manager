@@ -316,14 +316,26 @@ export function subscribeToAllUsers(callback: (users: UserProfile[]) => void) {
     callback([]);
     return () => {};
   }
-  const q = query(collection(db, "user_profiles"), orderBy("createdAt", "desc"));
+  // Query entire collection without strict orderBy to guarantee 100% of user documents load
+  const colRef = collection(db, "user_profiles");
   return onSnapshot(
-    q,
+    colRef,
     (snap) => {
       const users: UserProfile[] = [];
       snap.forEach((docSnap) => {
-        users.push(docSnap.data() as UserProfile);
+        const data = docSnap.data() as any;
+        users.push({
+          ...data,
+          uid: data.uid || docSnap.id,
+          email: data.email || docSnap.id,
+          createdAt: data.createdAt || new Date().toISOString(),
+          lastLoginAt: data.lastLoginAt || new Date().toISOString(),
+          plan: data.plan || "trial",
+          role: data.role || "user",
+        });
       });
+      // In-memory sort by createdAt descending
+      users.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       callback(users);
     },
     (err) => {

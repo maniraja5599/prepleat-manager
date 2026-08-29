@@ -57,6 +57,7 @@ export function PricingPlansModal({
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; percent: number } | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [autoRenew, setAutoRenew] = useState(true);
 
   // Lock body scroll and background touches when modal is active
   useEffect(() => {

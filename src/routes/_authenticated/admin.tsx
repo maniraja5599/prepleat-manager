@@ -679,41 +679,54 @@ function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {[...users]
-                  .sort((a, b) => (b.businessStats?.totalRevenueCollected || 0) - (a.businessStats?.totalRevenueCollected || 0))
-                  .slice(0, 6)
-                  .map((topUser, rankIdx) => {
-                    const stats = topUser.businessStats || { totalBookings: 0, totalRevenueCollected: 0, totalCustomers: 0 };
-                    const rankMedal = rankIdx === 0 ? "🥇" : rankIdx === 1 ? "🥈" : rankIdx === 2 ? "🥉" : `#${rankIdx + 1}`;
-                    return (
-                      <div
-                        key={topUser.uid}
-                        onClick={() => setInspectingUser(topUser)}
-                        className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-2xl border border-border/40 transition cursor-pointer flex items-center justify-between gap-2 text-xs"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="text-base font-black shrink-0">{rankMedal}</span>
-                          <div className="min-w-0">
-                            <p className="font-bold text-foreground truncate">
-                              {topUser.businessName || topUser.displayName || topUser.email.split("@")[0]}
-                            </p>
-                            <p className="text-[10.5px] text-muted-foreground truncate">{topUser.email}</p>
+              {users.length === 0 ? (
+                <div className="bg-secondary/30 rounded-2xl p-6 text-center text-xs text-muted-foreground">
+                  Loading registered studios...
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1">
+                  {[...users]
+                    .sort((a, b) => {
+                      const revA = a.businessStats?.totalRevenueCollected || 0;
+                      const revB = b.businessStats?.totalRevenueCollected || 0;
+                      if (revB !== revA) return revB - revA;
+                      const bookA = a.businessStats?.totalBookings || 0;
+                      const bookB = b.businessStats?.totalBookings || 0;
+                      if (bookB !== bookA) return bookB - bookA;
+                      return (a.email || "").localeCompare(b.email || "");
+                    })
+                    .map((topUser, rankIdx) => {
+                      const stats = topUser.businessStats || { totalBookings: 0, totalRevenueCollected: 0, totalCustomers: 0 };
+                      const rankMedal = rankIdx === 0 ? "🥇" : rankIdx === 1 ? "🥈" : rankIdx === 2 ? "🥉" : `#${rankIdx + 1}`;
+                      return (
+                        <div
+                          key={topUser.uid}
+                          onClick={() => setInspectingUser(topUser)}
+                          className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-2xl border border-border/40 transition cursor-pointer flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-base font-black shrink-0">{rankMedal}</span>
+                            <div className="min-w-0">
+                              <p className="font-bold text-foreground truncate">
+                                {topUser.businessName || topUser.displayName || topUser.email.split("@")[0]}
+                              </p>
+                              <p className="text-[10.5px] text-muted-foreground truncate">{topUser.email}</p>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-emerald-600 dark:text-emerald-400 block">
+                              ₹{stats.totalRevenueCollected.toLocaleString("en-IN")}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {stats.totalBookings} bookings
+                            </span>
                           </div>
                         </div>
-
-                        <div className="text-right shrink-0">
-                          <span className="font-black text-emerald-600 dark:text-emerald-400 block">
-                            ₹{stats.totalRevenueCollected.toLocaleString("en-IN")}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {stats.totalBookings} bookings
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
 
             {/* MONTH-WISE REVENUE BREAKDOWN & ORDERS SECTION */}
