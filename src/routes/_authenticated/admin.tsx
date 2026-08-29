@@ -29,6 +29,14 @@ import {
   Crown,
   Layers,
   ArrowUpRight,
+  Phone,
+  Eye,
+  Copy,
+  Check,
+  UserCheck,
+  CalendarDays,
+  Activity,
+  AlertTriangle,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
@@ -59,7 +67,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 function AdminPage() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "coupons" | "pricing">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "coupons" | "pricing">("users");
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -67,7 +75,12 @@ function AdminPage() {
 
   // Users Tab state
   const [searchUser, setSearchUser] = useState("");
-  const [userFilter, setUserFilter] = useState<"all" | "trial" | "paid" | "expired" | "suspended">("all");
+  const [userFilter, setUserFilter] = useState<
+    "all" | "monthly" | "yearly" | "trial" | "lifetime" | "expired" | "suspended"
+  >("all");
+
+  // Inspect User Details Modal
+  const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
 
   // Edit User Plan Modal
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -78,6 +91,7 @@ function AdminPage() {
 
   // Delete User State
   const [pendingDeleteUser, setPendingDeleteUser] = useState<UserProfile | null>(null);
+  const [copiedUid, setCopiedUid] = useState(false);
 
   // Create Coupon Modal
   const [createCouponOpen, setCreateCouponOpen] = useState(false);
@@ -158,6 +172,9 @@ function AdminPage() {
       );
       toast.success(`Updated plan for ${editingUser.email} successfully!`);
       setEditingUser(null);
+      if (inspectingUser?.uid === editingUser.uid) {
+        setInspectingUser(null);
+      }
     } catch (err: any) {
       toast.error(err?.message || "Failed to update user plan");
     }
@@ -185,8 +202,11 @@ function AdminPage() {
     if (!pendingDeleteUser) return;
     try {
       await deleteUserProfile(pendingDeleteUser.uid);
-      toast.success(`User ${pendingDeleteUser.email} has been removed from system.`);
+      toast.success(`User ${pendingDeleteUser.email} removed.`);
       setPendingDeleteUser(null);
+      if (inspectingUser?.uid === pendingDeleteUser.uid) {
+        setInspectingUser(null);
+      }
     } catch (err: any) {
       toast.error(err?.message || "Failed to remove user");
     }
@@ -250,7 +270,23 @@ function AdminPage() {
     }
   };
 
+  const handleCopyUid = (uid: string) => {
+    navigator.clipboard.writeText(uid);
+    setCopiedUid(true);
+    setTimeout(() => setCopiedUid(false), 2000);
+    toast.success("User UID copied!");
+  };
+
   const now = new Date();
+
+  // Counts for filters
+  const totalCount = users.length;
+  const monthlyCount = users.filter((u) => u.plan === "monthly" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
+  const yearlyCount = users.filter((u) => u.plan === "yearly" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
+  const trialCount = users.filter((u) => u.plan === "trial" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
+  const lifetimeCount = users.filter((u) => u.plan === "lifetime_free").length;
+  const expiredCount = users.filter((u) => u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free").length;
+  const suspendedCount = users.filter((u) => u.plan === "suspended" || !u.isApproved).length;
 
   // Filtered users
   const filteredUsers = users.filter((u) => {
@@ -259,27 +295,24 @@ function AdminPage() {
       u.email.toLowerCase().includes(query) ||
       (u.displayName && u.displayName.toLowerCase().includes(query)) ||
       u.uid.toLowerCase().includes(query) ||
+      (u.phone && u.phone.includes(query)) ||
       (u.referralCode && u.referralCode.toLowerCase().includes(query));
     if (!matchQuery) return false;
 
     const isExp = u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free";
 
+    if (userFilter === "monthly") return u.plan === "monthly" && !isExp;
+    if (userFilter === "yearly") return u.plan === "yearly" && !isExp;
     if (userFilter === "trial") return u.plan === "trial" && !isExp;
-    if (userFilter === "paid") return (u.plan === "monthly" || u.plan === "yearly" || u.plan === "lifetime_free") && !isExp;
+    if (userFilter === "lifetime") return u.plan === "lifetime_free";
     if (userFilter === "expired") return isExp;
     if (userFilter === "suspended") return u.plan === "suspended" || !u.isApproved;
     return true;
   });
 
-  // KPI Calculations
-  const totalUsersCount = users.length;
-  const activeTrialsCount = users.filter((u) => u.plan === "trial" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const paidSubscribersCount = users.filter((u) => (u.plan === "monthly" || u.plan === "yearly" || u.plan === "lifetime_free") && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const expiredCount = users.filter((u) => u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free").length;
-
   return (
-    <AppShell>
-      <div className="p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 pb-28 text-left">
+    <AppShell wide>
+      <div className="w-full max-w-6xl mx-auto space-y-4 pb-32 text-left">
         {/* Top Hero Header */}
         <div className="relative overflow-hidden bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -301,7 +334,7 @@ function AdminPage() {
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Developer Master Account: <span className="font-semibold text-foreground">{currentUser?.email}</span>
+                Developer Master: <span className="font-semibold text-foreground">{currentUser?.email}</span>
               </p>
             </div>
           </div>
@@ -318,11 +351,11 @@ function AdminPage() {
         </div>
 
         {/* Segmented Navigation Tabs */}
-        <div className="grid grid-cols-4 gap-1 bg-secondary/80 p-1 rounded-2xl border border-border/50">
+        <div className="grid grid-cols-4 gap-1.5 bg-secondary/80 p-1.5 rounded-2xl border border-border/50">
           <button
             onClick={() => setActiveTab("overview")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "overview"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
@@ -335,7 +368,7 @@ function AdminPage() {
           <button
             onClick={() => setActiveTab("users")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "users"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
@@ -348,7 +381,7 @@ function AdminPage() {
           <button
             onClick={() => setActiveTab("coupons")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "coupons"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
@@ -361,15 +394,14 @@ function AdminPage() {
           <button
             onClick={() => setActiveTab("pricing")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "pricing"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Settings className="size-3.5 shrink-0" />
-            <span className="hidden sm:inline">Pricing & Cashfree</span>
-            <span className="sm:hidden">Gateway</span>
+            <span>Pricing & Gateway</span>
           </button>
         </div>
 
@@ -377,46 +409,46 @@ function AdminPage() {
         {activeTab === "overview" && (
           <div className="space-y-4 animate-in fade-in duration-200">
             {/* 4 Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Users</span>
-                <p className="text-2xl font-black font-display my-1 text-foreground">{totalUsersCount}</p>
-                <span className="text-[10px] text-muted-foreground">Registered</span>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/50 flex flex-col justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Total Users</span>
+                <p className="text-3xl font-black font-display my-1 text-foreground">{totalCount}</p>
+                <span className="text-xs text-muted-foreground">All Registered Accounts</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Active Trials</span>
-                <p className="text-2xl font-black font-display my-1 text-amber-500">{activeTrialsCount}</p>
-                <span className="text-[10px] text-muted-foreground">30d Free</span>
+              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/50 flex flex-col justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500">Active Trials</span>
+                <p className="text-3xl font-black font-display my-1 text-amber-500">{trialCount}</p>
+                <span className="text-xs text-muted-foreground">30-Day Free Trial Users</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Paid Active</span>
-                <p className="text-2xl font-black font-display my-1 text-emerald-600 dark:text-emerald-400">{paidSubscribersCount}</p>
-                <span className="text-[10px] text-muted-foreground">Monthly/Year/VIP</span>
+              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/50 flex flex-col justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Paid Subscribers</span>
+                <p className="text-3xl font-black font-display my-1 text-emerald-600 dark:text-emerald-400">{monthlyCount + yearlyCount + lifetimeCount}</p>
+                <span className="text-xs text-muted-foreground">{yearlyCount} Yearly · {monthlyCount} Monthly</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">Expired</span>
-                <p className="text-2xl font-black font-display my-1 text-destructive">{expiredCount}</p>
-                <span className="text-[10px] text-muted-foreground">Needs Renewal</span>
+              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/50 flex flex-col justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-destructive">Expired Accounts</span>
+                <p className="text-3xl font-black font-display my-1 text-destructive">{expiredCount}</p>
+                <span className="text-xs text-muted-foreground">Pending Renewal</span>
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-border/40 space-y-3">
+            <div className="bg-card card-shadow rounded-3xl p-5 border border-border/40 space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <Zap className="size-4 text-primary" />
                 <span>Quick Developer Actions</span>
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setActiveTab("users")}
-                  className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
+                  className="p-4 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-xs font-bold text-foreground">Manage Users & Expiries</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Extend +30d, +1yr, edit dates, or remove.</p>
+                    <p className="text-sm font-bold text-foreground">Manage Users & Expiries</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Extend +30d, +1yr, edit dates, or inspect details.</p>
                   </div>
                   <ArrowUpRight className="size-4 text-muted-foreground shrink-0 ml-2" />
                 </button>
@@ -426,22 +458,22 @@ function AdminPage() {
                     setActiveTab("coupons");
                     setCreateCouponOpen(true);
                   }}
-                  className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
+                  className="p-4 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-xs font-bold text-foreground">+ Create Promo Coupon</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Generate free months or discount codes.</p>
+                    <p className="text-sm font-bold text-foreground">+ Create Promo Coupon</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Generate free months or discount codes.</p>
                   </div>
                   <ArrowUpRight className="size-4 text-muted-foreground shrink-0 ml-2" />
                 </button>
 
                 <button
                   onClick={() => setActiveTab("pricing")}
-                  className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
+                  className="p-4 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-xs font-bold text-foreground">Pricing & Cashfree Setup</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Configure Cashfree API keys and rates.</p>
+                    <p className="text-sm font-bold text-foreground">Pricing & Cashfree Setup</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Configure Cashfree keys and rates.</p>
                   </div>
                   <ArrowUpRight className="size-4 text-muted-foreground shrink-0 ml-2" />
                 </button>
@@ -450,161 +482,206 @@ function AdminPage() {
           </div>
         )}
 
-        {/* ================= TAB 2: USERS DIRECTORY ================= */}
+        {/* ================= TAB 2: USERS DIRECTORY (EXPANDABLE / CLICKABLE) ================= */}
         {activeTab === "users" && (
           <div className="space-y-3 animate-in fade-in duration-200">
-            {/* Search & Filters */}
-            <div className="flex flex-col sm:flex-row gap-2">
+            {/* Search & Comprehensive Filters */}
+            <div className="flex flex-col md:flex-row gap-2.5">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-3 size-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchUser}
                   onChange={(e) => setSearchUser(e.target.value)}
-                  placeholder="Search by email, name, code, or ID..."
-                  className="w-full bg-card border border-border rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-primary"
+                  placeholder="Search by email, name, phone, referral code, or UID..."
+                  className="w-full bg-card border border-border rounded-2xl pl-10 pr-3 py-2.5 text-xs focus:outline-none focus:border-primary font-medium"
                 />
               </div>
 
-              <div className="flex gap-1 overflow-x-auto pb-1">
-                {(["all", "trial", "paid", "expired", "suspended"] as const).map((f) => (
+              {/* Filter Pills with Counts */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {[
+                  { id: "all" as const, label: `All (${totalCount})` },
+                  { id: "yearly" as const, label: `Yearly (${yearlyCount})` },
+                  { id: "monthly" as const, label: `Monthly (${monthlyCount})` },
+                  { id: "trial" as const, label: `Trials (${trialCount})` },
+                  { id: "lifetime" as const, label: `VIP Lifetime (${lifetimeCount})` },
+                  { id: "expired" as const, label: `Expired (${expiredCount})` },
+                  { id: "suspended" as const, label: `Suspended (${suspendedCount})` },
+                ].map((f) => (
                   <button
-                    key={f}
-                    onClick={() => setUserFilter(f)}
+                    key={f.id}
+                    onClick={() => setUserFilter(f.id)}
                     className={cn(
-                      "px-3 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap cursor-pointer transition",
-                      userFilter === f
+                      "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition",
+                      userFilter === f.id
                         ? "bg-primary text-white shadow-2xs"
                         : "bg-secondary text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {f}
+                    {f.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Users List */}
+            {/* Users Responsive Grid (1 col mobile, 2 col tablet, 3 col desktop) */}
             {filteredUsers.length === 0 ? (
-              <div className="bg-card card-shadow rounded-3xl p-8 text-center text-sm text-muted-foreground">
+              <div className="bg-card card-shadow rounded-3xl p-10 text-center text-sm text-muted-foreground">
                 No users found matching your search.
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {filteredUsers.map((u) => {
                   const isExp = u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free";
                   const isMasterAdmin = isSuperAdmin({ id: u.uid, email: u.email, isAnonymous: false });
 
+                  // Days remaining calculation
+                  let daysRemaining: number | null = null;
+                  if (u.planExpiresAt && u.plan !== "lifetime_free") {
+                    const diffTime = new Date(u.planExpiresAt).getTime() - now.getTime();
+                    daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  }
+
                   return (
                     <div
                       key={u.uid}
-                      className="bg-card card-shadow rounded-3xl p-4 border border-border/40 space-y-3"
+                      onClick={() => setInspectingUser(u)}
+                      className="group bg-card card-shadow rounded-3xl p-4 border border-border/50 hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between space-y-3 active:scale-[0.99]"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-foreground">{u.email}</span>
-                            {isMasterAdmin ? (
-                              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase">
-                                Super Admin 👑
-                              </span>
-                            ) : u.plan === "lifetime_free" ? (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase">
-                                Lifetime Free VIP ✨
-                              </span>
-                            ) : isExp ? (
-                              <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold uppercase">
-                                Expired ⚠️
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase">
-                                {u.plan} Active
-                              </span>
+                      <div>
+                        {/* Header: Email + Plan Badge */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                              {u.email}
+                            </p>
+                            {u.displayName && (
+                              <p className="text-[11px] text-muted-foreground truncate">{u.displayName}</p>
                             )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Joined: {new Date(u.createdAt).toLocaleDateString()} · Last seen:{" "}
-                            {new Date(u.lastLoginAt).toLocaleDateString()}
-                          </p>
-                          {/* Referral Tag */}
-                          <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-muted-foreground">
-                            <span className="bg-secondary px-2 py-0.5 rounded-lg border border-border/50 font-mono font-bold text-primary">
-                              Code: {u.referralCode || "N/A"}
+
+                          {isMasterAdmin ? (
+                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9.5px] font-black uppercase shrink-0">
+                              SUPER ADMIN 👑
                             </span>
-                            <span>
-                              Referrals: <strong className="text-foreground">{u.referralCount || 0}</strong> ({u.freeMonthsEarned || 0} mos earned)
+                          ) : u.plan === "lifetime_free" ? (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9.5px] font-bold uppercase shrink-0">
+                              VIP LIFETIME ✨
                             </span>
-                          </div>
+                          ) : isExp ? (
+                            <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[9.5px] font-bold uppercase shrink-0">
+                              EXPIRED ⚠️
+                            </span>
+                          ) : u.plan === "yearly" ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9.5px] font-black uppercase shrink-0">
+                              YEARLY ACTIVE 💎
+                            </span>
+                          ) : u.plan === "monthly" ? (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9.5px] font-black uppercase shrink-0">
+                              MONTHLY ACTIVE ⚡
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9.5px] font-bold uppercase shrink-0">
+                              30D TRIAL ⏳
+                            </span>
+                          )}
                         </div>
 
-                        <div className="text-left sm:text-right">
-                          <p className="text-xs font-semibold text-foreground">
-                            {u.plan === "lifetime_free" || isMasterAdmin
-                              ? "Permanent Access"
-                              : u.planExpiresAt
-                                ? `Valid until: ${new Date(u.planExpiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
-                                : "No Expiry Set"}
+                        {/* Phone / Contact */}
+                        {u.phone && (
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1">
+                            <Phone className="size-3 text-primary" />
+                            <span>+91 {u.phone}</span>
                           </p>
-                          {u.notes && <p className="text-[10px] text-muted-foreground italic truncate max-w-xs">{u.notes}</p>}
+                        )}
+
+                        {/* Validity & Countdown */}
+                        <div className="mt-2 text-xs">
+                          {u.plan === "lifetime_free" || isMasterAdmin ? (
+                            <span className="text-muted-foreground font-semibold">Permanent Access</span>
+                          ) : u.planExpiresAt ? (
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground text-[11px]">
+                                Valid until:{" "}
+                                <strong className="text-foreground">
+                                  {new Date(u.planExpiresAt).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </strong>
+                              </span>
+                              {daysRemaining !== null && (
+                                <span
+                                  className={cn(
+                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
+                                    daysRemaining > 30
+                                      ? "bg-emerald-500/10 text-emerald-600"
+                                      : daysRemaining > 0
+                                        ? "bg-amber-500/10 text-amber-600"
+                                        : "bg-destructive/10 text-destructive",
+                                  )}
+                                >
+                                  {daysRemaining > 0 ? `${daysRemaining}d left` : "Expired"}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-[11px]">No Expiry Set</span>
+                          )}
+                        </div>
+
+                        {/* Referral Code & Stats */}
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground">
+                          <span className="bg-secondary px-2 py-0.5 rounded-md font-mono font-bold text-primary">
+                            {u.referralCode || "NO-CODE"}
+                          </span>
+                          <span>
+                            Referrals: <strong className="text-foreground">{u.referralCount || 0}</strong> ({u.freeMonthsEarned || 0} mos)
+                          </span>
                         </div>
                       </div>
 
-                      {/* Admin Action Buttons */}
+                      {/* Action Buttons (1-click from card) */}
                       {!isMasterAdmin && (
-                        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/30">
+                        <div
+                          className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/30"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
                             onClick={() => handleOpenEditUser(u)}
-                            className="px-3 py-1 rounded-xl bg-primary text-white hover:bg-primary/90 text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1 rounded-xl bg-primary text-white hover:bg-primary/90 text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
                           >
                             <Edit3 className="size-3" />
-                            <span>Edit Plan</span>
+                            <span>Edit</span>
                           </button>
 
                           <button
                             onClick={() => handleGrantDays(u.uid, 30, "monthly")}
-                            className="px-2.5 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold text-foreground cursor-pointer"
+                            className="px-2 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold text-foreground cursor-pointer"
                           >
                             +30d
                           </button>
 
                           <button
                             onClick={() => handleGrantDays(u.uid, 365, "yearly")}
-                            className="px-2.5 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold text-foreground cursor-pointer"
+                            className="px-2 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold text-foreground cursor-pointer"
                           >
                             +1yr
                           </button>
 
                           <button
-                            onClick={() => handleGrantLifetime(u.uid)}
-                            className="px-2.5 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold cursor-pointer"
+                            onClick={() => setInspectingUser(u)}
+                            className="p-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground text-xs font-bold cursor-pointer ml-auto"
+                            title="View Full User Details"
                           >
-                            VIP Free
-                          </button>
-
-                          <button
-                            onClick={() => handleRewardReferral(u)}
-                            className="px-2 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer flex items-center gap-0.5"
-                            title="Reward +30 Days Free for Referral"
-                          >
-                            <Gift className="size-3" />
-                            <span>+30d Ref</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleToggleSuspend(u)}
-                            className={cn(
-                              "px-2.5 py-1 rounded-xl text-xs font-bold cursor-pointer",
-                              u.plan === "suspended"
-                                ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                                : "bg-destructive/10 text-destructive hover:bg-destructive/20",
-                            )}
-                          >
-                            {u.plan === "suspended" ? "Unsuspend" : "Suspend"}
+                            <Eye className="size-3.5" />
                           </button>
 
                           <button
                             onClick={() => setPendingDeleteUser(u)}
-                            className="p-1.5 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer ml-auto"
+                            className="p-1.5 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer"
                             title="Remove User Account"
                           >
                             <Trash2 className="size-3.5" />
@@ -636,9 +713,9 @@ function AdminPage() {
               </button>
             </div>
 
-            {/* Coupons List */}
+            {/* Coupons Grid */}
             {coupons.length === 0 ? (
-              <div className="bg-card card-shadow rounded-3xl p-8 text-center text-sm text-muted-foreground space-y-2">
+              <div className="bg-card card-shadow rounded-3xl p-10 text-center text-sm text-muted-foreground space-y-2">
                 <Tag className="size-8 text-muted-foreground/50 mx-auto" />
                 <p>No coupon codes created yet.</p>
                 <button
@@ -649,7 +726,7 @@ function AdminPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {coupons.map((c) => (
                   <div
                     key={c.id}
@@ -719,8 +796,8 @@ function AdminPage() {
         {/* ================= TAB 4: PRICING & CASHFREE SETUP ================= */}
         {activeTab === "pricing" && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Cashfree Activation Guide Card */}
-            <div className="bg-primary/5 border border-primary/30 rounded-3xl p-4 sm:p-5 space-y-2.5">
+            {/* Cashfree Guide */}
+            <div className="bg-primary/5 border border-primary/30 rounded-3xl p-5 space-y-2.5">
               <div className="flex items-center gap-2">
                 <CreditCard className="size-5 text-primary" />
                 <h3 className="font-display font-bold text-sm text-foreground">
@@ -740,7 +817,7 @@ function AdminPage() {
 
             <form
               onSubmit={handleSaveConfig}
-              className="bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-border/40 space-y-4"
+              className="bg-card card-shadow rounded-3xl p-5 sm:p-6 border border-border/40 space-y-4"
             >
               <div>
                 <h2 className="text-base font-bold font-display">Subscription Pricing & Gateway Settings</h2>
@@ -779,7 +856,7 @@ function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                     Free Trial Duration (Days)
@@ -788,7 +865,7 @@ function AdminPage() {
                     type="number"
                     value={configForm.trialDays}
                     onChange={(e) => setConfigForm({ ...configForm, trialDays: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -800,7 +877,7 @@ function AdminPage() {
                     type="number"
                     value={configForm.monthlyPrice}
                     onChange={(e) => setConfigForm({ ...configForm, monthlyPrice: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -812,7 +889,7 @@ function AdminPage() {
                     type="number"
                     value={configForm.yearlyPrice}
                     onChange={(e) => setConfigForm({ ...configForm, yearlyPrice: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -824,7 +901,7 @@ function AdminPage() {
                     type="number"
                     value={configForm.yearlyOriginalPrice}
                     onChange={(e) => setConfigForm({ ...configForm, yearlyOriginalPrice: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -837,7 +914,7 @@ function AdminPage() {
                     value={configForm.cashfreeAppId || ""}
                     onChange={(e) => setConfigForm({ ...configForm, cashfreeAppId: e.target.value })}
                     placeholder="e.g. TEST1120290946507dc3d9f01ff4148790920211"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-mono font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-mono font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -850,7 +927,7 @@ function AdminPage() {
                     value={configForm.cashfreeSecretKey || ""}
                     onChange={(e) => setConfigForm({ ...configForm, cashfreeSecretKey: e.target.value })}
                     placeholder="e.g. cfsk_ma_test_..."
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-mono font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-mono font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -862,8 +939,8 @@ function AdminPage() {
                     type="text"
                     value={configForm.supportWhatsapp}
                     onChange={(e) => setConfigForm({ ...configForm, supportWhatsapp: e.target.value })}
-                    placeholder="e.g. 919876543210"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
+                    placeholder="e.g. 919159036301"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -876,14 +953,14 @@ function AdminPage() {
                     value={configForm.supportUpiId || ""}
                     onChange={(e) => setConfigForm({ ...configForm, supportUpiId: e.target.value })}
                     placeholder="e.g. manirajankg@okaxis"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2.5 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl saree-gradient text-white text-xs font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition cursor-pointer uppercase tracking-wider"
+                className="w-full py-3.5 rounded-2xl saree-gradient text-white text-xs font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition cursor-pointer uppercase tracking-wider"
               >
                 Save Configuration Changes
               </button>
@@ -891,7 +968,199 @@ function AdminPage() {
           </div>
         )}
 
-        {/* Modal: Interactive Edit User Plan */}
+        {/* ================= MODAL 1: FULL USER DETAILS INSPECTOR ================= */}
+        {inspectingUser && (
+          <div
+            className="fixed inset-0 z-[31000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setInspectingUser(null)}
+            style={{ touchAction: "none" }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 text-left max-h-[90vh] overflow-y-auto"
+              style={{ touchAction: "auto" }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base border border-primary/20">
+                    {inspectingUser.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-sm sm:text-base text-foreground">
+                      {inspectingUser.email}
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      {inspectingUser.displayName || "Client Account"}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setInspectingUser(null)}
+                  className="size-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Plan & Validity Card */}
+              <div className="bg-secondary/40 rounded-2xl p-4 border border-border/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Current Plan</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase">
+                    {inspectingUser.plan.replace("_", " ")}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Plan Expiry:</span>
+                  <span className="text-xs font-bold text-foreground">
+                    {inspectingUser.plan === "lifetime_free"
+                      ? "Permanent Access ✨"
+                      : inspectingUser.planExpiresAt
+                        ? new Date(inspectingUser.planExpiresAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "No Expiry"}
+                  </span>
+                </div>
+                {inspectingUser.notes && (
+                  <div className="pt-2 border-t border-border/30">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">Payment Note</span>
+                    <p className="text-xs text-foreground mt-0.5">{inspectingUser.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact & Phone */}
+              <div className="bg-secondary/40 rounded-2xl p-4 border border-border/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Contact & Mobile</span>
+                  {inspectingUser.phone ? (
+                    <a
+                      href={`https://wa.me/91${inspectingUser.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 transition"
+                    >
+                      <MessageCircle className="size-3.5" />
+                      <span>WhatsApp</span>
+                    </a>
+                  ) : (
+                    <span className="text-[11px] text-amber-600 font-bold">No Phone Added</span>
+                  )}
+                </div>
+                <p className="text-xs text-foreground font-bold">
+                  {inspectingUser.phone ? `+91 ${inspectingUser.phone}` : "User hasn't entered phone number yet"}
+                </p>
+              </div>
+
+              {/* Account Metadata */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-secondary/30 p-3 rounded-xl border border-border/30">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Joined Date</span>
+                  <span className="font-semibold text-foreground">
+                    {new Date(inspectingUser.createdAt).toLocaleDateString("en-IN")}
+                  </span>
+                </div>
+                <div className="bg-secondary/30 p-3 rounded-xl border border-border/30">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Last Active</span>
+                  <span className="font-semibold text-foreground">
+                    {new Date(inspectingUser.lastLoginAt).toLocaleDateString("en-IN")}
+                  </span>
+                </div>
+                <div className="bg-secondary/30 p-3 rounded-xl border border-border/30">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Invite Code</span>
+                  <span className="font-mono font-bold text-primary">{inspectingUser.referralCode || "N/A"}</span>
+                </div>
+                <div className="bg-secondary/30 p-3 rounded-xl border border-border/30">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Friends Invited</span>
+                  <span className="font-bold text-foreground">{inspectingUser.referralCount || 0} ({inspectingUser.freeMonthsEarned || 0} mos earned)</span>
+                </div>
+              </div>
+
+              {/* UID */}
+              <div className="flex items-center justify-between bg-secondary/30 p-2.5 rounded-xl border border-border/30 text-xs">
+                <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[240px]">
+                  UID: {inspectingUser.uid}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopyUid(inspectingUser.uid)}
+                  className="px-2 py-1 rounded-lg bg-card border border-border text-[10px] font-bold text-foreground hover:bg-secondary cursor-pointer flex items-center gap-1"
+                >
+                  {copiedUid ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+                  <span>{copiedUid ? "Copied" : "Copy UID"}</span>
+                </button>
+              </div>
+
+              {/* Developer Action Suite */}
+              <div className="space-y-2 pt-2 border-t border-border/40">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+                  Quick Actions
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <button
+                    onClick={() => {
+                      setInspectingUser(null);
+                      handleOpenEditUser(inspectingUser);
+                    }}
+                    className="p-2.5 rounded-xl bg-primary text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Edit3 className="size-3.5" />
+                    <span>Edit Plan</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleGrantDays(inspectingUser.uid, 30, "monthly")}
+                    className="p-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold cursor-pointer"
+                  >
+                    +30d (Monthly)
+                  </button>
+
+                  <button
+                    onClick={() => handleGrantDays(inspectingUser.uid, 365, "yearly")}
+                    className="p-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold cursor-pointer"
+                  >
+                    +1yr (Yearly)
+                  </button>
+
+                  <button
+                    onClick={() => handleGrantLifetime(inspectingUser.uid)}
+                    className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold cursor-pointer"
+                  >
+                    👑 VIP Lifetime
+                  </button>
+
+                  <button
+                    onClick={() => handleRewardReferral(inspectingUser)}
+                    className="p-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <Gift className="size-3.5" />
+                    <span>+30d Referral</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleToggleSuspend(inspectingUser)}
+                    className={cn(
+                      "p-2.5 rounded-xl text-xs font-bold cursor-pointer",
+                      inspectingUser.plan === "suspended"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {inspectingUser.plan === "suspended" ? "Unsuspend" : "Suspend"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= MODAL 2: EDIT USER PLAN ================= */}
         {editingUser && (
           <div
             className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
@@ -1052,7 +1321,7 @@ function AdminPage() {
           </div>
         )}
 
-        {/* Modal: Create Coupon */}
+        {/* ================= MODAL 3: CREATE COUPON ================= */}
         {createCouponOpen && (
           <div
             className="fixed inset-0 z-[30000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
@@ -1194,7 +1463,7 @@ function AdminPage() {
           </div>
         )}
 
-        {/* Modal: Delete User Confirmation Dialog */}
+        {/* ================= MODAL 4: DELETE USER DIALOG ================= */}
         {pendingDeleteUser && (
           <div
             className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"

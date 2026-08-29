@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.6";
+export const APP_VERSION = "1.9.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.6",
+    version: "v1.9.7",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Full Web & Tablet Responsive Shell, User Detail Inspector & Advanced Filters",
+    badge: "LATEST UPDATE 🖥️",
+    changes: [
+      {
+        emoji: "🖥️",
+        text: "Desktop & Tablet Responsive Layout",
+        desc: "AppShell now dynamically scales up to 6xl on widescreen PC, laptop, and tablet displays with multi-column grids.",
+      },
+      {
+        emoji: "🔍",
+        text: "Comprehensive User Inspector Modal",
+        desc: "Tap any user in Admin to inspect full identity, phone, WhatsApp chat link, payment logs, and referral statistics.",
+      },
+      {
+        emoji: "🏷️",
+        text: "Yearly & Monthly Filter Pills",
+        desc: "Filter user base by Monthly, Yearly, 30d Free Trials, VIP Lifetime, Expired, and Suspended accounts with live counters.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.6",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Profile Mobile Sync, Developer WhatsApp (+91-9159036301) & Smart Phone Persistence",
     badge: "LATEST UPDATE 📱",
     changes: [

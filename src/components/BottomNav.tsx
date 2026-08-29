@@ -104,7 +104,7 @@ export function BottomNav() {
         isKeyboardOpen ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
       )}
     >
-      <ul className="grid grid-cols-5 max-w-md mx-auto">
+      <ul className="grid grid-cols-5 max-w-lg md:max-w-2xl mx-auto">
         {tabs.map((t) => {
           const active = t.to === "/" ? pathname === "/" : pathname.startsWith(t.to);
           const Icon = t.icon;
