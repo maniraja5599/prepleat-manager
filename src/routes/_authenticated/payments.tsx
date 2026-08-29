@@ -2396,7 +2396,7 @@ function SummaryView(p: {
         )}
 
         {/* Fixed Width Full-Bleed Revenue Chart */}
-        <div className="h-56 w-full -mx-1">
+        <div className="h-56 w-full -mx-1.5">
           {trendDataWithCumulative.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
@@ -2405,7 +2405,7 @@ function SummaryView(p: {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={trendDataWithCumulative}
-                margin={{ top: 8, right: 6, left: -24, bottom: 0 }}
+                margin={{ top: 8, right: -18, left: -26, bottom: 0 }}
                 onClick={(e: any) => {
                   if (e && e.activePayload && e.activePayload.length) {
                     setActiveChartMonth(e.activePayload[0].payload);
@@ -2413,9 +2413,18 @@ function SummaryView(p: {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
-                <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={9} tickLine={false} interval={0} />
+                <XAxis
+                  dataKey="month"
+                  stroke="currentColor"
+                  opacity={0.6}
+                  fontSize={9}
+                  tickLine={false}
+                  interval={0}
+                  padding={{ left: 2, right: 2 }}
+                />
                 <YAxis
                   yAxisId="left"
+                  width={28}
                   stroke="currentColor"
                   opacity={0.6}
                   fontSize={9}
@@ -2424,6 +2433,7 @@ function SummaryView(p: {
                 />
                 <YAxis
                   yAxisId="right"
+                  width={28}
                   orientation="right"
                   stroke="currentColor"
                   opacity={0.4}
@@ -2455,7 +2465,7 @@ function SummaryView(p: {
                   name="Income"
                   stackId="monthlyBar"
                   fill="#10b981"
-                  barSize={12}
+                  barSize={14}
                   radius={[0, 0, 2, 2]}
                 />
                 <Bar
@@ -2464,7 +2474,7 @@ function SummaryView(p: {
                   name="Expense"
                   stackId="monthlyBar"
                   fill="#f43f5e"
-                  barSize={12}
+                  barSize={14}
                   radius={[3, 3, 0, 0]}
                 />
                 <Line

@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.9";
+export const APP_VERSION = "1.8.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,23 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.7.9",
+    version: "v1.8.0",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Full-Width Flush X-Axis & Expanded Right Margin Elimination",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📐",
+        text: "Full-Bleed X-Axis Extension",
+        desc: "Optimized Y-axis reserving widths and adjusted negative margins so the chart X-axis line and bars stretch fully flush to the right edge of the card.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.9",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Fixed Wide Revenue Chart & Redesigned Visual Analytics Switcher",
     badge: "LATEST UPDATE ✨",
     changes: [
