@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, netBookingAmount, formatShortBillNumber, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import { APP_VERSION } from "@/lib/changelog";
-import { syncUserBusinessMetrics, type UserBusinessStats } from "@/lib/subscription";
+import { syncUserBusinessMetrics, type UserBusinessStats, type SareeBookingSummary } from "@/lib/subscription";
 import logoAsset from "@/assets/default-app-logo.svg";
 import { waitForAppUser, onAppAuthStateChanged } from "@/integrations/firebase/client";
 import {
@@ -51,6 +51,8 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const bookings = useStore((s) => s.bookings);
   const customers = useStore((s) => s.customers);
   const payments = useStore((s) => s.payments);
+  const expenses = useStore((s) => s.expenses);
+  const extraIncomes = useStore((s) => s.extraIncomes);
   const activity = useStore((s) => s.activity);
 
   const navigate = useNavigate();
@@ -60,59 +62,122 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
 
-  // Auto-sync saree business metrics to cloud profile for developer leaderboard & growth tracking
+   // Auto-sync exact saree business financials & orders history to cloud profile
   useEffect(() => {
     const unsub = onAppAuthStateChanged((u) => {
       if (!u || u.isAnonymous) return;
-      const totalBookings = bookings.length;
-      const totalCustomers = customers.length;
+      const state = useStore.getState();
+      const currentBookings = state.bookings || [];
+      const currentCustomers = state.customers || [];
+      const currentPayments = state.payments || [];
+      const currentExpenses = state.expenses || [];
+      const currentExtraIncomes = state.extraIncomes || [];
 
-      // Sum advance paid from bookings + payments received
-      let totalRevenue = 0;
-      bookings.forEach((b) => {
-        totalRevenue += Number(b.advancePaid) || 0;
-      });
-      payments.forEach((p) => {
-        totalRevenue += Number(p.amount) || 0;
-      });
+      const totalBookings = currentBookings.length;
+      const totalCustomers = currentCustomers.length;
 
-      // Group by month
-      const monthMap = new Map<string, { monthKey: string; monthLabel: string; bookingsCount: number; revenueCollected: number }>();
-      bookings.forEach((b) => {
+      // Exact Financial Formulas from payments.tsx
+      const paymentsTotal = currentPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      const extraTotal = currentExtraIncomes.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const totalRevenueCollected = paymentsTotal + extraTotal;
+      const totalExpenses = currentExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const netProfit = totalRevenueCollected - totalExpenses;
+      const totalBilled = currentBookings.reduce(
+        (s, b) => s + ((Number(b.totalAmount) || 0) + (Number(b.extraCharges) || 0) - (Number(b.discount) || 0)),
+        0,
+      );
+
+      // Group monthly metrics accurately
+      const monthMap = new Map<string, { monthKey: string; monthLabel: string; bookingsCount: number; revenueCollected: number; expenses: number; netProfit: number }>();
+      
+      currentBookings.forEach((b) => {
         const dateStr = b.deliveryDate || b.createdAt || new Date().toISOString();
         const d = new Date(dateStr);
         const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         const mLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
-        const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0 };
+        const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0, expenses: 0, netProfit: 0 };
         existing.bookingsCount += 1;
-        existing.revenueCollected += Number(b.advancePaid) || 0;
         monthMap.set(mKey, existing);
       });
 
-      payments.forEach((p) => {
+      currentPayments.forEach((p) => {
         const dateStr = p.date || new Date().toISOString();
         const d = new Date(dateStr);
         const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         const mLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
-        const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0 };
+        const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0, expenses: 0, netProfit: 0 };
         existing.revenueCollected += Number(p.amount) || 0;
+        existing.netProfit = existing.revenueCollected - existing.expenses;
+        monthMap.set(mKey, existing);
+      });
+
+      currentExtraIncomes.forEach((e) => {
+        const dateStr = e.date || new Date().toISOString();
+        const d = new Date(dateStr);
+        const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const mLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+        const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0, expenses: 0, netProfit: 0 };
+        existing.revenueCollected += Number(e.amount) || 0;
+        existing.netProfit = existing.revenueCollected - existing.expenses;
+        monthMap.set(mKey, existing);
+      });
+
+      currentExpenses.forEach((x) => {
+        const dateStr = x.date || new Date().toISOString();
+        const d = new Date(dateStr);
+        const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const mLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+        const existing = monthMap.get(mKey) || { monthKey: mKey, monthLabel: mLabel, bookingsCount: 0, revenueCollected: 0, expenses: 0, netProfit: 0 };
+        existing.expenses += Number(x.amount) || 0;
+        existing.netProfit = existing.revenueCollected - existing.expenses;
         monthMap.set(mKey, existing);
       });
 
       const monthlyBreakdown = Array.from(monthMap.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
 
+      // Build clean summary of recent 100 saree booking orders for Super-Admin inspection
+      const recentBookings: SareeBookingSummary[] = currentBookings.slice(0, 100).map((b) => {
+        const cust = currentCustomers.find((c) => c.id === b.customerId);
+        const total = (Number(b.totalAmount) || 0) + (Number(b.extraCharges) || 0) - (Number(b.discount) || 0);
+        const adv = Number(b.advancePaid) || 0;
+        return {
+          id: b.id,
+          billNumber: b.billNumber || formatShortBillNumber(b.billNumber || b.id),
+          customerName: cust?.name || "Client",
+          customerPhone: cust?.phone || "",
+          service: b.service,
+          sareeCount: b.sareeCount || 1,
+          pricePerSaree: b.pricePerSaree || 0,
+          totalAmount: total,
+          advancePaid: adv,
+          dueAmount: Math.max(0, total - adv),
+          deliveryDate: b.deliveryDate || b.createdAt,
+          deliveryTime: b.deliveryTime || "",
+          status: b.status,
+          notes: b.notes || "",
+          measurements: b.measurements || [],
+          discount: b.discount || 0,
+          extraCharges: b.extraCharges || 0,
+          createdAt: b.createdAt || new Date().toISOString(),
+        };
+      });
+
       const stats: UserBusinessStats = {
         totalBookings,
         totalCustomers,
-        totalRevenueCollected: totalRevenue,
+        totalRevenueCollected,
+        totalExpenses,
+        netProfit,
+        totalBilled,
         monthlyBreakdown,
+        recentBookings,
       };
 
       void syncUserBusinessMetrics(u.id, stats);
     });
 
     return () => unsub();
-  }, [bookings, customers, payments]);
+  }, [bookings, customers, payments, expenses, extraIncomes]);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
 
   useEffect(() => {

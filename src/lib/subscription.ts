@@ -31,18 +31,45 @@ export interface PaymentHistoryItem {
 }
 
 
+export interface SareeBookingSummary {
+  id: string;
+  billNumber?: string;
+  customerName?: string;
+  customerPhone?: string;
+  service: string;
+  sareeCount: number;
+  pricePerSaree: number;
+  totalAmount: number;
+  advancePaid: number;
+  dueAmount: number;
+  deliveryDate: string;
+  deliveryTime?: string;
+  status: string;
+  notes?: string;
+  measurements?: { label: string; value: number }[];
+  discount?: number;
+  extraCharges?: number;
+  createdAt: string;
+}
+
 export interface MonthlyBusinessStat {
   monthKey: string; // "2026-08"
   monthLabel: string; // "Aug 2026"
   bookingsCount: number;
   revenueCollected: number;
+  expenses: number;
+  netProfit: number;
 }
 
 export interface UserBusinessStats {
   totalBookings: number;
   totalCustomers: number;
   totalRevenueCollected: number;
+  totalExpenses?: number;
+  netProfit?: number;
+  totalBilled?: number;
   monthlyBreakdown?: MonthlyBusinessStat[];
+  recentBookings?: SareeBookingSummary[];
   lastSyncedAt?: string;
 }
 

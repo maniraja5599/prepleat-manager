@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.6";
+export const APP_VERSION = "2.0.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.6",
+    version: "v2.0.7",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Exact Saree Net Profit Sync, Distinct Revenue Separation & Individual Order Drawer",
+    badge: "LATEST UPDATE 🛍️",
+    changes: [
+      {
+        emoji: "💰",
+        text: "Exact Financial Formulas & Net Profit Sync",
+        desc: "Accurately syncs client revenues (payments + extra incomes), total expenses, and true boutique net profits.",
+      },
+      {
+        emoji: "🛍️",
+        text: "One-by-One Saree Orders History & Full Bill Drawer",
+        desc: "Super-Admin can inspect individual customer saree orders with full breakdown of sarees, rates, dues, and measurements.",
+      },
+      {
+        emoji: "💎",
+        text: "Clear App Fee vs Studio Earnings Separation",
+        desc: "Clear visual separation between developer software subscription fees paid and boutique client revenue earned.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.6",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Instant Business Metrics Sync, 30d Device Guest Limits & Soft User Archive with Undo",
     badge: "LATEST UPDATE 🛡️",
     changes: [

@@ -71,6 +71,7 @@ import {
   type SubscriptionPlan,
   type PaymentHistoryItem,
   type CouponRedemption,
+  type SareeBookingSummary,
   DEFAULT_CONFIG,
 } from "@/lib/subscription";
 import { onAppAuthStateChanged, type AppUser } from "@/integrations/firebase/client";
@@ -114,6 +115,8 @@ function AdminPage() {
 
   // Inspect User Details Modal
   const [inspectingUser, setInspectingUser] = useState<UserProfile | null>(null);
+  const [selectedUserMonth, setSelectedUserMonth] = useState<string>("all");
+  const [selectedSareeOrder, setSelectedSareeOrder] = useState<SareeBookingSummary | null>(null);
 
   // Inspect Coupon Usage Modal
   const [inspectingCoupon, setInspectingCoupon] = useState<Coupon | null>(null);
@@ -2324,6 +2327,164 @@ function AdminPage() {
                 {inspectingCoupon.isActive ? "Disable Code" : "Activate Code"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ================= MODAL 7: FULL SAREE ORDER DETAILS DRAWER ================= */}
+      {selectedSareeOrder && (
+        <div
+          className="fixed inset-0 z-[34000] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200 text-left"
+          onClick={() => setSelectedSareeOrder(null)}
+          style={{ touchAction: "none" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto text-left"
+            style={{ touchAction: "auto" }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border/40 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-black text-base text-primary">
+                    #{selectedSareeOrder.billNumber || "ORDER"}
+                  </span>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase",
+                      selectedSareeOrder.status === "delivered" || selectedSareeOrder.status === "completed"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "bg-amber-500/10 text-amber-600",
+                    )}
+                  >
+                    {selectedSareeOrder.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Booked on {new Date(selectedSareeOrder.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedSareeOrder(null)}
+                className="size-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Customer Details */}
+            <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/40 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block">Customer Name</span>
+                <p className="text-sm font-bold text-foreground">{selectedSareeOrder.customerName || "Walk-in Client"}</p>
+                {selectedSareeOrder.customerPhone && (
+                  <p className="text-xs text-muted-foreground font-mono mt-0.5">+91 {selectedSareeOrder.customerPhone}</p>
+                )}
+              </div>
+
+              {selectedSareeOrder.customerPhone && (
+                <a
+                  href={`https://wa.me/91${selectedSareeOrder.customerPhone.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition"
+                >
+                  <MessageCircle className="size-3.5" />
+                  <span>WhatsApp</span>
+                </a>
+              )}
+            </div>
+
+            {/* Order Items & Financials */}
+            <div className="bg-secondary/40 rounded-2xl p-3.5 border border-border/40 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Service Type:</span>
+                <span className="font-bold text-foreground capitalize">{selectedSareeOrder.service}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Number of Sarees:</span>
+                <span className="font-bold text-foreground">{selectedSareeOrder.sareeCount} Sarees</span>
+              </div>
+              {selectedSareeOrder.pricePerSaree > 0 && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Rate per Saree:</span>
+                  <span className="font-bold text-foreground">₹{selectedSareeOrder.pricePerSaree}</span>
+                </div>
+              )}
+              {Number(selectedSareeOrder.discount) > 0 && (
+                <div className="flex items-center justify-between text-xs text-emerald-600">
+                  <span>Discount Applied:</span>
+                  <span>-₹{selectedSareeOrder.discount}</span>
+                </div>
+              )}
+              {Number(selectedSareeOrder.extraCharges) > 0 && (
+                <div className="flex items-center justify-between text-xs text-amber-600">
+                  <span>Extra Charges:</span>
+                  <span>+₹{selectedSareeOrder.extraCharges}</span>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-border/30 flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground">Total Bill Amount:</span>
+                <span className="text-base font-black text-foreground">₹{selectedSareeOrder.totalAmount.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-emerald-600 font-bold">Advance Paid:</span>
+                <span className="font-black text-emerald-600">₹{selectedSareeOrder.advancePaid.toLocaleString("en-IN")}</span>
+              </div>
+              {selectedSareeOrder.dueAmount > 0 && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-destructive font-bold">Balance Dues:</span>
+                  <span className="font-black text-destructive">₹{selectedSareeOrder.dueAmount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Delivery Date & Time */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-secondary/30 p-2.5 rounded-xl border border-border/30">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block">Delivery Date</span>
+                <span className="font-bold text-foreground">
+                  {new Date(selectedSareeOrder.deliveryDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              </div>
+              <div className="bg-secondary/30 p-2.5 rounded-xl border border-border/30">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block">Delivery Time</span>
+                <span className="font-bold text-foreground">{selectedSareeOrder.deliveryTime || "Anytime"}</span>
+              </div>
+            </div>
+
+            {/* Measurements if available */}
+            {selectedSareeOrder.measurements && selectedSareeOrder.measurements.length > 0 && (
+              <div className="bg-secondary/30 p-3 rounded-xl border border-border/30 space-y-1">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block">Client Measurements</span>
+                <div className="flex flex-wrap gap-2 pt-0.5">
+                  {selectedSareeOrder.measurements.map((m, idx) => (
+                    <span key={idx} className="px-2 py-0.5 rounded-md bg-card border border-border/40 text-xs font-bold">
+                      {m.label}: <strong>{m.value}"</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {selectedSareeOrder.notes && (
+              <div className="bg-secondary/30 p-3 rounded-xl border border-border/30">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block">Order Notes</span>
+                <p className="text-xs text-foreground mt-0.5 break-all">{selectedSareeOrder.notes}</p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setSelectedSareeOrder(null)}
+              className="w-full py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold hover:bg-secondary/80 cursor-pointer"
+            >
+              Close Order Details
+            </button>
           </div>
         </div>
       )}
