@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { useStore, totalDue, netBookingAmount, formatShortBillNumber, fmtINR, formatAppDate, formatAppTime, formatAppDateTime } from "@/lib/store";
 import { APP_VERSION } from "@/lib/changelog";
-import logoAsset from "@/assets/eyas-logo.png";
+import logoAsset from "@/assets/default-app-logo.svg";
 import { waitForAppUser } from "@/integrations/firebase/client";
 import {
   CloudOff,

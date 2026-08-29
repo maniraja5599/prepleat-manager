@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.7";
+export const APP_VERSION = "1.9.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.7",
+    version: "v1.9.8",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Universal Generic Saree App Logo & Cloud Store Branding Sync",
+    badge: "LATEST UPDATE 🎨",
+    changes: [
+      {
+        emoji: "🎨",
+        text: "Universal Generic Saree App Logo",
+        desc: "New users now start with a luxury generic saree draping monogram logo, eliminating hardcoded single-brand assets.",
+      },
+      {
+        emoji: "☁️",
+        text: "Cloud Store Logo & Name Sync",
+        desc: "Custom logos and business names uploaded in Settings now sync directly to the user's cloud account across all devices.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.7",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Full Web & Tablet Responsive Shell, User Detail Inspector & Advanced Filters",
     badge: "LATEST UPDATE 🖥️",
     changes: [

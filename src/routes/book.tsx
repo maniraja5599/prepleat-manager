@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
-import logoAsset from "@/assets/eyas-logo.png";
+import logoAsset from "@/assets/default-app-logo.svg";
 import { z } from "zod";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db, signInAsGuest } from "@/integrations/firebase/client";

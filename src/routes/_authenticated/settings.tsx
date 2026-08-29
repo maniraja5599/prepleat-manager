@@ -53,7 +53,7 @@ import {
   isNotificationsMuted,
   setNotificationsMuted,
 } from "@/lib/notifications";
-import logoAsset from "@/assets/eyas-logo.png";
+import logoAsset from "@/assets/default-app-logo.svg";
 import { formatDistanceToNow } from "date-fns";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { generateSampleData } from "@/lib/sample-data";
@@ -82,7 +82,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
-import { isSuperAdmin, updateUserPhone, checkSubscriptionStatus, subscribeToUserProfile, type UserProfile, generateReferralCode } from "@/lib/subscription";
+import { isSuperAdmin, updateUserPhone, syncCloudBusinessBranding, checkSubscriptionStatus, subscribeToUserProfile, type UserProfile, generateReferralCode } from "@/lib/subscription";
 export { APP_VERSION, RECENT_UPDATES, type ChangelogEntry };
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -996,7 +996,15 @@ function SettingsPage() {
                     </label>
                     <input
                       value={settings.businessName}
-                      onChange={(e) => update({ businessName: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        update({ businessName: val });
+                        waitForAppUser().then((u) => {
+                          if (u && !u.isAnonymous) {
+                            syncCloudBusinessBranding(u.id, { businessName: val });
+                          }
+                        });
+                      }}
                       className="input mt-1.5"
                     />
                   </div>

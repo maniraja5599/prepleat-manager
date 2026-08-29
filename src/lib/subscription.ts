@@ -25,6 +25,8 @@ export interface UserProfile {
   email: string;
   displayName?: string;
   phone?: string;
+  businessName?: string;
+  businessLogo?: string;
   role: "admin" | "user";
   plan: SubscriptionPlan;
   trialEndsAt: string; // ISO String
@@ -760,4 +762,23 @@ export async function updateUserPhone(uid: string, phone: string): Promise<void>
   const clean = phone.replace(/\D/g, "").slice(-10);
   const userDocRef = doc(db, "user_profiles", uid);
   await updateDoc(userDocRef, { phone: clean });
+}
+
+/**
+ * Update user's business brand name & custom logo in Cloud Firestore
+ */
+export async function syncCloudBusinessBranding(
+  uid: string,
+  branding: { businessName?: string; businessLogo?: string; phone?: string },
+): Promise<void> {
+  if (!db || !uid) return;
+  const userDocRef = doc(db, "user_profiles", uid);
+  const dataToUpdate: any = {};
+  if (branding.businessName !== undefined) dataToUpdate.businessName = branding.businessName;
+  if (branding.businessLogo !== undefined) dataToUpdate.businessLogo = branding.businessLogo;
+  if (branding.phone !== undefined) dataToUpdate.phone = branding.phone.replace(/\D/g, "").slice(-10);
+
+  if (Object.keys(dataToUpdate).length > 0) {
+    await updateDoc(userDocRef, dataToUpdate);
+  }
 }

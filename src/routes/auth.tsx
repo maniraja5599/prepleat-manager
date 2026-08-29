@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import logoAsset from "@/assets/eyas-logo.png";
+import logoAsset from "@/assets/default-app-logo.svg";
 import { Loader2, Mail, Lock, UserRound, Eye, EyeOff, Sparkles } from "lucide-react";
 import {
   createAccountWithEmail,

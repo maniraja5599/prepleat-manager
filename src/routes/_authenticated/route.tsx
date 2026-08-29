@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { CloudSync } from "@/components/CloudSync";
 import { InstallPwaBanner } from "@/components/InstallPwaBanner";
 import { WhatsNewModal } from "@/components/WhatsNewModal";
-import logoAsset from "@/assets/eyas-logo.png";
+import logoAsset from "@/assets/default-app-logo.svg";
 import { onAppAuthStateChanged, waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 import { useStore } from "@/lib/store";
 import { checkAndTriggerEventAlerts, checkAndTriggerUpdateAlert } from "@/lib/notifications";
