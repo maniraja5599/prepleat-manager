@@ -82,6 +82,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
+import { isSuperAdmin } from "@/lib/subscription";
 export { APP_VERSION, RECENT_UPDATES, type ChangelogEntry };
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -411,6 +412,57 @@ function SettingsPage() {
         >
           <LogOut className="size-3.5" />
           <span>{isUserGuest ? "Sign In" : "Logout"}</span>
+        </button>
+      </div>
+
+      {/* Developer Super-Admin Banner (Visible only to Master Admin) */}
+      {isSuperAdmin({ email: userEmail, id: "", isAnonymous: isUserGuest }) && (
+        <div className="bg-primary/10 border-2 border-primary/40 rounded-3xl p-4 mb-4 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-2xl saree-gradient text-white flex items-center justify-center font-black text-lg shadow-sm">
+              👑
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-display font-extrabold text-sm text-foreground">
+                  Developer Super-Admin Panel
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-primary text-white text-[9px] font-black uppercase">
+                  VIP
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Manage user access, subscription expiries, coupons & pricing.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/admin" as any })}
+            className="px-3.5 py-2 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 active:scale-95 transition cursor-pointer shrink-0"
+          >
+            Open Panel →
+          </button>
+        </div>
+      )}
+
+      {/* Subscription & Pricing Management Bar */}
+      <div className="bg-card card-shadow rounded-2xl p-3 mb-4 border border-border/60 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <Sparkles className="size-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-foreground">Saree Manager Subscription</p>
+            <p className="text-[10px] text-muted-foreground">View plan details, redeem coupons or renew</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("trigger-pricing-modal"))}
+          className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold border border-border/40 transition cursor-pointer shrink-0"
+        >
+          View Plans
         </button>
       </div>
 

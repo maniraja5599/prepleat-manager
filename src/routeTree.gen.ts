@@ -20,6 +20,7 @@ import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/ne
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedBookingsRouteImport } from './routes/_authenticated/bookings'
 import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedBookingsIndexRouteImport } from './routes/_authenticated/bookings.index'
 import { Route as AuthenticatedCustomersIdRouteImport } from './routes/_authenticated/customers.$id'
@@ -79,6 +80,11 @@ const AuthenticatedBillsRoute = AuthenticatedBillsRouteImport.update({
   path: '/bills',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCustomersIndexRoute =
   AuthenticatedCustomersIndexRouteImport.update({
     id: '/',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/privacy': typeof PrivacyRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/bills': typeof AuthenticatedBillsRoute
   '/bookings': typeof AuthenticatedBookingsRouteWithChildren
   '/customers': typeof AuthenticatedCustomersRouteWithChildren
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/privacy': typeof PrivacyRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/bills': typeof AuthenticatedBillsRoute
   '/new': typeof AuthenticatedNewRoute
   '/payments': typeof AuthenticatedPaymentsRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/privacy': typeof PrivacyRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bills': typeof AuthenticatedBillsRoute
   '/_authenticated/bookings': typeof AuthenticatedBookingsRouteWithChildren
   '/_authenticated/customers': typeof AuthenticatedCustomersRouteWithChildren
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/book'
     | '/privacy'
+    | '/admin'
     | '/bills'
     | '/bookings'
     | '/customers'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/book'
     | '/privacy'
+    | '/admin'
     | '/bills'
     | '/new'
     | '/payments'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/book'
     | '/privacy'
+    | '/_authenticated/admin'
     | '/_authenticated/bills'
     | '/_authenticated/bookings'
     | '/_authenticated/customers'
@@ -287,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBillsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/'
@@ -350,6 +369,7 @@ const AuthenticatedCustomersRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
   AuthenticatedBookingsRoute: typeof AuthenticatedBookingsRouteWithChildren
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRouteWithChildren
@@ -360,6 +380,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBillsRoute: AuthenticatedBillsRoute,
   AuthenticatedBookingsRoute: AuthenticatedBookingsRouteWithChildren,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRouteWithChildren,

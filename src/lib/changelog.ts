@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.6";
+export const APP_VERSION = "1.9.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.6",
+    version: "v1.9.0",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Developer Super-Admin Portal, Multi-Tier Subscriptions & Coupon Engine",
+    badge: "MAJOR UPDATE 👑",
+    changes: [
+      {
+        emoji: "👑",
+        text: "Developer Super-Admin Portal (/admin)",
+        desc: "Dedicated control panel for the developer (manirajankg@gmail.com) with real-time user management, 1-click plan extensions, and live pricing controls.",
+      },
+      {
+        emoji: "🎁",
+        text: "30-Day Free Trial & Multi-Tier Plans",
+        desc: "Automatic 1-month free trial on signup, plus Monthly (₹299) and discounted Yearly (₹1,999) subscriptions.",
+      },
+      {
+        emoji: "🎟️",
+        text: "Promo & Discount Coupon Engine",
+        desc: "Create and redeem promotional discount codes (+30 days, +1 year, % off, lifetime free) with usage limits.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.6",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Inline Category Header Creator & Manager in Quick Entry",
     badge: "LATEST UPDATE ✨",
     changes: [
