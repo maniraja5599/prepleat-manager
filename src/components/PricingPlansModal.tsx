@@ -50,12 +50,16 @@ export function PricingPlansModal({
 }) {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [couponCode, setCouponCode] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Lock body scroll and background touches when modal is active
   useEffect(() => {
     if (open) {
+      if (userProfile?.phone) {
+        setPhoneNumber(userProfile.phone.replace(/\D/g, "").slice(-10));
+      }
       const prevOverflow = document.body.style.overflow;
       const prevTouchAction = document.body.style.touchAction;
       document.body.style.overflow = "hidden";
@@ -65,7 +69,7 @@ export function PricingPlansModal({
         document.body.style.touchAction = prevTouchAction;
       };
     }
-  }, [open]);
+  }, [open, userProfile]);
 
   if (!open) return null;
 
@@ -124,6 +128,12 @@ export function PricingPlansModal({
     const appId = config.cashfreeAppId?.trim() || "";
     const secretKey = config.cashfreeSecretKey?.trim() || "";
 
+    const cleanPhone = phoneNumber.replace(/\D/g, "").slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      toast.error("Please enter a valid 10-digit mobile number for Cashfree & invoice receipts.");
+      return;
+    }
+
     setIsProcessingPayment(true);
     const amount = selectedPlan === "yearly" ? yearlyPrice : monthlyPrice;
     const planDays = selectedPlan === "yearly" ? 365 : 30;
@@ -143,6 +153,7 @@ export function PricingPlansModal({
           plan: selectedPlan,
           userId: user.id,
           userEmail: user.email || "user@sareeprepleat.com",
+          customerPhone: cleanPhone,
         },
       });
 
@@ -397,6 +408,26 @@ export function PricingPlansModal({
             </button>
           </div>
         </form>
+
+        {/* Mobile Number Input for Cashfree & WhatsApp Receipts */}
+        <div className="bg-secondary/30 rounded-2xl p-3 border border-border/40 space-y-1.5">
+          <label className="text-[11px] font-bold text-foreground block">
+            Mobile Number (Required for Online Payment & SMS Receipt)
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="bg-card px-2.5 py-2 rounded-xl text-xs font-bold text-muted-foreground border border-border">
+              +91
+            </span>
+            <input
+              type="tel"
+              maxLength={10}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+              placeholder="Enter 10-digit mobile number"
+              className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-primary"
+            />
+          </div>
+        </div>
 
         {/* Action Buttons: Clean & Compact (Zero Overflow) */}
         <div className="space-y-2 pt-1">

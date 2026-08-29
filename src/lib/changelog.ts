@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.4";
+export const APP_VERSION = "1.9.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.4",
+    version: "v1.9.5",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Mobile Number Checkout Validation & Generic Store Profile Defaults",
+    badge: "LATEST UPDATE 📱",
+    changes: [
+      {
+        emoji: "📱",
+        text: "Inline Mobile Number Verification for Checkout",
+        desc: "Added 10-digit mobile number input in the pricing modal to guarantee successful Cashfree checkout and automatic SMS/WhatsApp payment receipts.",
+      },
+      {
+        emoji: "🏷️",
+        text: "Generic Store Default for New Users",
+        desc: "New accounts now start with clean, customizable defaults without affecting existing users' custom business names or logos.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.4",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Serverless Cashfree Checkout Integration & Complete Admin UI Redesign",
     badge: "LATEST UPDATE 💎",
     changes: [

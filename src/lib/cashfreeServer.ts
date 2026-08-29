@@ -8,12 +8,13 @@ export interface CreateOrderPayload {
   plan: string;
   userId: string;
   userEmail: string;
+  customerPhone?: string;
 }
 
 export const createCashfreeOrderServer = createServerFn({ method: "POST" })
   .validator((data: CreateOrderPayload) => data)
   .handler(async ({ data }) => {
-    const { appId, secretKey, isProd, amount, plan, userId, userEmail } = data;
+    const { appId, secretKey, isProd, amount, plan, userId, userEmail, customerPhone } = data;
 
     if (!appId || !secretKey) {
       return {

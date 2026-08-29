@@ -24,6 +24,7 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
+  phone?: string;
   role: "admin" | "user";
   plan: SubscriptionPlan;
   trialEndsAt: string; // ISO String

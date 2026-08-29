@@ -332,7 +332,7 @@ export const useStore = create<State>()(
         ],
         showPaymentOnCalendar: false,
         calendarAmountDisplay: "pending",
-        businessName: "Eyas Saree Drapist",
+        businessName: "Saree PrePleat Studio",
         theme: "royal",
         defaultPaymentMode: "gpay",
         websiteUrl: "https://eyasdrapist.shop/",
