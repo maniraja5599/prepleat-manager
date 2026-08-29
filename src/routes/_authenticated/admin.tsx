@@ -22,6 +22,10 @@ import {
   Calendar,
   Lock,
   ArrowLeft,
+  Edit3,
+  ExternalLink,
+  HelpCircle,
+  CreditCard,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
@@ -31,15 +35,16 @@ import {
   subscribeToCoupons,
   subscribeToSystemConfig,
   updateUserPlan,
-  createCoupon,
-  deleteCoupon,
   deleteUserProfile,
   processReferralReward,
+  createCoupon,
+  deleteCoupon,
   toggleCouponStatus,
   updateSystemConfig,
   type UserProfile,
   type Coupon,
   type SystemSubscriptionConfig,
+  type SubscriptionPlan,
   DEFAULT_CONFIG,
 } from "@/lib/subscription";
 import { onAppAuthStateChanged, type AppUser } from "@/integrations/firebase/client";
@@ -61,6 +66,16 @@ function AdminPage() {
   const [searchUser, setSearchUser] = useState("");
   const [userFilter, setUserFilter] = useState<"all" | "trial" | "paid" | "expired" | "suspended">("all");
 
+  // Edit User Plan Modal
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editPlanType, setEditPlanType] = useState<SubscriptionPlan>("monthly");
+  const [editExpiryDate, setEditExpiryDate] = useState<string>("");
+  const [editNotes, setEditNotes] = useState<string>("");
+  const [editIsApproved, setEditIsApproved] = useState<boolean>(true);
+
+  // Delete User State
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<UserProfile | null>(null);
+
   // Create Coupon Modal
   const [createCouponOpen, setCreateCouponOpen] = useState(false);
   const [newCouponCode, setNewCouponCode] = useState("");
@@ -71,7 +86,6 @@ function AdminPage() {
 
   // System Config State
   const [configForm, setConfigForm] = useState<SystemSubscriptionConfig>(DEFAULT_CONFIG);
-  const [pendingDeleteUser, setPendingDeleteUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const unsubAuth = onAppAuthStateChanged((u) => {
@@ -117,31 +131,34 @@ function AdminPage() {
     );
   }
 
-  // Filtered users
-  const filteredUsers = users.filter((u) => {
-    const query = searchUser.toLowerCase();
-    const matchQuery =
-      u.email.toLowerCase().includes(query) ||
-      (u.displayName && u.displayName.toLowerCase().includes(query)) ||
-      u.uid.toLowerCase().includes(query);
-    if (!matchQuery) return false;
+  // Open Edit User Modal
+  const handleOpenEditUser = (u: UserProfile) => {
+    setEditingUser(u);
+    setEditPlanType(u.plan);
+    const dateStr = u.planExpiresAt ? u.planExpiresAt.slice(0, 10) : "";
+    setEditExpiryDate(dateStr);
+    setEditNotes(u.notes || "");
+    setEditIsApproved(u.isApproved !== false);
+  };
 
-    const now = new Date();
-    const isExp = u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free";
-
-    if (userFilter === "trial") return u.plan === "trial" && !isExp;
-    if (userFilter === "paid") return (u.plan === "monthly" || u.plan === "yearly" || u.plan === "lifetime_free") && !isExp;
-    if (userFilter === "expired") return isExp;
-    if (userFilter === "suspended") return u.plan === "suspended" || !u.isApproved;
-    return true;
-  });
-
-  // KPI Calculations
-  const now = new Date();
-  const totalUsersCount = users.length;
-  const activeTrialsCount = users.filter((u) => u.plan === "trial" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const paidSubscribersCount = users.filter((u) => (u.plan === "monthly" || u.plan === "yearly" || u.plan === "lifetime_free") && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const expiredCount = users.filter((u) => u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free").length;
+  const handleSaveUserPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      await updateUserPlan(
+        editingUser.uid,
+        editPlanType,
+        undefined,
+        editPlanType === "lifetime_free" ? null : editExpiryDate ? `${editExpiryDate}T23:59:59.000Z` : undefined,
+        editIsApproved,
+        editNotes.trim() || undefined,
+      );
+      toast.success(`Updated plan for ${editingUser.email} successfully!`);
+      setEditingUser(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update user plan");
+    }
+  };
 
   const handleGrantDays = async (uid: string, days: number, planName: "monthly" | "yearly") => {
     try {
@@ -154,7 +171,7 @@ function AdminPage() {
 
   const handleGrantLifetime = async (uid: string) => {
     try {
-      await updateUserPlan(uid, "lifetime_free", undefined, undefined, true, "VIP Lifetime Free Granted by Admin");
+      await updateUserPlan(uid, "lifetime_free", undefined, null, true, "VIP Lifetime Free Granted by Admin");
       toast.success("Granted 100% Lifetime VIP Free Access!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to update plan");
@@ -165,7 +182,7 @@ function AdminPage() {
     if (!pendingDeleteUser) return;
     try {
       await deleteUserProfile(pendingDeleteUser.uid);
-      toast.success(`User ${pendingDeleteUser.email} has been permanently removed.`);
+      toast.success(`User ${pendingDeleteUser.email} has been removed from system.`);
       setPendingDeleteUser(null);
     } catch (err: any) {
       toast.error(err?.message || "Failed to remove user");
@@ -200,7 +217,7 @@ function AdminPage() {
     e.preventDefault();
     try {
       await updateSystemConfig(configForm);
-      toast.success("Subscription pricing & config updated successfully!");
+      toast.success("Subscription pricing & Cashfree setup updated successfully!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to save configuration");
     }
@@ -230,9 +247,36 @@ function AdminPage() {
     }
   };
 
+  const now = new Date();
+
+  // Filtered users
+  const filteredUsers = users.filter((u) => {
+    const query = searchUser.toLowerCase();
+    const matchQuery =
+      u.email.toLowerCase().includes(query) ||
+      (u.displayName && u.displayName.toLowerCase().includes(query)) ||
+      u.uid.toLowerCase().includes(query) ||
+      (u.referralCode && u.referralCode.toLowerCase().includes(query));
+    if (!matchQuery) return false;
+
+    const isExp = u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free";
+
+    if (userFilter === "trial") return u.plan === "trial" && !isExp;
+    if (userFilter === "paid") return (u.plan === "monthly" || u.plan === "yearly" || u.plan === "lifetime_free") && !isExp;
+    if (userFilter === "expired") return isExp;
+    if (userFilter === "suspended") return u.plan === "suspended" || !u.isApproved;
+    return true;
+  });
+
+  // KPI Calculations
+  const totalUsersCount = users.length;
+  const activeTrialsCount = users.filter((u) => u.plan === "trial" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
+  const paidSubscribersCount = users.filter((u) => (u.plan === "monthly" || u.plan === "yearly" || u.plan === "lifetime_free") && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
+  const expiredCount = users.filter((u) => u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free").length;
+
   return (
     <AppShell>
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5 pb-24 text-left">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5 pb-28 text-left">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-primary/20">
           <div className="flex items-center gap-3">
@@ -320,8 +364,8 @@ function AdminPage() {
             )}
           >
             <Settings className="size-3.5" />
-            <span className="hidden sm:inline">Config & Pricing</span>
-            <span className="sm:hidden">Pricing</span>
+            <span className="hidden sm:inline">Pricing & Cashfree</span>
+            <span className="sm:hidden">Setup</span>
           </button>
         </div>
 
@@ -366,7 +410,7 @@ function AdminPage() {
                   className="p-3.5 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30"
                 >
                   <p className="text-xs font-bold text-foreground">Manage Users & Expiries</p>
-                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Extend +30 days, +1 year, or grant lifetime access.</p>
+                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Extend +30 days, +1 year, edit dates, or remove test users.</p>
                 </button>
 
                 <button
@@ -384,8 +428,8 @@ function AdminPage() {
                   onClick={() => setActiveTab("pricing")}
                   className="p-3.5 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30"
                 >
-                  <p className="text-xs font-bold text-foreground">Update Pricing & Deals</p>
-                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Change monthly/yearly plan rates on the fly.</p>
+                  <p className="text-xs font-bold text-foreground">Cashfree & Price Config</p>
+                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Set Cashfree keys, trial duration, and monthly/yearly rates.</p>
                 </button>
               </div>
             </div>
@@ -403,7 +447,7 @@ function AdminPage() {
                   type="text"
                   value={searchUser}
                   onChange={(e) => setSearchUser(e.target.value)}
-                  placeholder="Search by email, name, or ID..."
+                  placeholder="Search by email, name, code, or ID..."
                   className="w-full bg-card border border-border rounded-2xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-primary"
                 />
               </div>
@@ -495,32 +539,41 @@ function AdminPage() {
                       {!isMasterAdmin && (
                         <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/30">
                           <button
+                            onClick={() => handleOpenEditUser(u)}
+                            className="px-3 py-1 rounded-xl bg-primary text-white hover:bg-primary/90 text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer"
+                          >
+                            <Edit3 className="size-3" />
+                            <span>Edit Plan</span>
+                          </button>
+
+                          <button
                             onClick={() => handleGrantDays(u.uid, 30, "monthly")}
                             className="px-2.5 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold text-foreground cursor-pointer"
                           >
-                            +30 Days Free
+                            +30d
                           </button>
 
                           <button
                             onClick={() => handleGrantDays(u.uid, 365, "yearly")}
                             className="px-2.5 py-1 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold text-foreground cursor-pointer"
                           >
-                            +1 Year Plan
+                            +1yr
                           </button>
 
                           <button
                             onClick={() => handleGrantLifetime(u.uid)}
                             className="px-2.5 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold cursor-pointer"
                           >
-                            Grant Lifetime VIP
+                            VIP Free
                           </button>
 
                           <button
                             onClick={() => handleRewardReferral(u)}
-                            className="px-2.5 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer flex items-center gap-1"
+                            className="px-2 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer flex items-center gap-0.5"
+                            title="Reward +30 Days Free for Referral"
                           >
                             <Gift className="size-3" />
-                            <span>+30d Ref Bonus</span>
+                            <span>+30d Ref</span>
                           </button>
 
                           <button
@@ -537,7 +590,7 @@ function AdminPage() {
 
                           <button
                             onClick={() => setPendingDeleteUser(u)}
-                            className="p-1 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer ml-auto"
+                            className="p-1.5 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer ml-auto"
                             title="Remove User Account"
                           >
                             <Trash2 className="size-3.5" />
@@ -649,104 +702,310 @@ function AdminPage() {
           </div>
         )}
 
-        {/* ================= TAB 4: CONFIG & PRICING ================= */}
+        {/* ================= TAB 4: PRICING & CASHFREE SETUP ================= */}
         {activeTab === "pricing" && (
-          <form
-            onSubmit={handleSaveConfig}
-            className="bg-card card-shadow rounded-3xl p-5 border border-border/40 space-y-4 animate-in fade-in duration-200"
-          >
-            <div>
-              <h2 className="text-base font-bold font-display">Subscription Pricing & Trial Setup</h2>
-              <p className="text-xs text-muted-foreground">
-                Changes made here take effect immediately for all new and renewing users.
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Cashfree Activation Guide Card */}
+            <div className="bg-primary/5 border border-primary/30 rounded-3xl p-4 sm:p-5 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <CreditCard className="size-5 text-primary" />
+                <h3 className="font-display font-bold text-sm text-foreground">
+                  Cashfree Payment Gateway Activation Guide
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                To accept automatic credit card, netbanking, and UPI payments directly in the app:
               </p>
+              <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1 pl-1">
+                <li>Register a merchant account at <strong className="text-foreground">merchant.cashfree.com</strong>.</li>
+                <li>Go to <strong className="text-foreground">Developers → API Keys</strong>.</li>
+                <li>Copy your <strong className="text-foreground">App ID</strong> and <strong className="text-foreground">Secret Key</strong> and paste them below.</li>
+                <li>Set Environment to <strong className="text-foreground">TEST (Sandbox)</strong> for testing, then switch to <strong className="text-foreground">PROD (Live)</strong>.</li>
+              </ol>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Default Free Trial Duration (Days)
-                </label>
-                <input
-                  type="number"
-                  value={configForm.trialDays}
-                  onChange={(e) => setConfigForm({ ...configForm, trialDays: Number(e.target.value) })}
-                  className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
-                />
-                <span className="text-[10px] text-muted-foreground">New signups get 30 days free by default.</span>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Monthly Plan Price (₹)
-                </label>
-                <input
-                  type="number"
-                  value={configForm.monthlyPrice}
-                  onChange={(e) => setConfigForm({ ...configForm, monthlyPrice: Number(e.target.value) })}
-                  className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Yearly Plan Offer Price (₹)
-                </label>
-                <input
-                  type="number"
-                  value={configForm.yearlyPrice}
-                  onChange={(e) => setConfigForm({ ...configForm, yearlyPrice: Number(e.target.value) })}
-                  className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
-                />
-                <span className="text-[10px] text-emerald-600 font-semibold">Special Discounted Yearly Rate</span>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Yearly Original Price (₹ Strike-through)
-                </label>
-                <input
-                  type="number"
-                  value={configForm.yearlyOriginalPrice}
-                  onChange={(e) => setConfigForm({ ...configForm, yearlyOriginalPrice: Number(e.target.value) })}
-                  className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Support / Payment WhatsApp Number
-                </label>
-                <input
-                  type="text"
-                  value={configForm.supportWhatsapp}
-                  onChange={(e) => setConfigForm({ ...configForm, supportWhatsapp: e.target.value })}
-                  placeholder="e.g. 919876543210 (with country code)"
-                  className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Developer UPI ID (GPay / PhonePe)
-                </label>
-                <input
-                  type="text"
-                  value={configForm.supportUpiId || ""}
-                  onChange={(e) => setConfigForm({ ...configForm, supportUpiId: e.target.value })}
-                  placeholder="e.g. yourname@okaxis"
-                  className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-2xl saree-gradient text-white text-xs font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition cursor-pointer uppercase tracking-wider"
+            <form
+              onSubmit={handleSaveConfig}
+              className="bg-card card-shadow rounded-3xl p-5 border border-border/40 space-y-4"
             >
-              Save Configuration Changes
-            </button>
-          </form>
+              <div>
+                <h2 className="text-base font-bold font-display">Subscription Pricing & Gateway Settings</h2>
+                <p className="text-xs text-muted-foreground">
+                  Changes made here take effect immediately across all client devices.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Default Free Trial Duration (Days)
+                  </label>
+                  <input
+                    type="number"
+                    value={configForm.trialDays}
+                    onChange={(e) => setConfigForm({ ...configForm, trialDays: Number(e.target.value) })}
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                  <span className="text-[10px] text-muted-foreground">New signups get 30 days free by default.</span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Monthly Plan Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={configForm.monthlyPrice}
+                    onChange={(e) => setConfigForm({ ...configForm, monthlyPrice: Number(e.target.value) })}
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Yearly Plan Offer Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={configForm.yearlyPrice}
+                    onChange={(e) => setConfigForm({ ...configForm, yearlyPrice: Number(e.target.value) })}
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                  <span className="text-[10px] text-emerald-600 font-semibold">Special Discounted Yearly Rate</span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Yearly Original Price (₹ Strike-through)
+                  </label>
+                  <input
+                    type="number"
+                    value={configForm.yearlyOriginalPrice}
+                    onChange={(e) => setConfigForm({ ...configForm, yearlyOriginalPrice: Number(e.target.value) })}
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Cashfree App ID (Client ID)
+                  </label>
+                  <input
+                    type="text"
+                    value={configForm.cashfreeAppId || ""}
+                    onChange={(e) => setConfigForm({ ...configForm, cashfreeAppId: e.target.value })}
+                    placeholder="e.g. TEST1038493..."
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Cashfree Secret Key
+                  </label>
+                  <input
+                    type="password"
+                    value={configForm.cashfreeSecretKey || ""}
+                    onChange={(e) => setConfigForm({ ...configForm, cashfreeSecretKey: e.target.value })}
+                    placeholder="••••••••••••••••••••••••••••••"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Support / Payment WhatsApp Number
+                  </label>
+                  <input
+                    type="text"
+                    value={configForm.supportWhatsapp}
+                    onChange={(e) => setConfigForm({ ...configForm, supportWhatsapp: e.target.value })}
+                    placeholder="e.g. 919876543210 (with country code)"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Developer UPI ID (GPay / PhonePe)
+                  </label>
+                  <input
+                    type="text"
+                    value={configForm.supportUpiId || ""}
+                    onChange={(e) => setConfigForm({ ...configForm, supportUpiId: e.target.value })}
+                    placeholder="e.g. manirajankg@okaxis"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl saree-gradient text-white text-xs font-bold shadow-md hover:opacity-95 active:scale-[0.98] transition cursor-pointer uppercase tracking-wider"
+              >
+                Save Configuration Changes
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Modal: Interactive Edit User Plan */}
+        {editingUser && (
+          <div
+            className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setEditingUser(null)}
+          >
+            <form
+              onSubmit={handleSaveUserPlan}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-display font-bold text-base text-foreground">Edit User Plan & Access</h3>
+                  <p className="text-xs text-muted-foreground">{editingUser.email}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="size-7 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Plan Selector Chips */}
+              <div>
+                <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                  Select Subscription Plan
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(["trial", "monthly", "yearly", "lifetime_free", "suspended"] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        setEditPlanType(p);
+                        if (p === "monthly") {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 30);
+                          setEditExpiryDate(d.toISOString().slice(0, 10));
+                        } else if (p === "yearly") {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 365);
+                          setEditExpiryDate(d.toISOString().slice(0, 10));
+                        } else if (p === "trial") {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 30);
+                          setEditExpiryDate(d.toISOString().slice(0, 10));
+                        } else if (p === "lifetime_free") {
+                          setEditExpiryDate("");
+                        }
+                      }}
+                      className={cn(
+                        "py-2 px-1 text-center rounded-xl text-xs font-bold border transition cursor-pointer capitalize",
+                        editPlanType === p
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-secondary text-foreground border-transparent hover:bg-secondary/80",
+                      )}
+                    >
+                      {p.replace("_", " ")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Extend Buttons */}
+              {editPlanType !== "lifetime_free" && editPlanType !== "suspended" && (
+                <div>
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                    Quick Expiry Set
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 30);
+                        setEditExpiryDate(d.toISOString().slice(0, 10));
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
+                    >
+                      +30 Days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 90);
+                        setEditExpiryDate(d.toISOString().slice(0, 10));
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
+                    >
+                      +90 Days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 365);
+                        setEditExpiryDate(d.toISOString().slice(0, 10));
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
+                    >
+                      +1 Year (365d)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Date Input */}
+              {editPlanType !== "lifetime_free" && (
+                <div>
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Plan Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editExpiryDate}
+                    onChange={(e) => setEditExpiryDate(e.target.value)}
+                    className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-primary"
+                  />
+                </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                  Admin Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="e.g. Paid ₹1,999 via GPay on 29 Aug"
+                  className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl saree-gradient text-white text-xs font-bold shadow-sm cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
         {/* Modal: Create Coupon */}
@@ -888,7 +1147,8 @@ function AdminPage() {
             </form>
           </div>
         )}
-        {/* Delete User Confirmation Dialog */}
+
+        {/* Modal: Delete User Confirmation Dialog */}
         {pendingDeleteUser && (
           <div
             className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"

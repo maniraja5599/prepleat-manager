@@ -62,6 +62,7 @@ export interface SystemSubscriptionConfig {
   supportWhatsapp: string; // e.g. "919000000000"
   supportUpiId?: string; // e.g. "manirajankg@upi"
   cashfreeAppId?: string;
+  cashfreeSecretKey?: string;
   cashfreeEnv?: "TEST" | "PROD";
 }
 
@@ -382,7 +383,7 @@ export async function updateUserPlan(
   uid: string,
   plan: SubscriptionPlan,
   daysToAdd?: number,
-  customExpiry?: string,
+  customExpiry?: string | null,
   isApproved: boolean = true,
   notes?: string,
 ) {
@@ -392,12 +393,12 @@ export async function updateUserPlan(
   if (!snap.exists()) return;
 
   const current = snap.data() as UserProfile;
-  let newExpiry = current.planExpiresAt || new Date().toISOString();
+  let newExpiry: string | null = null;
 
   if (plan === "lifetime_free") {
-    newExpiry = null as any;
+    newExpiry = null;
   } else if (customExpiry) {
-    newExpiry = customExpiry;
+    newExpiry = new Date(customExpiry).toISOString();
   } else if (daysToAdd) {
     const baseDate =
       current.planExpiresAt && new Date(current.planExpiresAt) > new Date()
@@ -405,9 +406,18 @@ export async function updateUserPlan(
         : new Date();
     baseDate.setDate(baseDate.getDate() + daysToAdd);
     newExpiry = baseDate.toISOString();
+  } else {
+    // If switching plan without explicit days, give default period (30 days for monthly/trial, 365 days for yearly)
+    const defaultDays = plan === "yearly" ? 365 : 30;
+    const baseDate =
+      current.planExpiresAt && new Date(current.planExpiresAt) > new Date()
+        ? new Date(current.planExpiresAt)
+        : new Date();
+    baseDate.setDate(baseDate.getDate() + defaultDays);
+    newExpiry = baseDate.toISOString();
   }
 
-  const updates: Partial<UserProfile> = {
+  const updates: any = {
     plan,
     planExpiresAt: newExpiry,
     isApproved,

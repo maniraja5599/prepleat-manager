@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.1";
+export const APP_VERSION = "1.9.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.1",
+    version: "v1.9.2",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Interactive User Plan Editor, Custom Expiry Date Picker & Cashfree Guide",
+    badge: "LATEST UPDATE 🛠️",
+    changes: [
+      {
+        emoji: "✏️",
+        text: "Interactive User Plan & Expiry Editor",
+        desc: "Admin can now open a full editing modal on any user to switch between Trial, Monthly, Yearly, VIP Lifetime, or Suspended, set custom expiry dates with a calendar picker, and add admin notes.",
+      },
+      {
+        emoji: "💳",
+        text: "Cashfree Payment Gateway Integration Guide",
+        desc: "Added step-by-step Cashfree merchant activation guide with App ID, Secret Key, and live environment configuration in Admin Settings.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.1",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Refer & Earn Free Months, 30-Day Trial Welcome Modal & User Management",
     badge: "LATEST UPDATE 🎁",
     changes: [
