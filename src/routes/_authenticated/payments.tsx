@@ -2395,8 +2395,8 @@ function SummaryView(p: {
           </div>
         )}
 
-        {/* Fixed Width Full-Bleed Revenue Chart */}
-        <div className="h-56 w-full -mx-1.5">
+        {/* Fixed Width Full-Bleed Revenue Chart with Left Y-Axis */}
+        <div className="h-56 w-full -mx-1">
           {trendDataWithCumulative.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
@@ -2405,7 +2405,7 @@ function SummaryView(p: {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={trendDataWithCumulative}
-                margin={{ top: 8, right: -18, left: -26, bottom: 0 }}
+                margin={{ top: 8, right: 6, left: -22, bottom: 0 }}
                 onClick={(e: any) => {
                   if (e && e.activePayload && e.activePayload.length) {
                     setActiveChartMonth(e.activePayload[0].payload);
@@ -2420,23 +2420,13 @@ function SummaryView(p: {
                   fontSize={9}
                   tickLine={false}
                   interval={0}
-                  padding={{ left: 2, right: 2 }}
+                  padding={{ left: 4, right: 4 }}
                 />
                 <YAxis
                   yAxisId="left"
-                  width={28}
+                  width={34}
                   stroke="currentColor"
                   opacity={0.6}
-                  fontSize={9}
-                  tickLine={false}
-                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
-                />
-                <YAxis
-                  yAxisId="right"
-                  width={28}
-                  orientation="right"
-                  stroke="currentColor"
-                  opacity={0.4}
                   fontSize={9}
                   tickLine={false}
                   tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
@@ -2478,7 +2468,7 @@ function SummaryView(p: {
                   radius={[3, 3, 0, 0]}
                 />
                 <Line
-                  yAxisId="right"
+                  yAxisId="left"
                   type="monotone"
                   dataKey="cumulative"
                   name="Cumulative"
@@ -2503,41 +2493,43 @@ function SummaryView(p: {
       </div>
 
       {/* Period Selector & Modern Visual Sub-Tab Switcher */}
-      <div className="space-y-2 mb-3">
-        {/* Year Filter Segmented Strip */}
+      <div className="space-y-2 mb-3 max-w-full overflow-hidden">
+        {/* Compact Year Filter Segmented Strip (No Overflow) */}
         <div className="flex items-center justify-between gap-2 px-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Analytics Period
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground shrink-0">
+            Period
           </span>
-          <div className="flex items-center gap-1 bg-secondary/80 p-0.5 rounded-xl border border-border/30">
-            <button
-              type="button"
-              onClick={() => setSelectedYear("all")}
-              className={cn(
-                "px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer",
-                selectedYear === "all"
-                  ? "bg-card text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              All Time
-            </button>
-            {availableYears.map((yr) => (
+          {availableYears.length > 0 && (
+            <div className="flex items-center gap-1 bg-secondary/80 p-0.5 rounded-xl border border-border/30 max-w-[200px] overflow-x-auto no-scrollbar shrink-0">
               <button
-                key={yr}
                 type="button"
-                onClick={() => setSelectedYear(yr)}
+                onClick={() => setSelectedYear("all")}
                 className={cn(
-                  "px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer",
-                  selectedYear === yr
+                  "px-2 py-0.5 rounded-lg text-[9.5px] font-bold transition shrink-0 cursor-pointer",
+                  selectedYear === "all"
                     ? "bg-card text-foreground shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {yr}
+                All Time
               </button>
-            ))}
-          </div>
+              {availableYears.map((yr) => (
+                <button
+                  key={yr}
+                  type="button"
+                  onClick={() => setSelectedYear(yr)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-lg text-[9.5px] font-bold transition shrink-0 cursor-pointer",
+                    selectedYear === yr
+                      ? "bg-card text-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {yr}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 5-Card Visual Segmented Navigator */}

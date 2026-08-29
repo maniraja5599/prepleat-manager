@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.0";
+export const APP_VERSION = "1.8.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.0",
+    version: "v1.8.1",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Left-Only Y-Axis Clarity & Non-Overflowing Stable Period Bar",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Clean Left-Only Y-Axis",
+        desc: "Consolidated all revenue and cumulative line amounts onto the left Y-axis, eliminating right-side clipping and clutter.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Zero-Overflow Analytics Period Bar",
+        desc: "Compacted period selector strip with guaranteed layout stability and zero horizontal screen wobble on all devices.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.0",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Full-Width Flush X-Axis & Expanded Right Margin Elimination",
     badge: "LATEST UPDATE ✨",
     changes: [
