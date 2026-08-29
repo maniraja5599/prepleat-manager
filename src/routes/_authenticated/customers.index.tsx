@@ -61,29 +61,8 @@ function CustomersPage() {
   const [locationUrl, setLocationUrl] = useState("");
   const [showMapPicker, setShowMapPicker] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [detectedClipboardPhone, setDetectedClipboardPhone] = useState<string | null>(null);
 
-  // Check clipboard when showAdd is opened or window focused
-  useEffect(() => {
-    const checkClipboard = async () => {
-      try {
-        if (typeof navigator === "undefined" || !navigator.clipboard?.readText) return;
-        const text = await navigator.clipboard.readText();
-        const cleaned = sanitizeIndianPhone(text);
-        if (isValidIndianMobile(cleaned) && cleaned !== phone) {
-          setDetectedClipboardPhone(cleaned);
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    if (showAdd) {
-      checkClipboard();
-    }
-    window.addEventListener("focus", checkClipboard);
-    return () => window.removeEventListener("focus", checkClipboard);
-  }, [showAdd, phone]);
+  // Background clipboard polling removed to prevent iOS "Paste" callouts on focus
 
   const handlePasteCustomerPhone = async () => {
     try {
@@ -91,7 +70,6 @@ function CustomersPage() {
       const cleaned = sanitizeIndianPhone(text);
       if (cleaned) {
         setPhone(cleaned);
-        setDetectedClipboardPhone(null);
         toast.success(`Pasted: ${cleaned}`);
       } else {
         toast.error("No valid phone number found in clipboard");
@@ -561,39 +539,6 @@ function CustomersPage() {
 
       {showAdd && (
         <div className="bg-card card-shadow rounded-2xl p-3 mb-3 space-y-2">
-          {/* Smart Clipboard Auto-Fill Pill */}
-          {detectedClipboardPhone && !phone && (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-primary/10 border border-primary/25 text-xs animate-in fade-in">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Clipboard className="size-3.5 text-primary shrink-0" />
-                <span className="text-[11px] text-muted-foreground">Copied:</span>
-                <span className="font-bold font-mono text-primary text-xs tracking-wide">
-                  {detectedClipboardPhone}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhone(detectedClipboardPhone);
-                    setDetectedClipboardPhone(null);
-                    toast.success(`Auto-filled: ${detectedClipboardPhone}`);
-                  }}
-                  className="px-2 py-0.5 rounded-lg saree-gradient text-white text-[10px] font-bold cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1"
-                >
-                  <span>⚡ Auto-Fill</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDetectedClipboardPhone(null)}
-                  className="size-4.5 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-2">
             <input
               value={name}

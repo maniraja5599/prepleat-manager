@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.2";
+export const APP_VERSION = "1.8.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.2",
+    version: "v1.8.3",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "iOS Safari Touch Safety & Native Paste Prompt Elimination",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📱",
+        text: "iOS Clean Customer Selection",
+        desc: "Eliminated automatic background clipboard polling on focus/mount, completely removing the unwanted iOS Safari 'Paste' prompt when selecting customers or tapping input fields.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Production Bug Audit & Verification",
+        desc: "Added touch-safe event handlers and selection prevention to all customer dropdowns and list items across the app.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.2",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Complete Y-Axis Label Visibility & Proper Left Margin Alignment",
     badge: "LATEST UPDATE ✨",
     changes: [

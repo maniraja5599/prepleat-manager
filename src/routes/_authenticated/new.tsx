@@ -401,27 +401,7 @@ function NewBooking() {
     }
   }, [presetArtistId, artists]);
 
-  const [detectedClipboardPhone, setDetectedClipboardPhone] = useState<string | null>(null);
-
-  // Check clipboard on mount and when window gains focus (switching from Call Log / WhatsApp)
-  useEffect(() => {
-    const checkClipboardForPhone = async () => {
-      try {
-        if (typeof navigator === "undefined" || !navigator.clipboard?.readText) return;
-        const text = await navigator.clipboard.readText();
-        const cleaned = sanitizeIndianPhone(text);
-        if (isValidIndianMobile(cleaned) && cleaned !== newPhone) {
-          setDetectedClipboardPhone(cleaned);
-        }
-      } catch {
-        // Clipboard read not permitted without user interaction or empty
-      }
-    };
-
-    checkClipboardForPhone();
-    window.addEventListener("focus", checkClipboardForPhone);
-    return () => window.removeEventListener("focus", checkClipboardForPhone);
-  }, [newPhone]);
+  // Note: Background clipboard polling removed to prevent iOS Safari "Paste" callout on tap
 
   const handlePasteClick = async () => {
     try {
@@ -429,7 +409,6 @@ function NewBooking() {
       const cleaned = sanitizeIndianPhone(text);
       if (cleaned) {
         setNewPhone(cleaned);
-        setDetectedClipboardPhone(null);
         toast.success(`Pasted: ${cleaned}`);
       } else {
         toast.error("No valid phone number found in clipboard");
@@ -1032,7 +1011,7 @@ function NewBooking() {
                   className="w-full bg-secondary rounded-full pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {nameFocus && nameSuggestions.length > 0 && (
-                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto select-none">
                     {nameSuggestions.map((c) => (
                       <li key={c.id}>
                         <button
@@ -1041,17 +1020,21 @@ function NewBooking() {
                             e.preventDefault();
                             pickCustomer(c);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-secondary"
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            pickCustomer(c);
+                          }}
+                          className="w-full text-left px-3.5 py-2.5 hover:bg-secondary active:bg-secondary cursor-pointer select-none touch-manipulation"
                         >
-                          <p className="text-sm font-medium">{c.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                          <p className="text-sm font-medium select-none pointer-events-none">{c.name}</p>
+                          <p className="text-[11px] text-muted-foreground select-none pointer-events-none">{c.phone}</p>
                         </button>
                       </li>
                     ))}
                   </ul>
                 )}
                 {showExisting && !newName.trim() && existingList.length > 0 && (
-                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto select-none">
                     {existingList.map((c) => (
                       <li key={c.id}>
                         <button
@@ -1061,49 +1044,21 @@ function NewBooking() {
                             pickCustomer(c);
                             setShowExisting(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-secondary"
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            pickCustomer(c);
+                            setShowExisting(false);
+                          }}
+                          className="w-full text-left px-3.5 py-2.5 hover:bg-secondary active:bg-secondary cursor-pointer select-none touch-manipulation"
                         >
-                          <p className="text-sm font-medium">{c.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                          <p className="text-sm font-medium select-none pointer-events-none">{c.name}</p>
+                          <p className="text-[11px] text-muted-foreground select-none pointer-events-none">{c.phone}</p>
                         </button>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              {/* Smart Clipboard Auto-Fill Pill */}
-              {detectedClipboardPhone && !newPhone && (
-                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-primary/10 border border-primary/25 animate-in fade-in slide-in-from-top-1 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Clipboard className="size-3.5 text-primary shrink-0" />
-                    <span className="text-[11px] text-muted-foreground">Copied:</span>
-                    <span className="font-bold font-mono text-primary text-xs tracking-wide">
-                      {detectedClipboardPhone}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewPhone(detectedClipboardPhone);
-                        setDetectedClipboardPhone(null);
-                        setShowPhone(true);
-                        toast.success(`Auto-filled: ${detectedClipboardPhone}`);
-                      }}
-                      className="px-2.5 py-1 rounded-xl saree-gradient text-white text-[10px] font-bold cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1"
-                    >
-                      <span>⚡ Auto-Fill</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDetectedClipboardPhone(null)}
-                      className="size-5 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {showPhone && (
                 <div>
