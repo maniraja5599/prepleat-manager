@@ -2395,97 +2395,92 @@ function SummaryView(p: {
           </div>
         )}
 
-        {/* Horizontal Scrollable Chart Area for Greater Length */}
-        <div className="overflow-x-auto no-scrollbar pb-1 -mx-1">
-          <div className="min-w-[620px] h-60">
-            {trendDataWithCumulative.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
-                No financial data yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={trendDataWithCumulative}
-                  margin={{ top: 8, right: 10, left: -20, bottom: 0 }}
-                  onClick={(e: any) => {
-                    if (e && e.activePayload && e.activePayload.length) {
-                      setActiveChartMonth(e.activePayload[0].payload);
+        {/* Fixed Width Full-Bleed Revenue Chart */}
+        <div className="h-56 w-full -mx-1">
+          {trendDataWithCumulative.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+              No financial data yet
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={trendDataWithCumulative}
+                margin={{ top: 8, right: 6, left: -24, bottom: 0 }}
+                onClick={(e: any) => {
+                  if (e && e.activePayload && e.activePayload.length) {
+                    setActiveChartMonth(e.activePayload[0].payload);
+                  }
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
+                <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={9} tickLine={false} interval={0} />
+                <YAxis
+                  yAxisId="left"
+                  stroke="currentColor"
+                  opacity={0.6}
+                  fontSize={9}
+                  tickLine={false}
+                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="currentColor"
+                  opacity={0.4}
+                  fontSize={9}
+                  tickLine={false}
+                  tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+                />
+                <Tooltip
+                  cursor={{ fill: "currentColor", opacity: 0.05 }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0]?.payload || {};
+                      const cum = Number(data.cumulative) || 0;
+                      return (
+                        <div className="rounded-xl bg-card/95 backdrop-blur border border-border px-3 py-1.5 shadow-lg text-[11px] space-y-0.5 pointer-events-none">
+                          <p className="font-bold text-foreground">{label}</p>
+                          <p className="text-primary font-extrabold tabular-nums">
+                            Cumulative: {fmtINR(cum)}
+                          </p>
+                        </div>
+                      );
                     }
+                    return null;
                   }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.12} />
-                  <XAxis dataKey="month" stroke="currentColor" opacity={0.6} fontSize={10} tickLine={false} />
-                  <YAxis
-                    yAxisId="left"
-                    stroke="currentColor"
-                    opacity={0.6}
-                    fontSize={10}
-                    tickLine={false}
-                    tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="currentColor"
-                    opacity={0.4}
-                    fontSize={9}
-                    tickLine={false}
-                    tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "currentColor", opacity: 0.05 }}
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0]?.payload || {};
-                        const cum = Number(data.cumulative) || 0;
-                        return (
-                          <div className="rounded-xl bg-card/95 backdrop-blur border border-border px-3 py-1.5 shadow-lg text-[11px] space-y-0.5 pointer-events-none">
-                            <p className="font-bold text-foreground">{label}</p>
-                            <p className="text-primary font-extrabold tabular-nums">
-                              Cumulative: {fmtINR(cum)}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="amount"
-                    name="Income"
-                    stackId="monthlyBar"
-                    fill="#10b981"
-                    barSize={16}
-                    radius={[0, 0, 2, 2]}
-                  />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="expense"
-                    name="Expense"
-                    stackId="monthlyBar"
-                    fill="#f43f5e"
-                    barSize={16}
-                    radius={[3, 3, 0, 0]}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="cumulative"
-                    name="Cumulative"
-                    stroke="var(--color-primary)"
-                    strokeWidth={2}
-                    dot={{ r: 1.2, fill: "var(--color-primary)" }}
-                    activeDot={{ r: 3.5 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+                />
+                <Bar
+                  yAxisId="left"
+                  dataKey="amount"
+                  name="Income"
+                  stackId="monthlyBar"
+                  fill="#10b981"
+                  barSize={12}
+                  radius={[0, 0, 2, 2]}
+                />
+                <Bar
+                  yAxisId="left"
+                  dataKey="expense"
+                  name="Expense"
+                  stackId="monthlyBar"
+                  fill="#f43f5e"
+                  barSize={12}
+                  radius={[3, 3, 0, 0]}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="cumulative"
+                  name="Cumulative"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2}
+                  dot={{ r: 1.2, fill: "var(--color-primary)" }}
+                  activeDot={{ r: 3.5 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
         </div>
-        <p className="text-[8.5px] text-muted-foreground text-center mt-1">
-          ← Swipe horizontally to explore all 12 months →
-        </p>
 
         {/* Single Latest Milestone badge */}
         {latestMilestone && (
@@ -2497,86 +2492,72 @@ function SummaryView(p: {
         )}
       </div>
 
-      {/* Summary Sub-Tabs Navigation & Year Period Selector */}
-      <div className="flex items-center gap-1.5 mb-2.5">
-        <div className="flex-1 flex bg-secondary p-1 rounded-2xl gap-1 card-shadow overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setSummarySubTab("overview")}
-            className={cn(
-              "flex-1 min-w-[60px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
-              summarySubTab === "overview"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            📊 Growth
-          </button>
-          <button
-            type="button"
-            onClick={() => setSummarySubTab("months")}
-            className={cn(
-              "flex-1 min-w-[65px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
-              summarySubTab === "months"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            📅 Months
-          </button>
-          <button
-            type="button"
-            onClick={() => setSummarySubTab("services")}
-            className={cn(
-              "flex-1 min-w-[60px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
-              summarySubTab === "services"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            🥻 Services
-          </button>
-          <button
-            type="button"
-            onClick={() => setSummarySubTab("clients")}
-            className={cn(
-              "flex-1 min-w-[55px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
-              summarySubTab === "clients"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            👑 VIPs
-          </button>
-          <button
-            type="button"
-            onClick={() => setSummarySubTab("modes")}
-            className={cn(
-              "flex-1 min-w-[55px] py-1.5 rounded-xl text-[10.5px] font-bold transition cursor-pointer text-center whitespace-nowrap",
-              summarySubTab === "modes"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            💳 Cash
-          </button>
+      {/* Period Selector & Modern Visual Sub-Tab Switcher */}
+      <div className="space-y-2 mb-3">
+        {/* Year Filter Segmented Strip */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Analytics Period
+          </span>
+          <div className="flex items-center gap-1 bg-secondary/80 p-0.5 rounded-xl border border-border/30">
+            <button
+              type="button"
+              onClick={() => setSelectedYear("all")}
+              className={cn(
+                "px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer",
+                selectedYear === "all"
+                  ? "bg-card text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              All Time
+            </button>
+            {availableYears.map((yr) => (
+              <button
+                key={yr}
+                type="button"
+                onClick={() => setSelectedYear(yr)}
+                className={cn(
+                  "px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer",
+                  selectedYear === yr
+                    ? "bg-card text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {yr}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Year Filter Pill */}
-        {availableYears.length > 1 && (
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="text-[10px] font-bold bg-card border border-border/40 rounded-2xl px-2 py-2 text-foreground cursor-pointer outline-none shrink-0"
-          >
-            <option value="all">All Years</option>
-            {availableYears.map((yr) => (
-              <option key={yr} value={yr}>
-                {yr}
-              </option>
-            ))}
-          </select>
-        )}
+        {/* 5-Card Visual Segmented Navigator */}
+        <div className="grid grid-cols-5 gap-1.5 bg-card card-shadow p-1.5 rounded-2xl border border-border/40">
+          {[
+            { id: "overview", label: "Growth", emoji: "📊" },
+            { id: "months", label: "Months", emoji: "📅" },
+            { id: "services", label: "Services", emoji: "🥻" },
+            { id: "clients", label: "VIPs", emoji: "👑" },
+            { id: "modes", label: "Cash", emoji: "💳" },
+          ].map((tab) => {
+            const isActive = summarySubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSummarySubTab(tab.id as any)}
+                className={cn(
+                  "flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer select-none text-center gap-1 active:scale-95",
+                  isActive
+                    ? "saree-gradient text-white font-bold shadow-xs ring-1 ring-white/20"
+                    : "bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                )}
+              >
+                <span className="text-sm">{tab.emoji}</span>
+                <span className="text-[10px] tracking-tight leading-tight">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* SUB-TAB 1: 📊 Overview & Performance */}

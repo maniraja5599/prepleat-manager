@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.7.8";
+export const APP_VERSION = "1.7.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v1.7.9",
+    date: "29 Aug 2026",
+    isLatest: true,
+    title: "Fixed Wide Revenue Chart & Redesigned Visual Analytics Switcher",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Fixed Wide Full-Bleed Revenue Chart",
+        desc: "Chart now fits standard 100% card width without horizontal scrolling, with optimized bar widths and generous full-bleed spacing.",
+      },
+      {
+        emoji: "🎨",
+        text: "Modern 5-Tile Visual Sub-Tab Navigator",
+        desc: "Redesigned summary sub-tabs into modern visual tiles with gradient active states, emoji icons, and 1-tap quick year switcher pills.",
+      },
+    ],
+  },
+  {
     version: "v1.7.8",
     date: "28 Aug 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Expanded Horizontal Chart, Clean Cumulative Tooltip & Dedicated Monthly Matrix",
     badge: "LATEST UPDATE ✨",
     changes: [
