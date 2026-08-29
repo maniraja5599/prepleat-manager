@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.5";
+export const APP_VERSION = "1.8.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.5",
+    version: "v1.8.6",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Inline Category Header Creator & Manager in Quick Entry",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "🏷️",
+        text: "Direct Category Header Creation",
+        desc: "Add new income and expense categories instantly inside Quick Entry with auto-selection and instant cloud sync.",
+      },
+      {
+        emoji: "✂️",
+        text: "Inline Category Management",
+        desc: "Easily delete or manage existing category headers right from the transaction sheet without going to settings.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.5",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Clean Calendar Grid & Interactive Day Booking Action Card",
     badge: "LATEST UPDATE ✨",
     changes: [

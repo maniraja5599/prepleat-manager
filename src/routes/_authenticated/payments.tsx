@@ -3319,6 +3319,179 @@ function SummaryView(p: {
   );
 }
 
+// === Inline Category Header Creator & Manager for Extra Income / Expense ===
+function CategoryPickerWithManager({
+  type,
+  category,
+  onSelectCategory,
+}: {
+  type: "income" | "expense";
+  category: string;
+  onSelectCategory: (cat: string) => void;
+}) {
+  const settings = useStore((s) => s.settings);
+  const updateSettings = useStore((s) => s.updateSettings);
+
+  const isIncome = type === "income";
+  const rawList = isIncome ? (settings.incomeCategories ?? []) : (settings.expenseCategories ?? []);
+  const list = rawList.length > 0 ? rawList : isIncome ? ["Tips", "Sale", "Other Income"] : ["Material", "Travel", "Other"];
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+
+  const handleAdd = () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    if (list.some((c) => c.toLowerCase() === name.toLowerCase())) {
+      toast.error(`"${name}" category already exists!`);
+      onSelectCategory(name);
+      setIsAdding(false);
+      setNewCatName("");
+      return;
+    }
+
+    const updated = Array.from(new Set([...rawList, name]));
+    if (isIncome) {
+      updateSettings({ incomeCategories: updated });
+    } else {
+      updateSettings({ expenseCategories: updated });
+    }
+    onSelectCategory(name);
+    setIsAdding(false);
+    setNewCatName("");
+    toast.success(`Added "${name}" header!`);
+  };
+
+  const handleRemove = (catToRemove: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = rawList.filter((c) => c !== catToRemove);
+    if (isIncome) {
+      updateSettings({ incomeCategories: updated });
+    } else {
+      updateSettings({ expenseCategories: updated });
+    }
+    if (category === catToRemove) {
+      onSelectCategory(updated[0] ?? (isIncome ? "Other Income" : "Other"));
+    }
+    toast.success(`Removed "${catToRemove}" header`);
+  };
+
+  return (
+    <div className="mb-3 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Category Header
+        </label>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdding((v) => !v);
+              if (isManaging) setIsManaging(false);
+            }}
+            className="text-[10px] font-bold text-primary hover:underline cursor-pointer flex items-center gap-0.5"
+          >
+            <Plus className="size-3" />
+            <span>{isAdding ? "Cancel" : "Add Header"}</span>
+          </button>
+          {list.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsManaging((v) => !v);
+                if (isAdding) setIsAdding(false);
+              }}
+              className={cn(
+                "text-[10px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition",
+                isManaging ? "bg-destructive/10 text-destructive" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {isManaging ? "Done" : "Manage"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isAdding && (
+        <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-secondary border border-border animate-in fade-in slide-in-from-top-1">
+          <input
+            autoFocus
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAdd();
+              }
+            }}
+            placeholder={`New ${isIncome ? "income" : "expense"} header (e.g. Travel)`}
+            className="flex-1 bg-background rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-2xs transition cursor-pointer active:scale-95 shrink-0",
+              isIncome ? "bg-success" : "bg-destructive"
+            )}
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdding(false);
+              setNewCatName("");
+            }}
+            className="size-7 rounded-lg hover:bg-background flex items-center justify-center text-muted-foreground text-xs cursor-pointer shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Category Chips */}
+      <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+        {list.map((c) => {
+          const active = category === c;
+          return (
+            <div
+              key={c}
+              className={cn(
+                "inline-flex items-center rounded-full text-xs font-semibold transition-all duration-200 shadow-2xs",
+                active
+                  ? isIncome
+                    ? "bg-success text-white shadow-sm"
+                    : "bg-destructive text-white shadow-sm"
+                  : "bg-secondary text-foreground hover:bg-secondary/80",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => onSelectCategory(c)}
+                className="px-3 py-1.5 cursor-pointer text-left"
+              >
+                {c}
+              </button>
+              {isManaging && (
+                <button
+                  type="button"
+                  onClick={(e) => handleRemove(c, e)}
+                  className="pr-2 pl-0.5 hover:opacity-80 cursor-pointer text-xs font-bold text-white/80 hover:text-white"
+                  title={`Remove ${c}`}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // === Edit Transaction Sheet ===
 function EditTransactionSheet({
   tx,
@@ -3396,18 +3569,13 @@ function EditTransactionSheet({
           <input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="bg-transparent flex-1 pl-1 text-2xl font-bold tabular-nums focus:outline-none" />
         </div>
 
-        {/* Category Selection */}
+        {/* Category Header Manager */}
         {tx.sourceType !== "booking_payment" && (
-          <div className="mb-3">
-            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Category</label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {categories.map((c) => (
-                <button key={c} onClick={() => setCategory(c)} className={cn("px-3 py-1.5 rounded-full text-xs font-semibold transition border cursor-pointer", category === c ? (isIncome ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30") : "bg-secondary text-foreground border-transparent hover:bg-secondary/80")}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
+          <CategoryPickerWithManager
+            type={isIncome ? "income" : "expense"}
+            category={category}
+            onSelectCategory={setCategory}
+          />
         )}
 
         {/* Date and Mode */}
@@ -3595,48 +3763,12 @@ function AddTransactionSheet({
           />
         </div>
 
-        {/* Category Selector */}
-        <div className="flex items-baseline justify-between mb-1">
-          <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Category
-          </label>
-          {categories.length === 0 && (
-            <span className="text-[9px] text-destructive font-medium">
-              No custom categories set
-            </span>
-          )}
-        </div>
-
-        {categories.length === 0 ? (
-          <div className="bg-secondary rounded-xl p-3 text-center mb-3 text-xs text-muted-foreground">
-            {isIncome
-              ? "Add income categories in Settings → Headers"
-              : "Add expense categories in Settings → Pricing"}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-1.5 mt-1 mb-3 max-h-32 overflow-y-auto pr-1">
-            {categories.map((c) => {
-              const active = category === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCategory(c)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 cursor-pointer",
-                    active
-                      ? isIncome
-                        ? "bg-success text-white shadow-sm"
-                        : "bg-destructive text-white shadow-sm"
-                      : "bg-secondary text-foreground hover:bg-secondary/80",
-                  )}
-                >
-                  {c}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Category Header Manager */}
+        <CategoryPickerWithManager
+          type={type}
+          category={category}
+          onSelectCategory={setCategory}
+        />
 
         {/* Date Input */}
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
