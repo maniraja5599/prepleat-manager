@@ -872,8 +872,9 @@ export function checkSubscriptionStatus(
  */
 export async function createCashfreeOrderSession(
   user: AppUser,
-  plan: "monthly" | "yearly",
+  plan: SubscriptionPlan,
   config: SystemSubscriptionConfig,
+  phone?: string,
 ): Promise<{ success: boolean; paymentSessionId?: string; orderId?: string; message?: string }> {
   const appId = config.cashfreeAppId?.trim();
   const secretKey = config.cashfreeSecretKey?.trim();
@@ -881,18 +882,20 @@ export async function createCashfreeOrderSession(
   if (!appId || !secretKey) {
     return {
       success: false,
-      message: "Cashfree API keys are not configured yet. Please use Direct WhatsApp / UPI payment.",
+      message: "Cashfree credentials are not configured in system settings.",
     };
   }
 
-  const isProd = config.cashfreeEnv === "PROD";
-  const endpoint = isProd
+  const endpoint = config.cashfreeEnv === "PROD"
     ? "https://api.cashfree.com/pg/orders"
     : "https://sandbox.cashfree.com/pg/orders";
 
   const amount = plan === "yearly" ? config.yearlyPrice || 1999 : config.monthlyPrice || 299;
   const cleanUid = user.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 45) || "cust_user";
   const orderId = `order_${cleanUid}_${Date.now()}`;
+  const cleanPhone = (phone && phone.replace(/\D/g, "").slice(-10).length === 10)
+    ? phone.replace(/\D/g, "").slice(-10)
+    : "9159036301";
 
   try {
     const res = await fetch(endpoint, {
@@ -910,7 +913,7 @@ export async function createCashfreeOrderSession(
         customer_details: {
           customer_id: cleanUid,
           customer_email: user.email || "customer@sareeprepleat.com",
-          customer_phone: "9876543210",
+          customer_phone: cleanPhone,
         },
         order_meta: {
           return_url: `https://sareeprepleatmanager.vercel.app?order_id=${orderId}`,

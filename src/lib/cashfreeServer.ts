@@ -46,7 +46,9 @@ export const createCashfreeOrderServer = createServerFn({ method: "POST" })
           customer_details: {
             customer_id: cleanUid,
             customer_email: userEmail || "customer@sareeprepleat.com",
-            customer_phone: "9876543210",
+            customer_phone: (customerPhone && customerPhone.replace(/\D/g, "").slice(-10).length === 10)
+              ? customerPhone.replace(/\D/g, "").slice(-10)
+              : "9159036301",
           },
           order_meta: {
             return_url: `https://sareeprepleatmanager.vercel.app?order_id=${orderId}`,

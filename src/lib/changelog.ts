@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.7";
+export const APP_VERSION = "2.0.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.7",
+    version: "v2.0.8",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Real Customer Mobile Number Sync to Cashfree Invoices & Email Receipts",
+    badge: "LATEST UPDATE 📱",
+    changes: [
+      {
+        emoji: "📱",
+        text: "Dynamic Customer Mobile for Cashfree Invoices",
+        desc: "Cashfree payment requests and email receipts now use the paying customer's actual entered mobile number.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Zero Hardcoded Fallback Numbers",
+        desc: "Replaced dummy placeholder phone numbers with verified user mobile input and secure persistence.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.7",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Exact Saree Net Profit Sync, Distinct Revenue Separation & Individual Order Drawer",
     badge: "LATEST UPDATE 🛍️",
     changes: [
