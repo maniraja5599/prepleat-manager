@@ -2396,7 +2396,7 @@ function SummaryView(p: {
         )}
 
         {/* Fixed Width Full-Bleed Revenue Chart with Left Y-Axis */}
-        <div className="h-56 w-full -mx-1">
+        <div className="h-56 w-full">
           {trendDataWithCumulative.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
               No financial data yet
@@ -2405,7 +2405,7 @@ function SummaryView(p: {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={trendDataWithCumulative}
-                margin={{ top: 8, right: 6, left: -22, bottom: 0 }}
+                margin={{ top: 8, right: 8, left: -4, bottom: 0 }}
                 onClick={(e: any) => {
                   if (e && e.activePayload && e.activePayload.length) {
                     setActiveChartMonth(e.activePayload[0].payload);

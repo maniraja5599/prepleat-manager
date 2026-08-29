@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.1";
+export const APP_VERSION = "1.8.2";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,23 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.1",
+    version: "v1.8.2",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Complete Y-Axis Label Visibility & Proper Left Margin Alignment",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "👀",
+        text: "Full Currency Amount Numbers",
+        desc: "Fixed left margin and container bounds so full currency amounts (0, 45k, 90k, 135k, 180k) are 100% visible without prefix clipping.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.1",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Left-Only Y-Axis Clarity & Non-Overflowing Stable Period Bar",
     badge: "LATEST UPDATE ✨",
     changes: [
