@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.8";
+export const APP_VERSION = "2.0.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.8",
+    version: "v2.0.9",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Ultra-HD 300 DPI Invoice PDF & Image Engine + 1-Tap Customer WhatsApp Sharing",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "✨",
+        text: "Ultra-HD 300+ DPI Retina Invoice Engine",
+        desc: "All invoice PDFs and images are rendered with 3x Retina resolution for crystal-clear fonts, sharp lines, and professional printing.",
+      },
+      {
+        emoji: "💬",
+        text: "Direct Customer WhatsApp Invoice Sharing",
+        desc: "Added 1-tap Send to WhatsApp button in preview modal with rich breakdown, verified stamp, and quick mobile number prompt.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.8",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Real Customer Mobile Number Sync to Cashfree Invoices & Email Receipts",
     badge: "LATEST UPDATE 📱",
     changes: [

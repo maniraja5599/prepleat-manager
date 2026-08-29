@@ -17,17 +17,18 @@ export async function createBillPDFDoc(opts: GenerateBillOptions): Promise<{ doc
   const canvas = drawInvoiceCanvas(opts);
   const imgData = canvas.toDataURL("image/png");
 
-  const pdfWidth = 420; // A5 width in pt
+  const pdfWidth = 595.28; // A4 width in pt
   const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
   const doc = new jsPDF({
     orientation: "p",
     unit: "pt",
     format: [pdfWidth, pdfHeight],
+    compress: false,
   });
 
-  doc.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
-  const filename = `Bill-${billNo}-${(customer?.name || "Customer").replace(/\s+/g, "_")}.pdf`;
+  doc.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "SLOW");
+  const filename = `Invoice-${billNo}-${(customer?.name || "Customer").replace(/\s+/g, "_")}.pdf`;
   return { doc, filename };
 }
 
