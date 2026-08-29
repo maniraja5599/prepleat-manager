@@ -73,6 +73,8 @@ export const DEFAULT_CONFIG: SystemSubscriptionConfig = {
   yearlyOriginalPrice: 3588,
   supportWhatsapp: "919000000000",
   supportUpiId: "manirajankg@upi",
+  cashfreeAppId: "",
+  cashfreeSecretKey: "",
   cashfreeEnv: "TEST",
 };
 
