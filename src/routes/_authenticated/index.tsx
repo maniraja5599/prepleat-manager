@@ -511,22 +511,14 @@ function CalendarPage() {
                     setPeek(key);
                   }}
                   className={cn(
-                    "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition no-select",
+                    "aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 relative text-sm transition no-select cursor-pointer active:scale-95",
                     !isCur && "text-muted-foreground/40",
                     isSel
-                      ? "bg-primary text-primary-foreground font-semibold ring-2 ring-primary/40 shadow-sm"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "hover:bg-secondary",
                     isToday && !isSel && "ring-1 ring-primary/40",
                   )}
                 >
-                  {isSel && (
-                    <span
-                      className="absolute -top-1 -right-1 size-3.5 rounded-full bg-amber-400 text-amber-950 text-[7.5px] font-black flex items-center justify-center shadow-xs animate-bounce z-10 select-none"
-                      title="Double-tap to book"
-                    >
-                      2×
-                    </span>
-                  )}
                   <span
                     className={cn("tabular-nums", isToday && !isSel && "text-primary font-bold")}
                   >
@@ -583,56 +575,71 @@ function CalendarPage() {
             })}
           </div>
 
-          {/* Interactive Double-Tap Animated Hints (Below Calendar Grid) */}
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-2xl bg-secondary/50 border border-primary/20 mt-2.5 mb-1 text-xs text-muted-foreground shadow-2xs">
+          {/* Clean Calendar Quick Action Hints Bar */}
+          <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-secondary/50 border border-border/30 mt-2.5 mb-2 text-xs text-muted-foreground shadow-2xs">
             <div className="flex items-center gap-1.5">
               <span className="text-foreground font-bold text-[11px]">👆 1-Tap:</span>
-              <span className="text-[11px]">View Day</span>
+              <span className="text-[11px]">View Day Schedule</span>
             </div>
             <div className="w-px h-3.5 bg-border/60" />
-            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-0.5 rounded-xl border border-primary/20">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              <span className="text-primary font-bold text-[11px] flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-primary font-extrabold text-[11px] flex items-center gap-1">
                 <span>✌️ 2-Tap:</span>
-                <span>Double-Tap to Book!</span>
+                <span>Instant Book ⚡</span>
               </span>
             </div>
           </div>
 
           {isSameMonth(selected, cursor) && (
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-2 gap-2">
-                <button
-                  onClick={() => setSelected((d) => subDays(d, 1))}
-                  className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
-                  aria-label="Previous day"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate flex-1 text-center">
-                  {format(selected, "EEEE")} · {formatAppDate(selected)}
-                </h2>
-                <button
-                  onClick={() => setSelected((d) => addDays(d, 1))}
-                  className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
-                  aria-label="Next day"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
+            <div className="mt-4">
+              {/* Selected Day Interactive Header & 1-Tap Booking Action Card */}
+              <div className="bg-card card-shadow rounded-2xl p-3 border border-border/40 mb-3 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => setSelected((d) => subDays(d, 1))}
+                    className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 cursor-pointer"
+                    aria-label="Previous day"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <div className="text-center truncate flex-1">
+                    <h2 className="text-sm font-bold text-foreground">
+                      {format(selected, "EEEE")} · {formatAppDate(selected)}
+                    </h2>
+                    <p className="text-[10px] text-muted-foreground">
+                      {dayBookings.length} {dayBookings.length === 1 ? "booking" : "bookings"} scheduled
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelected((d) => addDays(d, 1))}
+                    className="size-8 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 cursor-pointer"
+                    aria-label="Next day"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+
+                {/* 1-Tap Action Button for this date */}
                 <Link
                   to="/new"
                   search={{ date: format(selected, "yyyy-MM-dd") }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full saree-gradient text-primary-foreground text-xs font-bold shrink-0 shadow-2xs active:scale-95 transition"
+                  className="w-full py-2.5 px-3 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Plus className="size-3.5 stroke-[2.5]" /> Book
+                  <Plus className="size-4 stroke-[3]" />
+                  <span>New Booking for {format(selected, "d MMM")}</span>
                 </Link>
+
+                {/* Pro-Tip Helper */}
+                <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-muted-foreground pt-1 border-t border-border/20">
+                  <span className="text-primary font-bold">💡 Pro-Tip:</span>
+                  <span>Double-tap any calendar date anytime to instant book!</span>
+                </div>
               </div>
+
+              {/* Bookings for the day */}
               <div ref={daySwipeRef} className="touch-pan-y">
                 {dayBookings.length === 0 ? (
-                  <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground">
+                  <div className="bg-card card-shadow rounded-2xl p-6 text-center text-sm text-muted-foreground border border-border/30">
                     No bookings on this day. Swipe ←/→ to change day.
                   </div>
                 ) : (

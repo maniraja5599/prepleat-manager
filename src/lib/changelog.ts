@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.4";
+export const APP_VERSION = "1.8.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.8.4",
+    version: "v1.8.5",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Clean Calendar Grid & Interactive Day Booking Action Card",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📅",
+        text: "Clean Uncluttered Calendar Grid",
+        desc: "Removed overlapping 2x badge from date cells so all numbers, dots, and dues remain 100% clean and clear.",
+      },
+      {
+        emoji: "✨",
+        text: "Dedicated Day Booking Action Card",
+        desc: "Added an instant full-width 'New Booking for [Date]' button and educational pro-tip right below the calendar grid.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.4",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Default Calendar Landing & Interactive Double-Tap Booking Animation",
     badge: "LATEST UPDATE ✨",
     changes: [
