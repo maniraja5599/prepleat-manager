@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.0";
+export const APP_VERSION = "2.0.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,23 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.0",
+    version: "v2.0.1",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Resolved Firestore Coupon setDoc Undefined Field Bug",
+    badge: "HOTFIX ⚡",
+    changes: [
+      {
+        emoji: "🎟️",
+        text: "Fixed Coupon Creation setDoc Error",
+        desc: "Sanitized Firestore document fields to eliminate unsupported undefined values when saving new promo coupons.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.0",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Major Release: Revenue Analytics, Payment History, Dynamic Title/Favicon & Coupon Fix",
     badge: "MAJOR RELEASE 🚀",
     changes: [

@@ -373,13 +373,28 @@ export async function createCoupon(couponData: Omit<Coupon, "id" | "usedCount" |
   if (!db) return;
   const cleanCode = couponData.code.trim().toUpperCase();
   const couponDocRef = doc(db, "coupons", cleanCode);
-  const newCoupon: Omit<Coupon, "id"> = {
-    ...couponData,
+
+  const newCoupon: Record<string, any> = {
     code: cleanCode,
+    type: couponData.type || "free_days",
+    value: Number(couponData.value) || 0,
+    maxUses: Number(couponData.maxUses) || 0,
     usedCount: 0,
     usedBy: [],
+    isActive: couponData.isActive !== false,
     createdAt: new Date().toISOString(),
   };
+
+  if (couponData.description && couponData.description.trim()) {
+    newCoupon.description = couponData.description.trim();
+  }
+  if (couponData.expiresAt) {
+    newCoupon.expiresAt = couponData.expiresAt;
+  }
+  if (couponData.planScope) {
+    newCoupon.planScope = couponData.planScope;
+  }
+
   await setDoc(couponDocRef, newCoupon);
 }
 

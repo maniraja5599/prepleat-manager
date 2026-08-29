@@ -329,24 +329,32 @@ function AdminPage() {
 
   const handleCreateCouponSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCouponCode.trim()) {
+    const cleanCode = newCouponCode.trim().toUpperCase();
+    if (!cleanCode) {
       toast.error("Please enter a coupon code");
       return;
     }
-    const val = Number(newCouponValue) || (newCouponType === "percent_discount" ? 50 : 30);
+
+    let val = Number(newCouponValue);
+    if (newCouponType === "lifetime_free") {
+      val = 0;
+    } else if (isNaN(val) || val <= 0) {
+      val = newCouponType === "percent_discount" ? 50 : 30;
+    }
+
     const maxUses = Number(newCouponMaxUses) || 0;
 
     setIsSubmittingCoupon(true);
     try {
       await createCoupon({
-        code: newCouponCode.trim().toUpperCase(),
+        code: cleanCode,
         type: newCouponType,
         value: val,
         maxUses: maxUses,
-        description: newCouponDesc.trim() || undefined,
+        description: newCouponDesc.trim() || "",
         isActive: true,
       });
-      toast.success(`Coupon "${newCouponCode.toUpperCase()}" created successfully!`);
+      toast.success(`Coupon "${cleanCode}" created successfully!`);
       setNewCouponCode("");
       setNewCouponValue("");
       setNewCouponMaxUses("");
@@ -354,7 +362,7 @@ function AdminPage() {
       setCreateCouponOpen(false);
     } catch (err: any) {
       console.error("Coupon create error:", err);
-      toast.error(err?.message || "Failed to create coupon. Please check permissions.");
+      toast.error(err?.message || "Failed to create coupon");
     } finally {
       setIsSubmittingCoupon(false);
     }
