@@ -82,7 +82,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
-import { isSuperAdmin, checkSubscriptionStatus, subscribeToUserProfile, type UserProfile, generateReferralCode } from "@/lib/subscription";
+import { isSuperAdmin, updateUserPhone, checkSubscriptionStatus, subscribeToUserProfile, type UserProfile, generateReferralCode } from "@/lib/subscription";
 export { APP_VERSION, RECENT_UPDATES, type ChangelogEntry };
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -1013,12 +1013,24 @@ function SettingsPage() {
                   </div>
                   <div className="mt-4">
                     <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      Mobile number
+                      Mobile number / WhatsApp (+91)
                     </label>
                     <input
                       value={settings.businessPhone ?? ""}
-                      onChange={(e) => update({ businessPhone: e.target.value })}
-                      placeholder="e.g. +91 83000 30123"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        update({ businessPhone: val });
+                        const clean = val.replace(/\D/g, "").slice(-10);
+                        if (clean.length === 10) {
+                          localStorage.setItem("user_last_payment_phone", clean);
+                          waitForAppUser().then((u) => {
+                            if (u && !u.isAnonymous) {
+                              updateUserPhone(u.id, clean);
+                            }
+                          });
+                        }
+                      }}
+                      placeholder="e.g. 9159036301"
                       className="input mt-1.5"
                     />
                   </div>

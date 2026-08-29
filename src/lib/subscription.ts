@@ -60,7 +60,7 @@ export interface SystemSubscriptionConfig {
   monthlyPrice: number; // default: 299
   yearlyPrice: number; // default: 1999
   yearlyOriginalPrice: number; // default: 3588
-  supportWhatsapp: string; // e.g. "919000000000"
+  supportWhatsapp: string; // e.g. "919159036301"
   supportUpiId?: string; // e.g. "manirajankg@upi"
   cashfreeAppId?: string;
   cashfreeSecretKey?: string;
@@ -72,7 +72,7 @@ export const DEFAULT_CONFIG: SystemSubscriptionConfig = {
   monthlyPrice: 299,
   yearlyPrice: 1999,
   yearlyOriginalPrice: 3588,
-  supportWhatsapp: "919000000000",
+  supportWhatsapp: "919159036301",
   supportUpiId: "manirajankg@upi",
   cashfreeAppId: "",
   cashfreeSecretKey: "",
@@ -750,4 +750,14 @@ export async function createCashfreeOrderSession(
       message: err?.message || "Network error while connecting to Cashfree.",
     };
   }
+}
+
+/**
+ * Update user's mobile phone number
+ */
+export async function updateUserPhone(uid: string, phone: string): Promise<void> {
+  if (!db || !uid) return;
+  const clean = phone.replace(/\D/g, "").slice(-10);
+  const userDocRef = doc(db, "user_profiles", uid);
+  await updateDoc(userDocRef, { phone: clean });
 }

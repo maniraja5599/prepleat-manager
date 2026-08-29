@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.5";
+export const APP_VERSION = "1.9.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.5",
+    version: "v1.9.6",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Profile Mobile Sync, Developer WhatsApp (+91-9159036301) & Smart Phone Persistence",
+    badge: "LATEST UPDATE 📱",
+    changes: [
+      {
+        emoji: "📞",
+        text: "Developer WhatsApp Direct (+91-9159036301)",
+        desc: "Updated direct developer support and UPI payment routing to +91-9159036301.",
+      },
+      {
+        emoji: "👤",
+        text: "Profile Mobile Header & Missing Phone Prompt",
+        desc: "Settings header now displays user phone or prompts with a 1-tap quick button if phone number is missing.",
+      },
+      {
+        emoji: "🔄",
+        text: "Automatic Checkout Phone Persistence",
+        desc: "Phone numbers entered during checkout automatically save and pre-fill for future renewals.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.5",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Mobile Number Checkout Validation & Generic Store Profile Defaults",
     badge: "LATEST UPDATE 📱",
     changes: [

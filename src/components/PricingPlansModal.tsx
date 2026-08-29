@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createCashfreeOrderServer } from "@/lib/cashfreeServer";
+import { useStore } from "@/lib/store";
 import {
   redeemCoupon,
+  updateUserPhone,
   updateUserPlan,
   createCashfreeOrderSession,
   checkSubscriptionStatus,
@@ -57,8 +59,13 @@ export function PricingPlansModal({
   // Lock body scroll and background touches when modal is active
   useEffect(() => {
     if (open) {
-      if (userProfile?.phone) {
-        setPhoneNumber(userProfile.phone.replace(/\D/g, "").slice(-10));
+      const savedPhone =
+        userProfile?.phone ||
+        localStorage.getItem("user_last_payment_phone") ||
+        useStore.getState().settings.businessPhone ||
+        "";
+      if (savedPhone) {
+        setPhoneNumber(savedPhone.replace(/\D/g, "").slice(-10));
       }
       const prevOverflow = document.body.style.overflow;
       const prevTouchAction = document.body.style.touchAction;
@@ -110,7 +117,7 @@ export function PricingPlansModal({
   };
 
   const handleWhatsAppPayment = () => {
-    const phone = config.supportWhatsapp || "919000000000";
+    const phone = config.supportWhatsapp || "919159036301";
     const planName = selectedPlan === "yearly" ? `Yearly Plan (₹${yearlyPrice})` : `Monthly Plan (₹${monthlyPrice})`;
     const userEmail = user?.email || "My Account";
     const msg = encodeURIComponent(
@@ -133,6 +140,15 @@ export function PricingPlansModal({
       toast.error("Please enter a valid 10-digit mobile number for Cashfree & invoice receipts.");
       return;
     }
+
+    // Persist phone for next time
+    try {
+      localStorage.setItem("user_last_payment_phone", cleanPhone);
+      if (user.id) {
+        updateUserPhone(user.id, cleanPhone);
+      }
+      useStore.getState().updateSettings({ businessPhone: cleanPhone });
+    } catch (_) {}
 
     setIsProcessingPayment(true);
     const amount = selectedPlan === "yearly" ? yearlyPrice : monthlyPrice;
