@@ -6,6 +6,8 @@ import {
   collection,
   onSnapshot,
   query,
+  where,
+  getDocs,
   orderBy,
   deleteDoc,
   arrayUnion,
@@ -30,6 +32,11 @@ export interface UserProfile {
   createdAt: string;
   lastLoginAt: string;
   notes?: string;
+  // Referral Engine Fields
+  referralCode?: string;
+  referredBy?: string | null;
+  referralCount?: number;
+  freeMonthsEarned?: number;
 }
 
 export interface Coupon {
@@ -69,6 +76,16 @@ export const DEFAULT_CONFIG: SystemSubscriptionConfig = {
 };
 
 /**
+ * Generate a clean, unique referral code for a user
+ */
+export function generateReferralCode(email: string, uid: string): string {
+  const cleanEmail = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const prefix = cleanEmail.slice(0, 4).padEnd(4, "X");
+  const suffix = uid.slice(-4).toUpperCase();
+  return `EYAS-${prefix}${suffix}`;
+}
+
+/**
  * Check if a user is a super admin
  */
 export function isSuperAdmin(user: AppUser | null | undefined): boolean {
@@ -89,31 +106,28 @@ export async function ensureUserProfile(user: AppUser): Promise<UserProfile | nu
 
     const now = new Date();
     const isAdmin = isSuperAdmin(user);
+    const myReferralCode = generateReferralCode(user.email || "user", user.id);
 
     if (snap.exists()) {
       const data = snap.data() as UserProfile;
-      // If admin, ensure role is always admin
-      if (isAdmin && (data.role !== "admin" || data.plan !== "lifetime_free")) {
-        await updateDoc(userDocRef, {
-          role: "admin",
-          plan: "lifetime_free",
-          isApproved: true,
-          lastLoginAt: now.toISOString(),
-        });
-        return {
-          ...data,
-          role: "admin",
-          plan: "lifetime_free",
-          isApproved: true,
-          lastLoginAt: now.toISOString(),
-        };
-      }
-      // Update last login
-      await updateDoc(userDocRef, {
+      const updates: Partial<UserProfile> = {
         lastLoginAt: now.toISOString(),
         email: user.email || data.email,
-      });
-      return { ...data, lastLoginAt: now.toISOString() };
+      };
+
+      if (!data.referralCode) {
+        updates.referralCode = myReferralCode;
+      }
+
+      // If admin, ensure role is always admin
+      if (isAdmin && (data.role !== "admin" || data.plan !== "lifetime_free")) {
+        updates.role = "admin";
+        updates.plan = "lifetime_free";
+        updates.isApproved = true;
+      }
+
+      await updateDoc(userDocRef, updates);
+      return { ...data, ...updates };
     }
 
     // New User profile initialization
@@ -132,6 +146,10 @@ export async function ensureUserProfile(user: AppUser): Promise<UserProfile | nu
       createdAt: now.toISOString(),
       lastLoginAt: now.toISOString(),
       notes: isAdmin ? "Developer Master Admin" : "Auto 30-Day Trial Signup",
+      referralCode: myReferralCode,
+      referralCount: 0,
+      freeMonthsEarned: 0,
+      referredBy: null,
     };
 
     await setDoc(userDocRef, newProfile);
@@ -139,6 +157,74 @@ export async function ensureUserProfile(user: AppUser): Promise<UserProfile | nu
   } catch (err) {
     console.error("Error ensuring user profile:", err);
     return null;
+  }
+}
+
+/**
+ * Delete a user profile (Admin Only)
+ */
+export async function deleteUserProfile(uid: string): Promise<void> {
+  if (!db || !uid) return;
+  const userDocRef = doc(db, "user_profiles", uid);
+  await deleteDoc(userDocRef);
+}
+
+/**
+ * Process referral reward: rewards the referrer with 1 free month (+30 days)
+ */
+export async function processReferralReward(
+  referrerCodeOrUid: string,
+  daysToAdd: number = 30,
+): Promise<{ success: boolean; message: string }> {
+  if (!db || !referrerCodeOrUid) return { success: false, message: "Invalid referrer." };
+
+  try {
+    const q = query(
+      collection(db, "user_profiles"),
+      where("referralCode", "==", referrerCodeOrUid.trim().toUpperCase()),
+    );
+    const snap = await getDocs(q);
+
+    let targetDocRef = null;
+    let targetProfile: UserProfile | null = null;
+
+    if (!snap.empty) {
+      targetDocRef = snap.docs[0].ref;
+      targetProfile = snap.docs[0].data() as UserProfile;
+    } else {
+      // Fallback: try lookup by UID directly
+      const directRef = doc(db, "user_profiles", referrerCodeOrUid);
+      const directSnap = await getDoc(directRef);
+      if (directSnap.exists()) {
+        targetDocRef = directRef;
+        targetProfile = directSnap.data() as UserProfile;
+      }
+    }
+
+    if (!targetDocRef || !targetProfile) {
+      return { success: false, message: "Referrer profile not found." };
+    }
+
+    const currentExpiry =
+      targetProfile.planExpiresAt && new Date(targetProfile.planExpiresAt) > new Date()
+        ? new Date(targetProfile.planExpiresAt)
+        : new Date();
+    currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
+
+    await updateDoc(targetDocRef, {
+      planExpiresAt: currentExpiry.toISOString(),
+      plan: targetProfile.plan === "trial" ? "monthly" : targetProfile.plan,
+      referralCount: increment(1),
+      freeMonthsEarned: increment(Math.round(daysToAdd / 30)),
+    });
+
+    return {
+      success: true,
+      message: `Successfully rewarded ${targetProfile.email} with +${daysToAdd} days free access!`,
+    };
+  } catch (err: any) {
+    console.error("Referral reward error:", err);
+    return { success: false, message: err?.message || "Failed to reward referrer." };
   }
 }
 
@@ -446,7 +532,14 @@ export function checkSubscriptionStatus(
   expiryDateStr: string;
   badgeLabel: string;
   planName: string;
+  referralCode: string;
+  referralCount: number;
+  freeMonthsEarned: number;
 } {
+  const referralCode = profile?.referralCode || (user ? generateReferralCode(user.email || "user", user.id) : "EYAS-PRO");
+  const referralCount = profile?.referralCount || 0;
+  const freeMonthsEarned = profile?.freeMonthsEarned || 0;
+
   // Guest mode on local device (always active)
   if (user?.isAnonymous) {
     return {
@@ -459,6 +552,9 @@ export function checkSubscriptionStatus(
       expiryDateStr: "Local Guest",
       badgeLabel: "Guest Mode",
       planName: "Local Guest",
+      referralCode,
+      referralCount,
+      freeMonthsEarned,
     };
   }
 
@@ -474,6 +570,9 @@ export function checkSubscriptionStatus(
       expiryDateStr: "Unlimited Lifetime",
       badgeLabel: "👑 Super Admin",
       planName: "Developer Master VIP",
+      referralCode,
+      referralCount,
+      freeMonthsEarned,
     };
   }
 
@@ -488,6 +587,9 @@ export function checkSubscriptionStatus(
       expiryDateStr: "30 Days Free Trial",
       badgeLabel: "Free Trial",
       planName: "Trial",
+      referralCode,
+      referralCount,
+      freeMonthsEarned,
     };
   }
 
@@ -502,6 +604,9 @@ export function checkSubscriptionStatus(
       expiryDateStr: "Account Suspended",
       badgeLabel: "Suspended",
       planName: "Suspended",
+      referralCode,
+      referralCount,
+      freeMonthsEarned,
     };
   }
 
@@ -516,6 +621,9 @@ export function checkSubscriptionStatus(
       expiryDateStr: "Permanent VIP",
       badgeLabel: "VIP Lifetime Free",
       planName: "Lifetime Free VIP",
+      referralCode,
+      referralCount,
+      freeMonthsEarned,
     };
   }
 
@@ -551,5 +659,8 @@ export function checkSubscriptionStatus(
         ? `Trial: ${daysRemaining}d left`
         : `${planName} (${daysRemaining}d)`,
     planName,
+    referralCode,
+    referralCount,
+    freeMonthsEarned,
   };
 }

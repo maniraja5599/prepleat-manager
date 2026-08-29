@@ -33,6 +33,8 @@ import {
   updateUserPlan,
   createCoupon,
   deleteCoupon,
+  deleteUserProfile,
+  processReferralReward,
   toggleCouponStatus,
   updateSystemConfig,
   type UserProfile,
@@ -69,6 +71,7 @@ function AdminPage() {
 
   // System Config State
   const [configForm, setConfigForm] = useState<SystemSubscriptionConfig>(DEFAULT_CONFIG);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const unsubAuth = onAppAuthStateChanged((u) => {
@@ -155,6 +158,30 @@ function AdminPage() {
       toast.success("Granted 100% Lifetime VIP Free Access!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to update plan");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!pendingDeleteUser) return;
+    try {
+      await deleteUserProfile(pendingDeleteUser.uid);
+      toast.success(`User ${pendingDeleteUser.email} has been permanently removed.`);
+      setPendingDeleteUser(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to remove user");
+    }
+  };
+
+  const handleRewardReferral = async (u: UserProfile) => {
+    try {
+      const res = await processReferralReward(u.referralCode || u.uid, 30);
+      if (res.success) {
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to reward referral");
     }
   };
 
@@ -441,6 +468,15 @@ function AdminPage() {
                             Joined: {new Date(u.createdAt).toLocaleDateString()} · Last seen:{" "}
                             {new Date(u.lastLoginAt).toLocaleDateString()}
                           </p>
+                          {/* Referral Tag */}
+                          <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                            <span className="bg-secondary px-2 py-0.5 rounded-lg border border-border/50 font-mono font-bold text-primary">
+                              Code: {u.referralCode || "N/A"}
+                            </span>
+                            <span>
+                              Referrals: <strong className="text-foreground">{u.referralCount || 0}</strong> ({u.freeMonthsEarned || 0} mos earned)
+                            </span>
+                          </div>
                         </div>
 
                         <div className="text-left sm:text-right">
@@ -480,6 +516,14 @@ function AdminPage() {
                           </button>
 
                           <button
+                            onClick={() => handleRewardReferral(u)}
+                            className="px-2.5 py-1 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer flex items-center gap-1"
+                          >
+                            <Gift className="size-3" />
+                            <span>+30d Ref Bonus</span>
+                          </button>
+
+                          <button
                             onClick={() => handleToggleSuspend(u)}
                             className={cn(
                               "px-2.5 py-1 rounded-xl text-xs font-bold cursor-pointer",
@@ -491,18 +535,13 @@ function AdminPage() {
                             {u.plan === "suspended" ? "Unsuspend" : "Suspend"}
                           </button>
 
-                          {config.supportWhatsapp && (
-                            <button
-                              onClick={() => {
-                                const msg = encodeURIComponent(`Hello from Saree PrePleat Manager! This is regarding your account (${u.email}).`);
-                                window.open(`https://wa.me/?text=${msg}`, "_blank");
-                              }}
-                              className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 ml-auto cursor-pointer"
-                            >
-                              <MessageCircle className="size-3" />
-                              <span>WhatsApp</span>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setPendingDeleteUser(u)}
+                            className="p-1 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer ml-auto"
+                            title="Remove User Account"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
                         </div>
                       )}
                     </div>
@@ -847,6 +886,47 @@ function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+        {/* Delete User Confirmation Dialog */}
+        {pendingDeleteUser && (
+          <div
+            className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setPendingDeleteUser(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-destructive/30 space-y-4 animate-in zoom-in-95 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center font-bold">
+                  <Trash2 className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-sm text-foreground">Remove User Account?</h3>
+                  <p className="text-xs text-muted-foreground">{pendingDeleteUser.email}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                This will delete the user's registration record from the system. (Their private local database will not be affected).
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPendingDeleteUser(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteUser}
+                  className="flex-1 py-2.5 rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

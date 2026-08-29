@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.0";
+export const APP_VERSION = "1.9.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.0",
+    version: "v1.9.1",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Refer & Earn Free Months, 30-Day Trial Welcome Modal & User Management",
+    badge: "LATEST UPDATE 🎁",
+    changes: [
+      {
+        emoji: "🎁",
+        text: "Refer & Earn 1 Free Month Program",
+        desc: "Every user can now share their unique invite code. When an invited friend subscribes, the referrer automatically earns 1 Free Month (+30 Days) of full access!",
+      },
+      {
+        emoji: "🎉",
+        text: "30-Day Free Trial Welcome Activation Modal",
+        desc: "Celebratory first-login activation screen showing exact trial expiry, feature benefits, and referral bonuses.",
+      },
+      {
+        emoji: "🗑️",
+        text: "Developer User Removal & Referral Oversight",
+        desc: "Admin can now view full referral stats and permanently delete unwanted or test accounts directly from the Admin Panel.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.0",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Developer Super-Admin Portal, Multi-Tier Subscriptions & Coupon Engine",
     badge: "MAJOR UPDATE 👑",
     changes: [

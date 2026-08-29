@@ -60,6 +60,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 import { SubscriptionGuard } from "@/components/SubscriptionGuard";
+import { SubscriptionWelcomeModal } from "@/components/SubscriptionWelcomeModal";
 
 function AuthenticatedRoot() {
   const bookings = useStore((s) => s.bookings);
@@ -74,6 +75,7 @@ function AuthenticatedRoot() {
     <>
       <CloudSync />
       <SubscriptionGuard />
+      <SubscriptionWelcomeModal />
       <InstallPwaBanner />
       <WhatsNewModal />
       <Outlet />

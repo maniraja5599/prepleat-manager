@@ -82,7 +82,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
-import { isSuperAdmin } from "@/lib/subscription";
+import { isSuperAdmin, checkSubscriptionStatus, subscribeToUserProfile, type UserProfile, generateReferralCode } from "@/lib/subscription";
 export { APP_VERSION, RECENT_UPDATES, type ChangelogEntry };
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -259,13 +259,34 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState<string>("");
   const [isUserGuest, setIsUserGuest] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [copiedRef, setCopiedRef] = useState(false);
 
   useEffect(() => {
     waitForAppUser(300).then((user) => {
       setUserEmail(user?.email ?? "");
       setIsUserGuest(!!user?.isAnonymous);
+      if (user && !user.isAnonymous) {
+        subscribeToUserProfile(user.id, (p) => setUserProfile(p));
+      }
     });
   }, []);
+
+  const myRefCode = userProfile?.referralCode || (userEmail ? generateReferralCode(userEmail, "user") : "EYAS-PRO");
+
+  const handleCopyReferralCode = () => {
+    navigator.clipboard.writeText(myRefCode);
+    setCopiedRef(true);
+    toast.success("Referral code copied to clipboard!");
+    setTimeout(() => setCopiedRef(false), 2500);
+  };
+
+  const handleShareReferralWhatsApp = () => {
+    const msg = encodeURIComponent(
+      `🥻 Manage Saree PrePleat & Draping orders with ease!\n\n⚡ Fast Booking, WhatsApp Bills, Offline Cloud Sync & Payment Tracking.\n\n🎁 Get 30 Days 100% Free Trial using my referral code: *${myRefCode}*\n\n👉 Open App: https://eyas.app`
+    );
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -465,6 +486,55 @@ function SettingsPage() {
           View Plans
         </button>
       </div>
+
+      {/* 🎁 Refer & Earn Free Months Banner */}
+      {!isUserGuest && (
+        <div className="bg-primary/5 border border-primary/20 rounded-3xl p-4 mb-4 space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-2xl saree-gradient text-white flex items-center justify-center font-black text-sm shadow-xs">
+                🎁
+              </div>
+              <div>
+                <h3 className="font-bold text-xs text-foreground">Refer & Earn 1 Free Month!</h3>
+                <p className="text-[10px] text-muted-foreground">
+                  Get +30 Days Free when your invited friend subscribes
+                </p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase">
+              +30d Reward
+            </span>
+          </div>
+
+          {/* Referral Code Box */}
+          <div className="flex items-center gap-2 bg-card rounded-2xl p-2 border border-border/60">
+            <div className="flex-1 px-2">
+              <span className="text-[9px] uppercase font-bold text-muted-foreground block">Your Unique Invite Code</span>
+              <span className="font-mono font-black text-xs text-primary">
+                {myRefCode}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyReferralCode}
+              className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold transition cursor-pointer shrink-0"
+            >
+              {copiedRef ? "Copied! ✓" : "Copy Code"}
+            </button>
+          </div>
+
+          {/* WhatsApp Share Button */}
+          <button
+            type="button"
+            onClick={handleShareReferralWhatsApp}
+            className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs active:scale-[0.98] transition flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <MessageCircle className="size-4" />
+            <span>Invite Friends on WhatsApp (+1 Month Free)</span>
+          </button>
+        </div>
+      )}
 
       {/* Main 4-Card Category Switcher Grid */}
       <div className="grid grid-cols-2 gap-2.5 mb-4">
