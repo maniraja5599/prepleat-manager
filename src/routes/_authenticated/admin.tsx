@@ -37,15 +37,18 @@ import {
   CalendarDays,
   Activity,
   AlertTriangle,
+  Shield,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
 import {
   isSuperAdmin,
+  isMasterSuperAdmin,
   subscribeToAllUsers,
   subscribeToCoupons,
   subscribeToSystemConfig,
   updateUserPlan,
+  updateUserRole,
   deleteUserProfile,
   processReferralReward,
   createCoupon,
@@ -88,10 +91,12 @@ function AdminPage() {
   const [editExpiryDate, setEditExpiryDate] = useState<string>("");
   const [editNotes, setEditNotes] = useState<string>("");
   const [editIsApproved, setEditIsApproved] = useState<boolean>(true);
+  const [customDaysToAdd, setCustomDaysToAdd] = useState<string>("");
 
   // Delete User State
   const [pendingDeleteUser, setPendingDeleteUser] = useState<UserProfile | null>(null);
   const [copiedUid, setCopiedUid] = useState(false);
+  const [copiedOrderId, setCopiedOrderId] = useState(false);
 
   // Create Coupon Modal
   const [createCouponOpen, setCreateCouponOpen] = useState(false);
@@ -124,7 +129,9 @@ function AdminPage() {
     };
   }, []);
 
-  const isAdmin = isSuperAdmin(currentUser);
+  const myProfile = users.find((u) => u.uid === currentUser?.id);
+  const isAdmin = isSuperAdmin(currentUser, myProfile);
+  const isMasterDev = isMasterSuperAdmin(currentUser);
 
   if (!isAdmin) {
     return (
@@ -135,7 +142,7 @@ function AdminPage() {
           </div>
           <h2 className="text-xl font-bold font-display">Developer Access Restricted</h2>
           <p className="text-sm text-muted-foreground max-w-xs">
-            This Super-Admin Control Panel is strictly reserved for the authorized developer (manirajankg@gmail.com).
+            This Super-Admin Control Panel is strictly reserved for authorized developers and assigned administrators.
           </p>
           <button
             onClick={() => navigate({ to: "/" })}
@@ -156,6 +163,18 @@ function AdminPage() {
     setEditExpiryDate(dateStr);
     setEditNotes(u.notes || "");
     setEditIsApproved(u.isApproved !== false);
+    setCustomDaysToAdd("");
+  };
+
+  const handleApplyCustomDays = (days: number) => {
+    if (isNaN(days) || days <= 0) return;
+    const baseDate =
+      editingUser?.planExpiresAt && new Date(editingUser.planExpiresAt) > new Date()
+        ? new Date(editingUser.planExpiresAt)
+        : new Date();
+    baseDate.setDate(baseDate.getDate() + days);
+    setEditExpiryDate(baseDate.toISOString().slice(0, 10));
+    toast.info(`Calculated new expiry date: ${baseDate.toLocaleDateString("en-IN")}`);
   };
 
   const handleSaveUserPlan = async (e: React.FormEvent) => {
@@ -195,6 +214,23 @@ function AdminPage() {
       toast.success("Granted 100% Lifetime VIP Free Access!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to update plan");
+    }
+  };
+
+  const handleToggleAdminRole = async (u: UserProfile) => {
+    const newRole = u.role === "admin" ? "user" : "admin";
+    try {
+      await updateUserRole(u.uid, newRole);
+      toast.success(
+        newRole === "admin"
+          ? `Promoted ${u.email} to Co-Admin!`
+          : `Removed Admin access for ${u.email}`,
+      );
+      if (inspectingUser?.uid === u.uid) {
+        setInspectingUser({ ...inspectingUser, role: newRole });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update user role");
     }
   };
 
@@ -277,6 +313,13 @@ function AdminPage() {
     toast.success("User UID copied!");
   };
 
+  const handleCopyOrderText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedOrderId(true);
+    setTimeout(() => setCopiedOrderId(false), 2000);
+    toast.success("Order details copied to clipboard!");
+  };
+
   const now = new Date();
 
   // Counts for filters
@@ -312,7 +355,7 @@ function AdminPage() {
 
   return (
     <AppShell wide>
-      <div className="w-full max-w-6xl mx-auto space-y-4 pb-32 text-left">
+      <div className="w-full max-w-6xl mx-auto space-y-3.5 pb-32 text-left">
         {/* Top Hero Header */}
         <div className="relative overflow-hidden bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -334,7 +377,7 @@ function AdminPage() {
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Developer Master: <span className="font-semibold text-foreground">{currentUser?.email}</span>
+                Logged in as: <span className="font-semibold text-foreground break-all">{currentUser?.email}</span>
               </p>
             </div>
           </div>
@@ -342,7 +385,7 @@ function AdminPage() {
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("trigger-pricing-modal"))}
-              className="px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <Zap className="size-3.5 text-primary" />
               <span>Test Paywall</span>
@@ -350,58 +393,58 @@ function AdminPage() {
           </div>
         </div>
 
-        {/* Segmented Navigation Tabs */}
-        <div className="grid grid-cols-4 gap-1.5 bg-secondary/80 p-1.5 rounded-2xl border border-border/50">
+        {/* Refined Segmented Sub-Menu Pills (Compact & Stylish) */}
+        <div className="grid grid-cols-4 gap-1 bg-secondary/60 p-1 rounded-2xl border border-border/40 backdrop-blur-sm">
           <button
             onClick={() => setActiveTab("overview")}
             className={cn(
-              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2 px-1 text-center rounded-xl text-[11.5px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "overview"
-                ? "bg-card text-primary shadow-xs font-extrabold"
+                ? "bg-card text-primary shadow-xs font-extrabold border border-border/50"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Sparkles className="size-3.5 shrink-0" />
-            <span>Overview</span>
+            <span className="truncate">Overview</span>
           </button>
 
           <button
             onClick={() => setActiveTab("users")}
             className={cn(
-              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2 px-1 text-center rounded-xl text-[11.5px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "users"
-                ? "bg-card text-primary shadow-xs font-extrabold"
+                ? "bg-card text-primary shadow-xs font-extrabold border border-border/50"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Users className="size-3.5 shrink-0" />
-            <span>Users ({users.length})</span>
+            <span className="truncate">Users ({users.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("coupons")}
             className={cn(
-              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2 px-1 text-center rounded-xl text-[11.5px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "coupons"
-                ? "bg-card text-primary shadow-xs font-extrabold"
+                ? "bg-card text-primary shadow-xs font-extrabold border border-border/50"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Tag className="size-3.5 shrink-0" />
-            <span>Coupons ({coupons.length})</span>
+            <span className="truncate">Coupons ({coupons.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("pricing")}
             className={cn(
-              "py-2.5 px-2 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              "py-2 px-1 text-center rounded-xl text-[11.5px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "pricing"
-                ? "bg-card text-primary shadow-xs font-extrabold"
+                ? "bg-card text-primary shadow-xs font-extrabold border border-border/50"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Settings className="size-3.5 shrink-0" />
-            <span>Pricing & Gateway</span>
+            <span className="truncate">Pricing & Keys</span>
           </button>
         </div>
 
@@ -482,10 +525,10 @@ function AdminPage() {
           </div>
         )}
 
-        {/* ================= TAB 2: USERS DIRECTORY (EXPANDABLE / CLICKABLE) ================= */}
+        {/* ================= TAB 2: USERS DIRECTORY ================= */}
         {activeTab === "users" && (
           <div className="space-y-3 animate-in fade-in duration-200">
-            {/* Search & Comprehensive Filters */}
+            {/* Search & Filters */}
             <div className="flex flex-col md:flex-row gap-2.5">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-3 size-4 text-muted-foreground" />
@@ -513,7 +556,7 @@ function AdminPage() {
                     key={f.id}
                     onClick={() => setUserFilter(f.id)}
                     className={cn(
-                      "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition",
+                      "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition",
                       userFilter === f.id
                         ? "bg-primary text-white shadow-2xs"
                         : "bg-secondary text-muted-foreground hover:text-foreground",
@@ -525,7 +568,7 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* Users Responsive Grid (1 col mobile, 2 col tablet, 3 col desktop) */}
+            {/* Users Responsive Grid */}
             {filteredUsers.length === 0 ? (
               <div className="bg-card card-shadow rounded-3xl p-10 text-center text-sm text-muted-foreground">
                 No users found matching your search.
@@ -534,7 +577,8 @@ function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {filteredUsers.map((u) => {
                   const isExp = u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free";
-                  const isMasterAdmin = isSuperAdmin({ id: u.uid, email: u.email, isAnonymous: false });
+                  const isMaster = isMasterSuperAdmin({ id: u.uid, email: u.email, isAnonymous: false });
+                  const isCoAdmin = u.role === "admin" && !isMaster;
 
                   // Days remaining calculation
                   let daysRemaining: number | null = null;
@@ -550,7 +594,7 @@ function AdminPage() {
                       className="group bg-card card-shadow rounded-3xl p-4 border border-border/50 hover:border-primary/50 transition-all cursor-pointer flex flex-col justify-between space-y-3 active:scale-[0.99]"
                     >
                       <div>
-                        {/* Header: Email + Plan Badge */}
+                        {/* Header: Email + Badges */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition-colors">
@@ -561,31 +605,39 @@ function AdminPage() {
                             )}
                           </div>
 
-                          {isMasterAdmin ? (
-                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9.5px] font-black uppercase shrink-0">
-                              SUPER ADMIN 👑
-                            </span>
-                          ) : u.plan === "lifetime_free" ? (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9.5px] font-bold uppercase shrink-0">
-                              VIP LIFETIME ✨
-                            </span>
-                          ) : isExp ? (
-                            <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[9.5px] font-bold uppercase shrink-0">
-                              EXPIRED ⚠️
-                            </span>
-                          ) : u.plan === "yearly" ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9.5px] font-black uppercase shrink-0">
-                              YEARLY ACTIVE 💎
-                            </span>
-                          ) : u.plan === "monthly" ? (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9.5px] font-black uppercase shrink-0">
-                              MONTHLY ACTIVE ⚡
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9.5px] font-bold uppercase shrink-0">
-                              30D TRIAL ⏳
-                            </span>
-                          )}
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {isMaster ? (
+                              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase">
+                                MASTER VIP 👑
+                              </span>
+                            ) : isCoAdmin ? (
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase">
+                                CO-ADMIN 🛡️
+                              </span>
+                            ) : null}
+
+                            {u.plan === "lifetime_free" ? (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-bold uppercase">
+                                VIP LIFETIME ✨
+                              </span>
+                            ) : isExp ? (
+                              <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[9px] font-bold uppercase">
+                                EXPIRED ⚠️
+                              </span>
+                            ) : u.plan === "yearly" ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase">
+                                YEARLY ACTIVE 💎
+                              </span>
+                            ) : u.plan === "monthly" ? (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase">
+                                MONTHLY ACTIVE ⚡
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase">
+                                30D TRIAL ⏳
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Phone / Contact */}
@@ -598,7 +650,7 @@ function AdminPage() {
 
                         {/* Validity & Countdown */}
                         <div className="mt-2 text-xs">
-                          {u.plan === "lifetime_free" || isMasterAdmin ? (
+                          {u.plan === "lifetime_free" || isMaster ? (
                             <span className="text-muted-foreground font-semibold">Permanent Access</span>
                           ) : u.planExpiresAt ? (
                             <div className="flex items-center justify-between">
@@ -643,8 +695,8 @@ function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Action Buttons (1-click from card) */}
-                      {!isMasterAdmin && (
+                      {/* Action Buttons */}
+                      {!isMaster && (
                         <div
                           className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/30"
                           onClick={(e) => e.stopPropagation()}
@@ -987,11 +1039,11 @@ function AdminPage() {
                     {inspectingUser.email.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-sm sm:text-base text-foreground">
+                    <h3 className="font-display font-bold text-sm sm:text-base text-foreground break-all">
                       {inspectingUser.email}
                     </h3>
                     <p className="text-[11px] text-muted-foreground">
-                      {inspectingUser.displayName || "Client Account"}
+                      {inspectingUser.role === "admin" ? "🛡️ Designated Co-Admin" : inspectingUser.displayName || "Client Account"}
                     </p>
                   </div>
                 </div>
@@ -1029,8 +1081,20 @@ function AdminPage() {
                 </div>
                 {inspectingUser.notes && (
                   <div className="pt-2 border-t border-border/30">
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">Payment Note</span>
-                    <p className="text-xs text-foreground mt-0.5">{inspectingUser.notes}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Payment & Activation Log</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyOrderText(inspectingUser.notes || "")}
+                        className="text-[10px] text-primary font-bold hover:underline cursor-pointer flex items-center gap-0.5"
+                      >
+                        {copiedOrderId ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+                        <span>{copiedOrderId ? "Copied" : "Copy Log"}</span>
+                      </button>
+                    </div>
+                    <p className="text-xs font-mono bg-card p-2 rounded-xl border border-border/50 text-foreground mt-1 break-all select-all">
+                      {inspectingUser.notes}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1100,7 +1164,7 @@ function AdminPage() {
               {/* Developer Action Suite */}
               <div className="space-y-2 pt-2 border-t border-border/40">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-                  Quick Actions
+                  Quick Actions & Permissions
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <button
@@ -1135,6 +1199,22 @@ function AdminPage() {
                     👑 VIP Lifetime
                   </button>
 
+                  {/* Co-Admin Toggle */}
+                  {isMasterDev && (
+                    <button
+                      onClick={() => handleToggleAdminRole(inspectingUser)}
+                      className={cn(
+                        "p-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-1",
+                        inspectingUser.role === "admin"
+                          ? "bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30"
+                          : "bg-secondary hover:bg-secondary/80 text-foreground",
+                      )}
+                    >
+                      <Shield className="size-3.5 text-indigo-600" />
+                      <span>{inspectingUser.role === "admin" ? "Remove Admin" : "Make Co-Admin"}</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleRewardReferral(inspectingUser)}
                     className="p-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold cursor-pointer flex items-center justify-center gap-1"
@@ -1160,7 +1240,7 @@ function AdminPage() {
           </div>
         )}
 
-        {/* ================= MODAL 2: EDIT USER PLAN ================= */}
+        {/* ================= MODAL 2: EDIT USER PLAN (WITH PAID WARNING & MANUAL DAYS) ================= */}
         {editingUser && (
           <div
             className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
@@ -1170,13 +1250,13 @@ function AdminPage() {
             <form
               onSubmit={handleSaveUserPlan}
               onClick={(e) => e.stopPropagation()}
-              className="bg-card w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 text-left"
+              className="bg-card w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 text-left max-h-[90vh] overflow-y-auto"
               style={{ touchAction: "auto" }}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-display font-bold text-base text-foreground">Edit User Plan & Access</h3>
-                  <p className="text-xs text-muted-foreground">{editingUser.email}</p>
+                  <p className="text-xs text-muted-foreground break-all">{editingUser.email}</p>
                 </div>
                 <button
                   type="button"
@@ -1186,6 +1266,21 @@ function AdminPage() {
                   ✕
                 </button>
               </div>
+
+              {/* STRICT PAID USER WARNING */}
+              {(editingUser.plan === "monthly" || editingUser.plan === "yearly" || (editingUser.notes && editingUser.notes.toLowerCase().includes("paid"))) && (
+                <div className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-3.5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    <span>CAUTION: ACTIVE PAID SUBSCRIBER</span>
+                  </div>
+                  <p className="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                    This customer has an active <strong>{editingUser.plan.toUpperCase()}</strong> paid subscription
+                    {editingUser.notes ? ` (${editingUser.notes})` : ""}.
+                    Modifying or shortening their plan will override their paid subscription period!
+                  </p>
+                </div>
+              )}
 
               {/* Plan Selector Chips */}
               <div>
@@ -1228,45 +1323,58 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* Quick Extend Buttons */}
+              {/* Quick Preset Buttons */}
               {editPlanType !== "lifetime_free" && editPlanType !== "suspended" && (
-                <div>
-                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                    Quick Expiry Set
+                <div className="space-y-2">
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    Quick Preset Expiry
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
-                      onClick={() => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 30);
-                        setEditExpiryDate(d.toISOString().slice(0, 10));
-                      }}
+                      onClick={() => handleApplyCustomDays(30)}
                       className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
                     >
                       +30 Days
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 90);
-                        setEditExpiryDate(d.toISOString().slice(0, 10));
-                      }}
+                      onClick={() => handleApplyCustomDays(90)}
                       className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
                     >
                       +90 Days
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 365);
-                        setEditExpiryDate(d.toISOString().slice(0, 10));
-                      }}
+                      onClick={() => handleApplyCustomDays(180)}
+                      className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
+                    >
+                      +180 Days (6 mos)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCustomDays(365)}
                       className="px-2.5 py-1 rounded-lg bg-secondary text-xs font-bold text-foreground cursor-pointer hover:bg-secondary/80"
                     >
                       +1 Year (365d)
+                    </button>
+                  </div>
+
+                  {/* Manual Exact Days Calculator */}
+                  <div className="bg-secondary/40 p-2.5 rounded-xl border border-border/40 flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={customDaysToAdd}
+                      onChange={(e) => setCustomDaysToAdd(e.target.value)}
+                      placeholder="Custom Days (e.g. 45, 60)"
+                      className="flex-1 bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCustomDays(Number(customDaysToAdd))}
+                      className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition cursor-pointer shrink-0"
+                    >
+                      Apply +Days
                     </button>
                   </div>
                 </div>
@@ -1276,7 +1384,7 @@ function AdminPage() {
               {editPlanType !== "lifetime_free" && (
                 <div>
                   <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                    Plan Expiry Date
+                    Calculated Plan Expiry Date
                   </label>
                   <input
                     type="date"
@@ -1290,13 +1398,13 @@ function AdminPage() {
               {/* Notes */}
               <div>
                 <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Admin Notes (Optional)
+                  Admin / Payment Notes
                 </label>
                 <input
                   type="text"
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  placeholder="e.g. Paid ₹1,999 via GPay on 29 Aug"
+                  placeholder="e.g. Paid ₹1,999 via Cashfree on 29 Aug"
                   className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-primary"
                 />
               </div>
@@ -1481,7 +1589,7 @@ function AdminPage() {
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-sm text-foreground">Remove User Account?</h3>
-                  <p className="text-xs text-muted-foreground">{pendingDeleteUser.email}</p>
+                  <p className="text-xs text-muted-foreground break-all">{pendingDeleteUser.email}</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">

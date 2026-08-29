@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.8";
+export const APP_VERSION = "1.9.9";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.8",
+    version: "v1.9.9",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Paid User Warning, Manual Days Calculator, Co-Admin Role & Compact Sub-Menu",
+    badge: "LATEST UPDATE 🛡️",
+    changes: [
+      {
+        emoji: "⚠️",
+        text: "Paid Subscriber Protection Warning",
+        desc: "Prominent warning alert appears when editing paid users to prevent accidental plan reduction or date shortening.",
+      },
+      {
+        emoji: "🧮",
+        text: "Manual Expiry Days Calculator",
+        desc: "Type exact custom days (e.g. +45, +60, +180) to automatically compute and set expiry dates.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Designated Co-Admin Delegation",
+        desc: "Master Super Admin can now promote trusted user accounts to Co-Admin.",
+      },
+      {
+        emoji: "📋",
+        text: "1-Tap Copy for Order & Payment Logs",
+        desc: "Added 1-tap clipboard copy for Cashfree order logs and fixed email text overflow.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.8",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Universal Generic Saree App Logo & Cloud Store Branding Sync",
     badge: "LATEST UPDATE 🎨",
     changes: [

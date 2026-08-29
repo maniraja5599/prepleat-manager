@@ -94,9 +94,16 @@ export function generateReferralCode(email: string, uid: string): string {
 /**
  * Check if a user is a super admin
  */
-export function isSuperAdmin(user: AppUser | null | undefined): boolean {
+export function isMasterSuperAdmin(user: AppUser | null | undefined): boolean {
   if (!user || !user.email) return false;
   return SUPER_ADMIN_EMAILS.some((adm) => adm.toLowerCase() === user.email?.toLowerCase().trim());
+}
+
+export function isSuperAdmin(user: AppUser | null | undefined, profile?: UserProfile | null): boolean {
+  if (!user || !user.email) return false;
+  if (isMasterSuperAdmin(user)) return true;
+  if (profile && profile.role === "admin") return true;
+  return false;
 }
 
 /**
@@ -781,4 +788,13 @@ export async function syncCloudBusinessBranding(
   if (Object.keys(dataToUpdate).length > 0) {
     await updateDoc(userDocRef, dataToUpdate);
   }
+}
+
+/**
+ * Update user's administrative role (admin or user)
+ */
+export async function updateUserRole(uid: string, role: "admin" | "user"): Promise<void> {
+  if (!db || !uid) return;
+  const userDocRef = doc(db, "user_profiles", uid);
+  await updateDoc(userDocRef, { role });
 }
