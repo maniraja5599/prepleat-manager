@@ -178,6 +178,17 @@ function AdminPage() {
   const isAdmin = isSuperAdmin(currentUser, myProfile);
   const isMasterDev = isMasterSuperAdmin(currentUser);
 
+  // Get accurate studio net profit earned by user
+  const getUserStudioProfit = (u: UserProfile): number => {
+    if (u.businessStats?.netProfit !== undefined) {
+      return u.businessStats.netProfit;
+    }
+    if (u.businessStats?.totalRevenueCollected) {
+      return u.businessStats.totalRevenueCollected;
+    }
+    return 0;
+  };
+
   // Compute Total Amount Collected per user
   const getUserTotalCollected = (u: UserProfile): number => {
     let total = 0;
@@ -719,9 +730,9 @@ function AdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1">
                   {[...users]
                     .sort((a, b) => {
-                      const revA = a.businessStats?.totalRevenueCollected || 0;
-                      const revB = b.businessStats?.totalRevenueCollected || 0;
-                      if (revB !== revA) return revB - revA;
+                      const profitA = getUserStudioProfit(a);
+                      const profitB = getUserStudioProfit(b);
+                      if (profitB !== profitA) return profitB - profitA;
                       const bookA = a.businessStats?.totalBookings || 0;
                       const bookB = b.businessStats?.totalBookings || 0;
                       if (bookB !== bookA) return bookB - bookA;
@@ -729,6 +740,7 @@ function AdminPage() {
                     })
                     .map((topUser, rankIdx) => {
                       const stats = topUser.businessStats || { totalBookings: 0, totalRevenueCollected: 0, totalCustomers: 0 };
+                      const profit = getUserStudioProfit(topUser);
                       const rankMedal = rankIdx === 0 ? "🥇" : rankIdx === 1 ? "🥈" : rankIdx === 2 ? "🥉" : `#${rankIdx + 1}`;
                       return (
                         <div
@@ -748,7 +760,7 @@ function AdminPage() {
 
                           <div className="text-right shrink-0">
                             <span className="font-black text-emerald-600 dark:text-emerald-400 block">
-                              ₹{stats.totalRevenueCollected.toLocaleString("en-IN")}
+                              ₹{profit.toLocaleString("en-IN")}
                             </span>
                             <span className="text-[10px] text-muted-foreground">
                               {stats.totalBookings} bookings
@@ -1038,7 +1050,7 @@ function AdminPage() {
                           <div>
                             <span className="text-[10px] text-muted-foreground block">Saree Orders:</span>
                             <span className="font-bold text-foreground">
-                              {u.businessStats?.totalBookings || 0} (₹{(u.businessStats?.totalRevenueCollected || 0).toLocaleString("en-IN")})
+                              {u.businessStats?.totalBookings || 0} (₹{getUserStudioProfit(u).toLocaleString("en-IN")})
                             </span>
                           </div>
                           <div className="text-right">
