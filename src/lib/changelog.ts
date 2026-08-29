@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.9.3";
+export const APP_VERSION = "1.9.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,28 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v1.9.3",
+    version: "v1.9.4",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Serverless Cashfree Checkout Integration & Complete Admin UI Redesign",
+    badge: "LATEST UPDATE 💎",
+    changes: [
+      {
+        emoji: "💎",
+        text: "Super-Admin Dashboard Redesign",
+        desc: "Brand new modern layout with responsive 4-stat KPI grid, segmented navigation pills, and polished settings forms.",
+      },
+      {
+        emoji: "⚡",
+        text: "Zero-CORS Serverless Cashfree Checkout",
+        desc: "Fixed browser CORS by routing Cashfree order creation through a serverless RPC handler, seamlessly launching the Drop-in modal.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.3",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Cashfree Modal Drop-in Checkout, Plan Stacking / Queueing & Touch Locking",
     badge: "LATEST UPDATE ⚡",
     changes: [

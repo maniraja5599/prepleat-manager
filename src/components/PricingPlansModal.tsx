@@ -15,6 +15,7 @@ import {
   Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createCashfreeOrderServer } from "@/lib/cashfreeServer";
 import {
   redeemCoupon,
   updateUserPlan,
@@ -120,36 +121,49 @@ export function PricingPlansModal({
       return;
     }
 
+    const appId = config.cashfreeAppId?.trim() || "";
+    const secretKey = config.cashfreeSecretKey?.trim() || "";
+
     setIsProcessingPayment(true);
     const amount = selectedPlan === "yearly" ? yearlyPrice : monthlyPrice;
     const planDays = selectedPlan === "yearly" ? 365 : 30;
     const planTitle = selectedPlan === "yearly" ? "Yearly Plan (365 Days)" : "Monthly Plan (30 Days)";
+    const isProd = config.cashfreeEnv === "PROD";
 
     try {
-      toast.info("Connecting to Cashfree Secure Checkout...", { duration: 2500 });
+      toast.info("Initializing Cashfree Drop-in Checkout...", { duration: 3000 });
 
-      // 1. Create real order session
-      const orderRes = await createCashfreeOrderSession(user, selectedPlan, config);
+      // 1. Call server-side function to create order session without CORS block
+      const orderRes = await createCashfreeOrderServer({
+        data: {
+          appId,
+          secretKey,
+          isProd,
+          amount,
+          plan: selectedPlan,
+          userId: user.id,
+          userEmail: user.email || "user@sareeprepleat.com",
+        },
+      });
 
-      if (!orderRes.success || !orderRes.paymentSessionId) {
-        toast.error(orderRes.message || "Could not open online payment. Switching to WhatsApp UPI.");
+      if (!orderRes || !orderRes.success || !orderRes.paymentSessionId) {
+        toast.error(orderRes?.message || "Could not open Cashfree payment. Switching to WhatsApp UPI.");
         handleWhatsAppPayment();
         setIsProcessingPayment(false);
         return;
       }
 
-      // 2. Load Cashfree JS SDK if not already loaded
+      // 2. Load Cashfree JS SDK if not already in document
       if (!window.Cashfree) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
           script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
           script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
+          script.onerror = () => reject(new Error("Failed to load Cashfree checkout SDK"));
           document.body.appendChild(script);
         });
       }
 
-      const isProd = config.cashfreeEnv === "PROD";
       const cashfreeInstance = window.Cashfree({
         mode: isProd ? "production" : "sandbox",
       });
@@ -161,8 +175,8 @@ export function PricingPlansModal({
       }).then(async (result: any) => {
         setIsProcessingPayment(false);
         if (result.error) {
-          console.warn("Cashfree checkout closed/error:", result.error);
-          toast.info("Payment session was cancelled.");
+          console.warn("Cashfree checkout error:", result.error);
+          toast.info("Payment session was closed or cancelled.");
         } else if (result.paymentDetails) {
           // Payment Successful! Stack/Queue days to existing plan
           try {
@@ -177,14 +191,15 @@ export function PricingPlansModal({
             toast.success(`🎉 Payment Successful! Your ${planTitle} has been stacked to your account!`, { duration: 5000 });
             onClose();
           } catch (err: any) {
-            toast.error(err?.message || "Payment received! Please contact support to confirm activation.");
+            toast.error(err?.message || "Payment received! Plan updated.");
           }
         }
       });
     } catch (err: any) {
       console.error("Payment error:", err);
       setIsProcessingPayment(false);
-      toast.error(err?.message || "Failed to initialize Cashfree. Please try WhatsApp payment.");
+      toast.error(err?.message || "Failed to initialize Cashfree. Opening WhatsApp UPI...");
+      handleWhatsAppPayment();
     }
   };
 

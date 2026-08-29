@@ -26,6 +26,9 @@ import {
   ExternalLink,
   HelpCircle,
   CreditCard,
+  Crown,
+  Layers,
+  ArrowUpRight,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
@@ -217,7 +220,7 @@ function AdminPage() {
     e.preventDefault();
     try {
       await updateSystemConfig(configForm);
-      toast.success("Subscription pricing & Cashfree setup updated successfully!");
+      toast.success("Subscription pricing & Cashfree setup saved successfully!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to save configuration");
     }
@@ -276,28 +279,29 @@ function AdminPage() {
 
   return (
     <AppShell>
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5 pb-28 text-left">
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-primary/20">
+      <div className="p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 pb-28 text-left">
+        {/* Top Hero Header */}
+        <div className="relative overflow-hidden bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate({ to: "/" })}
-              className="size-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 cursor-pointer shrink-0"
+              className="size-9 rounded-2xl bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer shrink-0"
               title="Return to Calendar"
             >
               <ArrowLeft className="size-4" />
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black font-display text-foreground">
+                <h1 className="text-base sm:text-lg font-black font-display text-foreground">
                   Developer Super-Admin
                 </h1>
-                <span className="px-2 py-0.5 rounded-full saree-gradient text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
-                  MASTER VIP 👑
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full saree-gradient text-white text-[9.5px] font-black uppercase tracking-wider shadow-xs">
+                  <Crown className="size-3" />
+                  <span>VIP</span>
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Logged in as <span className="font-semibold text-foreground">{currentUser?.email}</span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Developer Master Account: <span className="font-semibold text-foreground">{currentUser?.email}</span>
               </p>
             </div>
           </div>
@@ -305,112 +309,116 @@ function AdminPage() {
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("trigger-pricing-modal"))}
-              className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
-              <Zap className="size-3.5 text-amber-500" />
+              <Zap className="size-3.5 text-primary" />
               <span>Test Paywall</span>
             </button>
           </div>
         </div>
 
-        {/* 4 Navigation Tabs */}
-        <div className="grid grid-cols-4 gap-1.5 bg-secondary/80 p-1.5 rounded-2xl border border-border/40">
+        {/* Segmented Navigation Tabs */}
+        <div className="grid grid-cols-4 gap-1 bg-secondary/80 p-1 rounded-2xl border border-border/50">
           <button
             onClick={() => setActiveTab("overview")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1",
+              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "overview"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Sparkles className="size-3.5" />
-            <span className="hidden sm:inline">Overview</span>
+            <Sparkles className="size-3.5 shrink-0" />
+            <span>Overview</span>
           </button>
 
           <button
             onClick={() => setActiveTab("users")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1",
+              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "users"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Users className="size-3.5" />
+            <Users className="size-3.5 shrink-0" />
             <span>Users ({users.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("coupons")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1",
+              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "coupons"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Tag className="size-3.5" />
+            <Tag className="size-3.5 shrink-0" />
             <span>Coupons ({coupons.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("pricing")}
             className={cn(
-              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1",
+              "py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5",
               activeTab === "pricing"
                 ? "bg-card text-primary shadow-xs font-extrabold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Settings className="size-3.5" />
+            <Settings className="size-3.5 shrink-0" />
             <span className="hidden sm:inline">Pricing & Cashfree</span>
-            <span className="sm:hidden">Setup</span>
+            <span className="sm:hidden">Gateway</span>
           </button>
         </div>
 
         {/* ================= TAB 1: OVERVIEW ================= */}
         {activeTab === "overview" && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/40 text-center">
+            {/* 4 Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Users</span>
-                <p className="text-2xl font-black font-display mt-1 text-foreground">{totalUsersCount}</p>
-                <span className="text-[10px] text-muted-foreground">Registered Accounts</span>
+                <p className="text-2xl font-black font-display my-1 text-foreground">{totalUsersCount}</p>
+                <span className="text-[10px] text-muted-foreground">Registered</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/40 text-center">
+              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Active Trials</span>
-                <p className="text-2xl font-black font-display mt-1 text-amber-500">{activeTrialsCount}</p>
-                <span className="text-[10px] text-muted-foreground">30-Day Free Trials</span>
+                <p className="text-2xl font-black font-display my-1 text-amber-500">{activeTrialsCount}</p>
+                <span className="text-[10px] text-muted-foreground">30d Free</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/40 text-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Paid Subscribers</span>
-                <p className="text-2xl font-black font-display mt-1 text-emerald-600 dark:text-emerald-400">{paidSubscribersCount}</p>
-                <span className="text-[10px] text-muted-foreground">Monthly / Yearly / VIP</span>
+              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Paid Active</span>
+                <p className="text-2xl font-black font-display my-1 text-emerald-600 dark:text-emerald-400">{paidSubscribersCount}</p>
+                <span className="text-[10px] text-muted-foreground">Monthly/Year/VIP</span>
               </div>
 
-              <div className="bg-card card-shadow rounded-2xl p-4 border border-border/40 text-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">Expired Accounts</span>
-                <p className="text-2xl font-black font-display mt-1 text-destructive">{expiredCount}</p>
-                <span className="text-[10px] text-muted-foreground">Pending Renewal</span>
+              <div className="bg-card card-shadow rounded-2xl p-3.5 border border-border/50 flex flex-col justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">Expired</span>
+                <p className="text-2xl font-black font-display my-1 text-destructive">{expiredCount}</p>
+                <span className="text-[10px] text-muted-foreground">Needs Renewal</span>
               </div>
             </div>
 
-            {/* Quick Actions Panel */}
-            <div className="bg-card card-shadow rounded-3xl p-5 border border-border/40 space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+            {/* Quick Actions */}
+            <div className="bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-border/40 space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <Zap className="size-4 text-primary" />
                 <span>Quick Developer Actions</span>
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
                   onClick={() => setActiveTab("users")}
-                  className="p-3.5 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30"
+                  className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
                 >
-                  <p className="text-xs font-bold text-foreground">Manage Users & Expiries</p>
-                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Extend +30 days, +1 year, edit dates, or remove test users.</p>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Manage Users & Expiries</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Extend +30d, +1yr, edit dates, or remove.</p>
+                  </div>
+                  <ArrowUpRight className="size-4 text-muted-foreground shrink-0 ml-2" />
                 </button>
 
                 <button
@@ -418,18 +426,24 @@ function AdminPage() {
                     setActiveTab("coupons");
                     setCreateCouponOpen(true);
                   }}
-                  className="p-3.5 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30"
+                  className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
                 >
-                  <p className="text-xs font-bold text-foreground">+ Create Promo Coupon</p>
-                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Generate free months or discount codes for clients.</p>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">+ Create Promo Coupon</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Generate free months or discount codes.</p>
+                  </div>
+                  <ArrowUpRight className="size-4 text-muted-foreground shrink-0 ml-2" />
                 </button>
 
                 <button
                   onClick={() => setActiveTab("pricing")}
-                  className="p-3.5 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30"
+                  className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition text-left cursor-pointer border border-border/30 flex items-center justify-between"
                 >
-                  <p className="text-xs font-bold text-foreground">Cashfree & Price Config</p>
-                  <p className="text-[10.5px] text-muted-foreground mt-0.5">Set Cashfree keys, trial duration, and monthly/yearly rates.</p>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Pricing & Cashfree Setup</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Configure Cashfree API keys and rates.</p>
+                  </div>
+                  <ArrowUpRight className="size-4 text-muted-foreground shrink-0 ml-2" />
                 </button>
               </div>
             </div>
@@ -710,131 +724,159 @@ function AdminPage() {
               <div className="flex items-center gap-2">
                 <CreditCard className="size-5 text-primary" />
                 <h3 className="font-display font-bold text-sm text-foreground">
-                  Cashfree Payment Gateway Activation Guide
+                  Cashfree Payment Gateway Integration Guide
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                To accept automatic credit card, netbanking, and UPI payments directly in the app:
+                Accept automatic credit card, netbanking, and UPI payments directly in the app:
               </p>
               <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1 pl-1">
                 <li>Register a merchant account at <strong className="text-foreground">merchant.cashfree.com</strong>.</li>
                 <li>Go to <strong className="text-foreground">Developers → API Keys</strong>.</li>
                 <li>Copy your <strong className="text-foreground">App ID</strong> and <strong className="text-foreground">Secret Key</strong> and paste them below.</li>
-                <li>Set Environment to <strong className="text-foreground">TEST (Sandbox)</strong> for testing, then switch to <strong className="text-foreground">PROD (Live)</strong>.</li>
+                <li>Set Environment to <strong className="text-foreground">TEST (Sandbox)</strong> for testing, then switch to <strong className="text-foreground">PROD (Live)</strong> when verified.</li>
               </ol>
             </div>
 
             <form
               onSubmit={handleSaveConfig}
-              className="bg-card card-shadow rounded-3xl p-5 border border-border/40 space-y-4"
+              className="bg-card card-shadow rounded-3xl p-4 sm:p-5 border border-border/40 space-y-4"
             >
               <div>
                 <h2 className="text-base font-bold font-display">Subscription Pricing & Gateway Settings</h2>
                 <p className="text-xs text-muted-foreground">
-                  Changes made here take effect immediately across all client devices.
+                  Changes take effect immediately across all client devices.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Environment Toggle */}
+              <div className="bg-secondary/50 rounded-2xl p-3 border border-border flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                    Default Free Trial Duration (Days)
+                  <label className="text-xs font-bold text-foreground block">Cashfree Environment</label>
+                  <p className="text-[10.5px] text-muted-foreground">Current mode: {configForm.cashfreeEnv === "PROD" ? "🔴 Production (LIVE)" : "🟡 Sandbox (TEST)"}</p>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setConfigForm({ ...configForm, cashfreeEnv: "TEST" })}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition",
+                      configForm.cashfreeEnv === "TEST" ? "bg-amber-500 text-white shadow-xs" : "bg-card text-muted-foreground",
+                    )}
+                  >
+                    TEST
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigForm({ ...configForm, cashfreeEnv: "PROD" })}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition",
+                      configForm.cashfreeEnv === "PROD" ? "bg-emerald-600 text-white shadow-xs" : "bg-card text-muted-foreground",
+                    )}
+                  >
+                    LIVE (PROD)
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Free Trial Duration (Days)
                   </label>
                   <input
                     type="number"
                     value={configForm.trialDays}
                     onChange={(e) => setConfigForm({ ...configForm, trialDays: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
-                  <span className="text-[10px] text-muted-foreground">New signups get 30 days free by default.</span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                     Monthly Plan Price (₹)
                   </label>
                   <input
                     type="number"
                     value={configForm.monthlyPrice}
                     onChange={(e) => setConfigForm({ ...configForm, monthlyPrice: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                     Yearly Plan Offer Price (₹)
                   </label>
                   <input
                     type="number"
                     value={configForm.yearlyPrice}
                     onChange={(e) => setConfigForm({ ...configForm, yearlyPrice: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
-                  <span className="text-[10px] text-emerald-600 font-semibold">Special Discounted Yearly Rate</span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                    Yearly Original Price (₹ Strike-through)
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Yearly Strike-Through Price (₹)
                   </label>
                   <input
                     type="number"
                     value={configForm.yearlyOriginalPrice}
                     onChange={(e) => setConfigForm({ ...configForm, yearlyOriginalPrice: Number(e.target.value) })}
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                <div className="sm:col-span-2">
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                     Cashfree App ID (Client ID)
                   </label>
                   <input
                     type="text"
                     value={configForm.cashfreeAppId || ""}
                     onChange={(e) => setConfigForm({ ...configForm, cashfreeAppId: e.target.value })}
-                    placeholder="e.g. TEST1038493..."
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    placeholder="e.g. TEST1120290946507dc3d9f01ff4148790920211"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-mono font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                <div className="sm:col-span-2">
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
                     Cashfree Secret Key
                   </label>
                   <input
-                    type="password"
+                    type="text"
                     value={configForm.cashfreeSecretKey || ""}
                     onChange={(e) => setConfigForm({ ...configForm, cashfreeSecretKey: e.target.value })}
-                    placeholder="••••••••••••••••••••••••••••••"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    placeholder="e.g. cfsk_ma_test_..."
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-mono font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                    Support / Payment WhatsApp Number
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Support WhatsApp Number
                   </label>
                   <input
                     type="text"
                     value={configForm.supportWhatsapp}
                     onChange={(e) => setConfigForm({ ...configForm, supportWhatsapp: e.target.value })}
-                    placeholder="e.g. 919876543210 (with country code)"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    placeholder="e.g. 919876543210"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                    Developer UPI ID (GPay / PhonePe)
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                    Direct UPI ID (GPay / PhonePe)
                   </label>
                   <input
                     type="text"
                     value={configForm.supportUpiId || ""}
                     onChange={(e) => setConfigForm({ ...configForm, supportUpiId: e.target.value })}
                     placeholder="e.g. manirajankg@okaxis"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold border border-border focus:outline-none focus:border-primary"
+                    className="w-full bg-secondary rounded-xl px-3 py-2 text-xs font-bold border border-border focus:outline-none focus:border-primary"
                   />
                 </div>
               </div>
@@ -852,13 +894,15 @@ function AdminPage() {
         {/* Modal: Interactive Edit User Plan */}
         {editingUser && (
           <div
-            className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
             onClick={() => setEditingUser(null)}
+            style={{ touchAction: "none" }}
           >
             <form
               onSubmit={handleSaveUserPlan}
               onClick={(e) => e.stopPropagation()}
               className="bg-card w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-primary/30 space-y-4 animate-in zoom-in-95 text-left"
+              style={{ touchAction: "auto" }}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -1011,13 +1055,15 @@ function AdminPage() {
         {/* Modal: Create Coupon */}
         {createCouponOpen && (
           <div
-            className="fixed inset-0 z-[30000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[30000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
             onClick={() => setCreateCouponOpen(false)}
+            style={{ touchAction: "none" }}
           >
             <form
               onSubmit={handleCreateCouponSubmit}
               onClick={(e) => e.stopPropagation()}
               className="bg-card w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-border/60 space-y-4 animate-in zoom-in-95"
+              style={{ touchAction: "auto" }}
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-display font-bold text-base text-foreground">Create New Promo Coupon</h3>
@@ -1151,12 +1197,14 @@ function AdminPage() {
         {/* Modal: Delete User Confirmation Dialog */}
         {pendingDeleteUser && (
           <div
-            className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[32000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
             onClick={() => setPendingDeleteUser(null)}
+            style={{ touchAction: "none" }}
           >
             <div
               onClick={(e) => e.stopPropagation()}
               className="bg-card w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-destructive/30 space-y-4 animate-in zoom-in-95 text-left"
+              style={{ touchAction: "auto" }}
             >
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center font-bold">
