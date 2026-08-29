@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/default-app-logo.svg";
+import { useStore } from "@/lib/store";
 import { Loader2, Mail, Lock, UserRound, Eye, EyeOff, Sparkles } from "lucide-react";
 import {
   createAccountWithEmail,
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — Eyas Saree Drapist" },
+      { title: "Sign In — Saree PrePleat Studio" },
       {
         name: "description",
         content: "Sign in to manage your saree bookings, payments and customers.",
@@ -29,6 +30,9 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const storeBusinessName = useStore((s) => s.settings.businessName);
+  const storeLogo = useStore((s) => s.settings.logoDataUrl);
+  const displayBrand = storeBusinessName?.trim() || "Saree PrePleat Studio";
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -121,13 +125,13 @@ function AuthPage() {
         <div className="flex flex-col items-center mb-8">
           <div className="size-16 rounded-full overflow-hidden ring-2 ring-primary/30 mb-3">
             <img
-              src={logoAsset}
+              src={storeLogo || logoAsset}
               alt=""
-              className="size-full rounded-full object-cover scale-[1.18]"
+              className="size-full rounded-full object-cover scale-[1.05]"
             />
           </div>
-          <h1 className="text-2xl font-display font-semibold tracking-tight">Eyas Saree Drapist</h1>
-          <p className="text-sm text-muted-foreground mt-1">PrePleat & Drape manager</p>
+          <h1 className="text-2xl font-display font-semibold tracking-tight">{displayBrand}</h1>
+          <p className="text-sm text-muted-foreground mt-1">PrePleat & Drape Studio Manager</p>
         </div>
 
         <div className="bg-card card-shadow rounded-3xl p-6 space-y-4">

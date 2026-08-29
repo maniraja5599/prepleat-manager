@@ -78,15 +78,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Eyas Drapist" },
-      { title: "Eyas Saree — PrePleat & Drape" },
+      { name: "apple-mobile-web-app-title", content: "PrePleat Studio" },
+      { title: "Saree PrePleat Studio — Manager" },
       {
         name: "description",
         content:
           "Mobile-first manager for PrePleat & Drape bookings, payments, and customer reminders.",
       },
-      { property: "og:title", content: "Eyas Saree — PrePleat & Drape" },
-      { name: "twitter:title", content: "Eyas Saree — PrePleat & Drape" },
+      { property: "og:title", content: "Saree PrePleat Studio — Manager" },
+      { name: "twitter:title", content: "Saree PrePleat Studio — Manager" },
       {
         property: "og:description",
         content:
@@ -115,10 +115,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
+      { rel: "icon", type: "image/svg+xml", href: "/app-logo.svg" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
-      { rel: "shortcut icon", type: "image/png", href: "/icon-192.png" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "shortcut icon", type: "image/svg+xml", href: "/app-logo.svg" },
+      { rel: "apple-touch-icon", href: "/app-logo.svg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {

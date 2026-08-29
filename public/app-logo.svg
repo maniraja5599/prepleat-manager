@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#DB2777" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <linearGradient id="pleatGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#E0E7FF" stop-opacity="0.7" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background Circle with vibrant gradient -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" filter="url(#glow)" />
+  
+  <!-- Outer Gold Accent Ring -->
+  <circle cx="256" cy="256" r="232" fill="none" stroke="url(#goldGrad)" stroke-width="8" opacity="0.85" />
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="8 8" opacity="0.4" />
+
+  <!-- Saree Pleats Art Vector -->
+  <g transform="translate(0, -10)">
+    <!-- Hanger / Drapery Crown Top -->
+    <path d="M256 120 C240 120 228 132 228 148 C228 160 236 170 248 174 L170 216 C155 224 150 244 160 258 C168 270 184 274 198 266 L256 235 L314 266 C328 274 344 270 352 258 C362 244 357 224 342 216 L264 174 C276 170 284 160 284 148 C284 132 272 120 256 120 Z" fill="url(#goldGrad)" />
+    
+    <!-- Flowing Saree Pleats Layer 1 (Left) -->
+    <path d="M190 260 L140 400 C155 415 180 420 195 405 L230 255 Z" fill="url(#pleatGrad1)" opacity="0.9" />
+    
+    <!-- Flowing Saree Pleats Layer 2 (Center-Left) -->
+    <path d="M220 252 L190 415 C205 425 230 428 245 415 L252 250 Z" fill="#FFFFFF" opacity="0.95" />
+    
+    <!-- Center Royal Pleat with Gold Zari Border -->
+    <path d="M248 248 L238 425 C250 430 262 430 274 425 L264 248 Z" fill="url(#goldGrad)" />
+    
+    <!-- Flowing Saree Pleats Layer 3 (Center-Right) -->
+    <path d="M260 250 L267 415 C282 428 307 425 322 415 L292 252 Z" fill="#FFFFFF" opacity="0.95" />
+    
+    <!-- Flowing Saree Pleats Layer 4 (Right) -->
+    <path d="M282 255 L317 405 C332 420 357 415 372 400 L322 260 Z" fill="url(#pleatGrad1)" opacity="0.9" />
+    
+    <!-- Elegant Sparkles -->
+    <path d="M140 160 L145 175 L160 180 L145 185 L140 200 L135 185 L120 180 L135 175 Z" fill="url(#goldGrad)" />
+    <path d="M370 160 L375 175 L390 180 L375 185 L370 200 L365 185 L350 180 L365 175 Z" fill="url(#goldGrad)" />
+  </g>
+</svg>

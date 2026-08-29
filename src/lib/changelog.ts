@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.2";
+export const APP_VERSION = "2.0.3";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,38 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.2",
+    version: "v2.0.3",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Auth Branding Neutrality, Vector Favicon, Per-User Collections & Month-Wise Revenue",
+    badge: "LATEST UPDATE 💎",
+    changes: [
+      {
+        emoji: "🎨",
+        text: "Clean Neutral Auth Page & Universal Vector Favicon",
+        desc: "New users see Saree PrePleat Studio with luxury golden saree vector icon in the browser tab and auth page.",
+      },
+      {
+        emoji: "💰",
+        text: "Individual User Collections Tracker",
+        desc: "Each user card in Admin displays their exact lifetime amount paid with detailed order history.",
+      },
+      {
+        emoji: "📅",
+        text: "Month-Wise Revenue & Order Analytics",
+        desc: "Interactive monthly revenue breakdown with detailed subscription customer transaction logs.",
+      },
+      {
+        emoji: "🎟️",
+        text: "Enhanced Coupon Usage Inspector",
+        desc: "Comprehensive analytics showing exact user accounts, redemption timestamps, and direct WhatsApp links.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.2",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "Percent Discount Coupons, Checkout Price Deduction & Detailed Coupon Analytics",
     badge: "LATEST UPDATE 🎟️",
     changes: [
