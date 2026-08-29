@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   X,
@@ -56,6 +57,7 @@ export function PricingPlansModal({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; percent: number } | null>(null);
+  const navigate = useNavigate();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [autoRenew, setAutoRenew] = useState(true);
 
@@ -189,6 +191,13 @@ export function PricingPlansModal({
       }
       useStore.getState().updateSettings({ businessPhone: cleanPhone });
     } catch (_) {}
+
+    if (!user || user.isAnonymous) {
+      toast.error("Please Sign In with Google or Email first to secure your subscription and enable cloud sync!");
+      onClose();
+      navigate({ to: "/auth" });
+      return;
+    }
 
     setIsProcessingPayment(true);
     const amount = selectedPlan === "yearly" ? yearlyPrice : monthlyPrice;

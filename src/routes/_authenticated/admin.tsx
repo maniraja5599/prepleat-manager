@@ -58,6 +58,8 @@ import {
   updateUserPlan,
   updateUserRole,
   deleteUserProfile,
+  archiveUserProfile,
+  restoreUserProfile,
   processReferralReward,
   createCoupon,
   deleteCoupon,
@@ -107,7 +109,7 @@ function AdminPage() {
   // Users Tab state
   const [searchUser, setSearchUser] = useState("");
   const [userFilter, setUserFilter] = useState<
-    "all" | "monthly" | "yearly" | "trial" | "lifetime" | "expired" | "suspended"
+    "all" | "monthly" | "yearly" | "trial" | "lifetime" | "expired" | "suspended" | "archived"
   >("all");
 
   // Inspect User Details Modal
@@ -390,17 +392,39 @@ function AdminPage() {
     }
   };
 
-  const handleDeleteUser = async () => {
+  const handleArchiveUser = async () => {
     if (!pendingDeleteUser) return;
+    const target = pendingDeleteUser;
+    setPendingDeleteUser(null);
+    if (inspectingUser?.uid === target.uid) {
+      setInspectingUser(null);
+    }
     try {
-      await deleteUserProfile(pendingDeleteUser.uid);
-      toast.success("User account removed.");
-      setPendingDeleteUser(null);
-      if (inspectingUser?.uid === pendingDeleteUser.uid) {
-        setInspectingUser(null);
+      await archiveUserProfile(target.uid);
+      toast.success(`Archived ${target.email} (marked inactive).`, {
+        duration: 8000,
+        action: {
+          label: "↩️ Undo",
+          onClick: async () => {
+            await restoreUserProfile(target.uid);
+            toast.success(`Restored ${target.email} successfully!`);
+          },
+        },
+      });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to archive user");
+    }
+  };
+
+  const handleRestoreUser = async (u: UserProfile) => {
+    try {
+      await restoreUserProfile(u.uid);
+      toast.success(`Restored ${u.email} to active status!`);
+      if (inspectingUser?.uid === u.uid) {
+        setInspectingUser({ ...inspectingUser, isArchived: false, isApproved: true });
       }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to remove user");
+      toast.error(err?.message || "Failed to restore user");
     }
   };
 
@@ -503,13 +527,14 @@ function AdminPage() {
   const now = new Date();
 
   // Counts for filters
-  const totalCount = users.length;
-  const monthlyCount = users.filter((u) => u.plan === "monthly" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const yearlyCount = users.filter((u) => u.plan === "yearly" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const trialCount = users.filter((u) => u.plan === "trial" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now)).length;
-  const lifetimeCount = users.filter((u) => u.plan === "lifetime_free").length;
-  const expiredCount = users.filter((u) => u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free").length;
-  const suspendedCount = users.filter((u) => u.plan === "suspended" || !u.isApproved).length;
+  const totalCount = users.filter((u) => !u.isArchived).length;
+  const monthlyCount = users.filter((u) => u.plan === "monthly" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now) && !u.isArchived).length;
+  const yearlyCount = users.filter((u) => u.plan === "yearly" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now) && !u.isArchived).length;
+  const trialCount = users.filter((u) => u.plan === "trial" && (!u.planExpiresAt || new Date(u.planExpiresAt) >= now) && !u.isArchived).length;
+  const lifetimeCount = users.filter((u) => u.plan === "lifetime_free" && !u.isArchived).length;
+  const expiredCount = users.filter((u) => u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free" && !u.isArchived).length;
+  const suspendedCount = users.filter((u) => (u.plan === "suspended" || !u.isApproved) && !u.isArchived).length;
+  const archivedCount = users.filter((u) => u.isArchived).length;
 
   // Revenue Calculations
   const allTimeTotalCollections = allOrders.reduce((acc, o) => acc + o.amount, 0);
@@ -529,6 +554,10 @@ function AdminPage() {
     if (!matchQuery) return false;
 
     const isExp = u.planExpiresAt && new Date(u.planExpiresAt) < now && u.plan !== "lifetime_free";
+
+    if (userFilter === "archived") return !!u.isArchived;
+    // Don't show archived users in standard active tabs unless selected
+    if (u.isArchived) return false;
 
     if (userFilter === "monthly") return u.plan === "monthly" && !isExp;
     if (userFilter === "yearly") return u.plan === "yearly" && !isExp;
@@ -902,6 +931,7 @@ function AdminPage() {
                   { id: "lifetime" as const, label: `VIP Lifetime (${lifetimeCount})` },
                   { id: "expired" as const, label: `Expired (${expiredCount})` },
                   { id: "suspended" as const, label: `Suspended (${suspendedCount})` },
+                  { id: "archived" as const, label: `Archived/Inactive (${archivedCount})` },
                 ].map((f) => (
                   <button
                     key={f.id}
@@ -1099,13 +1129,24 @@ function AdminPage() {
                             <Eye className="size-3.5" />
                           </button>
 
-                          <button
-                            onClick={() => setPendingDeleteUser(u)}
-                            className="p-1.5 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer"
-                            title="Remove User Account"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                          {u.isArchived ? (
+                            <button
+                              onClick={() => handleRestoreUser(u)}
+                              className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-2xs hover:bg-emerald-700 cursor-pointer flex items-center gap-1"
+                              title="Restore User Account"
+                            >
+                              <UserCheck className="size-3" />
+                              <span>Restore</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setPendingDeleteUser(u)}
+                              className="p-1.5 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-bold cursor-pointer"
+                              title="Archive User Account"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -2064,12 +2105,12 @@ function AdminPage() {
                 <Trash2 className="size-5" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-sm text-foreground">Remove User Account?</h3>
+                <h3 className="font-display font-bold text-sm text-foreground">Archive User (Mark Inactive)?</h3>
                 <p className="text-xs text-muted-foreground break-all">{pendingDeleteUser.email}</p>
               </div>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              This will delete the user's registration record from the system. (Their private local database will not be affected).
+              This will archive the account and mark them inactive. You can restore them anytime using Undo or from the Archived tab.
             </p>
             <div className="flex gap-2 pt-1">
               <button
@@ -2081,10 +2122,10 @@ function AdminPage() {
               </button>
               <button
                 type="button"
-                onClick={handleDeleteUser}
+                onClick={handleArchiveUser}
                 className="flex-1 py-2.5 rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs font-bold shadow-xs cursor-pointer"
               >
-                Confirm Delete
+                Archive User
               </button>
             </div>
           </div>

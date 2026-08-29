@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.5";
+export const APP_VERSION = "2.0.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
-    version: "v2.0.5",
+    version: "v2.0.6",
     date: "29 Aug 2026",
     isLatest: true,
+    title: "Instant Business Metrics Sync, 30d Device Guest Limits & Soft User Archive with Undo",
+    badge: "LATEST UPDATE 🛡️",
+    changes: [
+      {
+        emoji: "⚡",
+        text: "Real-Time Saree Business Metrics Sync",
+        desc: "Boutique booking orders and client payments now sync automatically upon app launch and every booking update.",
+      },
+      {
+        emoji: "🔒",
+        text: "Device Guest Trial Enforcement & Payment Gate",
+        desc: "Guest mode enforces a 30-day device trial limit and requires account sign-in before processing subscription payments.",
+      },
+      {
+        emoji: "↩️",
+        text: "Soft User Archive & Instant Undo",
+        desc: "Deleting a user now safely archives them with a 1-tap Undo notification and a dedicated Archived directory.",
+      },
+    ],
+  },
+  {
+    version: "v2.0.5",
+    date: "29 Aug 2026",
+    isLatest: false,
     title: "7-Day Expiry Reminder Alert Banner, Auto-Renew Option & Full Leaderboard Sync",
     badge: "LATEST UPDATE ⚡",
     changes: [

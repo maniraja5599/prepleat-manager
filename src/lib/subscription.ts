@@ -58,6 +58,8 @@ export interface UserProfile {
   trialEndsAt: string; // ISO String
   planExpiresAt?: string | null; // ISO String or null
   isApproved: boolean;
+  isArchived?: boolean;
+  archivedAt?: string | null;
   createdAt: string;
   lastLoginAt: string;
   notes?: string;
@@ -964,5 +966,31 @@ export async function syncUserBusinessMetrics(
       ...stats,
       lastSyncedAt: new Date().toISOString(),
     },
+  });
+}
+
+/**
+ * Soft delete / Archive user account (Move to Inactive with Undo support)
+ */
+export async function archiveUserProfile(uid: string): Promise<void> {
+  if (!db || !uid) return;
+  const userDocRef = doc(db, "user_profiles", uid);
+  await updateDoc(userDocRef, {
+    isArchived: true,
+    isApproved: false,
+    archivedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Restore an archived / inactive user account
+ */
+export async function restoreUserProfile(uid: string): Promise<void> {
+  if (!db || !uid) return;
+  const userDocRef = doc(db, "user_profiles", uid);
+  await updateDoc(userDocRef, {
+    isArchived: false,
+    isApproved: true,
+    archivedAt: null,
   });
 }

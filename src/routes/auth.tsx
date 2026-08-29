@@ -108,10 +108,32 @@ function AuthPage() {
   }
 
   async function handleGuest() {
+    // Check if 30-day guest trial was already used on this device
+    const trialUsed = localStorage.getItem("prepleat_guest_trial_used");
+    const trialStarted = localStorage.getItem("prepleat_guest_trial_start");
+    
+    if (trialUsed === "expired" || trialUsed === "used") {
+      if (trialStarted) {
+        const startDate = new Date(trialStarted).getTime();
+        const daysPassed = (Date.now() - startDate) / (1000 * 60 * 60 * 24);
+        if (daysPassed > 30) {
+          toast.error("Your 30-day Guest Trial on this device has ended. Please Sign In with Google or Email to continue using your account!");
+          return;
+        }
+      } else {
+        toast.error("Guest access was already used on this device. Please Sign In with Google or Email.");
+        return;
+      }
+    }
+
     setBusy("guest");
     try {
       await signInAsGuest();
-      toast.success("Welcome! You're using a guest account.");
+      if (!trialStarted) {
+        localStorage.setItem("prepleat_guest_trial_start", new Date().toISOString());
+        localStorage.setItem("prepleat_guest_trial_used", "active");
+      }
+      toast.success("Welcome! You are using a 30-day Guest Trial on this device.");
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Guest sign-in failed");
