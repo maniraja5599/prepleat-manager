@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.9";
+export const APP_VERSION = "2.1.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,23 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.1.0",
+    date: "31 Aug 2026",
+    isLatest: true,
+    title: "Dynamic Smart Header: Auto-Hide Date on Upcoming Event Notifications",
+    badge: "LATEST UPDATE 🔔",
+    changes: [
+      {
+        emoji: "🔔",
+        text: "Smart Notification Ticker Auto-Spacing",
+        desc: "The header date below company name automatically and smoothly hides whenever an upcoming event notification or due alert appears at the top.",
+      },
+    ],
+  },
+  {
     version: "v2.0.9",
     date: "29 Aug 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Ultra-HD 300 DPI Invoice PDF & Image Engine + 1-Tap Customer WhatsApp Sharing",
     badge: "LATEST UPDATE ✨",
     changes: [

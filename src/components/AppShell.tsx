@@ -694,9 +694,18 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 <p className="text-[13px] font-display font-semibold tracking-tight truncate group-hover:text-primary transition">
                   {settings.businessName}
                 </p>
-                <HeaderClock
-                  dateFormat={settings.dateFormat || "DD-MM-YYYY"}
-                />
+                <div
+                  className={cn(
+                    "transition-all duration-300 overflow-hidden",
+                    showPill && hasValidText
+                      ? "max-h-0 opacity-0 -translate-y-1 pointer-events-none"
+                      : "max-h-5 opacity-100 translate-y-0",
+                  )}
+                >
+                  <HeaderClock
+                    dateFormat={settings.dateFormat || "DD-MM-YYYY"}
+                  />
+                </div>
               </div>
             </Link>
           </div>
