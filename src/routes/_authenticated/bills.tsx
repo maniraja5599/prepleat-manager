@@ -217,7 +217,7 @@ export function BillsPage() {
 
   return (
     <AppShell title="Bills Register" subtitle="Sequential Bill Number Hub (#1, #2...)">
-      <div className="max-w-2xl mx-auto space-y-4 pb-28">
+      <div className="max-w-2xl mx-auto space-y-4 pb-40">
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-3 gap-2.5">
           <button
@@ -612,25 +612,35 @@ export function BillsPage() {
           </div>
         )}
 
-        {/* Floating Multi-Bill Action Bar */}
+        {/* Floating Multi-Bill Action Bar - Positioned unblocked above bottom nav */}
         {isMultiSelectMode && selectedIds.size > 0 && (
-          <div className="fixed bottom-16 sm:bottom-6 inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 max-w-xl w-full z-40 bg-card/95 backdrop-blur-md p-3.5 rounded-3xl border border-primary/40 shadow-2xl animate-in slide-in-from-bottom-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">
-                {selectedIds.size} {selectedIds.size === 1 ? "Bill" : "Bills"} Selected
-              </p>
-              <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
-                Total: <span className="font-bold text-foreground">{fmtINR(selectedTotal)}</span> · Due: <span className={selectedDue > 0 ? "font-bold text-destructive" : "font-bold text-success"}>{fmtINR(selectedDue)}</span>
-              </p>
+          <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 max-w-xl w-full z-[10500] bg-card/95 backdrop-blur-md p-3.5 rounded-3xl border-2 border-primary/50 shadow-2xl animate-in slide-in-from-bottom-6 flex items-center justify-between gap-3 ring-4 ring-black/10">
+            <div className="min-w-0 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="size-7 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+                title="Clear Selection"
+              >
+                <X className="size-4" />
+              </button>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-foreground truncate">
+                  {selectedIds.size} {selectedIds.size === 1 ? "Bill" : "Bills"} Selected
+                </p>
+                <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
+                  Total: <span className="font-bold text-foreground">{fmtINR(selectedTotal)}</span> · Due: <span className={selectedDue > 0 ? "font-bold text-destructive" : "font-bold text-success"}>{fmtINR(selectedDue)}</span>
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setShowConsolidatedModal(true)}
-                className="px-4 py-2.5 rounded-2xl saree-gradient text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-2xl saree-gradient text-white text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
               >
-                <Layers className="size-3.5" />
+                <Layers className="size-4" />
                 <span>Combine Statement</span>
               </button>
             </div>
