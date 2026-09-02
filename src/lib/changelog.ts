@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.1.0";
+export const APP_VERSION = "2.1.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,9 +11,33 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.1.1",
+    date: "02 Sep 2026",
+    isLatest: true,
+    title: "Multi-Bill Statement Generator for Artists/Clients + Live Financial Controls in Edit Booking",
+    badge: "LATEST UPDATE 📑",
+    changes: [
+      {
+        emoji: "📑",
+        text: "Artist & Client Multi-Bill Statement Generator",
+        desc: "Multi-select bills across days to generate a single consolidated PDF statement, HD image, or instant WhatsApp breakdown with date, time, location, and dues.",
+      },
+      {
+        emoji: "💰",
+        text: "Live Financial Pricing Controls in Edit Booking",
+        desc: "Full interactive controls for Saree Count, Rate, Extra Charges, Discounts, and Advance Paid with real-time bill & dues auto-calculation in edit mode.",
+      },
+      {
+        emoji: "✨",
+        text: "Dynamic Onboarding & Install Guide Branding",
+        desc: "Install guide, tour, and onboarding now dynamically reflect your store name with zero hardcoded placeholder text.",
+      },
+    ],
+  },
+  {
     version: "v2.1.0",
     date: "31 Aug 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Dynamic Smart Header: Auto-Hide Date on Upcoming Event Notifications",
     badge: "LATEST UPDATE 🔔",
     changes: [

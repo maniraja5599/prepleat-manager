@@ -56,7 +56,7 @@ export function SubscriptionWelcomeModal() {
   const handleShareWhatsApp = () => {
     const code = status.referralCode;
     const msg = encodeURIComponent(
-      `🥻 Manage Saree PrePleat & Draping orders with ease!\n\n⚡ Fast Booking, WhatsApp Bills, Offline Cloud Sync & Payment Tracking.\n\n🎁 Get 30 Days 100% Free Trial using my referral code: *${code}*\n\n👉 Open App: https://eyas.app`,
+      `🥻 Manage Saree PrePleat & Draping orders with ease!\n\n⚡ Fast Booking, WhatsApp Bills, Offline Cloud Sync & Payment Tracking.\n\n🎁 Get 30 Days 100% Free Trial using my referral code: *${code}*\n\n👉 Open App: https://sareeprepleatmanager.vercel.app`,
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
     handleDismiss();

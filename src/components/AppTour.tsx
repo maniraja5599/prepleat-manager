@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useStore } from "@/lib/store";
 import {
   X,
   Sparkles,
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { waitForAppUser, type AppUser } from "@/integrations/firebase/client";
 
 export function AppTour() {
+  const settings = useStore((s) => s.settings);
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [user, setUser] = useState<AppUser | null>(() => {
@@ -38,10 +40,10 @@ export function AppTour() {
   }, []);
 
   const welcomeTitle = useMemo(() => {
-    if (!user) return "Welcome to Eyas!";
+    if (!user) return `Welcome to ${settings.businessName || "Saree PrePleat Studio"}!`;
     if (user.isAnonymous) return "Welcome, Guest User!";
     return `Welcome, ${(user as any).displayName || (user as any).name || user.email?.split("@")[0] || "User"}!`;
-  }, [user]);
+  }, [user, settings.businessName]);
 
   const welcomeSubtitle = useMemo(() => {
     if (!user) return "App Gestures & Shortcuts Tour";
@@ -115,7 +117,7 @@ export function AppTour() {
     {
       title: "1-Tap Invoices & WhatsApp",
       subtitle: "Instant Canvas PDF sharing",
-      desc: "Tap any Bill # (e.g. EYAS-101) to open zero-lag crystal-clear Canvas invoices in <5ms. Share directly to customer's WhatsApp without saving their contact number!",
+      desc: "Tap any Bill # (e.g. BILL-101) to open zero-lag crystal-clear Canvas invoices in <5ms. Share directly to customer's WhatsApp without saving their contact number!",
       icon: Receipt,
       color: "text-emerald-500 bg-emerald-500/10",
       illustration: (

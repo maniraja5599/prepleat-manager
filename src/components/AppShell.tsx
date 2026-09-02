@@ -876,7 +876,7 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                   if (res === "granted") {
                     setShowNotifBanner(false);
                     void sendNativeNotification("Notifications Enabled! 🔔", {
-                      body: "Eyas delivery & event alerts are now active.",
+                      body: "Delivery & event alerts are now active.",
                     });
                   } else {
                     setShowNotifBanner(false);

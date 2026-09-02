@@ -741,9 +741,12 @@ function BookingDetail() {
           booking={booking}
           onCancel={() => setEditing(false)}
           onSave={(patch) => {
-            const total = patch.sareeCount * patch.pricePerSaree;
-            updateBooking(booking.id, { ...patch, totalAmount: total });
-            toast.success("Booking updated");
+            const baseTotal = patch.sareeCount * patch.pricePerSaree;
+            updateBooking(booking.id, {
+              ...patch,
+              totalAmount: baseTotal,
+            });
+            toast.success("Booking details & pricing updated! ✨");
             setEditing(false);
           }}
         />
@@ -2382,6 +2385,8 @@ function EditPanel({
     pricePerSaree: number;
     extraCharges?: number;
     extraChargesNote?: string;
+    discount?: number;
+    advancePaid?: number;
     deliveryDate: string;
     deliveryTime: string;
     notes?: string;
@@ -2394,6 +2399,8 @@ function EditPanel({
     pricePerSaree: number;
     extraCharges?: number;
     extraChargesNote?: string;
+    discount?: number;
+    advancePaid?: number;
     deliveryDate: string;
     deliveryTime: string;
     notes?: string;
@@ -2406,6 +2413,8 @@ function EditPanel({
   const [pricePerSaree, setPricePerSaree] = useState(booking.pricePerSaree);
   const [extraCharges, setExtraCharges] = useState(booking.extraCharges ? String(booking.extraCharges) : "");
   const [extraChargesNote, setExtraChargesNote] = useState(booking.extraChargesNote || "Travel");
+  const [discount, setDiscount] = useState(booking.discount ? String(booking.discount) : "");
+  const [advancePaid, setAdvancePaid] = useState(booking.advancePaid ? String(booking.advancePaid) : "");
   const [deliveryDate, setDeliveryDate] = useState(
     format(parseISO(booking.deliveryDate), "yyyy-MM-dd"),
   );
@@ -2437,14 +2446,22 @@ function EditPanel({
     toast.success(`Added custom field: ${name}`);
   };
 
+  // Live Math calculations
+  const numExtra = Math.max(0, Number(extraCharges) || 0);
+  const numDiscount = Math.max(0, Number(discount) || 0);
+  const numAdvance = Math.max(0, Number(advancePaid) || 0);
+  const baseTotal = sareeCount * pricePerSaree;
+  const calculatedNetTotal = Math.max(0, baseTotal + numExtra - numDiscount);
+  const calculatedDue = Math.max(0, calculatedNetTotal - numAdvance);
+
   return (
-    <div className="bg-card card-shadow rounded-2xl p-5 mt-4 space-y-4 border border-border/20">
+    <div className="bg-card card-shadow rounded-2xl p-4 sm:p-5 mt-4 space-y-4 border border-border/40">
       <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Edit Booking Details
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+          <Pencil className="size-3.5 text-primary" /> Edit Booking & Pricing Details
         </h2>
         <span className="text-[10px] text-muted-foreground font-medium">
-          Update info & measurements
+          Modify count, rates, extras & dues
         </span>
       </div>
 
@@ -2469,7 +2486,7 @@ function EditPanel({
                 )}
               >
                 {active && <Check className="size-3.5 stroke-[3]" />}
-                {s === "prepleat" ? "PRE" : s}
+                {s === "prepleat" ? "Pre-Pleat" : "Draping"}
               </button>
             );
           })}
@@ -2482,7 +2499,7 @@ function EditPanel({
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             Sarees
           </p>
-          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10">
+          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10 border border-border/30">
             <button
               type="button"
               onClick={() => setSareeCount(Math.max(1, sareeCount - 1))}
@@ -2505,7 +2522,7 @@ function EditPanel({
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             Price Per Saree (₹)
           </p>
-          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10">
+          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10 border border-border/30">
             <button
               type="button"
               onClick={() => setPricePerSaree(Math.max(0, pricePerSaree - 50))}
@@ -2530,30 +2547,31 @@ function EditPanel({
         </div>
       </div>
 
-      {/* Extra / Travel Charge in EditPanel */}
-      <div className="space-y-1.5">
-        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
-          <Car className="size-3 text-primary" /> Extra / Travel Charge (₹)
-        </p>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+      {/* Extra Charges and Discount Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Extra / Travel Charge */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+            <Car className="size-3 text-primary" /> Extra / Travel Charge (₹)
+          </p>
+          <div className="relative">
             <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
             <input
               type="number"
               value={extraCharges}
               onChange={(e) => setExtraCharges(e.target.value)}
               placeholder="0 (Travel / Extra)"
-              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
             />
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 mt-1">
             {["Travel", "Delivery", "Urgent", "Other"].map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => setExtraChargesNote(tag)}
                 className={cn(
-                  "px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition cursor-pointer border",
+                  "px-2 py-1 rounded-lg text-[9.5px] font-bold transition cursor-pointer border",
                   extraChargesNote === tag
                     ? "bg-primary/10 text-primary border-primary/30"
                     : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80",
@@ -2562,6 +2580,134 @@ function EditPanel({
                 {tag}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Special Discount / Offer */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+            <Tag className="size-3 text-emerald-600 dark:text-emerald-400" /> Discount / Offer (₹)
+          </p>
+          <div className="relative">
+            <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              type="number"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              placeholder="0 (Discount / Coupon)"
+              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-500/40 border border-border/30"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {["50", "100", "200"].map((dVal) => (
+              <button
+                key={dVal}
+                type="button"
+                onClick={() => setDiscount(dVal)}
+                className={cn(
+                  "px-2 py-1 rounded-lg text-[9.5px] font-bold transition cursor-pointer border",
+                  discount === dVal
+                    ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
+                    : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80",
+                )}
+              >
+                -₹{dVal}
+              </button>
+            ))}
+            {discount && (
+              <button
+                type="button"
+                onClick={() => setDiscount("")}
+                className="px-2 py-1 rounded-lg text-[9.5px] font-bold bg-secondary text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Advance Paid Input */}
+      <div className="space-y-1.5">
+        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+          <Wallet className="size-3 text-primary" /> Advance / Paid Amount (₹)
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              type="number"
+              value={advancePaid}
+              onChange={(e) => setAdvancePaid(e.target.value)}
+              placeholder="0 (Advance paid)"
+              className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
+            />
+          </div>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => setAdvancePaid(String(Math.round(calculatedNetTotal / 2)))}
+              className="px-2.5 py-2 rounded-xl text-[10px] font-bold bg-secondary hover:bg-secondary/80 text-foreground cursor-pointer border border-border/30"
+            >
+              50%
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdvancePaid(String(calculatedNetTotal))}
+              className="px-2.5 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 cursor-pointer"
+            >
+              Full Paid
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Live Financial Pricing Breakdown Card */}
+      <div className="bg-primary/[0.04] rounded-2xl p-3.5 border border-primary/20 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Receipt className="size-4 text-primary" /> Live Pricing Overview
+          </span>
+          <span className="text-[11px] font-mono font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
+            {sareeCount} {sareeCount === 1 ? "Saree" : "Sarees"} × ₹{pricePerSaree}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs pt-1.5 border-t border-primary/10">
+          <div className="space-y-1 text-muted-foreground">
+            <div className="flex justify-between text-[11px]">
+              <span>Base Amount:</span>
+              <span className="font-mono font-bold text-foreground">{fmtINR(baseTotal)}</span>
+            </div>
+            {numExtra > 0 && (
+              <div className="flex justify-between text-[11px] text-primary">
+                <span>+ Extra ({extraChargesNote}):</span>
+                <span className="font-mono font-bold">+{fmtINR(numExtra)}</span>
+              </div>
+            )}
+            {numDiscount > 0 && (
+              <div className="flex justify-between text-[11px] text-emerald-600 dark:text-emerald-400">
+                <span>- Discount:</span>
+                <span className="font-mono font-bold">-{fmtINR(numDiscount)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1 text-muted-foreground border-l border-primary/10 pl-2">
+            <div className="flex justify-between text-[11px]">
+              <span>Advance Paid:</span>
+              <span className="font-mono font-bold text-foreground">{fmtINR(numAdvance)}</span>
+            </div>
+            <div className="flex justify-between text-xs font-bold text-foreground pt-0.5 border-t border-border/40">
+              <span>Total Bill:</span>
+              <span className="font-mono font-bold text-foreground">{fmtINR(calculatedNetTotal)}</span>
+            </div>
+            <div className="flex justify-between text-xs font-bold">
+              <span>Balance Due:</span>
+              <span className={calculatedDue > 0 ? "font-mono text-rose-600 dark:text-rose-400 font-black" : "font-mono text-emerald-600 dark:text-emerald-400 font-black"}>
+                {calculatedDue > 0 ? fmtINR(calculatedDue) : "Rs. 0 (Cleared)"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -2709,7 +2855,7 @@ function EditPanel({
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Enter notes / specifications..."
-          className="w-full bg-secondary rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none leading-relaxed"
+          className="w-full bg-secondary rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none leading-relaxed border border-border/30"
         />
       </div>
 
@@ -2726,12 +2872,16 @@ function EditPanel({
           type="button"
           onClick={() => {
             const extra = Number(extraCharges) || 0;
+            const disc = Number(discount) || 0;
+            const adv = Number(advancePaid) || 0;
             onSave({
               service,
               sareeCount,
               pricePerSaree,
               extraCharges: extra > 0 ? extra : undefined,
               extraChargesNote: extra > 0 ? (extraChargesNote || "Travel") : undefined,
+              discount: disc > 0 ? disc : undefined,
+              advancePaid: adv >= 0 ? adv : undefined,
               deliveryDate: new Date(deliveryDate).toISOString(),
               deliveryTime,
               notes: notes.trim() || undefined,
@@ -2740,7 +2890,7 @@ function EditPanel({
           }}
           className="py-3 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-sm shadow-primary/20 flex items-center justify-center gap-1.5"
         >
-          <Check className="size-4" /> Save
+          <Check className="size-4" /> Save Changes
         </button>
       </div>
     </div>

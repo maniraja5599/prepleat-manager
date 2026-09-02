@@ -40,7 +40,7 @@ const TIP_CATEGORIES: TipCategory[] = [
     tips: [
       {
         title: "1-Tap Instant Bill # Preview",
-        desc: "Tap any Bill # (e.g. EYAS-101) to open the zero-lag Canvas invoice preview with 1-click WhatsApp and PDF download.",
+        desc: "Tap any Bill # (e.g. BILL-101) to open the zero-lag Canvas invoice preview with 1-click WhatsApp and PDF download.",
         badge: "HOT ✨",
         icon: Receipt,
       },

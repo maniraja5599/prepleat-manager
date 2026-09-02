@@ -15,6 +15,9 @@ import {
   Eye,
   Map,
   Plus,
+  Layers,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -22,6 +25,7 @@ import { useState } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { ScrollNumber } from "@/components/ScrollNumber";
 import { MapPicker } from "@/components/MapPicker";
+import { ConsolidatedBillModal } from "@/components/ConsolidatedBillModal";
 
 export const Route = createFileRoute("/_authenticated/customers/$id")({
   component: CustomerDetail,
@@ -36,7 +40,7 @@ function CustomerDetail() {
   const restoreCustomer = useStore((s) => s.restoreCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
   const settings = useStore((s) => s.settings);
-  const businessName = settings.businessName || "Eyas Drapist";
+  const businessName = settings.businessName || "SAREE PREPLEAT STUDIO";
   const websiteUrl = settings.websiteUrl || "https://eyasdrapist.shop/";
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(customer?.name ?? "");
@@ -49,6 +53,9 @@ function CustomerDetail() {
   // Message preview modal state
   const [previewMode, setPreviewMode] = useState<null | "whatsapp" | "sms">(null);
   const [includeLink, setIncludeLink] = useState(false);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showConsolidatedModal, setShowConsolidatedModal] = useState(false);
 
   const [showMeasure, setShowMeasure] = useState(
     () => !!customer?.measurements && customer.measurements.length > 0,
@@ -91,7 +98,7 @@ function CustomerDetail() {
   // Build a beautiful, client-friendly WhatsApp message
   const buildWhatsAppMessage = (withLink = includeLink) => {
     const lines: string[] = [
-      `🥻 *EYAS SAREE DRAPIST* 🥻`,
+      `🌸 *${(settings.businessName || "SAREE PREPLEAT STUDIO").toUpperCase()}* 🌸`,
       ``,
       ``,
       `Hi *${customer.name}* 🙏`,

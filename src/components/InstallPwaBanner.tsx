@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useStore } from "@/lib/store";
 import { Download, X, Share2, PlusSquare, Sparkles, Smartphone, Check, Loader2, MoreVertical } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -11,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPwaBanner() {
+  const settings = useStore((s) => s.settings);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(true);
   const [isIOS, setIsIOS] = useState(false);
@@ -99,7 +101,7 @@ export function InstallPwaBanner() {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-bold text-foreground truncate">
-                  Eyas Saree Manager
+                  {settings.businessName || "Saree PrePleat Studio"}
                 </p>
                 <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-primary/20 text-primary shrink-0">
                   {isIOS ? "iOS" : "WEB APP"}

@@ -140,7 +140,7 @@ export function WelcomeOnboardingModal() {
               <span>⚡ 1-Tap Bill # Preview:</span>
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Tap any Bill # (e.g. EYAS-101) to open a crystal-clear invoice preview rendered in less than 5ms.
+              Tap any Bill # (e.g. BILL-101) to open a crystal-clear invoice preview rendered in less than 5ms.
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40 space-y-1">
@@ -160,7 +160,7 @@ export function WelcomeOnboardingModal() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-3xl border border-border/40 shadow-2xl bg-card max-h-[90vh] flex flex-col">
         <DialogTitle className="sr-only">
-          Welcome to {settings.businessName || "Eyas Saree Drapist"}
+          Welcome to {settings.businessName || "Saree PrePleat Studio"}
         </DialogTitle>
         {/* Header Banner */}
         <div className="saree-gradient p-5 text-white text-center relative overflow-hidden shrink-0">
@@ -171,7 +171,7 @@ export function WelcomeOnboardingModal() {
               <Sparkles className="size-6 text-white" />
             </div>
             <h2 className="text-lg sm:text-xl font-display font-extrabold tracking-tight">
-              Welcome to {settings.businessName || "Eyas Saree Drapist"}! 🥻
+              Welcome to {settings.businessName || "Saree PrePleat Studio"}! 🥻
             </h2>
             <p className="text-xs text-white/90 mt-0.5 max-w-xs font-medium">
               PrePleating, Draping & Instant Billing Manager.
