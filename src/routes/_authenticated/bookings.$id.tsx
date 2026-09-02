@@ -8,7 +8,9 @@ import {
   formatShortBillNumber,
   fmtINR,
   fmtTime12,
+  type Booking,
   type ServiceType,
+  type ServiceItem,
   type PaymentMode,
   type Payment,
   type Measurement,
@@ -18,6 +20,7 @@ import {
 } from "@/lib/store";
 import { format, parseISO } from "date-fns";
 import {
+  Sparkles,
   ArrowLeft,
   Trash2,
   MessageCircle,
@@ -729,23 +732,53 @@ function BookingDetail() {
               {booking.sareeCount} {booking.sareeCount === 1 ? "Saree" : "Sarees"}
             </p>
             <p className="opacity-95 text-[11px] mt-0.5">
-              {fmtINR(booking.pricePerSaree)} each ={" "}
+              {booking.items && booking.items.length > 1 ? "Multi-Service" : fmtINR(booking.pricePerSaree) + " each"} ={" "}
               <span className="font-bold">{fmtINR(booking.totalAmount)}</span>
             </p>
           </div>
         </div>
       </div>
 
+      {/* Itemized Services Breakdown Card (if multiple services or item note) */}
+      {booking.items && booking.items.length > 0 && (
+        <div className="bg-card card-shadow rounded-2xl p-4 mt-3 border border-border/40 space-y-2.5">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Sparkles className="size-3.5 text-primary" /> Itemized Services ({booking.items.length})
+          </p>
+          <div className="space-y-2 pt-1">
+            {booking.items.map((it, idx) => (
+              <div key={idx} className="flex items-start justify-between bg-secondary/40 p-2.5 rounded-xl text-xs border border-border/20">
+                <div>
+                  <div className="flex items-center gap-1.5 font-bold text-foreground">
+                    <span>{it.service === "drape" ? "✨" : it.service === "custom" ? "📦" : "🥻"}</span>
+                    <span>{it.serviceName || (it.service === "drape" ? "Draping" : "Pre-Pleat")}</span>
+                  </div>
+                  {it.notes && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5 italic">
+                      Note: {it.notes}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="font-mono font-semibold text-foreground">
+                    {it.sareeCount} × {fmtINR(it.pricePerSaree)}
+                  </span>
+                  <p className="font-bold font-mono text-primary text-[11.5px] mt-0.5">
+                    = {fmtINR(it.sareeCount * it.pricePerSaree)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {editing && (
         <EditPanel
           booking={booking}
           onCancel={() => setEditing(false)}
           onSave={(patch) => {
-            const baseTotal = patch.sareeCount * patch.pricePerSaree;
-            updateBooking(booking.id, {
-              ...patch,
-              totalAmount: baseTotal,
-            });
+            updateBooking(booking.id, patch);
             toast.success("Booking details & pricing updated! ✨");
             setEditing(false);
           }}
@@ -2379,38 +2412,29 @@ function EditPanel({
   onCancel,
   onSave,
 }: {
-  booking: {
-    service: ServiceType;
-    sareeCount: number;
-    pricePerSaree: number;
-    extraCharges?: number;
-    extraChargesNote?: string;
-    discount?: number;
-    advancePaid?: number;
-    deliveryDate: string;
-    deliveryTime: string;
-    notes?: string;
-    measurements?: Measurement[];
-  };
+  booking: Booking;
   onCancel: () => void;
-  onSave: (patch: {
-    service: ServiceType;
-    sareeCount: number;
-    pricePerSaree: number;
-    extraCharges?: number;
-    extraChargesNote?: string;
-    discount?: number;
-    advancePaid?: number;
-    deliveryDate: string;
-    deliveryTime: string;
-    notes?: string;
-    measurements?: Measurement[];
-  }) => void;
+  onSave: (patch: Partial<Booking>) => void;
 }) {
   const settings = useStore((s) => s.settings);
-  const [service, setService] = useState<ServiceType>(booking.service);
-  const [sareeCount, setSareeCount] = useState(booking.sareeCount);
-  const [pricePerSaree, setPricePerSaree] = useState(booking.pricePerSaree);
+
+  // Initialize multi-services list
+  const [servicesList, setServicesList] = useState<ServiceItem[]>(() => {
+    if (booking.items && booking.items.length > 0) {
+      return booking.items;
+    }
+    return [
+      {
+        id: "srv_1",
+        service: booking.service || "prepleat",
+        serviceName: booking.service === "prepleat" ? "Pre-Pleat" : "Draping",
+        sareeCount: booking.sareeCount || 1,
+        pricePerSaree: booking.pricePerSaree || 0,
+        notes: "",
+      },
+    ];
+  });
+
   const [extraCharges, setExtraCharges] = useState(booking.extraCharges ? String(booking.extraCharges) : "");
   const [extraChargesNote, setExtraChargesNote] = useState(booking.extraChargesNote || "Travel");
   const [discount, setDiscount] = useState(booking.discount ? String(booking.discount) : "");
@@ -2446,11 +2470,54 @@ function EditPanel({
     toast.success(`Added custom field: ${name}`);
   };
 
+  const addServiceRow = () => {
+    const nextService = servicesList.some((s) => s.service === "prepleat") ? "drape" : "prepleat";
+    const nextPrice = nextService === "prepleat" ? settings.prepleatPrice : settings.drapePrice;
+    setServicesList((prev) => [
+      ...prev,
+      {
+        id: "srv_" + Math.random().toString(36).slice(2, 8),
+        service: nextService,
+        serviceName: nextService === "prepleat" ? "Pre-Pleat" : "Draping",
+        sareeCount: 1,
+        pricePerSaree: nextPrice,
+        notes: "",
+      },
+    ]);
+  };
+
+  const updateServiceRow = (id: string, patch: Partial<ServiceItem>) => {
+    setServicesList((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const updated = { ...item, ...patch };
+        if (patch.service && patch.service !== item.service) {
+          if (patch.service === "prepleat") {
+            updated.serviceName = "Pre-Pleat";
+            updated.pricePerSaree = settings.prepleatPrice;
+          } else if (patch.service === "drape") {
+            updated.serviceName = "Draping";
+            updated.pricePerSaree = settings.drapePrice;
+          } else if (patch.service === "custom" && !item.serviceName) {
+            updated.serviceName = "Custom Service";
+          }
+        }
+        return updated;
+      })
+    );
+  };
+
+  const removeServiceRow = (id: string) => {
+    if (servicesList.length <= 1) return;
+    setServicesList((prev) => prev.filter((item) => item.id !== id));
+  };
+
   // Live Math calculations
+  const totalSareesCount = servicesList.reduce((s, it) => s + (Number(it.sareeCount) || 1), 0);
+  const baseTotal = servicesList.reduce((s, it) => s + (Number(it.sareeCount) || 1) * (Number(it.pricePerSaree) || 0), 0);
   const numExtra = Math.max(0, Number(extraCharges) || 0);
   const numDiscount = Math.max(0, Number(discount) || 0);
   const numAdvance = Math.max(0, Number(advancePaid) || 0);
-  const baseTotal = sareeCount * pricePerSaree;
   const calculatedNetTotal = Math.max(0, baseTotal + numExtra - numDiscount);
   const calculatedDue = Math.max(0, calculatedNetTotal - numAdvance);
 
@@ -2465,86 +2532,186 @@ function EditPanel({
         </span>
       </div>
 
-      {/* Service Type Selection */}
-      <div className="space-y-1.5">
-        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-          Service Type
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {(["prepleat", "drape"] as ServiceType[]).map((s) => {
-            const active = service === s;
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setService(s)}
-                className={cn(
-                  "py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer",
-                  active
-                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                    : "bg-secondary hover:bg-secondary/80 text-foreground/80",
+      {/* Multi-Service Items List */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+            <Sparkles className="size-3 text-primary" /> Services & Line Items ({servicesList.length})
+          </p>
+          <span className="text-[10px] font-bold text-foreground">
+            Total: {totalSareesCount} {totalSareesCount === 1 ? "Saree" : "Sarees"}
+          </span>
+        </div>
+
+        {servicesList.map((item, idx) => {
+          const itemSubtotal = (Number(item.sareeCount) || 1) * (Number(item.pricePerSaree) || 0);
+
+          return (
+            <div
+              key={item.id}
+              className="bg-secondary/40 border border-border/40 rounded-2xl p-3 space-y-2.5 relative"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Service #{idx + 1}
+                </span>
+                {servicesList.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeServiceRow(item.id)}
+                    className="size-6 rounded-full bg-destructive/10 hover:bg-destructive/20 text-destructive flex items-center justify-center text-xs transition cursor-pointer"
+                    title="Remove this service"
+                  >
+                    <X className="size-3.5" />
+                  </button>
                 )}
-              >
-                {active && <Check className="size-3.5 stroke-[3]" />}
-                {s === "prepleat" ? "Pre-Pleat" : "Draping"}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+              </div>
 
-      {/* Saree Count and Price/Saree */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-            Sarees
-          </p>
-          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10 border border-border/30">
-            <button
-              type="button"
-              onClick={() => setSareeCount(Math.max(1, sareeCount - 1))}
-              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
-            >
-              −
-            </button>
-            <span className="text-sm font-bold tabular-nums">{sareeCount}</span>
-            <button
-              type="button"
-              onClick={() => setSareeCount(sareeCount + 1)}
-              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
-            >
-              +
-            </button>
-          </div>
-        </div>
+              {/* Service Type Selection */}
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { key: "prepleat", label: "Pre-Pleat", icon: "🥻" },
+                  { key: "drape", label: "Draping", icon: "✨" },
+                  { key: "custom", label: "Custom", icon: "📦" },
+                ].map((srv) => {
+                  const active = item.service === srv.key;
+                  return (
+                    <button
+                      key={srv.key}
+                      type="button"
+                      onClick={() => updateServiceRow(item.id, { service: srv.key as any })}
+                      className={cn(
+                        "py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer",
+                        active
+                          ? "saree-gradient text-white shadow-xs"
+                          : "bg-card hover:bg-card/80 text-foreground/80 border border-border/30",
+                      )}
+                    >
+                      <span>{srv.icon}</span>
+                      <span>{srv.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-            Price Per Saree (₹)
-          </p>
-          <div className="flex items-center justify-between bg-secondary rounded-xl p-1 px-2 h-10 border border-border/30">
-            <button
-              type="button"
-              onClick={() => setPricePerSaree(Math.max(0, pricePerSaree - 50))}
-              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
-            >
-              −
-            </button>
-            <input
-              type="number"
-              value={pricePerSaree}
-              onChange={(e) => setPricePerSaree(Number(e.target.value) || 0)}
-              className="w-14 bg-transparent text-center text-sm font-bold tabular-nums focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => setPricePerSaree(pricePerSaree + 50)}
-              className="size-7 rounded-lg bg-background border border-border/40 hover:bg-secondary flex items-center justify-center font-bold active:scale-90 transition cursor-pointer"
-            >
-              +
-            </button>
-          </div>
-        </div>
+              {/* Custom Service Name Input (if custom) */}
+              {item.service === "custom" && (
+                <input
+                  type="text"
+                  value={item.serviceName || ""}
+                  onChange={(e) => updateServiceRow(item.id, { serviceName: e.target.value })}
+                  placeholder="Custom service name (e.g. Box Fold & Ironing)"
+                  className="w-full bg-card rounded-xl px-3 py-1.5 text-xs font-medium border border-border/40 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              )}
+
+              {/* Saree Count and Price per Saree */}
+              <div className="grid grid-cols-2 gap-2.5 items-center">
+                {/* Saree Counter */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Sarees
+                  </span>
+                  <div className="flex items-center justify-between bg-card rounded-xl p-1 px-2 h-9 border border-border/30">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateServiceRow(item.id, {
+                          sareeCount: Math.max(1, (item.sareeCount || 1) - 1),
+                        })
+                      }
+                      className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-sm active:scale-90 transition cursor-pointer"
+                    >
+                      −
+                    </button>
+                    <span className="text-xs font-bold tabular-nums">{item.sareeCount || 1}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateServiceRow(item.id, {
+                          sareeCount: (item.sareeCount || 1) + 1,
+                        })
+                      }
+                      className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-sm active:scale-90 transition cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Price Per Saree */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Rate / Saree (₹)
+                  </span>
+                  <div className="flex items-center justify-between bg-card rounded-xl p-1 px-1.5 h-9 border border-border/30">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateServiceRow(item.id, {
+                          pricePerSaree: Math.max(0, (item.pricePerSaree || 0) - 50),
+                        })
+                      }
+                      className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-xs active:scale-90 transition cursor-pointer"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      value={item.pricePerSaree}
+                      onChange={(e) =>
+                        updateServiceRow(item.id, {
+                          pricePerSaree: Number(e.target.value) || 0,
+                        })
+                      }
+                      className="w-14 bg-transparent text-center text-xs font-bold tabular-nums focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateServiceRow(item.id, {
+                          pricePerSaree: (item.pricePerSaree || 0) + 50,
+                        })
+                      }
+                      className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-xs active:scale-90 transition cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Note Input */}
+              <div className="pt-0.5">
+                <input
+                  type="text"
+                  value={item.notes || ""}
+                  onChange={(e) => updateServiceRow(item.id, { notes: e.target.value })}
+                  placeholder="Service note (e.g. Box packing with pins, morning Muhurtham)"
+                  className="w-full bg-card/80 border border-border/30 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/70"
+                />
+              </div>
+
+              {/* Subtotal line */}
+              <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-0.5 border-t border-border/20">
+                <span>Subtotal:</span>
+                <span className="font-bold text-foreground font-mono">
+                  {item.sareeCount || 1} × {fmtINR(item.pricePerSaree || 0)} = {fmtINR(itemSubtotal)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Add another service button */}
+        <button
+          type="button"
+          onClick={addServiceRow}
+          className="w-full py-2.5 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border border-primary/20 active:scale-95"
+        >
+          <Plus className="size-3.5" />
+          <span>+ Add Another Service (e.g. Draping, Box Folding)</span>
+        </button>
       </div>
 
       {/* Extra Charges and Discount Grid */}
@@ -2669,7 +2836,7 @@ function EditPanel({
             <Receipt className="size-4 text-primary" /> Live Pricing Overview
           </span>
           <span className="text-[11px] font-mono font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
-            {sareeCount} {sareeCount === 1 ? "Saree" : "Sarees"} × ₹{pricePerSaree}
+            {totalSareesCount} {totalSareesCount === 1 ? "Saree" : "Sarees"} · {servicesList.length} {servicesList.length === 1 ? "Service" : "Services"}
           </span>
         </div>
 
@@ -2874,15 +3041,18 @@ function EditPanel({
             const extra = Number(extraCharges) || 0;
             const disc = Number(discount) || 0;
             const adv = Number(advancePaid) || 0;
+            const primarySrv = servicesList[0]?.service === "drape" ? "drape" : "prepleat";
             onSave({
-              service,
-              sareeCount,
-              pricePerSaree,
+              service: primarySrv,
+              sareeCount: totalSareesCount,
+              pricePerSaree: Math.round(baseTotal / (totalSareesCount || 1)),
+              totalAmount: baseTotal,
+              items: servicesList,
               extraCharges: extra > 0 ? extra : undefined,
               extraChargesNote: extra > 0 ? (extraChargesNote || "Travel") : undefined,
               discount: disc > 0 ? disc : undefined,
               advancePaid: adv >= 0 ? adv : undefined,
-              deliveryDate: new Date(deliveryDate).toISOString(),
+              deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
               deliveryTime,
               notes: notes.trim() || undefined,
               measurements: showMeasure ? measurements : undefined,

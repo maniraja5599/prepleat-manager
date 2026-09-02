@@ -93,6 +93,17 @@ function mergeSnapshots(local: Snapshot, cloud: Snapshot) {
     return { ...b, advancePaid };
   });
 
+  // Self-heal and synchronize payment records with booking advancePaid
+  payments = payments.map((p) => {
+    const b = bookings.find((x) => x.id === p.bookingId);
+    if (!b) return p;
+    const bookingPayments = payments.filter((x) => x.bookingId === b.id);
+    if (bookingPayments.length === 1 && (b.advancePaid ?? 0) > (p.amount || 0)) {
+      return { ...p, amount: b.advancePaid };
+    }
+    return p;
+  });
+
   const trash = mergeById(
     (local.trash ?? []).map((t) => ({ ...t, id: t.booking.id })),
     (cloud.trash ?? []).map((t) => ({ ...t, id: t.booking.id })),

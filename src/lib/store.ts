@@ -4,6 +4,15 @@ import { format as dfFormat, parseISO } from "date-fns";
 
 export type ServiceType = "prepleat" | "drape";
 
+export interface ServiceItem {
+  id: string;
+  service: ServiceType | "custom" | string;
+  serviceName?: string;
+  sareeCount: number;
+  pricePerSaree: number;
+  notes?: string;
+}
+
 export interface Measurement {
   label: string;
   value: number;
@@ -18,6 +27,7 @@ export interface Booking {
   sareeCount: number;
   pricePerSaree: number;
   totalAmount: number;
+  items?: ServiceItem[];
   advancePaid: number;
   deliveryDate: string;
   deliveryTime: string;
@@ -477,10 +487,55 @@ export const useStore = create<State>()(
         set((s) => {
           const prev = s.bookings.find((x) => x.id === id);
           if (!prev) return s;
-          const next = { ...prev, ...b, updatedAt: new Date().toISOString() };
+          const now = new Date().toISOString();
+          const next = { ...prev, ...b, updatedAt: now };
+
+          let payments = s.payments;
+          // Synchronize payment records if advancePaid was explicitly changed
+          if (b.advancePaid !== undefined && b.advancePaid !== prev.advancePaid) {
+            const newAdv = Math.max(0, Number(b.advancePaid) || 0);
+            const bookingPayments = s.payments.filter((p) => p.bookingId === id);
+
+            if (bookingPayments.length === 0) {
+              if (newAdv > 0) {
+                payments = [
+                  {
+                    id: uid(),
+                    bookingId: id,
+                    customerId: next.customerId,
+                    amount: newAdv,
+                    date: now,
+                    note: "Advance / Payment",
+                    mode: "gpay",
+                    updatedAt: now,
+                  },
+                  ...s.payments,
+                ];
+              }
+            } else if (bookingPayments.length === 1) {
+              payments = s.payments.map((p) =>
+                p.id === bookingPayments[0].id
+                  ? { ...p, amount: newAdv, updatedAt: now }
+                  : p,
+              );
+            } else {
+              const currentSum = bookingPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+              const diff = newAdv - currentSum;
+              if (diff !== 0) {
+                const sorted = [...bookingPayments].sort((x, y) => (y.date || "").localeCompare(x.date || ""));
+                const latestId = sorted[0].id;
+                payments = s.payments.map((p) =>
+                  p.id === latestId
+                    ? { ...p, amount: Math.max(0, (p.amount || 0) + diff), updatedAt: now }
+                    : p,
+                );
+              }
+            }
+          }
+
           const entry: ActivityEntry = {
             id: uid(),
-            ts: new Date().toISOString(),
+            ts: now,
             kind: "update",
             bookingId: id,
             summary: describeDiff(prev, next),
@@ -489,6 +544,7 @@ export const useStore = create<State>()(
           };
           return {
             bookings: s.bookings.map((x) => (x.id === id ? next : x)),
+            payments,
             activity: [entry, ...s.activity].slice(0, 50),
             redoStack: [],
           };
@@ -624,13 +680,15 @@ export const useStore = create<State>()(
           const now = new Date().toISOString();
           const amountNum = Math.max(0, Number(p.amount) || 0);
           const payment: Payment = { ...p, amount: amountNum, id: uid(), updatedAt: now };
+          const updatedPayments = [payment, ...s.payments];
           const bookings = s.bookings.map((b) => {
             if (b.id !== p.bookingId) return b;
-            const currentPaid = Math.max(0, Number(b.advancePaid) || 0);
-            const newPaid = currentPaid + amountNum;
+            const totalPaid = updatedPayments
+              .filter((x) => x.bookingId === b.id)
+              .reduce((sum, x) => sum + (x.amount || 0), 0);
             return {
               ...b,
-              advancePaid: newPaid,
+              advancePaid: totalPaid,
               updatedAt: now,
             };
           });
@@ -642,7 +700,7 @@ export const useStore = create<State>()(
             summary: `paid ₹${amountNum} (${p.mode ?? "gpay"})`,
           };
           return {
-            payments: [payment, ...s.payments],
+            payments: updatedPayments,
             bookings,
             activity: [entry, ...s.activity].slice(0, 50),
           };
@@ -662,21 +720,18 @@ export const useStore = create<State>()(
             p.id === id ? { ...p, ...cleanPatch } : p,
           );
 
-          // If the amount changed, we need to update the booking's advancePaid
-          let bookings = s.bookings;
-          if (cleanPatch.amount !== undefined && cleanPatch.amount !== oldPay.amount) {
-            const diff = cleanPatch.amount - oldPay.amount;
-            bookings = s.bookings.map((b) => {
-              if (b.id !== oldPay.bookingId) return b;
-              const currentPaid = Math.max(0, Number(b.advancePaid) || 0);
-              const newPaid = Math.max(0, currentPaid + diff);
-              return {
-                ...b,
-                advancePaid: newPaid,
-                updatedAt: now,
-              };
-            });
-          }
+          // Calculate booking's advancePaid as the sum of all payments
+          const bookings = s.bookings.map((b) => {
+            if (b.id !== oldPay.bookingId) return b;
+            const totalPaid = payments
+              .filter((x) => x.bookingId === b.id)
+              .reduce((sum, x) => sum + (x.amount || 0), 0);
+            return {
+              ...b,
+              advancePaid: totalPaid,
+              updatedAt: now,
+            };
+          });
 
           const entry: ActivityEntry = {
             id: uid(),
@@ -697,13 +752,15 @@ export const useStore = create<State>()(
           const pay = s.payments.find((p) => p.id === id);
           if (!pay) return s;
           const now = new Date().toISOString();
+          const remainingPayments = s.payments.filter((p) => p.id !== id);
           const bookings = s.bookings.map((b) => {
             if (b.id !== pay.bookingId) return b;
-            const currentPaid = Math.max(0, Number(b.advancePaid) || 0);
-            const newPaid = Math.max(0, currentPaid - (Number(pay.amount) || 0));
+            const totalPaid = remainingPayments
+              .filter((x) => x.bookingId === b.id)
+              .reduce((sum, x) => sum + (x.amount || 0), 0);
             return {
               ...b,
-              advancePaid: newPaid,
+              advancePaid: totalPaid,
               updatedAt: now,
             };
           });
@@ -721,7 +778,7 @@ export const useStore = create<State>()(
           ].slice(0, 50);
 
           return {
-            payments: s.payments.filter((p) => p.id !== id),
+            payments: remainingPayments,
             bookings,
             deletedPayments,
             activity: [entry, ...s.activity].slice(0, 50),
@@ -1874,7 +1931,8 @@ export const formatAppDateTime = (isoString: string | undefined | null): string 
 
 export const fmtTime12 = (hhmm: string) => formatAppTime(hhmm);
 
-export const netBookingAmount = (b: Booking) => (b.totalAmount || 0) + (b.extraCharges || 0);
+export const netBookingAmount = (b: Booking) =>
+  Math.max(0, (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0));
 
 export const netBookingTotal = (b: Booking) =>
   Math.max(0, (b.totalAmount || 0) + (b.extraCharges || 0) - (b.discount || 0));

@@ -7,6 +7,7 @@ import {
   fmtTime12,
   bookingsOnDate,
   type ServiceType,
+  type ServiceItem,
   type Measurement,
   formatAppDate,
   formatShortBillNumber,
@@ -117,23 +118,36 @@ function NewBooking() {
   const [showAddress, setShowAddress] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
 
-  const [sareeCount, setSareeCount] = useState(1);
-  const defaultPrice =
-    bookingSource === "artist"
-      ? service === "prepleat"
+  const getServiceDefaultPrice = (srv: string) => {
+    if (bookingSource === "artist") {
+      return srv === "prepleat"
         ? (settings.artistPrepleatPrice ?? settings.prepleatPrice)
-        : (settings.artistDrapePrice ?? settings.drapePrice)
-      : service === "prepleat"
-        ? settings.prepleatPrice
-        : settings.drapePrice;
-  const lastPrice = customerId ? lastPriceFor(customerId, service, bookings) : undefined;
+        : (settings.artistDrapePrice ?? settings.drapePrice);
+    }
+    return srv === "prepleat" ? settings.prepleatPrice : settings.drapePrice;
+  };
+
+    const lastPrice = customerId ? lastPriceFor(customerId, "prepleat", bookings) : undefined;
   const lastArtistPrice = artistId
-    ? bookings.find((b) => b.artistId === artistId && b.service === service)?.pricePerSaree
+    ? bookings.find((b) => b.artistId === artistId)?.pricePerSaree
     : undefined;
   const quotedLastPrice = bookingSource === "artist" ? lastArtistPrice : lastPrice;
+  const defaultPrice = getServiceDefaultPrice(service);
+  const [servicesList, setServicesList] = useState<ServiceItem[]>([
+    {
+      id: "srv_1",
+      service: "prepleat",
+      serviceName: "Pre-Pleat",
+      sareeCount: 1,
+      pricePerSaree: defaultPrice,
+      notes: "",
+    },
+  ]);
+
+  const [sareeCount, setSareeCount] = useState(1);
   const [pricePerSaree, setPricePerSaree] = useState<number>(defaultPrice);
   const [priceTouched, setPriceTouched] = useState(false);
-  const effPrice = priceTouched ? pricePerSaree : (quotedLastPrice ?? defaultPrice);
+  const effPrice = priceTouched ? pricePerSaree : defaultPrice;
   
   const [manualTotal, setManualTotal] = useState<number | null>(null);
   const [extraCharges, setExtraCharges] = useState<string>("");
@@ -142,7 +156,19 @@ function NewBooking() {
   const [showExtraCharges, setShowExtraCharges] = useState(false);
   const [sendWhatsAppOnSave, setSendWhatsAppOnSave] = useState(true);
 
-  const sareeSubtotal = manualTotal !== null ? manualTotal : sareeCount * effPrice;
+  // Synchronized multi-service totals
+  const totalSareesCount = useMemo(() => {
+    return servicesList.reduce((sum, item) => sum + (Number(item.sareeCount) || 1), 0);
+  }, [servicesList]);
+
+  const calculatedBaseSubtotal = useMemo(() => {
+    return servicesList.reduce(
+      (sum, item) => sum + (Number(item.sareeCount) || 1) * (Number(item.pricePerSaree) || 0),
+      0
+    );
+  }, [servicesList]);
+
+  const sareeSubtotal = manualTotal !== null ? manualTotal : calculatedBaseSubtotal;
   const total = sareeSubtotal + extraNum;
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -194,6 +220,47 @@ function NewBooking() {
   const hasRestoredDraft = useRef(false);
   const isSavedRef = useRef(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const addServiceRow = () => {
+    const nextService = servicesList.some((s) => s.service === "prepleat") ? "drape" : "prepleat";
+    const nextPrice = getServiceDefaultPrice(nextService);
+    setServicesList((prev) => [
+      ...prev,
+      {
+        id: "srv_" + Math.random().toString(36).slice(2, 8),
+        service: nextService,
+        serviceName: nextService === "prepleat" ? "Pre-Pleat" : "Draping",
+        sareeCount: 1,
+        pricePerSaree: nextPrice,
+        notes: "",
+      },
+    ]);
+  };
+
+  const updateServiceRow = (id: string, patch: Partial<ServiceItem>) => {
+    setServicesList((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const updated = { ...item, ...patch };
+        if (patch.service && patch.service !== item.service) {
+          if (patch.service === "prepleat") {
+            updated.serviceName = "Pre-Pleat";
+            updated.pricePerSaree = getServiceDefaultPrice("prepleat");
+          } else if (patch.service === "drape") {
+            updated.serviceName = "Draping";
+            updated.pricePerSaree = getServiceDefaultPrice("drape");
+          } else if (patch.service === "custom" && !item.serviceName) {
+            updated.serviceName = "Custom Service";
+          }
+        }
+        return updated;
+      })
+    );
+  };
+
+  const removeServiceRow = (id: string) => {
+    if (servicesList.length <= 1) return;
+    setServicesList((prev) => prev.filter((item) => item.id !== id));
+  };
   const [createdBookingPreview, setCreatedBookingPreview] = useState<{
     bookingId: string;
     customerName: string;
@@ -500,13 +567,15 @@ function NewBooking() {
 
     const finalNotes = [...selectedTags, notes.trim()].filter(Boolean).join(" · ");
 
+    const primarySrv = servicesList[0]?.service === "drape" ? "drape" : "prepleat";
     const b = addBooking({
       customerId: cid,
       artistId: artistId || undefined,
-      service,
-      sareeCount,
-      pricePerSaree: effPrice,
+      service: primarySrv,
+      sareeCount: totalSareesCount,
+      pricePerSaree: Math.round(sareeSubtotal / (totalSareesCount || 1)),
       totalAmount: sareeSubtotal,
+      items: servicesList,
       extraCharges: extraNum > 0 ? extraNum : undefined,
       extraChargesNote: extraNum > 0 ? (extraChargesNote.trim() || "Travel") : undefined,
       advancePaid: hasAdvance ? advNum : 0,
@@ -752,42 +821,7 @@ function NewBooking() {
         )}
       </section>
 
-      {/* Service toggle */}
-      <div className="grid grid-cols-2 gap-2.5 mb-4">
-        {(["prepleat", "drape"] as ServiceType[]).map((s) => {
-          const active = service === s;
-          const price =
-            bookingSource === "artist"
-              ? s === "prepleat"
-                ? (settings.artistPrepleatPrice ?? settings.prepleatPrice)
-                : (settings.artistDrapePrice ?? settings.drapePrice)
-              : s === "prepleat"
-                ? settings.prepleatPrice
-                : settings.drapePrice;
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => {
-                setService(s);
-                setPriceTouched(false);
-                setPricePerSaree(price);
-              }}
-              className={cn(
-                "py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-95 card-shadow border border-border/40",
-                active
-                  ? "saree-gradient text-primary-foreground border-transparent shadow-sm shadow-primary/20"
-                  : "bg-card text-foreground hover:bg-secondary/20",
-              )}
-            >
-              {active && <Check className="size-3.5 stroke-[3]" />}
-              <span>
-                {s === "prepleat" ? "PrePleat" : "Drape"} · ₹{price}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+
 
       {/* Customer — hidden by default when booking via artist (often unknown). */}
       {bookingSource === "artist" && !showCustomerForArtist && !selectedCust ? (
@@ -1189,77 +1223,195 @@ function NewBooking() {
         </section>
       )}
 
-      {/* Order */}
-      <section className="bg-card card-shadow rounded-2xl p-4 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-          Order
-        </p>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm font-medium">Saree count</span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSareeCount(Math.max(1, sareeCount - 1))}
-              className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150"
-            >
-              −
-            </button>
-            <span className="w-8 text-center text-lg font-bold tabular-nums">{sareeCount}</span>
-            <button
-              type="button"
-              onClick={() => setSareeCount(sareeCount + 1)}
-              className="size-8 rounded-full bg-secondary flex items-center justify-center font-bold text-lg hover:bg-secondary/80 active:scale-90 transition-all duration-150"
-            >
-              +
-            </button>
+      {/* Services & Line Items Section */}
+      <section className="bg-card card-shadow rounded-2xl p-4 mb-3 space-y-3.5 border border-border/40">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="size-4 text-primary" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+              Services & Saree Items ({servicesList.length})
+            </h2>
           </div>
+          <span className="text-[10px] text-muted-foreground font-semibold">
+            Total: {totalSareesCount} {totalSareesCount === 1 ? "Saree" : "Sarees"}
+          </span>
         </div>
-        <div className="flex items-center justify-between gap-3 mt-3.5">
-          <span className="text-sm font-medium">Price / saree</span>
-          <div className="flex items-center gap-1 bg-secondary rounded-full px-1 py-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                setPriceTouched(true);
-                setPricePerSaree(Math.max(0, effPrice - 50));
-              }}
-              className="size-7 rounded-full flex items-center justify-center hover:bg-background/40 active:scale-90 transition-all duration-150"
-            >
-              <Minus className="size-3.5" />
-            </button>
-            <div className="relative w-20">
-              <IndianRupee className="absolute left-1 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
-              <input
-                type="number"
-                value={priceTouched ? pricePerSaree : effPrice}
-                onChange={(e) => {
-                  setPriceTouched(true);
-                  setPricePerSaree(Number(e.target.value) || 0);
-                }}
-                className="w-full bg-transparent pl-5 pr-1 py-1 text-sm text-right font-semibold tabular-nums focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setPriceTouched(true);
-                setPricePerSaree(effPrice + 50);
-              }}
-              className="size-7 rounded-full flex items-center justify-center hover:bg-background/40 active:scale-90 transition-all duration-150"
-            >
-              <Plus className="size-3.5" />
-            </button>
-          </div>
+
+        <div className="space-y-3">
+          {servicesList.map((item, idx) => {
+            const itemSubtotal = (Number(item.sareeCount) || 1) * (Number(item.pricePerSaree) || 0);
+
+            return (
+              <div
+                key={item.id}
+                className="bg-secondary/40 border border-border/40 rounded-2xl p-3 space-y-2.5 transition relative"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Service #{idx + 1}
+                  </span>
+                  {servicesList.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeServiceRow(item.id)}
+                      className="size-6 rounded-full bg-destructive/10 hover:bg-destructive/20 text-destructive flex items-center justify-center text-xs transition cursor-pointer"
+                      title="Remove this service"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Service Type Selection */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { key: "prepleat", label: "Pre-Pleat", icon: "🥻" },
+                    { key: "drape", label: "Draping", icon: "✨" },
+                    { key: "custom", label: "Custom", icon: "📦" },
+                  ].map((srv) => {
+                    const active = item.service === srv.key;
+                    return (
+                      <button
+                        key={srv.key}
+                        type="button"
+                        onClick={() => updateServiceRow(item.id, { service: srv.key as any })}
+                        className={cn(
+                          "py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer",
+                          active
+                            ? "saree-gradient text-white shadow-xs"
+                            : "bg-card hover:bg-card/80 text-foreground/80 border border-border/30",
+                        )}
+                      >
+                        <span>{srv.icon}</span>
+                        <span>{srv.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Service Name Input (if custom) */}
+                {item.service === "custom" && (
+                  <input
+                    type="text"
+                    value={item.serviceName || ""}
+                    onChange={(e) => updateServiceRow(item.id, { serviceName: e.target.value })}
+                    placeholder="Custom service name (e.g. Box Fold & Ironing)"
+                    className="w-full bg-card rounded-xl px-3 py-1.5 text-xs font-medium border border-border/40 focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                )}
+
+                {/* Saree Count and Price per Saree */}
+                <div className="grid grid-cols-2 gap-2.5 items-center">
+                  {/* Saree Counter */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Sarees
+                    </span>
+                    <div className="flex items-center justify-between bg-card rounded-xl p-1 px-2 h-9 border border-border/30">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateServiceRow(item.id, {
+                            sareeCount: Math.max(1, (item.sareeCount || 1) - 1),
+                          })
+                        }
+                        className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-sm active:scale-90 transition cursor-pointer"
+                      >
+                        −
+                      </button>
+                      <span className="text-xs font-bold tabular-nums">{item.sareeCount || 1}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateServiceRow(item.id, {
+                            sareeCount: (item.sareeCount || 1) + 1,
+                          })
+                        }
+                        className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-sm active:scale-90 transition cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Price Per Saree */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Rate / Saree (₹)
+                    </span>
+                    <div className="flex items-center justify-between bg-card rounded-xl p-1 px-1.5 h-9 border border-border/30">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateServiceRow(item.id, {
+                            pricePerSaree: Math.max(0, (item.pricePerSaree || 0) - 50),
+                          })
+                        }
+                        className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-xs active:scale-90 transition cursor-pointer"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        value={item.pricePerSaree}
+                        onChange={(e) =>
+                          updateServiceRow(item.id, {
+                            pricePerSaree: Number(e.target.value) || 0,
+                          })
+                        }
+                        className="w-14 bg-transparent text-center text-xs font-bold tabular-nums focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateServiceRow(item.id, {
+                            pricePerSaree: (item.pricePerSaree || 0) + 50,
+                          })
+                        }
+                        className="size-6.5 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center font-bold text-xs active:scale-90 transition cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Note Input */}
+                <div className="pt-1">
+                  <input
+                    type="text"
+                    value={item.notes || ""}
+                    onChange={(e) => updateServiceRow(item.id, { notes: e.target.value })}
+                    placeholder="Service note (e.g. Box packing with pins, morning Muhurtham)"
+                    className="w-full bg-card/80 border border-border/30 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/70"
+                  />
+                </div>
+
+                {/* Subtotal line */}
+                <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-0.5 border-t border-border/20">
+                  <span>Subtotal:</span>
+                  <span className="font-bold text-foreground font-mono">
+                    {item.sareeCount || 1} × {fmtINR(item.pricePerSaree || 0)} = {fmtINR(itemSubtotal)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add another service button */}
+          <button
+            type="button"
+            onClick={addServiceRow}
+            className="w-full py-2.5 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border border-primary/20 active:scale-95"
+          >
+            <Plus className="size-3.5" />
+            <span>+ Add Another Service (e.g. Draping, Box Folding)</span>
+          </button>
         </div>
-        {quotedLastPrice && (
-          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Last charged</span>
-            <span className="font-semibold text-gold">{fmtINR(quotedLastPrice)} / saree</span>
-          </div>
-        )}
+
         {/* Extra / Travel Charges toggle & inputs */}
         {!showExtraCharges && extraNum === 0 ? (
-          <div className="mt-3 pt-2.5 border-t border-border/40 flex justify-between items-center">
+          <div className="pt-2.5 border-t border-border/40 flex justify-between items-center">
             <button
               type="button"
               onClick={() => setShowExtraCharges(true)}
@@ -1269,7 +1421,7 @@ function NewBooking() {
             </button>
           </div>
         ) : (
-          <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="pt-3 border-t border-border/40 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold flex items-center gap-1.5 text-foreground/90">
                 <Car className="size-3.5 text-primary" />
@@ -1334,13 +1486,13 @@ function NewBooking() {
           </div>
         )}
 
-        <div className="mt-3 pt-3 border-t border-border/50 bg-primary/5 dark:bg-primary/10 rounded-2xl p-3.5 border border-primary/20 flex justify-between items-center">
+        <div className="pt-3 border-t border-border/50 bg-primary/5 dark:bg-primary/10 rounded-2xl p-3.5 border border-primary/20 flex justify-between items-center">
           <div>
             <span className="text-xs font-extrabold uppercase tracking-wider text-primary">
               Grand Total Amount
             </span>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {sareeCount} saree{sareeCount > 1 ? "s" : ""} × ₹{priceTouched ? pricePerSaree : effPrice} {extraNum > 0 ? `+ ₹${extraNum} ${extraChargesNote || "extra"}` : ""}
+              {totalSareesCount} {totalSareesCount > 1 ? "sarees" : "saree"} · {servicesList.length} {servicesList.length > 1 ? "services" : "service"} {extraNum > 0 ? `+ ₹${extraNum} ${extraChargesNote || "extra"}` : ""}
             </p>
           </div>
           <div className="relative w-32">

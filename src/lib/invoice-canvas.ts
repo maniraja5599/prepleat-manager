@@ -174,35 +174,59 @@ export function drawInvoiceCanvas(opts: InvoiceDrawOptions): HTMLCanvasElement {
 
   tableY += 34;
 
-  // Row 1: Primary Service
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(16, tableY, W - 32, 54);
-  ctx.strokeStyle = "#f1f5f9";
-  ctx.strokeRect(16, tableY, W - 32, 54);
+  // 3. Table Rows (Multi-Service Support)
+  const itemsToRender =
+    booking.items && booking.items.length > 0
+      ? booking.items
+      : [
+          {
+            id: "1",
+            service: booking.service,
+            serviceName: booking.service === "prepleat" ? "PrePleat Saree Service" : "Saree Drape Service",
+            sareeCount: booking.sareeCount || 1,
+            pricePerSaree: booking.pricePerSaree || 0,
+            notes: booking.notes,
+          },
+        ];
 
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "bold 15px 'Segoe UI', Tahoma, sans-serif";
-  const serviceTitle = booking.service === "prepleat" ? "PrePleat Saree Service" : "Saree Drape Service";
-  ctx.fillText(serviceTitle, 36, tableY + 24);
+  for (const item of itemsToRender) {
+    const itemSubtotal = (Number(item.sareeCount) || 1) * (Number(item.pricePerSaree) || 0);
+    const itemTitle =
+      item.serviceName ||
+      (item.service === "prepleat"
+        ? "PrePleat Saree Service"
+        : item.service === "drape"
+          ? "Saree Drape Service"
+          : "Custom Service");
 
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px 'Segoe UI', Tahoma, sans-serif";
-  ctx.fillText("Professional pleating & box folding", 36, tableY + 44);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(16, tableY, W - 32, 54);
+    ctx.strokeStyle = "#f1f5f9";
+    ctx.strokeRect(16, tableY, W - 32, 54);
 
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "bold 14px 'Courier New', monospace";
-  ctx.textAlign = "center";
-  ctx.fillText(String(booking.sareeCount), W - 240, tableY + 32);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 15px 'Segoe UI', Tahoma, sans-serif";
+    ctx.fillText(itemTitle, 36, tableY + 24);
 
-  ctx.textAlign = "right";
-  ctx.font = "14px 'Courier New', monospace";
-  ctx.fillText(fmtINR(booking.pricePerSaree), W - 140, tableY + 32);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "12px 'Segoe UI', Tahoma, sans-serif";
+    ctx.fillText(item.notes ? `Note: ${item.notes}` : "Professional pleating & care", 36, tableY + 44);
 
-  ctx.font = "bold 15px 'Courier New', monospace";
-  ctx.fillText(fmtINR(booking.totalAmount), W - 36, tableY + 32);
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 14px 'Courier New', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(String(item.sareeCount || 1), W - 240, tableY + 32);
 
-  tableY += 54;
+    ctx.textAlign = "right";
+    ctx.font = "14px 'Courier New', monospace";
+    ctx.fillText(fmtINR(item.pricePerSaree || 0), W - 140, tableY + 32);
+
+    ctx.font = "bold 15px 'Courier New', monospace";
+    ctx.fillText(fmtINR(itemSubtotal), W - 36, tableY + 32);
+
+    tableY += 54;
+  }
 
   // Extra charges row
   if (booking.extraCharges && booking.extraCharges > 0) {

@@ -185,7 +185,7 @@ export function drawConsolidatedStatementCanvas(opts: ConsolidatedStatementOptio
     const timeStr = b.deliveryTime ? fmtTime12(b.deliveryTime) : "";
     const bCustomer = allCustomers.find((c) => c.id === b.customerId);
     const place = bCustomer?.address || b.notes || "Standard Studio Delivery";
-    const svc = b.service === "prepleat" ? "PrePleat" : "Drape";
+    const svc = b.items && b.items.length > 1 ? "Multi-Svc" : b.service === "prepleat" ? "PrePleat" : "Drape";
     const bNet = netBookingAmount(b);
     const bDue = totalDue(b);
 
@@ -417,25 +417,25 @@ export async function shareConsolidatedWhatsApp(
   });
 
   const msg = [
-    `🌸 *{(settings.businessName || "SAREE PREPLEAT STUDIO").toUpperCase()}* 🌸`,
-    `_{settings.businessSlogan || "Flawless Saree Draping & Pre-Pleat Care"}_`,
+    `🌸 *${(settings.businessName || "SAREE PREPLEAT STUDIO").toUpperCase()}* 🌸`,
+    `_${settings.businessSlogan || "Flawless Saree Draping & Pre-Pleat Care"}_`,
     ``,
-    `Vanakkam *{clientName}* 🙏`,
-    `Here is your *Consolidated Multi-Bill Statement* for *{selectedBookings.length} orders* ({totalSarees} Sarees Total) 🧾`,
+    `Vanakkam *${clientName}* 🙏`,
+    `Here is your *Consolidated Multi-Bill Statement* for *${selectedBookings.length} orders* (${totalSarees} Sarees Total) 🧾`,
     ``,
     `📋 *ITEMIZED BILLS BREAKDOWN*:`,
     ...billLines,
     ``,
     `───────────────────────`,
-    `💰 *Grand Total Amount*: {fmtINR(grandTotal)}`,
-    `💵 *Total Advance Paid*: {fmtINR(totalPaid)}`,
+    `💰 *Grand Total Amount*: ${fmtINR(grandTotal)}`,
+    `💵 *Total Advance Paid*: ${fmtINR(totalPaid)}`,
     totalBalanceDue > 0
-      ? `📌 *Net Balance Due*: *{fmtINR(totalBalanceDue)}*`
+      ? `📌 *Net Balance Due*: *${fmtINR(totalBalanceDue)}*`
       : `✅ *Statement Status*: *ALL DUES CLEARED* ✓`,
     `───────────────────────`,
     ``,
-    settings.businessPhone ? `📞 *Contact*: +91 {settings.businessPhone}` : "",
-    settings.businessAddress ? `📍 *Location*: {settings.businessAddress}` : "",
+    settings.businessPhone ? `📞 *Contact*: +91 ${settings.businessPhone}` : "",
+    settings.businessAddress ? `📍 *Location*: ${settings.businessAddress}` : "",
     ``,
     `✨ *Thank you for your valued partnership!* 🙏`,
   ].filter(Boolean).join("\n");
