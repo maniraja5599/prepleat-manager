@@ -804,14 +804,18 @@ function BookingsPage() {
 
             return (
               <div key={group.monthKey} className="relative">
-                {/* Timeline Milestone Node Pin */}
-                <div
-                  className={cn(
-                    "absolute -left-3.5 sm:-left-4 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
-                    theme.dot,
-                  )}
-                >
-                  <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
+                {/* Full-height Left Timeline Track for Sticky Scroll-Following Dot */}
+                <div className="absolute -left-3.5 sm:-left-4 top-0 bottom-3 w-4 pointer-events-none z-10">
+                  <div className="sticky-timeline-dot-bookings flex items-center justify-center -translate-x-[2px]">
+                    <div
+                      className={cn(
+                        "size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center transition-all",
+                        theme.dot,
+                      )}
+                    >
+                      <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Month Container Box */}
