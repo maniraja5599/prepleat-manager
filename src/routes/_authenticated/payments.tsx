@@ -146,7 +146,7 @@ function PaymentsPage() {
   const netProfit = lifetime - totalExpense;
   const totalPending = useMemo(() => {
     return bookings.reduce((s, b) => {
-      if (b.status !== "completed") return s;
+      if (b.status === "cancelled") return s;
       return s + totalDue(b);
     }, 0);
   }, [bookings]);

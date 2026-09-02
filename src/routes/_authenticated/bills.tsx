@@ -393,7 +393,7 @@ export function BillsPage() {
           </div>
         ) : (
           <div
-            className="relative pl-6 sm:pl-7 space-y-6 before:absolute before:left-2.5 sm:before:left-3 before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-border before:to-border/20 select-none touch-manipulation"
+            className="relative pl-3.5 sm:pl-4 space-y-5 before:absolute before:left-[3.5px] sm:before:left-[5px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30 select-none touch-manipulation"
             style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
           >
             {groupedByMonth.map((group, gIdx) => {
@@ -406,7 +406,7 @@ export function BillsPage() {
                 <div key={group.monthKey} className="relative">
                   <div
                     className={cn(
-                      "absolute -left-6 sm:-left-7 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
+                      "absolute -left-3.5 sm:-left-4 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
                       theme.dot,
                     )}
                   >

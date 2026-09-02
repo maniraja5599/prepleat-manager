@@ -2594,6 +2594,36 @@ function EditPanel({
                 })}
               </div>
 
+              {/* Draping Sub-Type Selector */}
+              {item.service === "drape" && (
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-card rounded-xl border border-border/30 animate-in fade-in">
+                  <button
+                    type="button"
+                    onClick={() => updateServiceRow(item.id, { serviceName: "Spot Drape" })}
+                    className={cn(
+                      "py-1.5 rounded-lg text-xs font-bold transition cursor-pointer text-center",
+                      (item.serviceName || "Spot Drape") === "Spot Drape"
+                        ? "bg-primary/15 text-primary border border-primary/30"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    ✨ Spot Drape
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateServiceRow(item.id, { serviceName: "Pre-Pleat + Drape" })}
+                    className={cn(
+                      "py-1.5 rounded-lg text-xs font-bold transition cursor-pointer text-center",
+                      item.serviceName === "Pre-Pleat + Drape"
+                        ? "bg-primary/15 text-primary border border-primary/30"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    🥻 Pre-Pleat + Drape
+                  </button>
+                </div>
+              )}
+
               {/* Custom Service Name Input (if custom) */}
               {item.service === "custom" && (
                 <input

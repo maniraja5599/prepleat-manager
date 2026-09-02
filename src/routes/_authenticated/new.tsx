@@ -38,6 +38,7 @@ import {
   CheckCircle,
   AlertCircle,
   Sparkles,
+  Receipt,
 } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -48,6 +49,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { MapPicker } from "@/components/MapPicker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TimePicker12 } from "@/components/TimePicker12";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -196,6 +198,8 @@ function NewBooking() {
   const [showMeasure, setShowMeasure] = useState(false);
   const [measurements, setMeasurements] = useState<Measurement[]>(settings.defaultMeasurements);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [showMiniBillBreakdown, setShowMiniBillBreakdown] = useState(false);
   const [isEditingMeasure, setIsEditingMeasure] = useState(true);
   const [hasExistingMeasurements, setHasExistingMeasurements] = useState(false);
   const [showNewCustConfirm, setShowNewCustConfirm] = useState(false);
@@ -757,10 +761,10 @@ function NewBooking() {
                             setPriceTouched(false);
                           }}
                           className={cn(
-                            "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0",
+                            "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition",
                             artistId === a.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary",
+                              ? "saree-gradient text-white font-bold ring-2 ring-primary/40 shadow-xs"
+                              : "bg-secondary hover:bg-secondary/80",
                           )}
                         >
                           {a.name}
@@ -809,6 +813,44 @@ function NewBooking() {
                   </div>
                 );
               })()}
+
+            {/* Prominent Highlighted Selected Artist Card */}
+            {artistId && (() => {
+              const selectedArt = artists.find((a) => a.id === artistId);
+              if (!selectedArt) return null;
+              return (
+                <div className="mt-2.5 p-3 rounded-2xl saree-gradient text-white shadow-xs flex items-center justify-between gap-2 border border-white/20 animate-in fade-in">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                      <Palette className="size-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9.5px] uppercase font-extrabold tracking-wider text-white/80">
+                        Selected Artist
+                      </p>
+                      <h4 className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+                        <span>{selectedArt.name}</span>
+                        <CheckCircle className="size-3.5 text-emerald-300 shrink-0" />
+                      </h4>
+                      {selectedArt.phone && (
+                        <p className="text-[11px] text-white/80 font-mono">{selectedArt.phone}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setArtistId("");
+                      setPriceTouched(false);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition active:scale-95 shrink-0"
+                  >
+                    Change
+                  </button>
+                </div>
+              );
+            })()}
+
             <AddArtistInline
               onAdd={(name) => {
                 const c = addCustomer({ kind: "artist", name: name.trim(), phone: "" });
@@ -880,30 +922,102 @@ function NewBooking() {
             </div>
           </div>
           {customerId && selectedCust ? (
-            <div>
+            <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-display font-bold text-base text-foreground tracking-tight truncate">
-                    {selectedCust.name}
+                  <h3 className="font-display font-bold text-base text-foreground tracking-tight truncate flex items-center gap-1.5">
+                    <User className="size-4 text-primary shrink-0" />
+                    <span>{selectedCust.name}</span>
                   </h3>
-                  {selectedCust.phone ? (
-                    !isEditingPhone ? (
-                      <div className="mt-2 flex items-center gap-2 bg-secondary/50 px-3 py-2 rounded-xl border border-border/10">
+                  {quotedLastPrice && (
+                    <p className="text-[11px] text-gold font-semibold mt-0.5">
+                      💡 Previous order: {fmtINR(quotedLastPrice)} / saree
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setCustomerId("");
+                    setNewPhone("");
+                    setNewAddress("");
+                    setNewLocationUrl("");
+                    setMeasurements(settings.defaultMeasurements);
+                    setShowMeasure(false);
+                    setHasExistingMeasurements(false);
+                    setIsEditingMeasure(true);
+                    setIsEditingPhone(false);
+                    setIsEditingAddress(false);
+                  }}
+                  className="text-xs text-primary font-semibold shrink-0 hover:underline cursor-pointer"
+                >
+                  Change
+                </button>
+              </div>
+
+              {/* Mobile Number Section */}
+              <div>
+                {selectedCust.phone ? (
+                  !isEditingPhone ? (
+                    <div className="flex items-center justify-between bg-secondary/50 px-3 py-2 rounded-xl border border-border/10">
+                      <div className="flex items-center gap-2">
                         <Phone className="size-3.5 text-muted-foreground shrink-0" />
                         <span className="text-xs font-semibold tabular-nums">{selectedCust.phone}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
-                            setIsEditingPhone(true);
-                          }}
-                          className="ml-auto text-[11px] text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95"
-                        >
-                          Edit
-                        </button>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
+                          setIsEditingPhone(true);
+                        }}
+                        className="text-[11px] text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95 cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="tel-national"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        maxLength={10}
+                        value={newPhone}
+                        onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
+                        placeholder="Mobile number"
+                        className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary select-text"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingPhone(false);
+                          setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground font-semibold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div>
+                    {!isEditingPhone ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPhone(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/80 hover:bg-secondary text-foreground text-xs font-bold rounded-xl transition active:scale-95 cursor-pointer border border-border/30"
+                      >
+                        <Plus className="size-3.5 text-primary" />
+                        <span>Add Mobile Number</span>
+                      </button>
                     ) : (
-                      <div className="mt-2 relative">
+                      <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                         <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
                           +91
@@ -925,108 +1039,159 @@ function NewBooking() {
                           type="button"
                           onClick={() => {
                             setIsEditingPhone(false);
-                            setNewPhone(selectedCust.phone.replace(/^\+91/, ""));
+                            setNewPhone("");
                           }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground font-semibold"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground font-semibold cursor-pointer"
                         >
                           Cancel
                         </button>
                       </div>
-                    )
-                  ) : (
-                    <div className="mt-2">
-                      {!isEditingPhone ? (
-                        <div className="flex items-center gap-2 flex-nowrap overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingPhone(true)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl transition active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
-                          >
-                            <Plus className="size-3.5 shrink-0" />
-                            <span>Add Mobile</span>
-                          </button>
-                          <span className="text-[11px] text-muted-foreground whitespace-nowrap truncate">
-                            (No mobile saved)
-                          </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Address & Google Maps Location Section */}
+              <div>
+                {selectedCust.address ? (
+                  !isEditingAddress ? (
+                    <div className="flex items-start justify-between bg-secondary/50 px-3 py-2.5 rounded-xl border border-border/10">
+                      <div className="flex items-start gap-2 min-w-0 flex-1">
+                        <MapPin className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground whitespace-pre-wrap">
+                            {selectedCust.address}
+                          </p>
+                          {selectedCust.locationUrl && (
+                            <a
+                              href={selectedCust.locationUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1 mt-1 font-semibold"
+                            >
+                              <Map className="size-3" /> View on Google Maps
+                            </a>
+                          )}
                         </div>
-                      ) : (
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewAddress(selectedCust.address || "");
+                          setNewLocationUrl(selectedCust.locationUrl || "");
+                          setIsEditingAddress(true);
+                        }}
+                        className="text-[11px] text-primary font-bold px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition active:scale-95 shrink-0 ml-2 cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 bg-secondary/30 p-3 rounded-2xl border border-border/30 animate-in fade-in">
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                        <textarea
+                          value={newAddress}
+                          onChange={(e) => setNewAddress(e.target.value)}
+                          rows={2}
+                          placeholder="Delivery address"
+                          className="w-full bg-background rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none border border-border/40"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={newLocationUrl}
+                          onChange={(e) => setNewLocationUrl(e.target.value)}
+                          placeholder="Paste Google Maps URL"
+                          className="flex-1 bg-background rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary border border-border/40"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowMapPicker(true)}
+                          className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition flex items-center gap-1 text-xs font-bold"
+                          title="Pick Location on Map"
+                        >
+                          <Map className="size-4" />
+                          <span className="hidden sm:inline">Pick Map</span>
+                        </button>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingAddress(false)}
+                          className="text-xs text-primary font-bold px-3 py-1 rounded-lg bg-primary/10 hover:bg-primary/20"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div>
+                    {!isEditingAddress ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingAddress(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/80 hover:bg-secondary text-foreground text-xs font-bold rounded-xl transition active:scale-95 cursor-pointer border border-border/30"
+                      >
+                        <Plus className="size-3.5 text-primary" />
+                        <MapPin className="size-3.5 text-muted-foreground" />
+                        <span>Add Address & Map Location</span>
+                      </button>
+                    ) : (
+                      <div className="space-y-2 bg-secondary/30 p-3 rounded-2xl border border-border/30 animate-in fade-in">
                         <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                          <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
-                            +91
-                          </span>
+                          <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                          <textarea
+                            value={newAddress}
+                            onChange={(e) => setNewAddress(e.target.value)}
+                            rows={2}
+                            autoFocus
+                            placeholder="Delivery address"
+                            className="w-full bg-background rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none border border-border/40"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
                           <input
-                            type="tel"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            autoComplete="tel-national"
-                            autoCorrect="off"
-                            spellCheck={false}
-                            maxLength={10}
-                            value={newPhone}
-                            onChange={(e) => setNewPhone(sanitizeIndianPhone(e.target.value))}
-                            placeholder="Mobile number"
-                            className="w-full bg-secondary rounded-2xl pl-[4.5rem] pr-16 py-2.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary select-text"
+                            value={newLocationUrl}
+                            onChange={(e) => setNewLocationUrl(e.target.value)}
+                            placeholder="Paste Google Maps URL"
+                            className="flex-1 bg-background rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary border border-border/40"
                           />
                           <button
                             type="button"
+                            onClick={() => setShowMapPicker(true)}
+                            className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition flex items-center gap-1 text-xs font-bold"
+                            title="Pick Location on Map"
+                          >
+                            <Map className="size-4" />
+                            <span className="hidden sm:inline">Pick Map</span>
+                          </button>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
                             onClick={() => {
-                              setIsEditingPhone(false);
-                              setNewPhone("");
+                              setIsEditingAddress(false);
+                              setNewAddress("");
+                              setNewLocationUrl("");
                             }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground font-semibold"
+                            className="text-xs text-muted-foreground hover:text-foreground px-2.5 py-1"
                           >
                             Cancel
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingAddress(false)}
+                            className="text-xs text-primary font-bold px-3 py-1 rounded-lg bg-primary/10 hover:bg-primary/20"
+                          >
+                            Done
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  )}
-                  {quotedLastPrice && (
-                    <p className="text-xs text-gold mt-2">
-                      Last {service}: {fmtINR(quotedLastPrice)}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setCustomerId("");
-                    setNewPhone("");
-                    setNewAddress("");
-                    setNewLocationUrl("");
-                    setMeasurements(settings.defaultMeasurements);
-                    setShowMeasure(false);
-                    setHasExistingMeasurements(false);
-                    setIsEditingMeasure(true);
-                    setIsEditingPhone(false);
-                  }}
-                  className="text-xs text-primary font-semibold shrink-0"
-                >
-                  Change
-                </button>
-              </div>
-              <div className="space-y-2 mt-4">
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                  <textarea
-                    value={newAddress}
-                    onChange={(e) => setNewAddress(e.target.value)}
-                    rows={2}
-                    placeholder="Add/Edit address"
-                    className="w-full bg-secondary rounded-2xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    value={newLocationUrl}
-                    onChange={(e) => setNewLocationUrl(e.target.value)}
-                    placeholder="Paste Maps URL"
-                    className="flex-1 bg-secondary rounded-2xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button type="button" onClick={() => setShowMapPicker(true)} className="p-2 bg-secondary text-primary rounded-full hover:bg-secondary/80">
-                    <Map className="size-4" />
-                  </button>
-                </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -1289,6 +1454,36 @@ function NewBooking() {
                   })}
                 </div>
 
+                {/* Draping Sub-Type Selector */}
+                {item.service === "drape" && (
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-card rounded-xl border border-border/30 animate-in fade-in">
+                    <button
+                      type="button"
+                      onClick={() => updateServiceRow(item.id, { serviceName: "Spot Drape" })}
+                      className={cn(
+                        "py-1.5 rounded-lg text-xs font-bold transition cursor-pointer text-center",
+                        (item.serviceName || "Spot Drape") === "Spot Drape"
+                          ? "bg-primary/15 text-primary border border-primary/30"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      ✨ Spot Drape (Direct)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateServiceRow(item.id, { serviceName: "Pre-Pleat + Drape" })}
+                      className={cn(
+                        "py-1.5 rounded-lg text-xs font-bold transition cursor-pointer text-center",
+                        item.serviceName === "Pre-Pleat + Drape"
+                          ? "bg-primary/15 text-primary border border-primary/30"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      🥻 Pre-Pleat + Drape
+                    </button>
+                  </div>
+                )}
+
                 {/* Custom Service Name Input (if custom) */}
                 {item.service === "custom" && (
                   <input
@@ -1495,14 +1690,25 @@ function NewBooking() {
               {totalSareesCount} {totalSareesCount > 1 ? "sarees" : "saree"} · {servicesList.length} {servicesList.length > 1 ? "services" : "service"} {extraNum > 0 ? `+ ₹${extraNum} ${extraChargesNote || "extra"}` : ""}
             </p>
           </div>
-          <div className="relative w-32">
-            <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-primary" />
-            <input
-              type="number"
-              value={manualTotal !== null ? manualTotal : total}
-              onChange={(e) => setManualTotal(e.target.value ? Number(e.target.value) : null)}
-              className="w-full bg-background rounded-xl pl-7 pr-3 py-1.5 text-xl font-display font-black text-primary text-right focus:outline-none focus:ring-2 focus:ring-primary border border-border/40"
-            />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowMiniBillBreakdown(true)}
+              className="size-9 rounded-xl bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+              title="View Itemized Mini Bill Summary"
+            >
+              <Receipt className="size-4.5" />
+            </button>
+            <div className="text-right">
+              <span className="text-xl font-display font-black text-primary tabular-nums">
+                {fmtINR(total)}
+              </span>
+              {hasAdvance && advNum > 0 && (
+                <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                  Due: {fmtINR(remaining)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -2262,6 +2468,97 @@ function NewBooking() {
           </div>
         </div>
       )}
+
+      {/* Mini Bill Breakdown Dialog */}
+      <Dialog open={showMiniBillBreakdown} onOpenChange={setShowMiniBillBreakdown}>
+        <DialogContent className="max-w-md p-4 sm:p-5 rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+              <Receipt className="size-4 text-primary" /> Itemized Bill Breakdown
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 pt-2">
+            <div className="border border-border/40 rounded-2xl overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-secondary/60 text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="text-left p-2.5">Service</th>
+                    <th className="text-center p-2.5">Qty</th>
+                    <th className="text-right p-2.5">Rate</th>
+                    <th className="text-right p-2.5">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/20">
+                  {servicesList.map((it, idx) => {
+                    const lineTot = (Number(it.sareeCount) || 1) * (Number(it.pricePerSaree) || 0);
+                    return (
+                      <tr key={it.id || idx} className="hover:bg-secondary/20">
+                        <td className="p-2.5">
+                          <p className="font-bold text-foreground">
+                            {it.serviceName || (it.service === "prepleat" ? "Pre-Pleat" : "Draping")}
+                          </p>
+                          {it.notes && (
+                            <p className="text-[10px] text-muted-foreground italic mt-0.5">
+                              Note: {it.notes}
+                            </p>
+                          )}
+                        </td>
+                        <td className="p-2.5 text-center font-semibold">{it.sareeCount || 1}</td>
+                        <td className="p-2.5 text-right font-mono">{fmtINR(it.pricePerSaree || 0)}</td>
+                        <td className="p-2.5 text-right font-mono font-bold">{fmtINR(lineTot)}</td>
+                      </tr>
+                    );
+                  })}
+                  {extraNum > 0 && (
+                    <tr className="bg-secondary/10">
+                      <td colSpan={3} className="p-2.5 text-muted-foreground font-semibold">
+                        + Extra / {extraChargesNote || "Travel"} Charge
+                      </td>
+                      <td className="p-2.5 text-right font-mono font-bold text-primary">
+                        +{fmtINR(extraNum)}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="bg-secondary/30 p-3 rounded-2xl space-y-1.5 text-xs">
+              <div className="flex justify-between font-bold text-foreground text-sm border-b border-border/30 pb-1.5">
+                <span>Grand Total:</span>
+                <span className="font-mono text-primary font-black">{fmtINR(total)}</span>
+              </div>
+              {hasAdvance && advNum > 0 ? (
+                <>
+                  <div className="flex justify-between text-muted-foreground pt-1">
+                    <span>Advance Received:</span>
+                    <span className="font-mono font-bold text-emerald-600">{fmtINR(advNum)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-rose-600 dark:text-rose-400 pt-0.5">
+                    <span>Balance Due:</span>
+                    <span className="font-mono font-black">{fmtINR(remaining)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between text-muted-foreground pt-1">
+                  <span>Payment Status:</span>
+                  <span className="font-bold text-amber-600">Full Payment Pending</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMiniBillBreakdown(false)}
+              className="w-full py-2.5 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
+            >
+              Close Summary
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

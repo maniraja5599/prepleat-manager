@@ -110,7 +110,7 @@ function BookingsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [mainFilter, setMainFilter] = useState<
-    "active" | "prepleat" | "drape" | "artist" | "history"
+    "active" | "prepleat" | "drape" | "artist" | "history" | "cancelled"
   >("active");
   const [showPast, setShowPast] = useState(past || false);
   const [pay, setPay] = useState<PayFilter>("all");
@@ -222,29 +222,35 @@ function BookingsPage() {
   const list = useMemo(() => {
     let arr = bookings.slice();
 
-    // Filter by status (active vs past)
-    // Past = completed or delivered; Active = everything else
-    if (showPast) {
-      arr = arr.filter((b) => b.status === "completed" || b.status === "delivered");
+    // If viewing Cancelled bookings
+    if (mainFilter === "cancelled") {
+      arr = arr.filter((b) => b.status === "cancelled");
     } else {
-      arr = arr.filter((b) => b.status !== "completed" && b.status !== "delivered");
-    }
+      // Hide cancelled bookings from all standard active/past views by default
+      arr = arr.filter((b) => b.status !== "cancelled");
 
-    // Filter by service type (mainFilter)
-    if (mainFilter === "prepleat") {
-      arr = arr.filter((b) => b.service === "prepleat");
-    } else if (mainFilter === "drape") {
-      arr = arr.filter((b) => {
-        const c = customers.find((x) => x.id === b.customerId);
-        const isArtistBooking = !!b.artistId || c?.kind === "artist";
-        return b.service === "drape" && !isArtistBooking;
-      });
-    } else if (mainFilter === "artist") {
-      arr = arr.filter((b) => {
-        const c = customers.find((x) => x.id === b.customerId);
-        const isArtistBooking = !!b.artistId || c?.kind === "artist";
-        return isArtistBooking;
-      });
+      if (showPast) {
+        arr = arr.filter((b) => b.status === "completed" || b.status === "delivered");
+      } else {
+        arr = arr.filter((b) => b.status !== "completed" && b.status !== "delivered");
+      }
+
+      // Filter by service type (mainFilter)
+      if (mainFilter === "prepleat") {
+        arr = arr.filter((b) => b.service === "prepleat");
+      } else if (mainFilter === "drape") {
+        arr = arr.filter((b) => {
+          const c = customers.find((x) => x.id === b.customerId);
+          const isArtistBooking = !!b.artistId || c?.kind === "artist";
+          return b.service === "drape" && !isArtistBooking;
+        });
+      } else if (mainFilter === "artist") {
+        arr = arr.filter((b) => {
+          const c = customers.find((x) => x.id === b.customerId);
+          const isArtistBooking = !!b.artistId || c?.kind === "artist";
+          return isArtistBooking;
+        });
+      }
     }
 
     if (pay === "paid") arr = arr.filter((b) => totalDue(b) === 0);
@@ -310,11 +316,12 @@ function BookingsPage() {
   }, [list]);
 
   const counts = useMemo(() => {
-    // Active = not completed and not delivered
+    // Active = not completed, not delivered, and not cancelled
     const statusFilter = (b: any) =>
-      showPast
+      b.status !== "cancelled" &&
+      (showPast
         ? b.status === "completed" || b.status === "delivered"
-        : b.status !== "completed" && b.status !== "delivered";
+        : b.status !== "completed" && b.status !== "delivered");
     return {
       active: bookings.filter((b) => statusFilter(b)).length,
 
@@ -330,6 +337,7 @@ function BookingsPage() {
         return isArtistBooking && statusFilter(b);
       }).length,
       history: bookings.filter((b) => b.status === "delivered" || b.status === "completed").length,
+      cancelled: bookings.filter((b) => b.status === "cancelled").length,
     };
   }, [bookings, customers, showPast]);
 
@@ -681,6 +689,7 @@ function BookingsPage() {
               { id: "prepleat" as const, label: "PrePleat", count: counts.prepleat },
               { id: "drape" as const, label: "Direct Drape", count: counts.drape },
               { id: "artist" as const, label: "Artist", count: counts.artist },
+              ...(counts.cancelled > 0 ? [{ id: "cancelled" as const, label: "Cancelled", count: counts.cancelled }] : []),
             ].map((item) => {
               const isActive = mainFilter === item.id;
               return (
@@ -768,7 +777,7 @@ function BookingsPage() {
           No {showPast ? "past" : "active"} bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
         </div>
       ) : (
-        <div className="relative pl-6 sm:pl-7 space-y-6 before:absolute before:left-2.5 sm:before:left-3 before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-border before:to-border/20">
+        <div className="relative pl-3.5 sm:pl-4 space-y-5 before:absolute before:left-[3.5px] sm:before:left-[5px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30">
           {groupedByMonth.map((group, gIdx) => {
             const theme = MONTH_THEMES[gIdx % MONTH_THEMES.length];
             const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
@@ -798,7 +807,7 @@ function BookingsPage() {
                 {/* Timeline Milestone Node Pin */}
                 <div
                   className={cn(
-                    "absolute -left-6 sm:-left-7 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
+                    "absolute -left-3.5 sm:-left-4 top-3.5 size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center -translate-x-[2px] z-10",
                     theme.dot,
                   )}
                 >
