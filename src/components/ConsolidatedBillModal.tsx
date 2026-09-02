@@ -282,7 +282,16 @@ export function ConsolidatedBillModal({
                     const timeStr = b.deliveryTime ? fmtTime12(b.deliveryTime) : "";
                     const bCustomer = allCustomers.find((c) => c.id === b.customerId);
                     const place = bCustomer?.address || b.notes || "-";
-                    const svc = b.service === "prepleat" ? "PrePleat" : "Drape";
+                    
+                    let svcBreakdown = "";
+                    if (b.items && b.items.length > 0) {
+                      svcBreakdown = b.items
+                        .map((it) => `${it.sareeCount || 1} ${it.serviceName || (it.service === "prepleat" ? "PrePleat" : "Drape")}`)
+                        .join(" + ");
+                    } else {
+                      svcBreakdown = `${b.sareeCount || 1} ${b.service === "prepleat" ? "PrePleat" : "Drape"}`;
+                    }
+
                     const bNet = netBookingAmount(b);
                     const bDue = totalDue(b);
 
@@ -292,11 +301,16 @@ export function ConsolidatedBillModal({
                           <p className="font-bold font-mono text-slate-900">{billNo}</p>
                           <p className="text-[10px] text-slate-500 font-mono">{dateStr}{timeStr ? ` · ${timeStr}` : ""}</p>
                         </td>
-                        <td className="py-2.5 px-2 text-slate-700 text-[11px] max-w-[130px] truncate">
-                          {place}
+                        <td className="py-2.5 px-2 text-slate-700 text-[11px]">
+                          <p className="truncate max-w-[140px] font-medium">{place}</p>
+                          {b.notes && b.notes !== place && (
+                            <p className="text-[10px] text-slate-500 italic mt-0.5 truncate max-w-[140px]">
+                              Note: {b.notes}
+                            </p>
+                          )}
                         </td>
-                        <td className="py-2.5 px-2 text-center font-bold text-slate-900">
-                          {b.sareeCount} ({svc})
+                        <td className="py-2.5 px-2 text-center font-bold text-slate-900 text-[11px]">
+                          {svcBreakdown}
                         </td>
                         <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
                           {fmtINR(bNet)}
@@ -314,24 +328,24 @@ export function ConsolidatedBillModal({
 
               {/* Financial Totals & Verification Rubber Stamp */}
               <div className="mt-4 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                {/* Visual Stamp Seal */}
+                {/* Visual Circular Rubber Stamp Seal */}
                 <div
-                  className="px-3.5 py-2 rounded-xl border-2 text-center -rotate-3 select-none"
+                  className="size-20 rounded-full border-2 border-dashed flex flex-col items-center justify-center -rotate-12 select-none shrink-0"
                   style={{
-                    borderColor: isAllPaid ? "#047857" : "#b91c1c",
-                    backgroundColor: isAllPaid ? "rgba(4, 120, 87, 0.05)" : "rgba(185, 28, 28, 0.05)",
-                    color: isAllPaid ? "#047857" : "#b91c1c",
+                    borderColor: isAllPaid ? "rgba(4, 120, 87, 0.48)" : "rgba(185, 28, 28, 0.48)",
+                    backgroundColor: isAllPaid ? "rgba(4, 120, 87, 0.02)" : "rgba(185, 28, 28, 0.02)",
+                    color: isAllPaid ? "rgba(4, 120, 87, 0.70)" : "rgba(185, 28, 28, 0.70)",
                   }}
                 >
-                  <p className="text-[8.5px] font-mono font-bold tracking-widest">
-                    ★ {(settings.businessName || "SAREE STUDIO").toUpperCase()} ★
-                  </p>
-                  <p className="text-xs sm:text-sm font-mono font-black my-0.5 tracking-wider">
-                    {isAllPaid ? "ALL BILLS CLEARED" : "STATEMENT PENDING"}
-                  </p>
-                  <p className="text-[8px] font-mono font-bold">
-                    {isAllPaid ? "100% RECEIVED · ZERO OUTSTANDING" : `NET DUE: ${fmtINR(totalBalanceDue)} · CONSOLIDATED`}
-                  </p>
+                  <span className="text-[7px] font-mono font-bold tracking-wider">★ OFFICIAL ★</span>
+                  <div className="w-12 my-0.5 border-y border-current/40 py-0.5 text-center">
+                    <span className="text-xs font-mono font-black tracking-widest block">
+                      {isAllPaid ? "PAID" : "DUE"}
+                    </span>
+                  </div>
+                  <span className="text-[6.5px] font-mono font-bold tracking-tight">
+                    {isAllPaid ? "ALL CLEARED" : "STATEMENT DUE"}
+                  </span>
                 </div>
 
                 {/* Financial Math */}

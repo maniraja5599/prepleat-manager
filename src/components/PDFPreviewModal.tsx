@@ -277,23 +277,60 @@ export function PDFPreviewModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td className="py-2.5 px-2">
-                      <p className="font-bold text-slate-900">
-                        {booking.service === "prepleat" ? "Saree Pre-Pleating Service" : "Saree Draping Service"}
-                      </p>
-                      <p className="text-[10px] text-slate-500">Professional pleating & box folding care</p>
-                    </td>
-                    <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900">
-                      {booking.sareeCount}
-                    </td>
-                    <td className="py-2.5 px-2 text-right font-mono text-slate-700">
-                      {fmtINR(booking.pricePerSaree)}
-                    </td>
-                    <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
-                      {fmtINR(booking.totalAmount)}
-                    </td>
-                  </tr>
+                  {booking.items && booking.items.length > 0 ? (
+                    booking.items.map((it, idx) => {
+                      const itemSubtotal = (it.sareeCount || 1) * (it.pricePerSaree || 0);
+                      return (
+                        <tr key={it.id || idx}>
+                          <td className="py-2.5 px-2">
+                            <p className="font-bold text-slate-900">
+                              {it.serviceName || (it.service === "prepleat" ? "Saree Pre-Pleating" : it.service === "drape" ? "Saree Draping" : "Custom Service")}
+                            </p>
+                            {it.notes ? (
+                              <p className="text-[10px] text-slate-600 font-medium mt-0.5">
+                                📌 Note: {it.notes}
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-slate-400">Professional studio care</p>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900">
+                            {it.sareeCount || 1}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono text-slate-700">
+                            {fmtINR(it.pricePerSaree || 0)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
+                            {fmtINR(itemSubtotal)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td className="py-2.5 px-2">
+                        <p className="font-bold text-slate-900">
+                          {booking.service === "prepleat" ? "Saree Pre-Pleating Service" : "Saree Draping Service"}
+                        </p>
+                        {booking.notes ? (
+                          <p className="text-[10px] text-slate-600 font-medium mt-0.5">
+                            📌 Note: {booking.notes}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-slate-400">Professional pleating & box folding care</p>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900">
+                        {booking.sareeCount}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-mono text-slate-700">
+                        {fmtINR(booking.pricePerSaree)}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
+                        {fmtINR(booking.totalAmount)}
+                      </td>
+                    </tr>
+                  )}
 
                   {booking.extraCharges && booking.extraCharges > 0 ? (
                     <tr>
@@ -319,24 +356,24 @@ export function PDFPreviewModal({
 
               {/* Financial Totals & Verification Rubber Stamp */}
               <div className="mt-4 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                {/* Visual Stamp Seal */}
+                {/* Visual Circular Rubber Stamp Seal */}
                 <div
-                  className="px-3.5 py-2 rounded-xl border-2 text-center -rotate-3 select-none"
+                  className="size-20 rounded-full border-2 border-dashed flex flex-col items-center justify-center -rotate-12 select-none shrink-0"
                   style={{
-                    borderColor: isPaid ? "#047857" : "#b91c1c",
-                    backgroundColor: isPaid ? "rgba(4, 120, 87, 0.05)" : "rgba(185, 28, 28, 0.05)",
-                    color: isPaid ? "#047857" : "#b91c1c",
+                    borderColor: isPaid ? "rgba(4, 120, 87, 0.48)" : isPartial ? "rgba(194, 65, 12, 0.48)" : "rgba(185, 28, 28, 0.48)",
+                    backgroundColor: isPaid ? "rgba(4, 120, 87, 0.02)" : "rgba(185, 28, 28, 0.02)",
+                    color: isPaid ? "rgba(4, 120, 87, 0.70)" : isPartial ? "rgba(194, 65, 12, 0.70)" : "rgba(185, 28, 28, 0.70)",
                   }}
                 >
-                  <p className="text-[8.5px] font-mono font-bold tracking-widest">
-                    ★ {(settings.businessName || "SAREE STUDIO").toUpperCase()} ★
-                  </p>
-                  <p className="text-xs sm:text-sm font-mono font-black my-0.5 tracking-wider">
-                    {isPaid ? "PAID & VERIFIED" : isPartial ? "ADVANCE RECEIVED" : "PAYMENT PENDING"}
-                  </p>
-                  <p className="text-[8px] font-mono font-bold">
-                    {isPaid ? "100% RECEIVED · ALL DUES CLEARED" : `BAL DUE: ${fmtINR(due)} · PAY ON DELIVERY`}
-                  </p>
+                  <span className="text-[7px] font-mono font-bold tracking-wider">★ OFFICIAL ★</span>
+                  <div className="w-12 my-0.5 border-y border-current/40 py-0.5 text-center">
+                    <span className="text-xs font-mono font-black tracking-widest block">
+                      {isPaid ? "PAID" : isPartial ? "PARTIAL" : "DUE"}
+                    </span>
+                  </div>
+                  <span className="text-[6.5px] font-mono font-bold tracking-tight">
+                    {isPaid ? "100% CLEARED" : isPartial ? "BAL PENDING" : "PAY ON DELIVERY"}
+                  </span>
                 </div>
 
                 {/* Financial Math */}

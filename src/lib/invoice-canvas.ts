@@ -504,7 +504,17 @@ export async function shareInvoiceToCustomerWhatsApp(
     `Vanakkam *${customerName}* 🙏`,
     `Here is your invoice for *Bill #${billNo}* 🧾`,
     ``,
-    `👗 *Service*: ${booking.service === "prepleat" ? "Saree Pre-Pleating" : "Saree Draping"} (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
+    ...(booking.items && booking.items.length > 0
+      ? [
+          `👗 *SERVICES BREAKDOWN*:`,
+          ...booking.items.map(
+            (it, idx) =>
+              `   ${idx + 1}. ${it.serviceName || (it.service === "prepleat" ? "Pre-Pleat" : "Draping")} (${it.sareeCount || 1} saree${(it.sareeCount || 1) > 1 ? "s" : ""} × ${fmtINR(it.pricePerSaree || 0)}) = *${fmtINR((it.sareeCount || 1) * (it.pricePerSaree || 0))}*${it.notes ? `\n      📌 _Note: ${it.notes}_` : ""}`
+          ),
+        ]
+      : [
+          `👗 *Service*: ${booking.service === "prepleat" ? "Saree Pre-Pleating" : "Saree Draping"} (${booking.sareeCount} saree${booking.sareeCount > 1 ? "s" : ""})`,
+        ]),
     `📅 *Delivery Date*: ${formatAppDate(booking.deliveryDate)}${timeSuffix}`,
     ``,
     `💰 *Total Amount*: ${fmtINR(netTotal)}`,

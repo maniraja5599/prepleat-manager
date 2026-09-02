@@ -237,67 +237,76 @@ export function drawConsolidatedStatementCanvas(opts: ConsolidatedStatementOptio
     tableY += rowHeight;
   });
 
-  // 4. Financial Summary & Rubber Stamp Seal
+  // 4. Financial Summary & Authentic Circular Rubber Stamp Seal
   const sumY = tableY + 30;
 
   ctx.save();
-  ctx.translate(135, sumY + 46);
-  ctx.rotate((-2.5 * Math.PI) / 180);
+  ctx.translate(140, sumY + 48);
+  ctx.rotate((-12 * Math.PI) / 180);
 
-  const stampW = 185;
-  const stampH = 74;
-  const stampX = -stampW / 2;
-  const stampY = -stampH / 2;
-
+  const rOuter = 44;
+  const rInner = 37;
   const isAllPaid = totalBalanceDue === 0;
   const isPartial = !isAllPaid && totalPaid > 0;
-  const stampColor = isAllPaid ? "rgba(4, 120, 87, 0.70)" : "rgba(185, 28, 28, 0.68)";
-  const stampBg = isAllPaid ? "rgba(4, 120, 87, 0.03)" : "rgba(185, 28, 28, 0.03)";
+  const stampColor = isAllPaid
+    ? "rgba(4, 120, 87, 0.48)"
+    : isPartial
+    ? "rgba(194, 65, 12, 0.48)"
+    : "rgba(185, 28, 28, 0.48)";
+  const stampBg = isAllPaid ? "rgba(4, 120, 87, 0.02)" : "rgba(185, 28, 28, 0.02)";
 
-  ctx.fillStyle = stampBg;
+  // Outer solid ring
   ctx.beginPath();
-  ctx.roundRect(stampX, stampY, stampW, stampH, 6);
+  ctx.arc(0, 0, rOuter, 0, Math.PI * 2);
+  ctx.fillStyle = stampBg;
   ctx.fill();
   ctx.strokeStyle = stampColor;
-  ctx.lineWidth = 1.6;
+  ctx.lineWidth = 1.8;
   ctx.stroke();
 
-  ctx.setLineDash([3, 2.5]);
-  ctx.strokeStyle = stampColor;
-  ctx.lineWidth = 0.8;
+  // Inner dashed ring
   ctx.beginPath();
-  ctx.roundRect(stampX + 3.5, stampY + 3.5, stampW - 7, stampH - 7, 3);
+  ctx.arc(0, 0, rInner, 0, Math.PI * 2);
+  ctx.strokeStyle = stampColor;
+  ctx.lineWidth = 0.9;
+  ctx.setLineDash([3, 2.5]);
   ctx.stroke();
   ctx.setLineDash([]);
 
+  // Top header text
   ctx.textAlign = "center";
   ctx.fillStyle = stampColor;
-  ctx.font = "bold 8px 'Courier New', monospace";
-  ctx.fillText(`★ ${(settings.businessName || "SAREE STUDIO").toUpperCase()} ★`, 0, stampY + 15);
+  ctx.font = "bold 7.5px 'Courier New', monospace";
+  ctx.fillText("★ OFFICIAL SEAL ★", 0, -18);
 
-  ctx.strokeStyle = isAllPaid ? "rgba(4, 120, 87, 0.25)" : "rgba(185, 28, 28, 0.25)";
+  // Center banner divider lines
+  ctx.strokeStyle = stampColor;
   ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(stampX + 8, stampY + 20);
-  ctx.lineTo(stampX + stampW - 8, stampY + 20);
-  ctx.moveTo(stampX + 8, stampY + 49);
-  ctx.lineTo(stampX + stampW - 8, stampY + 49);
+  ctx.moveTo(-28, -10);
+  ctx.lineTo(28, -10);
+  ctx.moveTo(-28, 13);
+  ctx.lineTo(28, 13);
   ctx.stroke();
 
-  ctx.font = "bold 13.5px 'Courier New', monospace";
+  // Center Main Stamp Status Text
+  ctx.font = "900 15px 'Courier New', monospace";
   if (isAllPaid) {
-    ctx.fillText("ALL BILLS CLEARED", 0, stampY + 38);
+    ctx.fillText("PAID", 0, 4);
   } else if (isPartial) {
-    ctx.fillText("PARTIAL RECEIVED", 0, stampY + 38);
+    ctx.fillText("PARTIAL", 0, 4);
   } else {
-    ctx.fillText("STATEMENT PENDING", 0, stampY + 38);
+    ctx.fillText("DUE", 0, 4);
   }
 
-  ctx.font = "bold 7.5px 'Courier New', monospace";
+  // Bottom sub-label
+  ctx.font = "bold 6.5px 'Courier New', monospace";
   if (isAllPaid) {
-    ctx.fillText("100% RECEIVED · ZERO OUTSTANDING", 0, stampY + 62);
+    ctx.fillText("ALL CLEARED", 0, 24);
+  } else if (isPartial) {
+    ctx.fillText("BAL PENDING", 0, 24);
   } else {
-    ctx.fillText(`NET DUE: ${fmtINR(totalBalanceDue)} · CONSOLIDATED`, 0, stampY + 62);
+    ctx.fillText("STATEMENT DUE", 0, 24);
   }
 
   ctx.restore();
