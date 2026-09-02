@@ -199,33 +199,42 @@ export function drawInvoiceCanvas(opts: InvoiceDrawOptions): HTMLCanvasElement {
           ? "Saree Drape Service"
           : "Custom Service");
 
+    const hasItemNote = Boolean(item.notes && item.notes.trim());
+    const rHeight = hasItemNote ? 52 : 42;
+
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(16, tableY, W - 32, 54);
+    ctx.fillRect(16, tableY, W - 32, rHeight);
     ctx.strokeStyle = "#f1f5f9";
-    ctx.strokeRect(16, tableY, W - 32, 54);
+    ctx.strokeRect(16, tableY, W - 32, rHeight);
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#0f172a";
-    ctx.font = "bold 15px 'Segoe UI', Tahoma, sans-serif";
-    ctx.fillText(itemTitle, 36, tableY + 24);
+    ctx.font = "bold 14.5px 'Segoe UI', Tahoma, sans-serif";
+    
+    if (hasItemNote) {
+      ctx.fillText(itemTitle, 36, tableY + 22);
+      ctx.fillStyle = "#64748b";
+      ctx.font = "11.5px 'Segoe UI', Tahoma, sans-serif";
+      ctx.fillText(`Note: ${item.notes}`, 36, tableY + 40);
+    } else {
+      ctx.fillText(itemTitle, 36, tableY + 26);
+    }
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px 'Segoe UI', Tahoma, sans-serif";
-    ctx.fillText(item.notes ? `Note: ${item.notes}` : "Professional pleating & care", 36, tableY + 44);
+    const valY = hasItemNote ? tableY + 30 : tableY + 26;
 
     ctx.fillStyle = "#0f172a";
     ctx.font = "bold 14px 'Courier New', monospace";
     ctx.textAlign = "center";
-    ctx.fillText(String(item.sareeCount || 1), W - 240, tableY + 32);
+    ctx.fillText(String(item.sareeCount || 1), W - 240, valY);
 
     ctx.textAlign = "right";
     ctx.font = "14px 'Courier New', monospace";
-    ctx.fillText(fmtINR(item.pricePerSaree || 0), W - 140, tableY + 32);
+    ctx.fillText(fmtINR(item.pricePerSaree || 0), W - 140, valY);
 
     ctx.font = "bold 15px 'Courier New', monospace";
-    ctx.fillText(fmtINR(itemSubtotal), W - 36, tableY + 32);
+    ctx.fillText(fmtINR(itemSubtotal), W - 36, valY);
 
-    tableY += 54;
+    tableY += rHeight;
   }
 
   // Extra charges row

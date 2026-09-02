@@ -290,9 +290,7 @@ export function PDFPreviewModal({
                               <p className="text-[10px] text-slate-600 font-medium mt-0.5">
                                 📌 Note: {it.notes}
                               </p>
-                            ) : (
-                              <p className="text-[10px] text-slate-400">Professional studio care</p>
-                            )}
+                            ) : null}
                           </td>
                           <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900">
                             {it.sareeCount || 1}
@@ -316,9 +314,7 @@ export function PDFPreviewModal({
                           <p className="text-[10px] text-slate-600 font-medium mt-0.5">
                             📌 Note: {booking.notes}
                           </p>
-                        ) : (
-                          <p className="text-[10px] text-slate-400">Professional pleating & box folding care</p>
-                        )}
+                        ) : null}
                       </td>
                       <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900">
                         {booking.sareeCount}
