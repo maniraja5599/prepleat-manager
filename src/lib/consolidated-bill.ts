@@ -184,8 +184,18 @@ export function drawConsolidatedStatementCanvas(opts: ConsolidatedStatementOptio
     const dateStr = formatAppDate(b.deliveryDate);
     const timeStr = b.deliveryTime ? fmtTime12(b.deliveryTime) : "";
     const bCustomer = allCustomers.find((c) => c.id === b.customerId);
-    const place = bCustomer?.address || b.notes || "Standard Studio Delivery";
-    const svc = b.items && b.items.length > 1 ? "Multi-Svc" : b.service === "prepleat" ? "PrePleat" : "Drape";
+    const place = bCustomer?.address || b.notes || "Studio Delivery";
+    
+    // Detailed Itemized Service Breakdown
+    let svcBreakdown = "";
+    if (b.items && b.items.length > 0) {
+      svcBreakdown = b.items
+        .map((it) => `${it.sareeCount || 1} ${it.serviceName || (it.service === "prepleat" ? "PrePleat" : "Drape")}`)
+        .join(" + ");
+    } else {
+      svcBreakdown = `${b.sareeCount || 1} ${b.service === "prepleat" ? "PrePleat" : "Drape"}`;
+    }
+
     const bNet = netBookingAmount(b);
     const bDue = totalDue(b);
 
@@ -197,7 +207,7 @@ export function drawConsolidatedStatementCanvas(opts: ConsolidatedStatementOptio
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#0f172a";
-    ctx.font = "bold 13.5px 'Courier New', monospace";
+    ctx.font = "bold 13px 'Courier New', monospace";
     ctx.fillText(billNo, 36, tableY + 19);
 
     ctx.fillStyle = "#64748b";
@@ -205,14 +215,15 @@ export function drawConsolidatedStatementCanvas(opts: ConsolidatedStatementOptio
     ctx.fillText(`${dateStr}${timeStr ? ` · ${timeStr}` : ""}`, 36, tableY + 35);
 
     ctx.fillStyle = "#334155";
-    ctx.font = "12px 'Segoe UI', Tahoma, sans-serif";
-    const truncatedPlace = place.length > 28 ? place.slice(0, 26) + "..." : place;
+    ctx.font = "11.5px 'Segoe UI', Tahoma, sans-serif";
+    const truncatedPlace = place.length > 26 ? place.slice(0, 24) + "..." : place;
     ctx.fillText(truncatedPlace, 230, tableY + 26);
 
     ctx.textAlign = "center";
     ctx.fillStyle = "#0f172a";
-    ctx.font = "bold 12.5px 'Segoe UI', Tahoma, sans-serif";
-    ctx.fillText(`${b.sareeCount} Saree (${svc})`, W - 260, tableY + 26);
+    ctx.font = "bold 11.5px 'Segoe UI', Tahoma, sans-serif";
+    const truncatedSvc = svcBreakdown.length > 24 ? svcBreakdown.slice(0, 22) + ".." : svcBreakdown;
+    ctx.fillText(truncatedSvc, W - 260, tableY + 26);
 
     ctx.textAlign = "right";
     ctx.font = "bold 13.5px 'Courier New', monospace";
@@ -230,63 +241,63 @@ export function drawConsolidatedStatementCanvas(opts: ConsolidatedStatementOptio
   const sumY = tableY + 30;
 
   ctx.save();
-  ctx.translate(150, sumY + 45);
-  ctx.rotate((-3 * Math.PI) / 180);
+  ctx.translate(135, sumY + 46);
+  ctx.rotate((-2.5 * Math.PI) / 180);
 
-  const stampW = 230;
-  const stampH = 92;
+  const stampW = 185;
+  const stampH = 74;
   const stampX = -stampW / 2;
   const stampY = -stampH / 2;
 
   const isAllPaid = totalBalanceDue === 0;
   const isPartial = !isAllPaid && totalPaid > 0;
-  const stampColor = isAllPaid ? "#047857" : "#b91c1c";
-  const stampBg = isAllPaid ? "rgba(4, 120, 87, 0.05)" : "rgba(185, 28, 28, 0.05)";
+  const stampColor = isAllPaid ? "rgba(4, 120, 87, 0.70)" : "rgba(185, 28, 28, 0.68)";
+  const stampBg = isAllPaid ? "rgba(4, 120, 87, 0.03)" : "rgba(185, 28, 28, 0.03)";
 
   ctx.fillStyle = stampBg;
   ctx.beginPath();
-  ctx.roundRect(stampX, stampY, stampW, stampH, 8);
+  ctx.roundRect(stampX, stampY, stampW, stampH, 6);
   ctx.fill();
   ctx.strokeStyle = stampColor;
-  ctx.lineWidth = 2.2;
+  ctx.lineWidth = 1.6;
   ctx.stroke();
 
-  ctx.setLineDash([4, 3]);
+  ctx.setLineDash([3, 2.5]);
   ctx.strokeStyle = stampColor;
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.roundRect(stampX + 4, stampY + 4, stampW - 8, stampH - 8, 4);
+  ctx.roundRect(stampX + 3.5, stampY + 3.5, stampW - 7, stampH - 7, 3);
   ctx.stroke();
   ctx.setLineDash([]);
 
   ctx.textAlign = "center";
   ctx.fillStyle = stampColor;
-  ctx.font = "bold 9.5px 'Courier New', monospace";
-  ctx.fillText(`★ ${(settings.businessName || "SAREE STUDIO").toUpperCase()} ★`, 0, stampY + 18);
+  ctx.font = "bold 8px 'Courier New', monospace";
+  ctx.fillText(`★ ${(settings.businessName || "SAREE STUDIO").toUpperCase()} ★`, 0, stampY + 15);
 
-  ctx.strokeStyle = isAllPaid ? "rgba(4, 120, 87, 0.4)" : "rgba(185, 28, 28, 0.4)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = isAllPaid ? "rgba(4, 120, 87, 0.25)" : "rgba(185, 28, 28, 0.25)";
+  ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(stampX + 10, stampY + 24);
-  ctx.lineTo(stampX + stampW - 10, stampY + 24);
-  ctx.moveTo(stampX + 10, stampY + 60);
-  ctx.lineTo(stampX + stampW - 10, stampY + 60);
+  ctx.moveTo(stampX + 8, stampY + 20);
+  ctx.lineTo(stampX + stampW - 8, stampY + 20);
+  ctx.moveTo(stampX + 8, stampY + 49);
+  ctx.lineTo(stampX + stampW - 8, stampY + 49);
   ctx.stroke();
 
-  ctx.font = "bold 16px 'Courier New', monospace";
+  ctx.font = "bold 13.5px 'Courier New', monospace";
   if (isAllPaid) {
-    ctx.fillText("ALL BILLS CLEARED", 0, stampY + 47);
+    ctx.fillText("ALL BILLS CLEARED", 0, stampY + 38);
   } else if (isPartial) {
-    ctx.fillText("PARTIAL RECEIVED", 0, stampY + 47);
+    ctx.fillText("PARTIAL RECEIVED", 0, stampY + 38);
   } else {
-    ctx.fillText("STATEMENT PENDING", 0, stampY + 47);
+    ctx.fillText("STATEMENT PENDING", 0, stampY + 38);
   }
 
-  ctx.font = "bold 8.5px 'Courier New', monospace";
+  ctx.font = "bold 7.5px 'Courier New', monospace";
   if (isAllPaid) {
-    ctx.fillText("100% RECEIVED · ZERO OUTSTANDING", 0, stampY + 76);
+    ctx.fillText("100% RECEIVED · ZERO OUTSTANDING", 0, stampY + 62);
   } else {
-    ctx.fillText(`NET DUE: ${fmtINR(totalBalanceDue)} · CONSOLIDATED`, 0, stampY + 76);
+    ctx.fillText(`NET DUE: ${fmtINR(totalBalanceDue)} · CONSOLIDATED`, 0, stampY + 62);
   }
 
   ctx.restore();
@@ -371,14 +382,45 @@ export async function downloadConsolidatedImagePNG(opts: ConsolidatedStatementOp
   const { clientOrArtist } = opts;
   const clientName = (clientOrArtist?.name || "Client").replace(/\s+/g, "_");
   const canvas = drawConsolidatedStatementCanvas(opts);
-  const dataUrl = canvas.toDataURL("image/png", 1.0);
+  const filename = `Statement-${clientName}-${formatAppDate(new Date().toISOString())}.png`;
 
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png", 1.0));
+  if (!blob) throw new Error("Could not create statement image");
+
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent || "") ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+  // On iOS Safari / WebKit: Trigger Web Share API with File
+  if (isIOS && typeof navigator !== "undefined" && navigator.share && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `Statement - ${clientName}`,
+          files: [file],
+        });
+        return;
+      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      console.warn("iOS Share aborted or failed:", e);
+    }
+  }
+
+  // Universal Blob download for all other devices
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = `Statement-${clientName}-${formatAppDate(new Date().toISOString())}.png`;
+  a.href = blobUrl;
+  a.download = filename;
+  a.rel = "noopener";
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  }, 2500);
 }
 
 export async function shareConsolidatedWhatsApp(

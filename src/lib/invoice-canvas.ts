@@ -416,14 +416,45 @@ export async function downloadInvoiceImagePNG(opts: InvoiceDrawOptions): Promise
   const { booking, customer } = opts;
   const billNo = formatShortBillNumber(booking.billNumber, booking.id);
   const canvas = drawInvoiceCanvas(opts);
-  const dataUrl = canvas.toDataURL("image/png", 1.0);
+  const filename = `Invoice-${billNo}-${(customer?.name || "Customer").replace(/\s+/g, "_")}.png`;
 
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png", 1.0));
+  if (!blob) throw new Error("Could not create invoice image");
+
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent || "") ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+  // On iOS Safari / WebKit: Trigger Web Share API with File so user can "Save Image" to Photos
+  if (isIOS && typeof navigator !== "undefined" && navigator.share && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `Invoice #${billNo}`,
+          files: [file],
+        });
+        return;
+      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      console.warn("iOS Share aborted or failed:", e);
+    }
+  }
+
+  // Universal Blob download for Android, Chrome, Edge, and desktop browsers
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = `Invoice-${billNo}-${(customer?.name || "Customer").replace(/\s+/g, "_")}.png`;
+  a.href = blobUrl;
+  a.download = filename;
+  a.rel = "noopener";
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  }, 2500);
 }
 
 /**

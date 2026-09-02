@@ -1458,8 +1458,8 @@ function BookingDetail() {
         const isDiscInvalid = d > dynamicDueOnComplete;
 
         return (
-          <div className="fixed inset-0 z-[20000] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm px-3 pb-4 sm:pb-0 text-left animate-in fade-in duration-200">
-            <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-5 overflow-hidden animate-in slide-in-from-bottom-4 duration-200 border border-border/40 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3.5 sm:p-4 text-left animate-in fade-in duration-200 overflow-y-auto overscroll-contain">
+            <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-5 animate-in zoom-in-95 duration-200 border border-border/40 my-auto max-h-[88dvh] overflow-y-auto">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-1 flex items-center gap-1.5">
                 <span>✅</span> Complete Booking
               </h3>
@@ -2286,11 +2286,11 @@ function EditPaymentModal({
 
   return (
     <div
-      className="fixed inset-0 z-[20000] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[20000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4 animate-in fade-in duration-200 overflow-y-auto overscroll-contain"
       onClick={onClose}
     >
       <div
-        className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-200 border border-border/40"
+        className="bg-card w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border border-border/40 my-auto max-h-[88dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border/30 pb-3">
@@ -2316,6 +2316,7 @@ function EditPaymentModal({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)}
               className="bg-transparent flex-1 pl-1 text-xl font-bold tabular-nums focus:outline-none"
               placeholder="0"
               autoFocus
@@ -2379,6 +2380,7 @@ function EditPaymentModal({
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
+            onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)}
             placeholder="E.g. advance, final balance..."
             className="w-full text-xs font-semibold bg-secondary border border-border/30 rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition"
           />
@@ -2407,6 +2409,7 @@ function EditPaymentModal({
   );
 }
 
+// EditPanel with keyboard-safe scroll headroom
 function EditPanel({
   booking,
   onCancel,
@@ -2757,6 +2760,7 @@ function EditPanel({
               type="number"
               value={extraCharges}
               onChange={(e) => setExtraCharges(e.target.value)}
+              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)}
               placeholder="0 (Travel / Extra)"
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
             />
@@ -2791,6 +2795,7 @@ function EditPanel({
               type="number"
               value={discount}
               onChange={(e) => setDiscount(e.target.value)}
+              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)}
               placeholder="0 (Discount / Coupon)"
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-500/40 border border-border/30"
             />
@@ -2836,6 +2841,7 @@ function EditPanel({
               type="number"
               value={advancePaid}
               onChange={(e) => setAdvancePaid(e.target.value)}
+              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)}
               placeholder="0 (Advance paid)"
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
             />
