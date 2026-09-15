@@ -777,7 +777,7 @@ function BookingsPage() {
           No {showPast ? "past" : "active"} bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
         </div>
       ) : (
-        <div className="relative pl-3.5 sm:pl-4 space-y-5 before:absolute before:left-[3.5px] sm:before:left-[5px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30">
+        <div className="relative pl-3 sm:pl-4 space-y-4 sm:space-y-5 before:absolute before:left-[3px] sm:before:left-[5px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30">
           {groupedByMonth.map((group, gIdx) => {
             const theme = MONTH_THEMES[gIdx % MONTH_THEMES.length];
             const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
@@ -805,7 +805,7 @@ function BookingsPage() {
             return (
               <div key={group.monthKey} className="relative">
                 {/* Full-height Left Timeline Track for Sticky Scroll-Following Dot */}
-                <div className="absolute -left-3.5 sm:-left-4 top-0 bottom-3 w-4 pointer-events-none z-10">
+                <div className="absolute -left-3 sm:-left-4 top-0 bottom-3 w-4 pointer-events-none z-10">
                   <div className="sticky-timeline-dot-bookings flex items-center justify-center -translate-x-[2px]">
                     <div
                       className={cn(
@@ -821,7 +821,7 @@ function BookingsPage() {
                 {/* Month Container Box */}
                 <section
                   className={cn(
-                    "border rounded-3xl p-3 sm:p-4 space-y-3 shadow-xs transition-all",
+                    "border rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2.5 sm:space-y-3 shadow-xs transition-all",
                     theme.bg,
                     theme.border,
                   )}
@@ -829,7 +829,7 @@ function BookingsPage() {
                   {/* Sticky Fixed Month Section Header with Highlighted Pill + Animated Scrolling Stats Ticker */}
                   <div
                     className={cn(
-                      "sticky-month-header-bookings -mx-3 -mt-3 sm:-mx-4 sm:-mt-4 px-3 sm:px-4 py-2.5 rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 transition-all",
+                      "sticky-month-header-bookings -mx-2.5 -mt-2.5 sm:-mx-4 sm:-mt-4 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-t-2xl sm:rounded-t-3xl bg-card border-b border-border/50 shadow-xs flex items-center justify-between gap-2 transition-all",
                     )}
                   >
                     {/* Month Highlighted Badge Pill */}

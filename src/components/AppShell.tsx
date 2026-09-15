@@ -676,9 +676,9 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
 
   return (
     <div className="min-h-[100dvh] bg-background pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]">
-      <div className={wide ? "w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8" : "w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8"}>
+      <div className={wide ? "w-full max-w-6xl mx-auto px-2 sm:px-6 lg:px-8" : "w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-1 sm:px-6 lg:px-8"}>
         {/* Uniform brand strip — strictly single-row without wrapping */}
-        <div className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-4 pb-2.5 flex items-center justify-between gap-2 flex-nowrap">
+        <div className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-2.5 sm:px-4 pb-2.5 flex items-center justify-between gap-2 flex-nowrap">
           <div className="flex items-center gap-2 min-w-0 shrink">
             <Link
               to="/settings"
@@ -902,14 +902,14 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
         )}
 
         {title && (
-          <header className="px-5 pt-2 pb-3">
+          <header className="px-2.5 sm:px-5 pt-2 pb-3">
             <h1 className="text-xl font-display font-semibold tracking-tight truncate">{title}</h1>
             {subtitle && (
               <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{subtitle}</p>
             )}
           </header>
         )}
-        <main className="px-5">{children}</main>
+        <main className="px-1.5 sm:px-5">{children}</main>
         <p className="text-center text-[10px] text-muted-foreground/70 mt-8 pb-2 flex items-center justify-center gap-1.5 flex-wrap">
           <span>Developed by</span>
           <a
