@@ -357,7 +357,7 @@ function BookingsPage() {
 
   return (
     <AppShell showFloatingSearch={true}>      {/* Sticky Top Control Deck (Title/Ticker + Search + Filters) */}
-      <div className="sticky-search-deck bg-background/95 backdrop-blur-md -mx-5 px-5 pt-2 pb-2 border-b border-border/40 mb-3 space-y-2 shadow-2xs">
+      <div className="sticky-search-deck bg-background -mx-1.5 px-1.5 sm:-mx-5 sm:px-5 pt-2 pb-2 border-b border-border/40 mb-3 space-y-2 shadow-2xs">
         {/* Row 1: Title + Action + Ticker */}
         <div className="flex items-center justify-between gap-3 h-7">
           <div className="flex items-center gap-2 min-w-0">

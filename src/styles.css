@@ -691,3 +691,11 @@ body:has(.sonner-toast-center-override [data-sonner-toast])::before {
   z-index: 9999 !important;
   pointer-events: auto !important;
 }
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  overscroll-behavior-x: none;
+  touch-action: pan-y pinch-zoom;
+}

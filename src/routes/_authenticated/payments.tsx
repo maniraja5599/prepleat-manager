@@ -667,7 +667,7 @@ function PaymentsPage() {
   return (
     <AppShell>
       {/* Sticky Header block (Title + Ticker + Tab Bar) */}
-      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background/95 backdrop-blur-md -mx-5 px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
+      <div className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 bg-background -mx-1.5 px-1.5 sm:-mx-5 sm:px-5 pt-3 pb-2.5 border-b border-border/40 mb-4">
         <div className="flex items-center justify-between gap-4 h-9">
           <h1 className="text-xl font-display font-semibold tracking-tight text-foreground">
             Finances

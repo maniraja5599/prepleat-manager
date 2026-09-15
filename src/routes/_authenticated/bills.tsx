@@ -276,7 +276,7 @@ export function BillsPage() {
         </div>
 
         {/* Search, Sort and Multi-Bill Toggle Deck */}
-        <div className="sticky-search-deck bg-background/95 backdrop-blur-md p-2.5 rounded-2xl border border-border/40 shadow-xs space-y-2 mb-3">
+        <div className="sticky-search-deck bg-background p-2 sm:p-2.5 rounded-2xl border border-border/40 shadow-xs space-y-2 mb-3">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <input
