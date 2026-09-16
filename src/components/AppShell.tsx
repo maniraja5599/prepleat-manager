@@ -688,9 +688,25 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
               <img
                 src={logo}
                 alt={settings.businessName}
-                className="size-8.5 rounded-full object-cover ring-1 ring-primary/25 group-hover:ring-primary/60 shrink-0"
+                width={34}
+                height={34}
+                className="size-8.5 rounded-full object-cover ring-1 ring-primary/25 group-hover:ring-primary/60 shrink-0 select-none"
+                style={{
+                  imageRendering: "-webkit-optimize-contrast",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
               />
-              <div className="flex flex-col min-w-0" style={{ WebkitFontSmoothing: "antialiased", textRendering: "optimizeLegibility" }}>
+              <div
+                className="flex flex-col min-w-0 select-none"
+                style={{
+                  WebkitFontSmoothing: "antialiased",
+                  MozOsxFontSmoothing: "grayscale",
+                  textRendering: "geometricPrecision",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
+              >
                 <p className="text-[13.5px] font-sans font-bold tracking-tight text-foreground truncate group-hover:text-primary leading-tight">
                   {settings.businessName}
                 </p>
