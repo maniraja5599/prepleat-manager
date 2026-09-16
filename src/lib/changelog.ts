@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.1.1";
+export const APP_VERSION = "2.2.4";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.2.4",
+    date: "16 Sep 2026",
+    isLatest: true,
+    title: "iPhone PWA Crystal Sharp Status Bar & Bookings Timeline Gap Fix",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "📱",
+        text: "iPhone PWA Crystal Sharp Header & Status Bar",
+        desc: "Removed translucent frosted-glass status bar overlay on iPhone Home Screen standalone app for sharp, crisp logo and business typography.",
+      },
+      {
+        emoji: "📅",
+        text: "Bookings Timeline 0-Gap Sticky Month Header",
+        desc: "Eliminated gap above the month pill (e.g. September 2026) so it docks perfectly under filter controls with clean scrolling.",
+      },
+      {
+        emoji: "⚡",
+        text: "PWA Service Worker Instant Auto-Update",
+        desc: "Updated service worker cache cycle and controller listener for seamless 1-tap cache invalidation across all devices.",
+      },
+    ],
+  },
+  {
     version: "v2.1.1",
     date: "02 Sep 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Multi-Bill Statement Generator for Artists/Clients + Live Financial Controls in Edit Booking",
-    badge: "LATEST UPDATE 📑",
+    badge: "PREVIOUS UPDATE 📑",
     changes: [
       {
         emoji: "📑",

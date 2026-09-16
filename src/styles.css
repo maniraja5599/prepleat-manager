@@ -430,6 +430,9 @@
   }
   .safe-header-top {
     padding-top: calc(env(safe-area-inset-top, 0px) + 0.35rem);
+    background-color: var(--background);
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
   .safe-pb {
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
