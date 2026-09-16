@@ -156,7 +156,7 @@ function BookingsPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % 2);
-      setMonthTickerIndex((prev) => (prev + 1) % 3);
+      setMonthTickerIndex((prev) => (prev + 1) % 6);
     }, 2800);
     return () => clearInterval(timer);
   }, []);
@@ -777,12 +777,39 @@ function BookingsPage() {
           No {showPast ? "past" : "active"} bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
         </div>
       ) : (
-        <div className="relative pl-3 sm:pl-4 space-y-4 sm:space-y-5 before:absolute before:left-[3px] sm:before:left-[5px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30">
+        <div className="relative pl-6 sm:pl-7 space-y-4 sm:space-y-5 before:absolute before:left-[11px] sm:before:left-[13px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30">
           {groupedByMonth.map((group, gIdx) => {
             const theme = MONTH_THEMES[gIdx % MONTH_THEMES.length];
             const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
             const monthSarees = group.items.reduce((s, b) => s + (b.sareeCount || 1), 0);
             const monthDue = group.items.reduce((s, b) => s + totalDue(b), 0);
+
+            // Extract all unique booked delivery dates for this month
+            const bookedDates = (() => {
+              const map = new Map<string, { day: number; dayFormatted: string; dateStr: string; dayName: string; count: number }>();
+              for (const b of group.items) {
+                if (!b.deliveryDate) continue;
+                try {
+                  const d = parseISO(b.deliveryDate);
+                  const dateKey = format(d, "yyyy-MM-dd");
+                  const day = d.getDate();
+                  if (!map.has(dateKey)) {
+                    map.set(dateKey, {
+                      day,
+                      dayFormatted: String(day).padStart(2, "0"),
+                      dateStr: dateKey,
+                      dayName: format(d, "EEE"),
+                      count: 1,
+                    });
+                  }
+                } catch {}
+              }
+              return Array.from(map.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+            })();
+
+            const activeDate = bookedDates.length > 0
+              ? bookedDates[monthTickerIndex % bookedDates.length]
+              : null;
 
             const tickerSlides = [
               {
@@ -790,6 +817,15 @@ function BookingsPage() {
                 color: "text-foreground font-semibold",
                 icon: "📦",
               },
+              ...(bookedDates.length > 0
+                ? [
+                    {
+                      text: `Dates: ${bookedDates.map((d) => d.day).join(", ")} ${format(parseISO(bookedDates[0].dateStr), "MMM")}`,
+                      color: "text-primary font-bold",
+                      icon: "📅",
+                    },
+                  ]
+                : []),
               {
                 text: `${fmtINR(monthTotal)} Total Billed`,
                 color: "text-primary font-bold",
@@ -804,17 +840,47 @@ function BookingsPage() {
 
             return (
               <div key={group.monthKey} className="relative">
-                {/* Full-height Left Timeline Track for Sticky Scroll-Following Dot */}
-                <div className="absolute -left-3 sm:-left-4 top-0 bottom-3 w-4 pointer-events-none z-10">
-                  <div className="sticky-timeline-dot-bookings flex items-center justify-center -translate-x-[2px]">
-                    <div
-                      className={cn(
-                        "size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center transition-all",
-                        theme.dot,
-                      )}
-                    >
-                      <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
-                    </div>
+                {/* Full-height Left Timeline Track for Sticky Scroll-Following Date Dot */}
+                <div className="absolute -left-6 sm:-left-7 top-0 bottom-3 w-6 sm:w-7 pointer-events-none z-10 flex justify-center">
+                  <div className="sticky-timeline-dot-bookings flex flex-col items-center justify-center">
+                    {activeDate ? (
+                      <div className="flex flex-col items-center gap-0.5 pointer-events-auto">
+                        <div
+                          className={cn(
+                            "size-6 sm:size-7 rounded-full border-2 border-background shadow-xs flex flex-col items-center justify-center transition-all cursor-default select-none",
+                            theme.badge,
+                          )}
+                          title={`Booked Dates: ${bookedDates.map((d) => d.day).join(", ")} ${format(parseISO(activeDate.dateStr), "MMMM yyyy")}`}
+                        >
+                          <span
+                            key={activeDate.dayFormatted}
+                            className="text-[10px] sm:text-[11px] font-black font-mono tracking-tight leading-none text-white animate-in fade-in zoom-in-75 duration-300"
+                          >
+                            {activeDate.dayFormatted}
+                          </span>
+                          <span
+                            key={activeDate.dayName}
+                            className="text-[5.5px] sm:text-[6.5px] uppercase font-bold text-white/90 leading-none mt-0.5 tracking-tighter animate-in fade-in duration-300"
+                          >
+                            {activeDate.dayName}
+                          </span>
+                        </div>
+                        {bookedDates.length > 1 && (
+                          <span className="text-[7.5px] font-mono font-bold px-1 rounded-full bg-background/95 border border-border/60 text-muted-foreground shadow-2xs leading-none py-0.5 whitespace-nowrap">
+                            {bookedDates.length}d
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className={cn(
+                          "size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center transition-all",
+                          theme.dot,
+                        )}
+                      >
+                        <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -896,6 +962,11 @@ function BookingsPage() {
                               <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg bg-secondary text-foreground/80 border border-border/40 tracking-wider">
                                 {billShort}
                               </span>
+                              {b.deliveryDate && (
+                                <span className="text-[9.5px] font-bold tracking-wide px-1.5 py-0.5 rounded-md bg-secondary/80 text-foreground/90 border border-border/40 flex items-center gap-1 font-mono">
+                                  📅 {format(parseISO(b.deliveryDate), "dd MMM")}
+                                </span>
+                              )}
                               {b.service === "prepleat" ? (
                                 <span className="text-[9px] font-bold tracking-wide px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                                   🥻 Pre-Pleat

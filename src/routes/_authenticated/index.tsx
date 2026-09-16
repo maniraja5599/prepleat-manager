@@ -745,9 +745,16 @@ const BookingRow = memo(function BookingRow({
       {/* Timeline Node Dot */}
       <div
         style={{ backgroundColor: tagColor }}
-        className="absolute left-0 top-3.5 size-5 rounded-full border-2 border-background shadow-xs flex items-center justify-center text-white"
+        className="absolute left-0 top-3.5 size-5.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center text-white"
+        title={b.deliveryDate ? formatAppDate(b.deliveryDate) : undefined}
       >
-        <span className="size-1.5 rounded-full bg-white" />
+        {b.deliveryDate ? (
+          <span className="text-[9px] font-mono font-bold leading-none text-white">
+            {format(parseISO(b.deliveryDate), "d")}
+          </span>
+        ) : (
+          <span className="size-1.5 rounded-full bg-white" />
+        )}
       </div>
 
       {/* Timeline Card */}
