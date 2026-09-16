@@ -683,23 +683,23 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             <Link
               to="/settings"
               title="Open Settings"
-              className="flex items-center gap-2 min-w-0 group cursor-pointer active:scale-95 transition"
+              className="flex items-center gap-2 min-w-0 group cursor-pointer active:opacity-75 transition-opacity"
             >
               <img
                 src={logo}
                 alt={settings.businessName}
-                className="size-8 rounded-full object-cover scale-[1.18] ring-1 ring-primary/25 group-hover:ring-primary/60 shrink-0 transition"
+                className="size-8.5 rounded-full object-cover ring-1 ring-primary/25 group-hover:ring-primary/60 shrink-0"
               />
-              <div className="flex flex-col min-w-0">
-                <p className="text-[13px] font-display font-semibold tracking-tight truncate group-hover:text-primary transition">
+              <div className="flex flex-col min-w-0" style={{ WebkitFontSmoothing: "antialiased", textRendering: "optimizeLegibility" }}>
+                <p className="text-[13.5px] font-sans font-bold tracking-tight text-foreground truncate group-hover:text-primary leading-tight">
                   {settings.businessName}
                 </p>
                 <div
                   className={cn(
                     "transition-all duration-300 overflow-hidden",
                     showPill && hasValidText
-                      ? "max-h-0 opacity-0 -translate-y-1 pointer-events-none"
-                      : "max-h-5 opacity-100 translate-y-0",
+                      ? "max-h-0 opacity-0 pointer-events-none"
+                      : "max-h-5 opacity-100",
                   )}
                 >
                   <HeaderClock

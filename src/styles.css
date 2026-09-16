@@ -458,12 +458,7 @@
     top: calc(env(safe-area-inset-top, 0px) + 172px);
     z-index: 30;
   }
-  .sticky-timeline-dot-bookings {
-    position: -webkit-sticky;
-    position: sticky;
-    top: calc(env(safe-area-inset-top, 0px) + 148px);
-    z-index: 35;
-  }
+
   .sticky-timeline-dot-bills {
     position: -webkit-sticky;
     position: sticky;

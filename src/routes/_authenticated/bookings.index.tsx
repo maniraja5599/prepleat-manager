@@ -777,7 +777,7 @@ function BookingsPage() {
           No {showPast ? "past" : "active"} bookings match. Tap <span className="font-semibold text-primary">+</span> to create one.
         </div>
       ) : (
-        <div className="relative pl-6 sm:pl-7 space-y-4 sm:space-y-5 before:absolute before:left-[11px] sm:before:left-[13px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-primary/60 before:via-border/80 before:to-primary/30">
+        <div className="space-y-4 sm:space-y-5">
           {groupedByMonth.map((group, gIdx) => {
             const theme = MONTH_THEMES[gIdx % MONTH_THEMES.length];
             const monthTotal = group.items.reduce((s, b) => s + netBookingAmount(b), 0);
@@ -840,49 +840,6 @@ function BookingsPage() {
 
             return (
               <div key={group.monthKey} className="relative">
-                {/* Full-height Left Timeline Track for Sticky Scroll-Following Date Dot */}
-                <div className="absolute -left-6 sm:-left-7 top-0 bottom-3 w-6 sm:w-7 pointer-events-none z-10 flex justify-center">
-                  <div className="sticky-timeline-dot-bookings flex flex-col items-center justify-center">
-                    {activeDate ? (
-                      <div className="flex flex-col items-center gap-0.5 pointer-events-auto">
-                        <div
-                          className={cn(
-                            "size-6 sm:size-7 rounded-full border-2 border-background shadow-xs flex flex-col items-center justify-center transition-all cursor-default select-none",
-                            theme.badge,
-                          )}
-                          title={`Booked Dates: ${bookedDates.map((d) => d.day).join(", ")} ${format(parseISO(activeDate.dateStr), "MMMM yyyy")}`}
-                        >
-                          <span
-                            key={activeDate.dayFormatted}
-                            className="text-[10px] sm:text-[11px] font-black font-mono tracking-tight leading-none text-white animate-in fade-in zoom-in-75 duration-300"
-                          >
-                            {activeDate.dayFormatted}
-                          </span>
-                          <span
-                            key={activeDate.dayName}
-                            className="text-[5.5px] sm:text-[6.5px] uppercase font-bold text-white/90 leading-none mt-0.5 tracking-tighter animate-in fade-in duration-300"
-                          >
-                            {activeDate.dayName}
-                          </span>
-                        </div>
-                        {bookedDates.length > 1 && (
-                          <span className="text-[7.5px] font-mono font-bold px-1 rounded-full bg-background/95 border border-border/60 text-muted-foreground shadow-2xs leading-none py-0.5 whitespace-nowrap">
-                            {bookedDates.length}d
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div
-                        className={cn(
-                          "size-3.5 rounded-full border-2 border-background shadow-xs flex items-center justify-center transition-all",
-                          theme.dot,
-                        )}
-                      >
-                        <span className={cn("size-1.5 rounded-full animate-ping opacity-75", theme.dotPing)} />
-                      </div>
-                    )}
-                  </div>
-                </div>
 
                 {/* Month Container Box */}
                 <section
@@ -927,8 +884,11 @@ function BookingsPage() {
                     </div>
                   </div>
 
-                  {/* Month's Cards */}
-                  <ul className="space-y-2 pt-1">
+                  {/* Month's Cards Timeline */}
+                  <ul className="relative pl-8 sm:pl-9 space-y-2.5 pt-1.5 pb-0.5">
+                    {/* Vertical Timeline Connector Line */}
+                    <div className="absolute left-[13px] sm:left-[15px] top-3 bottom-5 w-0.5 bg-border/50" />
+
                     {group.items.map((b) => {
                       const c = customers.find((x) => x.id === b.customerId);
                       const a = b.artistId ? customers.find((x) => x.id === b.artistId) : undefined;
@@ -940,6 +900,9 @@ function BookingsPage() {
                           : (settings.directDrapeDotColor ?? "#10b981");
                       const billShort = formatShortBillNumber(b.billNumber, b.id);
                       const isSelected = selected.has(b.id);
+                      const dDate = b.deliveryDate ? parseISO(b.deliveryDate) : null;
+                      const dayNumber = dDate ? format(dDate, "d") : "—";
+                      const monthName = dDate ? format(dDate, "MMM") : "";
                       const inner = (
                         <div className="space-y-2.5">
                           {selectMode && (
@@ -962,11 +925,7 @@ function BookingsPage() {
                               <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg bg-secondary text-foreground/80 border border-border/40 tracking-wider">
                                 {billShort}
                               </span>
-                              {b.deliveryDate && (
-                                <span className="text-[9.5px] font-bold tracking-wide px-1.5 py-0.5 rounded-md bg-secondary/80 text-foreground/90 border border-border/40 flex items-center gap-1 font-mono">
-                                  📅 {format(parseISO(b.deliveryDate), "dd MMM")}
-                                </span>
-                              )}
+
                               {b.service === "prepleat" ? (
                                 <span className="text-[9px] font-bold tracking-wide px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                                   🥻 Pre-Pleat
@@ -1083,6 +1042,24 @@ function BookingsPage() {
                       );
                       return (
                         <li key={b.id} className="relative touch-pan-y">
+                          {/* Timeline Date Milestone Node - directly in front of this booking */}
+                          <div
+                            className="absolute -left-8 sm:-left-9 top-3.5 flex flex-col items-center justify-center w-7 sm:w-8 select-none pointer-events-none z-10"
+                            title={b.deliveryDate ? formatAppDate(b.deliveryDate) : undefined}
+                          >
+                            <div
+                              style={{ backgroundColor: tagColor }}
+                              className="size-6 sm:size-7 rounded-xl border-2 border-background shadow-xs flex flex-col items-center justify-center text-white"
+                            >
+                              <span className="text-[10px] sm:text-[11px] font-black font-mono leading-none text-white">
+                                {dayNumber}
+                              </span>
+                              <span className="text-[5.5px] sm:text-[6.5px] uppercase font-bold text-white/90 leading-none mt-0.5 tracking-tighter">
+                                {monthName}
+                              </span>
+                            </div>
+                          </div>
+
                           {selectMode ? (
                             <button
                               type="button"
