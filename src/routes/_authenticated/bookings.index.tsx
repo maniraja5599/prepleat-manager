@@ -1048,13 +1048,17 @@ function BookingsPage() {
                             title={b.deliveryDate ? formatAppDate(b.deliveryDate) : undefined}
                           >
                             <div
-                              style={{ backgroundColor: tagColor }}
-                              className="size-6 sm:size-7 rounded-xl border-2 border-background shadow-xs flex flex-col items-center justify-center text-white"
+                              className={cn(
+                                "size-6 sm:size-6.5 rounded-lg border border-background/80 shadow-xs flex flex-col items-center justify-center transition-all",
+                                b.service === "prepleat"
+                                  ? "bg-amber-800 dark:bg-amber-900 border-amber-950/20 text-white"
+                                  : "bg-emerald-800 dark:bg-emerald-900 border-emerald-950/20 text-white",
+                              )}
                             >
-                              <span className="text-[10px] sm:text-[11px] font-black font-mono leading-none text-white">
+                              <span className="text-[9px] sm:text-[9.5px] font-black font-mono leading-none tracking-tight text-white">
                                 {dayNumber}
                               </span>
-                              <span className="text-[5.5px] sm:text-[6.5px] uppercase font-bold text-white/90 leading-none mt-0.5 tracking-tighter">
+                              <span className="text-[5px] sm:text-[5.5px] uppercase font-bold text-white/80 leading-none mt-0.5 tracking-tighter">
                                 {monthName}
                               </span>
                             </div>
