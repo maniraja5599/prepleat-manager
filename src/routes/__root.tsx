@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -14,6 +15,7 @@ import appCss from "../styles.css?url";
 import logoAsset from "../assets/default-app-logo.svg";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeApplier } from "../components/ThemeApplier";
+import { trackPageView } from "../lib/analytics";
 
 function NotFoundComponent() {
   return (
@@ -138,6 +140,23 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Google tag (gtag.js) */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-TYJ0W4G17T"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-TYJ0W4G17T', {
+                send_page_view: false
+              });
+            `,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -145,6 +164,16 @@ function RootShell({ children }: { children: ReactNode }) {
       </body>
     </html>
   );
+}
+
+function AnalyticsTracker() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname]);
+
+  return null;
 }
 
 function RootComponent() {
@@ -197,6 +226,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AnalyticsTracker />
       <ThemeApplier />
       <Outlet />
       <Toaster

@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.2.4";
+export const APP_VERSION = "2.2.5";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.2.5",
+    date: "17 Sep 2026",
+    isLatest: true,
+    title: "Official Google Analytics 4 (GA4) Live Integration & Route Tracking",
+    badge: "LATEST UPDATE 📊",
+    changes: [
+      {
+        emoji: "📊",
+        text: "Google Analytics 4 (GA4) Integration",
+        desc: "Connected official Google tag (G-TYJ0W4G17T) to track real-time website & app visitors, traffic sources, and user activity.",
+      },
+      {
+        emoji: "🚀",
+        text: "Automated SPA Route & Pageview Tracking",
+        desc: "Accurately monitors navigation across Calendar, Bookings, Payments, Settings, and Customer directory without full page reloads.",
+      },
+      {
+        emoji: "🎯",
+        text: "Real-Time Booking Conversion Events",
+        desc: "Logs custom business events (like new booking creation and order revenue) directly into your Google Analytics dashboard.",
+      },
+    ],
+  },
+  {
     version: "v2.2.4",
     date: "16 Sep 2026",
-    isLatest: true,
+    isLatest: false,
     title: "iPhone PWA Crystal Sharp Status Bar & Bookings Timeline Gap Fix",
-    badge: "LATEST UPDATE ✨",
+    badge: "PREVIOUS UPDATE ✨",
     changes: [
       {
         emoji: "📱",

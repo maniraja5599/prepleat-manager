@@ -43,6 +43,7 @@ import {
 import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { ScrollNumber } from "@/components/ScrollNumber";
+import { trackEvent } from "@/lib/analytics";
 import { HorizontalPicker } from "@/components/HorizontalPicker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -589,6 +590,12 @@ function NewBooking() {
       measurements: showMeasure ? measurements : undefined,
     });
     isSavedRef.current = true;
+    trackEvent("create_booking", {
+      service: primarySrv,
+      saree_count: totalSareesCount,
+      value: sareeSubtotal,
+      currency: "INR",
+    });
     sessionStorage.removeItem("eyas_new_booking_draft");
     try {
       localStorage.setItem("eyas_has_made_first_entry", "true");
