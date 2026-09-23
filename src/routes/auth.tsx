@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/default-app-logo.svg";
@@ -287,6 +287,34 @@ function AuthPage() {
           <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
             Guest mode keeps data locally on your device. Sign in anytime to backup to cloud.
           </p>
+
+          {/* Compliance Footer */}
+          <div className="pt-4 border-t border-border mt-3 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+              <Link to="/pricing" className="hover:text-primary transition underline">
+                Pricing
+              </Link>
+              <span>•</span>
+              <Link to="/terms" className="hover:text-primary transition underline">
+                Terms
+              </Link>
+              <span>•</span>
+              <Link to="/privacy" className="hover:text-primary transition underline">
+                Privacy
+              </Link>
+              <span>•</span>
+              <Link to="/refund" className="hover:text-primary transition underline">
+                Refund Policy
+              </Link>
+              <span>•</span>
+              <Link to="/contact" className="hover:text-primary transition underline">
+                Contact
+              </Link>
+            </div>
+            <p className="text-[10px] text-muted-foreground/70 mt-2">
+              &copy; {new Date().getFullYear()} Eyas Saree Drapist • PrePleat Studio. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </div>
