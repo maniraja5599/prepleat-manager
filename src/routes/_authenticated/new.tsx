@@ -51,6 +51,7 @@ import { MapPicker } from "@/components/MapPicker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TimePicker12 } from "@/components/TimePicker12";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSubscription } from "@/hooks/useSubscription";
 
 function roundUpToQuarter(d = new Date()) {
   const ms = 15 * 60 * 1000;
@@ -102,6 +103,14 @@ function NewBooking() {
   const addCustomer = useStore((s) => s.addCustomer);
   const updateCustomer = useStore((s) => s.updateCustomer);
   const addBooking = useStore((s) => s.addBooking);
+  const {
+    isDemo,
+    allowed,
+    remaining: demoBookingsRemaining,
+    bookingsCount,
+    maxLimit,
+    openUpgradeModal,
+  } = useSubscription();
 
   const [bookingSource, setBookingSource] = useState<"direct" | "artist">("direct");
   const [artistId, setArtistId] = useState<string>("");
@@ -493,6 +502,11 @@ function NewBooking() {
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const openReview = () => {
+    if (isDemo && !allowed) {
+      toast.error(`Demo limit reached (${bookingsCount}/${maxLimit} bookings). Upgrade to continue creating bookings.`);
+      openUpgradeModal();
+      return;
+    }
     if (bookingSource === "artist" && !artistId) return toast.error("Select or add an artist");
     // Customer name/mobile only mandatory for direct bookings. For artist-via bookings they are optional.
     if (bookingSource === "direct" && !customerId) {
@@ -518,6 +532,11 @@ function NewBooking() {
   };
 
   const confirmSave = () => {
+    if (isDemo && !allowed) {
+      toast.error(`Demo limit reached (${bookingsCount}/${maxLimit} bookings). Upgrade to continue creating bookings.`);
+      openUpgradeModal();
+      return;
+    }
     let cid = customerId;
     const formattedPhone = newPhone.trim()
       ? newPhone.replace(/\D/g, "").length === 10
@@ -697,6 +716,41 @@ function NewBooking() {
             className="text-[10px] font-bold text-destructive hover:underline cursor-pointer"
           >
             Clear
+          </button>
+        </div>
+      )}
+
+      {/* Demo Booking Quota Banner */}
+      {isDemo && (
+        <div
+          className={cn(
+            "mb-3 px-3.5 py-2.5 rounded-2xl flex items-center justify-between text-xs border transition-all",
+            !allowed
+              ? "bg-destructive/10 border-destructive/30 text-destructive shadow-xs"
+              : demoBookingsRemaining <= 5
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                : "bg-secondary/60 border-border/40 text-foreground"
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-bold flex items-center gap-1.5">
+              {!allowed ? (
+                <AlertTriangle className="size-4 text-destructive shrink-0" />
+              ) : (
+                <Sparkles className="size-3.5 text-primary shrink-0" />
+              )}
+              {!allowed ? "Demo Limit Reached" : "Demo Account"}
+            </span>
+            <span className="text-[11px] opacity-80 font-medium">
+              ({bookingsCount}/{maxLimit} bookings used)
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={openUpgradeModal}
+            className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition cursor-pointer shadow-2xs"
+          >
+            Upgrade
           </button>
         </div>
       )}
@@ -2198,13 +2252,23 @@ function NewBooking() {
         />
       </section>
 
-      <button
-        type="button"
-        onClick={openReview}
-        className="w-full saree-gradient text-primary-foreground py-3 rounded-xl font-bold uppercase tracking-wider text-xs mt-3.5 flex items-center justify-center gap-2 active:scale-98 transition shadow-md shadow-primary/25"
-      >
-        <Check className="size-4 stroke-[3]" /> Review & Save
-      </button>
+      {isDemo && !allowed ? (
+        <button
+          type="button"
+          onClick={openUpgradeModal}
+          className="w-full bg-destructive text-white py-3 rounded-xl font-bold uppercase tracking-wider text-xs mt-3.5 flex items-center justify-center gap-2 active:scale-98 transition shadow-md shadow-destructive/25 cursor-pointer"
+        >
+          <AlertCircle className="size-4 stroke-[2.5]" /> Demo Limit Reached ({bookingsCount}/{maxLimit}) — Upgrade Now
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={openReview}
+          className="w-full saree-gradient text-primary-foreground py-3 rounded-xl font-bold uppercase tracking-wider text-xs mt-3.5 flex items-center justify-center gap-2 active:scale-98 transition shadow-md shadow-primary/25 cursor-pointer"
+        >
+          <Check className="size-4 stroke-[3]" /> Review & Save
+        </button>
+      )}
 
       {reviewOpen && (
         <div

@@ -41,6 +41,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const Route = createFileRoute("/_authenticated/bookings/")({
   validateSearch: (search: Record<string, unknown>): { past?: boolean } => {
@@ -106,6 +107,7 @@ function BookingsPage() {
   const restoreBooking = useStore((s) => s.restoreBooking);
   const addPayment = useStore((s) => s.addPayment);
   const settings = useStore((s) => s.settings);
+  const { isDemo, allowed, remaining, bookingsCount, maxLimit, openUpgradeModal } = useSubscription();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -721,13 +723,23 @@ function BookingsPage() {
 
           <div className="flex gap-1 items-center shrink-0">
             {!selectMode && (
-              <Link
-                to="/"
-                search={{ guide: "book" }}
-                className="rounded-full px-2.5 py-0.5 bg-card border border-border text-muted-foreground flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:bg-secondary/40 hover:text-foreground"
-              >
-                <Calendar className="size-3" /> Book
-              </Link>
+              isDemo && !allowed ? (
+                <button
+                  type="button"
+                  onClick={openUpgradeModal}
+                  className="rounded-full px-2.5 py-0.5 bg-destructive/10 border border-destructive/30 text-destructive flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95"
+                >
+                  <AlertCircle className="size-3" /> Limit ({bookingsCount}/{maxLimit})
+                </button>
+              ) : (
+                <Link
+                  to="/"
+                  search={{ guide: "book" }}
+                  className="rounded-full px-2.5 py-0.5 bg-card border border-border text-muted-foreground flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer active:scale-95 hover:bg-secondary/40 hover:text-foreground"
+                >
+                  <Calendar className="size-3" /> Book
+                </Link>
+              )
             )}
 
             <button
@@ -766,6 +778,41 @@ function BookingsPage() {
             className="px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
           >
             <Trash2 className="size-3.5" /> Delete {selected.size || ""}
+          </button>
+        </div>
+      )}
+
+      {/* Demo Booking Quota Banner in Bookings */}
+      {isDemo && (
+        <div
+          className={cn(
+            "mb-3 px-3.5 py-2 rounded-2xl flex items-center justify-between text-xs border transition-all",
+            !allowed
+              ? "bg-destructive/10 border-destructive/30 text-destructive shadow-xs"
+              : remaining <= 5
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                : "bg-secondary/60 border-border/40 text-foreground"
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-bold flex items-center gap-1.5">
+              {!allowed ? (
+                <AlertCircle className="size-3.5 text-destructive shrink-0" />
+              ) : (
+                <Sparkles className="size-3.5 text-primary shrink-0" />
+              )}
+              {!allowed ? "Demo Limit Reached" : "Demo Account"}
+            </span>
+            <span className="text-[11px] opacity-80 font-medium">
+              ({bookingsCount}/{maxLimit} bookings used)
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={openUpgradeModal}
+            className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition cursor-pointer shadow-2xs"
+          >
+            Upgrade
           </button>
         </div>
       )}

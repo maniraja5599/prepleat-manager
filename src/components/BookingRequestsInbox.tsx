@@ -5,6 +5,7 @@ import { useStore, type ServiceType } from "@/lib/store";
 import { Check, X, Inbox, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface BookingRequest {
   id: string;
@@ -28,6 +29,7 @@ export function BookingRequestsInbox() {
   const addBooking = useStore((s) => s.addBooking);
   const customers = useStore((s) => s.customers);
   const navigate = useNavigate();
+  const { isDemo, allowed, bookingsCount, maxLimit, openUpgradeModal } = useSubscription();
 
   const fetch = async () => {
     setLoading(true);
@@ -67,6 +69,11 @@ export function BookingRequestsInbox() {
   if (requests.length === 0) return null;
 
   const accept = async (r: BookingRequest) => {
+    if (isDemo && !allowed) {
+      toast.error(`Demo limit reached (${bookingsCount}/${maxLimit} bookings). Upgrade to accept more requests.`);
+      openUpgradeModal();
+      return;
+    }
     const phoneDigits = r.phone.replace(/\D/g, "");
     let cust = customers.find((c) => c.phone.replace(/\D/g, "") === phoneDigits);
     if (!cust) cust = addCustomer({ kind: "client", name: r.name, phone: r.phone });

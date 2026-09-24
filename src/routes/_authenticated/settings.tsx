@@ -83,6 +83,7 @@ import {
 
 import { APP_VERSION, RECENT_UPDATES, type ChangelogEntry } from "@/lib/changelog";
 import { isSuperAdmin, updateUserPhone, syncCloudBusinessBranding, checkSubscriptionStatus, subscribeToUserProfile, type UserProfile, generateReferralCode } from "@/lib/subscription";
+import { useSubscription } from "@/hooks/useSubscription";
 export { APP_VERSION, RECENT_UPDATES, type ChangelogEntry };
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -261,6 +262,7 @@ function SettingsPage() {
   const [isUserGuest, setIsUserGuest] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
+  const { isDemo, allowed, remaining, bookingsCount, maxLimit, openUpgradeModal } = useSubscription();
 
   useEffect(() => {
     waitForAppUser(300).then((user) => {
@@ -468,22 +470,67 @@ function SettingsPage() {
       )}
 
       {/* Subscription & Pricing Management Bar */}
-      <div className="bg-card card-shadow rounded-2xl p-3 mb-4 border border-border/60 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Sparkles className="size-4" />
+      <div
+        className={cn(
+          "card-shadow rounded-2xl p-3.5 mb-4 border flex items-center justify-between gap-2.5 transition-all",
+          isDemo && !allowed
+            ? "bg-destructive/10 border-destructive/30"
+            : "bg-card border-border/60"
+        )}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className={cn(
+              "size-9 rounded-xl flex items-center justify-center shrink-0",
+              isDemo && !allowed
+                ? "bg-destructive text-white"
+                : "bg-primary/10 text-primary"
+            )}
+          >
+            {isDemo && !allowed ? (
+              <AlertTriangle className="size-4.5" />
+            ) : (
+              <Sparkles className="size-4.5" />
+            )}
           </div>
-          <div>
-            <p className="text-xs font-bold text-foreground">Saree Manager Subscription</p>
-            <p className="text-[10px] text-muted-foreground">View plan details, redeem coupons or renew</p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-xs font-bold text-foreground">
+                {isDemo ? "Demo / Free Trial" : "Pro Subscription"}
+              </p>
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider",
+                  isDemo
+                    ? !allowed
+                      ? "bg-destructive text-white"
+                      : "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                    : "bg-success/15 text-success border border-success/20"
+                )}
+              >
+                {isDemo ? `${bookingsCount}/${maxLimit} Bookings` : "Unlimited Bookings"}
+              </span>
+            </div>
+            <p className="text-[10.5px] text-muted-foreground truncate mt-0.5">
+              {isDemo
+                ? !allowed
+                  ? "Booking limit reached (20/20). Upgrade to add unlimited bookings."
+                  : `${remaining} booking${remaining === 1 ? "" : "s"} remaining in demo mode.`
+                : "Active subscriber — enjoy unlimited booking capacity."}
+            </p>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent("trigger-pricing-modal"))}
-          className="px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold border border-border/40 transition cursor-pointer shrink-0"
+          onClick={openUpgradeModal}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 active:scale-95 shadow-2xs",
+            isDemo && !allowed
+              ? "bg-destructive text-white hover:bg-destructive/90"
+              : "saree-gradient text-white hover:opacity-95"
+          )}
         >
-          View Plans
+          {isDemo ? "Upgrade" : "Manage"}
         </button>
       </div>
 

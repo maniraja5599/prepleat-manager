@@ -28,10 +28,13 @@ import {
   Phone,
   MessageCircle,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const Route = createFileRoute("/_authenticated/")({
   validateSearch: (s: Record<string, unknown>): { guide?: string } => ({
@@ -56,6 +59,7 @@ function CalendarPage() {
   const customers = useStore((s) => s.customers);
   const settings = useStore((s) => s.settings);
   const calendarAmountDisplay = settings.calendarAmountDisplay ?? "pending";
+  const { isDemo, allowed, remaining, bookingsCount, maxLimit, openUpgradeModal } = useSubscription();
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
@@ -325,6 +329,12 @@ function CalendarPage() {
     const now = Date.now();
     if (lastTapRef.current.key === key && now - lastTapRef.current.time < 380) {
       // Double-tap detected!
+      if (isDemo && !allowed) {
+        toast.error(`Demo limit reached (${bookingsCount}/${maxLimit} bookings). Upgrade to continue adding bookings.`);
+        openUpgradeModal();
+        lastTapRef.current = { key: "", time: 0 };
+        return;
+      }
       navigate({ to: "/new", search: { date: key } });
       lastTapRef.current = { key: "", time: 0 };
       return;
@@ -346,6 +356,41 @@ function CalendarPage() {
   return (
     <AppShell showBrand showFloatingSearch={true}>
       <div className="no-select">
+
+        {/* Demo Booking Quota Banner */}
+        {isDemo && (
+          <div
+            className={cn(
+              "px-3.5 py-2 rounded-2xl flex items-center justify-between text-xs border transition-all mt-1 mb-2",
+              !allowed
+                ? "bg-destructive/10 border-destructive/30 text-destructive shadow-xs"
+                : remaining <= 5
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                  : "bg-secondary/60 border-border/40 text-foreground"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span className="font-bold flex items-center gap-1.5">
+                {!allowed ? (
+                  <AlertCircle className="size-3.5 text-destructive shrink-0" />
+                ) : (
+                  <Sparkles className="size-3.5 text-primary shrink-0" />
+                )}
+                {!allowed ? "Demo Limit Reached" : "Demo Account"}
+              </span>
+              <span className="text-[11px] opacity-80 font-medium">
+                ({bookingsCount}/{maxLimit} bookings used)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={openUpgradeModal}
+              className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition cursor-pointer shadow-2xs"
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
 
         {/* Top 12-Month Year-Round Delivery Schedule Strip */}
         <div className="bg-card card-shadow rounded-2xl p-1.5 border border-border/40 my-2.5">
@@ -499,7 +544,14 @@ function CalendarPage() {
                 <button
                   key={key}
                   onClick={() => handleDateTap(d, key)}
-                  onDoubleClick={() => navigate({ to: "/new", search: { date: key } })}
+                  onDoubleClick={() => {
+                    if (isDemo && !allowed) {
+                      toast.error(`Demo limit reached (${bookingsCount}/${maxLimit} bookings). Upgrade to continue adding bookings.`);
+                      openUpgradeModal();
+                      return;
+                    }
+                    navigate({ to: "/new", search: { date: key } });
+                  }}
                   onTouchStart={() => startPress(key)}
                   onTouchEnd={cancelPress}
                   onTouchMove={cancelPress}
@@ -620,14 +672,25 @@ function CalendarPage() {
                 </div>
 
                 {/* 1-Tap Action Button for this date */}
-                <Link
-                  to="/new"
-                  search={{ date: format(selected, "yyyy-MM-dd") }}
-                  className="w-full py-2.5 px-3 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="size-4 stroke-[3]" />
-                  <span>New Booking for {format(selected, "d MMM")}</span>
-                </Link>
+                {isDemo && !allowed ? (
+                  <button
+                    type="button"
+                    onClick={openUpgradeModal}
+                    className="w-full py-2.5 px-3 rounded-xl bg-destructive text-white text-xs font-bold shadow-xs hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <AlertCircle className="size-4" />
+                    <span>Demo Limit Reached ({bookingsCount}/{maxLimit}) — Upgrade</span>
+                  </button>
+                ) : (
+                  <Link
+                    to="/new"
+                    search={{ date: format(selected, "yyyy-MM-dd") }}
+                    className="w-full py-2.5 px-3 rounded-xl saree-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="size-4 stroke-[3]" />
+                    <span>New Booking for {format(selected, "d MMM")}</span>
+                  </Link>
+                )}
 
                 {/* Pro-Tip Helper */}
                 <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-muted-foreground pt-1 border-t border-border/20">
@@ -702,14 +765,27 @@ function CalendarPage() {
                   ))}
                 </ul>
               )}
-              <Link
-                to="/new"
-                search={{ date: peek }}
-                onClick={() => setPeek(null)}
-                className="mt-3 block text-center py-3 rounded-2xl saree-gradient text-primary-foreground text-sm font-semibold"
-              >
-                + Book this date
-              </Link>
+              {isDemo && !allowed ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPeek(null);
+                    openUpgradeModal();
+                  }}
+                  className="mt-3 block w-full text-center py-3 rounded-2xl bg-destructive text-white text-sm font-semibold cursor-pointer"
+                >
+                  Demo Limit Reached — Upgrade to Book
+                </button>
+              ) : (
+                <Link
+                  to="/new"
+                  search={{ date: peek }}
+                  onClick={() => setPeek(null)}
+                  className="mt-3 block text-center py-3 rounded-2xl saree-gradient text-primary-foreground text-sm font-semibold"
+                >
+                  + Book this date
+                </Link>
+              )}
             </div>
           </div>
         )}

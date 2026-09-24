@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.2.5";
+export const APP_VERSION = "2.2.6";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.2.6",
+    date: "24 Sep 2026",
+    isLatest: true,
+    title: "Demo User 20 Bookings Quota & Smart Upgrade Prompts",
+    badge: "LATEST UPDATE 🔒",
+    changes: [
+      {
+        emoji: "🔒",
+        text: "Demo Account 20 Bookings Quota",
+        desc: "Guest / Trial accounts are restricted to 20 saree bookings. Super-Admin and paid subscribers have unlimited booking access.",
+      },
+      {
+        emoji: "📊",
+        text: "Real-Time Booking Usage Indicators",
+        desc: "Live quota trackers in New Booking form, Calendar, Bookings list, and Settings show exactly how many bookings have been used (e.g. 14/20).",
+      },
+      {
+        emoji: "🚀",
+        text: "Seamless 1-Tap Upgrade Flow",
+        desc: "When the demo limit is reached, booking triggers and save actions prompt users to upgrade their subscription with 1 tap.",
+      },
+    ],
+  },
+  {
     version: "v2.2.5",
     date: "17 Sep 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Official Google Analytics 4 (GA4) Live Integration & Route Tracking",
-    badge: "LATEST UPDATE 📊",
+    badge: "PREVIOUS UPDATE 📊",
     changes: [
       {
         emoji: "📊",

@@ -867,6 +867,65 @@ export function checkSubscriptionStatus(
   };
 }
 
+export const DEMO_MAX_BOOKINGS = 20;
+
+/**
+ * Returns true if the user is in Demo / Guest / Free Trial mode
+ * (i.e. does not possess an active paid subscription or admin status)
+ */
+export function isDemoUser(
+  user: AppUser | null | undefined,
+  profile: UserProfile | null | undefined,
+): boolean {
+  if (!user) return true;
+  if (isSuperAdmin(user)) return false;
+  if (user.isAnonymous) return true;
+  if (!profile) return true;
+  if (profile.role === "admin" || profile.plan === "lifetime_free") return false;
+  if (profile.plan === "monthly" || profile.plan === "yearly") {
+    const expiryIso = profile.planExpiresAt || profile.trialEndsAt;
+    if (expiryIso && new Date(expiryIso).getTime() > Date.now()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Checks whether booking creation is allowed for the user
+ */
+export function canAddBooking(
+  currentBookingsCount: number,
+  user: AppUser | null | undefined,
+  profile: UserProfile | null | undefined,
+): {
+  allowed: boolean;
+  isDemo: boolean;
+  currentCount: number;
+  maxLimit: number;
+  remaining: number;
+} {
+  const isDemo = isDemoUser(user, profile);
+  if (!isDemo) {
+    return {
+      allowed: true,
+      isDemo: false,
+      currentCount: currentBookingsCount,
+      maxLimit: Infinity,
+      remaining: Infinity,
+    };
+  }
+  const allowed = currentBookingsCount < DEMO_MAX_BOOKINGS;
+  const remaining = Math.max(0, DEMO_MAX_BOOKINGS - currentBookingsCount);
+  return {
+    allowed,
+    isDemo: true,
+    currentCount: currentBookingsCount,
+    maxLimit: DEMO_MAX_BOOKINGS,
+    remaining,
+  };
+}
+
 /**
  * Create a Cashfree Order and obtain payment_session_id
  */
