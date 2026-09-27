@@ -1,4 +1,4 @@
-const CACHE_NAME = "eyas-drapist-v2.2.6";
+const CACHE_NAME = "eyas-drapist-v2.2.7";
 
 const urlsToCache = [
   '/',

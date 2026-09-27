@@ -48,6 +48,10 @@ export function SubscriptionWelcomeModal() {
 
   const status = checkSubscriptionStatus(user, profile);
 
+  if (status.isLifetime || profile?.plan === "lifetime_free" || profile?.plan === "yearly" || profile?.plan === "monthly") {
+    return null;
+  }
+
   const handleDismiss = () => {
     localStorage.setItem("has_seen_trial_welcome_v2", "true");
     setOpen(false);

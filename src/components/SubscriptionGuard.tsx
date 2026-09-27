@@ -4,17 +4,21 @@ import {
   subscribeToUserProfile,
   subscribeToSystemConfig,
   checkSubscriptionStatus,
+  getCachedUserProfile,
   type UserProfile,
   type SystemSubscriptionConfig,
   DEFAULT_CONFIG,
 } from "@/lib/subscription";
 import { PricingPlansModal } from "@/components/PricingPlansModal";
-import { onAppAuthStateChanged, type AppUser } from "@/integrations/firebase/client";
+import { onAppAuthStateChanged, getCurrentAppUser, type AppUser } from "@/integrations/firebase/client";
 import { AlertTriangle, Sparkles } from "lucide-react";
 
 export function SubscriptionGuard() {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<AppUser | null>(() => getCurrentAppUser());
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    const u = getCurrentAppUser();
+    return u?.id ? getCachedUserProfile(u.id) : null;
+  });
   const [config, setConfig] = useState<SystemSubscriptionConfig>(DEFAULT_CONFIG);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -24,6 +28,8 @@ export function SubscriptionGuard() {
     const unsubAuth = onAppAuthStateChanged((u) => {
       setUser(u);
       if (u && !u.isAnonymous) {
+        const cached = getCachedUserProfile(u.id);
+        if (cached) setProfile(cached);
         void ensureUserProfile(u).then((p) => {
           if (p) setProfile(p);
         });

@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.2.6";
+export const APP_VERSION = "2.2.7";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.2.7",
+    date: "27 Sep 2026",
+    isLatest: true,
+    title: "Lifetime & Pro User Login Quota Flicker Fix",
+    badge: "LATEST UPDATE ⚡",
+    changes: [
+      {
+        emoji: "⚡",
+        text: "Synchronous Profile Cache & Zero Flicker",
+        desc: "Cached user profiles locally so Lifetime VIP and paid users never see a brief 'Demo Limit' flash on app launch or login.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Smart Auth Loading Guard",
+        desc: "Authenticated accounts are never falsely assumed to be in demo mode while Firestore profiles are resolving in the background.",
+      },
+      {
+        emoji: "👑",
+        text: "Lifetime User Welcome Streamline",
+        desc: "Ensured Lifetime and paid subscribers bypass any trial welcome alerts and access unlimited booking capacity immediately.",
+      },
+    ],
+  },
+  {
     version: "v2.2.6",
     date: "24 Sep 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Demo User 20 Bookings Quota & Smart Upgrade Prompts",
-    badge: "LATEST UPDATE 🔒",
+    badge: "PREVIOUS UPDATE 🔒",
     changes: [
       {
         emoji: "🔒",

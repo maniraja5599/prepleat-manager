@@ -208,7 +208,9 @@ export async function ensureUserProfile(user: AppUser): Promise<UserProfile | nu
       }
 
       await updateDoc(userDocRef, updates);
-      return { ...data, ...updates };
+      const merged = { ...data, ...updates };
+      setCachedUserProfile(user.id, merged);
+      return merged;
     }
 
     // New User profile initialization
@@ -234,6 +236,7 @@ export async function ensureUserProfile(user: AppUser): Promise<UserProfile | nu
     };
 
     await setDoc(userDocRef, newProfile);
+    setCachedUserProfile(user.id, newProfile);
     return newProfile;
   } catch (err) {
     console.error("Error ensuring user profile:", err);
@@ -325,14 +328,21 @@ export function subscribeToUserProfile(
     userDocRef,
     (snap) => {
       if (snap.exists()) {
-        callback(snap.data() as UserProfile);
+        const p = snap.data() as UserProfile;
+        setCachedUserProfile(uid, p);
+        callback(p);
       } else {
         callback(null);
       }
     },
     (err) => {
       console.warn("User profile subscription error:", err);
-      callback(null);
+      const cached = getCachedUserProfile(uid);
+      if (cached) {
+        callback(cached);
+      } else {
+        callback(null);
+      }
     },
   );
 }
@@ -870,6 +880,29 @@ export function checkSubscriptionStatus(
 export const DEMO_MAX_BOOKINGS = 20;
 
 /**
+ * Synchronous local cache for user profile to avoid UI flicker during auth/loading transitions
+ */
+export function getCachedUserProfile(uid: string): UserProfile | null {
+  if (typeof window === "undefined" || !uid) return null;
+  try {
+    const raw = localStorage.getItem("user_profile_" + uid);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return null;
+}
+
+export function setCachedUserProfile(uid: string, profile: UserProfile | null): void {
+  if (typeof window === "undefined" || !uid) return;
+  try {
+    if (profile) {
+      localStorage.setItem("user_profile_" + uid, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem("user_profile_" + uid);
+    }
+  } catch (_) {}
+}
+
+/**
  * Returns true if the user is in Demo / Guest / Free Trial mode
  * (i.e. does not possess an active paid subscription or admin status)
  */
@@ -877,13 +910,20 @@ export function isDemoUser(
   user: AppUser | null | undefined,
   profile: UserProfile | null | undefined,
 ): boolean {
-  if (!user) return true;
-  if (isSuperAdmin(user)) return false;
+  if (!user) return false;
+  if (isSuperAdmin(user, profile)) return false;
   if (user.isAnonymous) return true;
-  if (!profile) return true;
-  if (profile.role === "admin" || profile.plan === "lifetime_free") return false;
-  if (profile.plan === "monthly" || profile.plan === "yearly") {
-    const expiryIso = profile.planExpiresAt || profile.trialEndsAt;
+
+  // For logged-in users, if profile state hasn't resolved yet in React, inspect localStorage cache
+  const activeProfile = profile || (user.id ? getCachedUserProfile(user.id) : null);
+  if (!activeProfile) {
+    // Authenticated user with profile still loading from cloud: do not assume demo or flash limit!
+    return false;
+  }
+
+  if (activeProfile.role === "admin" || activeProfile.plan === "lifetime_free") return false;
+  if (activeProfile.plan === "monthly" || activeProfile.plan === "yearly") {
+    const expiryIso = activeProfile.planExpiresAt || activeProfile.trialEndsAt;
     if (expiryIso && new Date(expiryIso).getTime() > Date.now()) {
       return false;
     }
