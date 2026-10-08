@@ -93,6 +93,12 @@ function BookingDetail() {
   const [payNote, setPayNote] = useState("");
   const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [editing, setEditing] = useState(false);
+  const [targetEditSection, setTargetEditSection] = useState<string | null>(null);
+
+  const openEditSection = (sectionId?: string) => {
+    setTargetEditSection(sectionId || null);
+    setEditing(true);
+  };
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [recordedPaymentSuccess, setRecordedPaymentSuccess] = useState<{
@@ -599,172 +605,207 @@ function BookingDetail() {
           </div>
         </div>
       )}
-      <div className="flex items-center justify-between pt-4 pb-3">
+      <div className="flex items-center justify-between pt-2.5 pb-2">
         <button
           onClick={() => navigate({ to: "/bookings" })}
-          className="size-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+          className="size-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+          title="Back to Bookings"
         >
-          <ArrowLeft className="size-5" />
+          <ArrowLeft className="size-4.5" />
         </button>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setEditing((v) => !v)}
+            onClick={() => {
+              if (editing) {
+                setEditing(false);
+                setTargetEditSection(null);
+              } else {
+                openEditSection();
+              }
+            }}
             className={cn(
-              "size-10 rounded-full flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer",
+              "size-9 rounded-full flex items-center justify-center hover:bg-secondary/80 active:scale-95 transition cursor-pointer",
               editing ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-secondary",
             )}
             aria-label="Edit"
+            title={editing ? "Close Edit" : "Edit Booking"}
           >
-            {editing ? <X className="size-5" /> : <Pencil className="size-5" />}
+            {editing ? <X className="size-4.5" /> : <Pencil className="size-4 text-foreground/85" />}
           </button>
           <button
             onClick={() => setDeleteConfirmOpen(true)}
-            className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 active:scale-95 transition cursor-pointer"
+            className="size-9 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 active:scale-95 transition cursor-pointer"
             title="Delete Booking"
           >
-            <Trash2 className="size-5" />
+            <Trash2 className="size-4" />
           </button>
         </div>
       </div>
 
-      {/* Hero Header Card */}
-      <div className="saree-gradient rounded-3xl p-5 text-primary-foreground card-shadow relative overflow-hidden">
+      {/* Hero Header Card - Compact, Neat & Space-Saving */}
+      <div className="saree-gradient rounded-2xl p-3.5 sm:p-4 text-primary-foreground card-shadow relative overflow-hidden">
+        {/* Top Badges & Edit Shortcut */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/20 border border-white/10">
-            {booking.service === "prepleat" ? "PRE" : booking.service}
-          </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[9.5px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/20 border border-white/10">
+              {booking.service === "prepleat" ? "PRE" : booking.service}
+            </span>
             {(booking.billNumber || booking.id) && (
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
+              <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/15">
                 {formatShortBillNumber(booking.billNumber, booking.id)}
               </span>
             )}
             <span
               className={cn(
-                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/20 bg-white/10 text-white",
+                "text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/20 bg-white/10 text-white",
               )}
             >
               {statusInfo.label}
             </span>
           </div>
-        </div>
 
-        <div className="flex items-center justify-between gap-2 mt-3">
-          <h1 className="text-2xl font-display font-bold truncate">{customer?.name}</h1>
           <button
             type="button"
-            onClick={() => setEditing((v) => !v)}
-            className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold flex items-center gap-1 active:scale-95 transition shrink-0 cursor-pointer shadow-2xs"
+            onClick={() => {
+              if (editing) {
+                setEditing(false);
+                setTargetEditSection(null);
+              } else {
+                openEditSection();
+              }
+            }}
+            className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10.5px] font-bold flex items-center gap-1 active:scale-95 transition shrink-0 cursor-pointer shadow-2xs"
           >
-            <Pencil className="size-3" /> {editing ? "Close" : "Edit"}
+            <Pencil className="size-3" /> {editing ? "Close Edit" : "Edit Details"}
           </button>
         </div>
 
-        <div className="mt-1 flex items-center gap-2">
-          {customer?.phone && (
-            <a
-              href={`tel:${dialPhone}`}
-              className="text-xs opacity-90 hover:underline cursor-pointer"
-            >
-              {customer.phone}
-            </a>
-          )}
-          {customer?.phone && (
-            <div className="flex gap-1.5 ml-1">
-              <a
-                href={`tel:${dialPhone}`}
-                className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
-                title="Call Customer"
-              >
-                <Phone className="size-3 text-white" />
-              </a>
-              <a
-                href={`https://wa.me/${whatsappPhone}`}
-                target="_blank"
-                rel="noreferrer"
-                className="size-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition active:scale-90"
-                title="WhatsApp Chat"
-              >
-                <MessageCircle className="size-3 text-white" />
-              </a>
+        {/* Customer Name & Phone */}
+        <div className="mt-2 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-display font-bold truncate leading-tight">
+              {customer?.name || "Unnamed Customer"}
+            </h1>
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              {customer?.phone && (
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={`tel:${dialPhone}`}
+                    className="text-xs opacity-95 hover:underline cursor-pointer font-mono font-medium"
+                  >
+                    {customer.phone}
+                  </a>
+                  <div className="flex gap-1 ml-0.5">
+                    <a
+                      href={`tel:${dialPhone}`}
+                      className="size-5.5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition active:scale-90"
+                      title="Call Customer"
+                    >
+                      <Phone className="size-2.5 text-white" />
+                    </a>
+                    <a
+                      href={`https://wa.me/${whatsappPhone}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="size-5.5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition active:scale-90"
+                      title="WhatsApp Chat"
+                    >
+                      <MessageCircle className="size-2.5 text-white" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Artist tag or Add Artist */}
+              {artist ? (
+                <div className="flex items-center gap-1 bg-white/15 px-2 py-0.5 rounded-full text-[10.5px]">
+                  <span className="opacity-80">Artist:</span>
+                  <span className="font-semibold truncate max-w-[100px]">{artist.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => openEditSection("edit-customer-section")}
+                    className="ml-0.5 underline opacity-90 hover:opacity-100 cursor-pointer text-[10px]"
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openEditSection("edit-customer-section")}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-[10.5px] font-medium transition cursor-pointer"
+                >
+                  <Palette className="size-2.5" /> + Artist
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {customer?.address && (
-          <p className="text-xs opacity-80 mt-1.5 line-clamp-2 italic flex items-start gap-1">
-            <MapPin className="size-3 mt-0.5 shrink-0" />
-            {customer.address}
-          </p>
-        )}
-        {customer?.locationUrl && (
-          <div className="mt-2">
-            <a
-              href={customer.locationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-full text-xs font-semibold transition-colors"
-            >
-              <Map className="size-3.5" /> Get Directions
-            </a>
-          </div>
-        )}
-
-        {artist ? (
-          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 font-medium">
-              <span className="opacity-80">Artist:</span>{" "}
-              <span className="font-semibold">{artist.name}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-[10px] text-white/90 hover:text-white underline cursor-pointer"
-            >
-              Change Artist
-            </button>
-          </div>
-        ) : (
-          <div className="mt-2">
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-[10px] inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-white/90 font-medium transition cursor-pointer"
-            >
-              <Palette className="size-2.5" /> + Assign Artist
-            </button>
-          </div>
-        )}
-
-        <div className="mt-4.5 grid grid-cols-2 gap-4 text-xs pt-3.5 border-t border-white/10">
-          <div>
-            <p className="opacity-70 text-[9px] uppercase font-bold tracking-wider">
-              Delivery Schedule
-            </p>
-            <p className="font-semibold text-sm mt-0.5 flex items-center gap-1">
-              <Calendar className="size-3.5 shrink-0" />
-              {formatAppDate(booking.deliveryDate)}
-            </p>
-            <p className="opacity-95 text-[11px] mt-0.5 ml-4.5 flex items-center gap-1">
-              <Clock className="size-3 shrink-0" />
-              {fmtTime12(booking.deliveryTime)}
-            </p>
-            {booking.createdAt && (
-              <p className="opacity-75 text-[10px] mt-1.5 font-mono">
-                Booked: {formatAppDate(booking.createdAt)}
+        {/* Address / Directions if present */}
+        {(customer?.address || customer?.locationUrl) && (
+          <div className="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
+            {customer.address && (
+              <p className="opacity-85 text-[11px] truncate flex items-center gap-1 min-w-0">
+                <MapPin className="size-3 shrink-0" />
+                <span className="truncate">{customer.address}</span>
               </p>
             )}
+            {customer.locationUrl && (
+              <a
+                href={customer.locationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-white/15 hover:bg-white/25 rounded-full text-[10px] font-semibold transition"
+              >
+                <Map className="size-3" /> Map
+              </a>
+            )}
           </div>
-          <div>
-            <p className="opacity-70 text-[9px] uppercase font-bold tracking-wider">
-              Saree Counter
+        )}
+
+        {/* Schedule & Saree Stats Glass Card */}
+        <div className="mt-2.5 p-2.5 rounded-xl bg-black/15 border border-white/15 grid grid-cols-2 gap-2 text-xs">
+          <div className="relative group">
+            <div className="flex items-center justify-between">
+              <span className="opacity-75 text-[9px] uppercase font-bold tracking-wider">Delivery</span>
+              <button
+                type="button"
+                onClick={() => openEditSection("edit-schedule-section")}
+                className="opacity-75 hover:opacity-100 text-[10px] underline flex items-center gap-0.5 cursor-pointer"
+                title="Edit Schedule"
+              >
+                <Pencil className="size-2.5" />
+              </button>
+            </div>
+            <p className="font-semibold text-xs mt-0.5 flex items-center gap-1">
+              <Calendar className="size-3 shrink-0 opacity-80" />
+              <span>{formatAppDate(booking.deliveryDate)}</span>
             </p>
-            <p className="font-semibold text-sm mt-0.5">
-              {booking.sareeCount} {booking.sareeCount === 1 ? "Saree" : "Sarees"}
+            <p className="text-[10.5px] opacity-90 mt-0.5 flex items-center gap-1">
+              <Clock className="size-2.5 shrink-0 opacity-80" />
+              <span>{fmtTime12(booking.deliveryTime)}</span>
             </p>
-            <p className="opacity-95 text-[11px] mt-0.5">
-              {booking.items && booking.items.length > 1 ? "Multi-Service" : fmtINR(booking.pricePerSaree) + " each"} ={" "}
+          </div>
+
+          <div className="border-l border-white/15 pl-2 relative group">
+            <div className="flex items-center justify-between">
+              <span className="opacity-75 text-[9px] uppercase font-bold tracking-wider">Sarees & Bill</span>
+              <button
+                type="button"
+                onClick={() => openEditSection("edit-services-section")}
+                className="opacity-75 hover:opacity-100 text-[10px] underline flex items-center gap-0.5 cursor-pointer"
+                title="Edit Sarees / Services"
+              >
+                <Pencil className="size-2.5" />
+              </button>
+            </div>
+            <p className="font-semibold text-xs mt-0.5 flex items-center justify-between">
+              <span>{booking.sareeCount} {booking.sareeCount === 1 ? "Saree" : "Sarees"}</span>
               <span className="font-bold">{fmtINR(booking.totalAmount)}</span>
+            </p>
+            <p className="text-[10.5px] opacity-85 mt-0.5 truncate">
+              {booking.items && booking.items.length > 1 ? `${booking.items.length} items` : `${fmtINR(booking.pricePerSaree)}/pc`}
             </p>
           </div>
         </div>
@@ -773,40 +814,58 @@ function BookingDetail() {
       {editing && (
         <EditPanel
           booking={booking}
-          onCancel={() => setEditing(false)}
+          targetSection={targetEditSection}
+          onCancel={() => {
+            setEditing(false);
+            setTargetEditSection(null);
+          }}
           onSave={(patch) => {
             updateBooking(booking.id, patch);
             toast.success("Booking details & pricing updated! ✨");
             setEditing(false);
+            setTargetEditSection(null);
           }}
         />
       )}
 
+      {/* Detail Cards - shown when not editing to save space and avoid duplicate views */}
+      {!editing && (
+        <>
+
       {/* Itemized Services Breakdown Card (if multiple services or item note) */}
       {booking.items && booking.items.length > 0 && (
-        <div className="bg-card card-shadow rounded-2xl p-4 mt-3 border border-border/40 space-y-2.5">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <Sparkles className="size-3.5 text-primary" /> Itemized Services ({booking.items.length})
-          </p>
-          <div className="space-y-2 pt-1">
+        <div className="bg-card card-shadow rounded-2xl p-3.5 mt-2.5 border border-border/40 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="size-3.5 text-primary" /> Itemized Services ({booking.items.length})
+            </p>
+            <button
+              type="button"
+              onClick={() => openEditSection("edit-services-section")}
+              className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Pencil className="size-3" /> Edit Services
+            </button>
+          </div>
+          <div className="space-y-1.5 pt-0.5">
             {booking.items.map((it, idx) => (
-              <div key={idx} className="flex items-start justify-between bg-secondary/40 p-2.5 rounded-xl text-xs border border-border/20">
-                <div>
+              <div key={idx} className="flex items-start justify-between bg-secondary/40 p-2 rounded-xl text-xs border border-border/20">
+                <div className="min-w-0 pr-2">
                   <div className="flex items-center gap-1.5 font-bold text-foreground">
                     <span>{it.service === "drape" ? "✨" : it.service === "custom" ? "📦" : "🥻"}</span>
-                    <span>{it.serviceName || (it.service === "drape" ? "Draping" : "Pre-Pleat")}</span>
+                    <span className="truncate">{it.serviceName || (it.service === "drape" ? "Draping" : "Pre-Pleat")}</span>
                   </div>
                   {it.notes && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5 italic">
+                    <p className="text-[10.5px] text-muted-foreground mt-0.5 italic truncate">
                       Note: {it.notes}
                     </p>
                   )}
                 </div>
-                <div className="text-right">
-                  <span className="font-mono font-semibold text-foreground">
+                <div className="text-right shrink-0">
+                  <span className="font-mono font-semibold text-foreground text-[11px]">
                     {it.sareeCount} × {fmtINR(it.pricePerSaree)}
                   </span>
-                  <p className="font-bold font-mono text-primary text-[11.5px] mt-0.5">
+                  <p className="font-bold font-mono text-primary text-xs mt-0.5">
                     = {fmtINR(it.sareeCount * it.pricePerSaree)}
                   </p>
                 </div>
@@ -817,13 +876,13 @@ function BookingDetail() {
       )}
 
       {booking.status !== "cancelled" && (
-        <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
+        <div className="bg-card card-shadow rounded-2xl p-3.5 mt-2.5 border border-border/40">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Booking Status
             </h2>
             <span className={cn(
-              "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+              "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
               booking.status === "completed" || booking.status === "delivered"
                 ? "bg-success/10 text-success"
                 : "bg-primary/10 text-primary"
@@ -832,13 +891,13 @@ function BookingDetail() {
             </span>
           </div>
           
-          <div className="mt-4 flex flex-col gap-2.5">
+          <div className="mt-2.5 flex flex-col gap-2">
             {booking.status !== "completed" && booking.status !== "delivered" ? (
               <>
                 {booking.service === "prepleat" && booking.workDoneAt && (
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base">🥻</span>
+                      <span className="text-sm">🥻</span>
                       <div className="min-w-0">
                         <span className="text-xs font-bold text-foreground block truncate">
                           Saree Ready for Pickup
@@ -852,7 +911,7 @@ function BookingDetail() {
                       <button
                         type="button"
                         onClick={() => sendWhatsApp("ready")}
-                        className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
+                        className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
                         title="Re-send Ready WhatsApp Notice"
                       >
                         <MessageCircle className="size-3" />
@@ -864,7 +923,7 @@ function BookingDetail() {
                           updateBooking(booking.id, { workDoneAt: undefined });
                           toast.success("Ready status reverted");
                         }}
-                        className="size-7 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+                        className="size-6 rounded-lg hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
                         title="Undo Ready"
                       >
                         ✕
@@ -873,12 +932,12 @@ function BookingDetail() {
                   </div>
                 )}
 
-                <div className="flex gap-2.5">
+                <div className="flex gap-2">
                   {booking.service === "prepleat" && !booking.workDoneAt && (
                     <button
                       type="button"
                       onClick={() => setReadyModalOpen(true)}
-                      className="flex-1 py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider active:scale-95 transition shadow-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer"
+                      className="flex-1 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider active:scale-95 transition shadow-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer"
                     >
                       <span>🥻</span>
                       <span>Mark Ready</span>
@@ -899,9 +958,9 @@ function BookingDetail() {
                         toast.success("Booking Completed! ✅");
                       }
                     }}
-                    className="flex-1 py-3 rounded-xl saree-gradient text-white font-bold text-xs uppercase tracking-wider hover:opacity-95 active:scale-95 transition shadow-sm flex items-center justify-center gap-1.5 border border-primary/20 cursor-pointer"
+                    className="flex-1 py-2.5 rounded-xl saree-gradient text-white font-bold text-xs uppercase tracking-wider hover:opacity-95 active:scale-95 transition shadow-sm flex items-center justify-center gap-1.5 border border-primary/20 cursor-pointer"
                   >
-                    <CheckCircle className="size-4" />
+                    <CheckCircle className="size-3.5" />
                     <span>Complete Order</span>
                   </button>
                 </div>
@@ -917,7 +976,7 @@ function BookingDetail() {
                   updateBooking(booking.id, { status: "pending", completedAt: undefined, deliveredAt: undefined });
                   toast.success("Reverted to Active Bookings 🟢");
                 }}
-                className="flex-1 py-3 rounded-xl bg-secondary text-foreground font-bold text-sm border border-border/40 hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground font-bold text-xs border border-border/40 hover:bg-secondary/80 active:scale-95 transition cursor-pointer"
               >
                 Revert to Booked (Active)
               </button>
@@ -928,55 +987,64 @@ function BookingDetail() {
 
       {/* Details (Measurements & Notes) */}
       {((booking.measurements && booking.measurements.length > 0) || booking.notes) && (
-        <div className="grid grid-cols-1 gap-3 mt-3">
+        <div className="bg-card card-shadow rounded-2xl p-3.5 mt-2.5 border border-border/40 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Measurements & Notes
+            </h2>
+            <button
+              type="button"
+              onClick={() => openEditSection("edit-measurements-section")}
+              className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Pencil className="size-3" /> Edit
+            </button>
+          </div>
+
           {booking.measurements && booking.measurements.length > 0 && (
-            <div className="bg-card card-shadow rounded-2xl p-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">
-                Measurements (inch)
-              </h2>
-              <div className="flex gap-4 flex-wrap">
-                {booking.measurements.map((m) => (
-                  <div key={m.label} className="min-w-[45px]">
-                    <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                      {m.label}
-                    </p>
-                    <p className="text-base font-bold tabular-nums text-foreground mt-0.5">
-                      {m.value}″
-                    </p>
-                  </div>
-                ))}
-              </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {booking.measurements.map((m) => (
+                <div key={m.label} className="px-2.5 py-1 rounded-xl bg-secondary/70 border border-border/20 text-xs flex items-center gap-1">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground">{m.label}:</span>
+                  <span className="font-bold font-mono text-foreground">{m.value}″</span>
+                </div>
+              ))}
             </div>
           )}
 
           {booking.notes && (
-            <div className="bg-card card-shadow rounded-2xl p-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Notes & Custom Request
-              </h2>
-              <p className="text-xs text-foreground/95 leading-relaxed whitespace-pre-wrap">
-                {booking.notes}
-              </p>
+            <div className="p-2.5 rounded-xl bg-secondary/30 border border-border/20 text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-0.5">Custom Notes:</span>
+              {booking.notes}
             </div>
           )}
         </div>
       )}
 
       {/* Financial Summary & Payments */}
-      <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
+      <div className="bg-card card-shadow rounded-2xl p-3.5 mt-2.5 border border-border/40">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Financial Summary
           </h2>
-          {due === 0 ? (
-            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
-              Fully paid
-            </span>
-          ) : (
-            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-              {fmtINR(due)} Pending
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => openEditSection("edit-pricing-section")}
+              className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer mr-1"
+            >
+              <Pencil className="size-3" /> Edit Rates
+            </button>
+            {due === 0 ? (
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/20">
+                Fully paid
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                {fmtINR(due)} Pending
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Paid Progress Bar */}
@@ -1382,41 +1450,41 @@ function BookingDetail() {
       </div>
 
       {/* Share & Action Center */}
-      <div className="bg-card card-shadow rounded-2xl p-4 mt-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+      <div className="bg-card card-shadow rounded-2xl p-3.5 mt-2.5 border border-border/40">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">
           Share & Action Center
         </h2>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setPreviewMode({ channel: "whatsapp", kind: "bill" })}
-            className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+            className="py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
           >
-            <Receipt className="size-4 text-primary" /> WhatsApp Bill
+            <Receipt className="size-3.5 text-primary" /> WhatsApp Bill
           </button>
 
           <button
             onClick={() => setShowPDFPreview(true)}
-            className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+            className="py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border/40 text-foreground text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
           >
-            <FileText className="size-4 text-primary" /> PDF Invoice
+            <FileText className="size-3.5 text-primary" /> PDF Invoice
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mt-2.5">
+        <div className="grid grid-cols-3 gap-2 mt-2">
           <button
             onClick={() => setPreviewMode({ channel: "sms", kind: "status" })}
-            className="py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+            className="py-2 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
           >
-            <MessageSquare className="size-3.5" /> SMS Update
+            <MessageSquare className="size-3" /> SMS Update
           </button>
 
           {due > 0 && booking.status !== "cancelled" && (
             <button
               onClick={() => setPreviewMode({ channel: "whatsapp", kind: "balance" })}
-              className="py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+              className="py-2 rounded-xl bg-secondary/50 hover:bg-secondary/70 text-muted-foreground text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
             >
-              <IndianRupee className="size-3.5" /> Remind Due
+              <IndianRupee className="size-3" /> Remind Due
             </button>
           )}
 
@@ -1427,9 +1495,9 @@ function BookingDetail() {
                 cancelBooking(booking.id);
                 toast.success("Booking cancelled");
               }}
-              className="py-2.5 rounded-xl bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+              className="py-2 rounded-xl bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
             >
-              <Ban className="size-3.5" /> Cancel Order
+              <Ban className="size-3" /> Cancel
             </button>
           ) : (
             <button
@@ -1437,13 +1505,15 @@ function BookingDetail() {
                 updateBooking(booking.id, { status: "pending" });
                 toast.success("Booking re-opened");
               }}
-              className="py-2.5 rounded-xl bg-[oklch(0.55_0.13_150)]/10 text-[oklch(0.55_0.13_150)] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+              className="py-2 rounded-xl bg-[oklch(0.55_0.13_150)]/10 text-[oklch(0.55_0.13_150)] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
             >
-              <Check className="size-3.5" /> Reopen Order
+              <Check className="size-3" /> Reopen
             </button>
           )}
         </div>
       </div>
+        </>
+      )}
 
       {activePayment && (
         <EditPaymentModal
@@ -2443,10 +2513,12 @@ function EditPaymentModal({
 // EditPanel with keyboard-safe scroll headroom
 function EditPanel({
   booking,
+  targetSection,
   onCancel,
   onSave,
 }: {
   booking: Booking;
+  targetSection?: string | null;
   onCancel: () => void;
   onSave: (patch: Partial<Booking>) => void;
 }) {
@@ -2640,19 +2712,73 @@ function EditPanel({
   const calculatedNetTotal = Math.max(0, baseTotal + numExtra - numDiscount);
   const calculatedDue = Math.max(0, calculatedNetTotal - numAdvance);
 
+  useEffect(() => {
+    if (targetSection) {
+      const el = document.getElementById(targetSection);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+  }, [targetSection]);
+
+  const handleSaveSubmit = () => {
+    const extra = Number(extraCharges) || 0;
+    const disc = Number(discount) || 0;
+    const adv = Number(advancePaid) || 0;
+    const primarySrv = servicesList[0]?.service === "drape" ? "drape" : "prepleat";
+
+    onSave({
+      customerId: selectedCustomerId,
+      artistId: selectedArtistId ? selectedArtistId : undefined,
+      service: primarySrv,
+      sareeCount: totalSareesCount,
+      pricePerSaree: Math.round(baseTotal / (totalSareesCount || 1)),
+      totalAmount: baseTotal,
+      items: servicesList,
+      extraCharges: extra > 0 ? extra : undefined,
+      extraChargesNote: extra > 0 ? (extraChargesNote || "Travel") : undefined,
+      discount: disc > 0 ? disc : undefined,
+      advancePaid: adv >= 0 ? adv : undefined,
+      deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
+      deliveryTime,
+      notes: notes.trim() || undefined,
+      measurements: showMeasure ? measurements : undefined,
+    });
+  };
+
   return (
-    <div className="bg-card card-shadow rounded-2xl p-4 sm:p-5 mt-4 space-y-4 border border-border/40">
-      <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-          <Pencil className="size-3.5 text-primary" /> Edit Booking & Pricing Details
-        </h2>
-        <span className="text-[10px] text-muted-foreground font-medium">
-          Modify customer, artist, rates & extras
-        </span>
+    <div className="bg-card card-shadow rounded-2xl p-3.5 sm:p-4 mt-3 space-y-3.5 border border-primary/25">
+      <div className="flex items-center justify-between border-b border-border/40 pb-2">
+        <div>
+          <h2 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
+            <Pencil className="size-3.5 text-primary" /> Edit Booking Details
+          </h2>
+          <span className="text-[10px] text-muted-foreground font-medium">
+            Customer, services, rates, measurements & schedule
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-2.5 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-[10.5px] font-bold transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveSubmit}
+            className="px-3 py-1 rounded-lg saree-gradient text-white text-[10.5px] font-bold transition cursor-pointer shadow-2xs"
+          >
+            Save
+          </button>
+        </div>
       </div>
 
       {/* Customer & Artist Quick Row (Compact & Neat) */}
-      <div className="space-y-2">
+      <div id="edit-customer-section" className="space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Client Mini Card */}
           <div className="bg-secondary/40 border border-border/40 rounded-xl p-2.5 flex items-center justify-between gap-2">
@@ -2983,7 +3109,7 @@ function EditPanel({
       </div>
 
       {/* Multi-Service Items List */}
-      <div className="space-y-3">
+      <div id="edit-services-section" className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
             <Sparkles className="size-3 text-primary" /> Services & Line Items ({servicesList.length})
@@ -3195,7 +3321,7 @@ function EditPanel({
       </div>
 
       {/* Extra Charges and Discount Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div id="edit-pricing-section" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Extra / Travel Charge */}
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
@@ -3363,7 +3489,7 @@ function EditPanel({
       </div>
 
       {/* Date & Time */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+      <div id="edit-schedule-section" className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
             Delivery Date
@@ -3386,7 +3512,7 @@ function EditPanel({
       </div>
 
       {/* Measurements Section */}
-      <div className="bg-secondary/40 rounded-xl p-3.5 border border-border/20 space-y-3">
+      <div id="edit-measurements-section" className="bg-secondary/40 rounded-xl p-3.5 border border-border/20 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -3496,7 +3622,7 @@ function EditPanel({
       </div>
 
       {/* Notes */}
-      <div className="space-y-1.5">
+      <div id="edit-notes-section" className="space-y-1.5">
         <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
           Notes & Custom Request
         </p>
@@ -3514,37 +3640,14 @@ function EditPanel({
         <button
           type="button"
           onClick={onCancel}
-          className="py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5"
+          className="py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5"
         >
           <X className="size-4" /> Cancel
         </button>
         <button
           type="button"
-          onClick={() => {
-            const extra = Number(extraCharges) || 0;
-            const disc = Number(discount) || 0;
-            const adv = Number(advancePaid) || 0;
-            const primarySrv = servicesList[0]?.service === "drape" ? "drape" : "prepleat";
-
-            onSave({
-              customerId: selectedCustomerId,
-              artistId: selectedArtistId ? selectedArtistId : undefined,
-              service: primarySrv,
-              sareeCount: totalSareesCount,
-              pricePerSaree: Math.round(baseTotal / (totalSareesCount || 1)),
-              totalAmount: baseTotal,
-              items: servicesList,
-              extraCharges: extra > 0 ? extra : undefined,
-              extraChargesNote: extra > 0 ? (extraChargesNote || "Travel") : undefined,
-              discount: disc > 0 ? disc : undefined,
-              advancePaid: adv >= 0 ? adv : undefined,
-              deliveryDate: new Date(deliveryDate + "T12:00:00").toISOString(),
-              deliveryTime,
-              notes: notes.trim() || undefined,
-              measurements: showMeasure ? measurements : undefined,
-            });
-          }}
-          className="py-3 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-sm shadow-primary/20 flex items-center justify-center gap-1.5"
+          onClick={handleSaveSubmit}
+          className="py-2.5 rounded-xl saree-gradient text-primary-foreground text-xs font-bold uppercase tracking-wider active:scale-95 transition cursor-pointer shadow-sm shadow-primary/20 flex items-center justify-center gap-1.5"
         >
           <Check className="size-4" /> Save Changes
         </button>
