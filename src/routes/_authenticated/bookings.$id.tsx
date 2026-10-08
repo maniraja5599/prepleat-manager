@@ -2417,10 +2417,8 @@ function EditPaymentModal({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)}
               className="bg-transparent flex-1 pl-1 text-xl font-bold tabular-nums focus:outline-none"
               placeholder="0"
-              autoFocus
             />
           </div>
         </div>
@@ -2481,7 +2479,6 @@ function EditPaymentModal({
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)}
             placeholder="E.g. advance, final balance..."
             className="w-full text-xs font-semibold bg-secondary border border-border/30 rounded-xl px-3 py-2.5 outline-none focus:border-foreground/30 transition"
           />
@@ -2724,8 +2721,8 @@ function EditPanel({
       const el = document.getElementById(targetSection) || document.getElementById("edit-customer-section");
       if (el) {
         setTimeout(() => {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 100);
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 150);
       }
     }
   }, [targetSection]);
@@ -2756,7 +2753,7 @@ function EditPanel({
   };
 
   return (
-    <div className="bg-card card-shadow rounded-2xl p-3.5 sm:p-4 mt-3 space-y-3.5 border border-primary/25">
+    <div id="edit-booking-panel" className="bg-card card-shadow rounded-2xl p-3.5 sm:p-4 mt-3 space-y-3.5 border border-primary/25">
       <div className="flex items-center justify-between border-b border-border/40 pb-2">
         <div>
           <h2 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -2877,7 +2874,7 @@ function EditPanel({
             {/* Artist Card & Client Card in 2 columns (or stacked on mobile) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {/* Artist Card */}
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-2.5 flex items-center justify-between gap-2">
+              <div id="edit-artist-section" className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="size-7 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                     <Palette className="size-3.5" />
@@ -2977,7 +2974,6 @@ function EditPanel({
                 onChange={(e) => setCustSearch(e.target.value)}
                 placeholder="Search by name or phone..."
                 className="w-full bg-secondary pl-8 pr-3 py-1.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
-                autoFocus
               />
             </div>
 
@@ -3091,7 +3087,6 @@ function EditPanel({
                 onChange={(e) => setArtSearch(e.target.value)}
                 placeholder="Search artist..."
                 className="w-full bg-secondary pl-8 pr-3 py-1.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
-                autoFocus
               />
             </div>
 
@@ -3407,7 +3402,6 @@ function EditPanel({
               type="number"
               value={extraCharges}
               onChange={(e) => setExtraCharges(e.target.value)}
-              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)}
               placeholder="0 (Travel / Extra)"
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
             />
@@ -3442,7 +3436,6 @@ function EditPanel({
               type="number"
               value={discount}
               onChange={(e) => setDiscount(e.target.value)}
-              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)}
               placeholder="0 (Discount / Coupon)"
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-500/40 border border-border/30"
             />
@@ -3488,7 +3481,6 @@ function EditPanel({
               type="number"
               value={advancePaid}
               onChange={(e) => setAdvancePaid(e.target.value)}
-              onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)}
               placeholder="0 (Advance paid)"
               className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2 text-xs font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
             />
@@ -3650,7 +3642,6 @@ function EditPanel({
                   value={newFieldName}
                   onChange={(e) => setNewFieldName(e.target.value)}
                   className="flex-1 text-[11px] h-7 px-3 border border-border rounded-full bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  autoFocus
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
