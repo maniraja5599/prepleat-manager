@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.2.7";
+export const APP_VERSION = "2.2.8";
 
 export interface ChangelogEntry {
   version: string;
@@ -11,11 +11,35 @@ export interface ChangelogEntry {
 
 export const RECENT_UPDATES: ChangelogEntry[] = [
   {
+    version: "v2.2.8",
+    date: "08 Oct 2026",
+    isLatest: true,
+    title: "Customer & Artist Editing in Booking Details",
+    badge: "LATEST UPDATE ✨",
+    changes: [
+      {
+        emoji: "👤",
+        text: "Switch or Rename Customer in Bookings",
+        desc: "Easily switch the client assigned to a booking with instant search, or rename/edit customer details inline with zero impact on previous history.",
+      },
+      {
+        emoji: "🎨",
+        text: "Artist Assignment, Swap & Removal",
+        desc: "Assign a makeup/draping artist to any direct booking, change to another artist, or remove artist association seamlessly.",
+      },
+      {
+        emoji: "🛡️",
+        text: "Safe & Synchronized Payment Linkage",
+        desc: "All existing booking payments and ledger balances automatically synchronize to the updated customer with complete financial consistency.",
+      },
+    ],
+  },
+  {
     version: "v2.2.7",
     date: "27 Sep 2026",
-    isLatest: true,
+    isLatest: false,
     title: "Lifetime & Pro User Login Quota Flicker Fix",
-    badge: "LATEST UPDATE ⚡",
+    badge: "PREVIOUS UPDATE ⚡",
     changes: [
       {
         emoji: "⚡",

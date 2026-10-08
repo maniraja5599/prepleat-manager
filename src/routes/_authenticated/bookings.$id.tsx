@@ -47,8 +47,11 @@ import {
   Tag,
   FileText,
   ChevronRight,
+  User,
+  Palette,
+  Search,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { cn, cleanPhoneForDialing, cleanPhoneForWhatsApp } from "@/lib/utils";
 import { generateBillPDF } from "@/lib/pdf-bill";
@@ -2473,6 +2476,144 @@ function EditPanel({
     toast.success(`Added custom field: ${name}`);
   };
 
+  // Customer & Artist Management
+  const allCustomers = useStore((s) => s.customers);
+  const addCustomer = useStore((s) => s.addCustomer);
+  const updateCustomer = useStore((s) => s.updateCustomer);
+
+  const clientCustomers = useMemo(
+    () => allCustomers.filter((c) => (c.kind ?? "client") === "client"),
+    [allCustomers],
+  );
+  const artistCustomers = useMemo(
+    () => allCustomers.filter((c) => c.kind === "artist"),
+    [allCustomers],
+  );
+
+  // Customer state
+  const [selectedCustomerId, setSelectedCustomerId] = useState(booking.customerId);
+  const selectedCustomer = allCustomers.find((c) => c.id === selectedCustomerId);
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [editCustName, setEditCustName] = useState(selectedCustomer?.name || "");
+  const [editCustPhone, setEditCustPhone] = useState(selectedCustomer?.phone || "");
+  const [showCustPicker, setShowCustPicker] = useState(false);
+  const [custSearch, setCustSearch] = useState("");
+  const [showNewCustForm, setShowNewCustForm] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      setEditCustName(selectedCustomer.name || "");
+      setEditCustPhone(selectedCustomer.phone || "");
+    }
+  }, [selectedCustomerId, allCustomers]);
+
+  // Artist state
+  const [selectedArtistId, setSelectedArtistId] = useState(booking.artistId || "");
+  const selectedArtist = selectedArtistId ? allCustomers.find((c) => c.id === selectedArtistId) : undefined;
+  const [isEditingArtist, setIsEditingArtist] = useState(false);
+  const [editArtName, setEditArtName] = useState(selectedArtist?.name || "");
+  const [editArtPhone, setEditArtPhone] = useState(selectedArtist?.phone || "");
+  const [showArtPicker, setShowArtPicker] = useState(false);
+  const [artSearch, setArtSearch] = useState("");
+  const [showNewArtForm, setShowNewArtForm] = useState(false);
+  const [newArtName, setNewArtName] = useState("");
+  const [newArtPhone, setNewArtPhone] = useState("");
+
+  useEffect(() => {
+    if (selectedArtist) {
+      setEditArtName(selectedArtist.name || "");
+      setEditArtPhone(selectedArtist.phone || "");
+    } else {
+      setEditArtName("");
+      setEditArtPhone("");
+    }
+  }, [selectedArtistId, allCustomers]);
+
+  const filteredClients = useMemo(() => {
+    const q = custSearch.toLowerCase().trim();
+    if (!q) return clientCustomers.slice(0, 20);
+    return clientCustomers
+      .filter((c) => c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q)))
+      .slice(0, 20);
+  }, [clientCustomers, custSearch]);
+
+  const filteredArtists = useMemo(() => {
+    const q = artSearch.toLowerCase().trim();
+    if (!q) return artistCustomers.slice(0, 20);
+    return artistCustomers
+      .filter((a) => a.name.toLowerCase().includes(q) || (a.phone && a.phone.includes(q)))
+      .slice(0, 20);
+  }, [artistCustomers, artSearch]);
+
+  const handleCreateCustomer = () => {
+    const name = newCustName.trim();
+    if (!name) {
+      toast.error("Please enter a customer name");
+      return;
+    }
+    const created = addCustomer({
+      kind: "client",
+      name,
+      phone: newCustPhone.trim() || "",
+    });
+    setSelectedCustomerId(created.id);
+    setNewCustName("");
+    setNewCustPhone("");
+    setShowNewCustForm(false);
+    setShowCustPicker(false);
+    toast.success(`Created & selected client: ${created.name}`);
+  };
+
+  const handleCreateArtist = () => {
+    const name = newArtName.trim();
+    if (!name) {
+      toast.error("Please enter an artist name");
+      return;
+    }
+    const created = addCustomer({
+      kind: "artist",
+      name,
+      phone: newArtPhone.trim() || "",
+    });
+    setSelectedArtistId(created.id);
+    setNewArtName("");
+    setNewArtPhone("");
+    setShowNewArtForm(false);
+    setShowArtPicker(false);
+    toast.success(`Created & selected artist: ${created.name}`);
+  };
+
+  const handleDoneEditCustomer = () => {
+    const trimmed = editCustName.trim();
+    if (!trimmed) {
+      toast.error("Customer name cannot be empty");
+      return;
+    }
+    updateCustomer(selectedCustomerId, {
+      name: trimmed,
+      phone: editCustPhone.trim(),
+    });
+    setIsEditingCustomer(false);
+    toast.success("Customer details updated");
+  };
+
+  const handleDoneEditArtist = () => {
+    if (!selectedArtistId) return;
+    const trimmed = editArtName.trim();
+    if (!trimmed) {
+      toast.error("Artist name cannot be empty");
+      return;
+    }
+    updateCustomer(selectedArtistId, {
+      name: trimmed,
+      phone: editArtPhone.trim(),
+    });
+    setIsEditingArtist(false);
+    toast.success("Artist details updated");
+  };
+
   const addServiceRow = () => {
     const nextService = servicesList.some((s) => s.service === "prepleat") ? "drape" : "prepleat";
     const nextPrice = nextService === "prepleat" ? settings.prepleatPrice : settings.drapePrice;
@@ -2531,8 +2672,451 @@ function EditPanel({
           <Pencil className="size-3.5 text-primary" /> Edit Booking & Pricing Details
         </h2>
         <span className="text-[10px] text-muted-foreground font-medium">
-          Modify count, rates, extras & dues
+          Modify customer, artist, rates & extras
         </span>
+      </div>
+
+      {/* Customer & Artist Section */}
+      <div className="space-y-2.5">
+        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+          <User className="size-3 text-primary" /> Customer & Artist Information
+        </p>
+
+        {/* 1. Customer Card */}
+        <div className="bg-secondary/40 border border-border/40 rounded-2xl p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <User className="size-3 text-primary" /> Client / Customer
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingCustomer(!isEditingCustomer);
+                  setShowCustPicker(false);
+                }}
+                className={cn(
+                  "px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer",
+                  isEditingCustomer
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-secondary hover:bg-secondary/80 text-foreground border border-border/40"
+                )}
+                title="Rename or edit customer phone"
+              >
+                <Pencil className="size-2.5" />
+                {isEditingCustomer ? "Editing Info" : "Edit Name"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustPicker(!showCustPicker);
+                  setIsEditingCustomer(false);
+                }}
+                className={cn(
+                  "px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer",
+                  showCustPicker
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-secondary hover:bg-secondary/80 text-foreground border border-border/40"
+                )}
+                title="Switch customer"
+              >
+                <RefreshCw className="size-2.5" />
+                Switch
+              </button>
+            </div>
+          </div>
+
+          {/* Current Customer Display (when not inline editing) */}
+          {!isEditingCustomer ? (
+            <div className="flex items-center gap-2.5 bg-card/60 p-2.5 rounded-xl border border-border/30">
+              <div className="size-8 rounded-full saree-gradient text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                {(selectedCustomer?.name || "C").charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-foreground truncate">
+                  {selectedCustomer?.name || "Unknown Customer"}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-mono">
+                  {selectedCustomer?.phone || "No phone number registered"}
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Inline Edit Customer Name & Phone */
+            <div className="bg-card/90 p-3 rounded-xl border border-primary/30 space-y-2 animate-in fade-in">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  value={editCustName}
+                  onChange={(e) => setEditCustName(e.target.value)}
+                  placeholder="Enter customer name..."
+                  className="w-full bg-secondary border border-border/40 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={editCustPhone}
+                  onChange={(e) => setEditCustPhone(e.target.value)}
+                  placeholder="Enter phone number..."
+                  className="w-full bg-secondary border border-border/40 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={handleDoneEditCustomer}
+                  className="px-3 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Customer Switch / Search Drawer */}
+          {showCustPicker && (
+            <div className="bg-card p-3 rounded-xl border border-border/40 space-y-2 animate-in fade-in">
+              <div className="relative">
+                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={custSearch}
+                  onChange={(e) => setCustSearch(e.target.value)}
+                  placeholder="Search existing customer by name or phone..."
+                  className="w-full bg-secondary pl-8 pr-3 py-1.5 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
+                  autoFocus
+                />
+              </div>
+
+              {/* Matching Customers */}
+              <div className="max-h-40 overflow-y-auto space-y-1 divide-y divide-border/20">
+                {filteredClients.map((c) => {
+                  const isSelected = c.id === selectedCustomerId;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCustomerId(c.id);
+                        setShowCustPicker(false);
+                        setIsEditingCustomer(false);
+                      }}
+                      className={cn(
+                        "p-2 rounded-lg flex items-center justify-between cursor-pointer transition text-xs",
+                        isSelected
+                          ? "bg-primary/10 text-primary font-bold"
+                          : "hover:bg-secondary/60 text-foreground"
+                      )}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="truncate font-medium">{c.name}</p>
+                        {c.phone && (
+                          <p className="text-[10px] text-muted-foreground font-mono">{c.phone}</p>
+                        )}
+                      </div>
+                      {isSelected ? (
+                        <Check className="size-3.5 text-primary shrink-0" />
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground uppercase font-semibold">Select</span>
+                      )}
+                    </div>
+                  );
+                })}
+                {filteredClients.length === 0 && (
+                  <p className="text-center py-2 text-[11px] text-muted-foreground">
+                    No customers found matching &quot;{custSearch}&quot;
+                  </p>
+                )}
+              </div>
+
+              {/* Create New Customer Option */}
+              {!showNewCustForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowNewCustForm(true)}
+                  className="w-full py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-[10px] font-bold text-primary flex items-center justify-center gap-1 cursor-pointer border border-dashed border-border/60"
+                >
+                  <Plus className="size-3" /> Add New Customer
+                </button>
+              ) : (
+                <div className="p-2.5 rounded-lg bg-secondary/60 border border-border/40 space-y-2 mt-1">
+                  <p className="text-[10px] font-bold uppercase text-foreground">Create New Customer</p>
+                  <input
+                    type="text"
+                    value={newCustName}
+                    onChange={(e) => setNewCustName(e.target.value)}
+                    placeholder="Customer Name"
+                    className="w-full bg-card rounded-md px-2 py-1 text-xs border border-border/30 focus:outline-none"
+                  />
+                  <input
+                    type="tel"
+                    value={newCustPhone}
+                    onChange={(e) => setNewCustPhone(e.target.value)}
+                    placeholder="Phone number"
+                    className="w-full bg-card rounded-md px-2 py-1 text-xs border border-border/30 focus:outline-none"
+                  />
+                  <div className="flex items-center justify-end gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCustForm(false)}
+                      className="px-2.5 py-1 rounded bg-secondary text-[10px] font-semibold text-muted-foreground cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCreateCustomer}
+                      className="px-2.5 py-1 rounded saree-gradient text-white text-[10px] font-bold cursor-pointer"
+                    >
+                      Create & Select
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 2. Artist Card */}
+        <div className="bg-secondary/40 border border-border/40 rounded-2xl p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <Palette className="size-3 text-primary" /> Makeup / Draping Artist
+            </span>
+            <div className="flex items-center gap-1.5">
+              {selectedArtistId ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingArtist(!isEditingArtist);
+                      setShowArtPicker(false);
+                    }}
+                    className={cn(
+                      "px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer",
+                      isEditingArtist
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-secondary hover:bg-secondary/80 text-foreground border border-border/40"
+                    )}
+                    title="Rename artist"
+                  >
+                    <Pencil className="size-2.5" />
+                    {isEditingArtist ? "Editing" : "Edit Name"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowArtPicker(!showArtPicker);
+                      setIsEditingArtist(false);
+                    }}
+                    className={cn(
+                      "px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer",
+                      showArtPicker
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-secondary hover:bg-secondary/80 text-foreground border border-border/40"
+                    )}
+                    title="Change artist"
+                  >
+                    <RefreshCw className="size-2.5" />
+                    Change
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedArtistId("");
+                      setShowArtPicker(false);
+                      setIsEditingArtist(false);
+                    }}
+                    className="px-2 py-1 rounded-lg text-[10px] font-bold bg-destructive/10 hover:bg-destructive/20 text-destructive transition flex items-center gap-1 cursor-pointer"
+                    title="Remove artist"
+                  >
+                    <X className="size-2.5" />
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowArtPicker(!showArtPicker)}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold bg-primary/10 hover:bg-primary/20 text-primary transition flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="size-2.5" />
+                  Assign Artist
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Current Artist Display */}
+          {selectedArtistId ? (
+            !isEditingArtist ? (
+              <div className="flex items-center gap-2.5 bg-card/60 p-2.5 rounded-xl border border-border/30">
+                <div className="size-8 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0 shadow-xs border border-purple-500/30">
+                  <Palette className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-foreground truncate">
+                    {selectedArtist?.name || "Artist"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-mono">
+                    {selectedArtist?.phone || "No phone number registered"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Inline Edit Artist Name & Phone */
+              <div className="bg-card/90 p-3 rounded-xl border border-primary/30 space-y-2 animate-in fade-in">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase">
+                    Artist Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editArtName}
+                    onChange={(e) => setEditArtName(e.target.value)}
+                    placeholder="Enter artist name..."
+                    className="w-full bg-secondary border border-border/40 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={editArtPhone}
+                    onChange={(e) => setEditArtPhone(e.target.value)}
+                    placeholder="Enter phone number..."
+                    className="w-full bg-secondary border border-border/40 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleDoneEditArtist}
+                    className="px-3 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="p-2.5 rounded-xl bg-card/40 border border-border/20 text-center">
+              <p className="text-[11px] text-muted-foreground">
+                No artist assigned · Direct client booking
+              </p>
+            </div>
+          )}
+
+          {/* Artist Switch / Search Drawer */}
+          {showArtPicker && (
+            <div className="bg-card p-3 rounded-xl border border-border/40 space-y-2 animate-in fade-in">
+              <div className="relative">
+                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={artSearch}
+                  onChange={(e) => setArtSearch(e.target.value)}
+                  placeholder="Search existing artist..."
+                  className="w-full bg-secondary pl-8 pr-3 py-1.5 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 border border-border/30"
+                  autoFocus
+                />
+              </div>
+
+              {/* Matching Artists */}
+              <div className="max-h-40 overflow-y-auto space-y-1 divide-y divide-border/20">
+                {filteredArtists.map((a) => {
+                  const isSelected = a.id === selectedArtistId;
+                  return (
+                    <div
+                      key={a.id}
+                      onClick={() => {
+                        setSelectedArtistId(a.id);
+                        setShowArtPicker(false);
+                        setIsEditingArtist(false);
+                      }}
+                      className={cn(
+                        "p-2 rounded-lg flex items-center justify-between cursor-pointer transition text-xs",
+                        isSelected
+                          ? "bg-primary/10 text-primary font-bold"
+                          : "hover:bg-secondary/60 text-foreground"
+                      )}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="truncate font-medium">{a.name}</p>
+                        {a.phone && (
+                          <p className="text-[10px] text-muted-foreground font-mono">{a.phone}</p>
+                        )}
+                      </div>
+                      {isSelected ? (
+                        <Check className="size-3.5 text-primary shrink-0" />
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground uppercase font-semibold">Select</span>
+                      )}
+                    </div>
+                  );
+                })}
+                {filteredArtists.length === 0 && (
+                  <p className="text-center py-2 text-[11px] text-muted-foreground">
+                    No artists found matching &quot;{artSearch}&quot;
+                  </p>
+                )}
+              </div>
+
+              {/* Create New Artist Option */}
+              {!showNewArtForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowNewArtForm(true)}
+                  className="w-full py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-[10px] font-bold text-primary flex items-center justify-center gap-1 cursor-pointer border border-dashed border-border/60"
+                >
+                  <Plus className="size-3" /> Add New Artist
+                </button>
+              ) : (
+                <div className="p-2.5 rounded-lg bg-secondary/60 border border-border/40 space-y-2 mt-1">
+                  <p className="text-[10px] font-bold uppercase text-foreground">Create New Artist</p>
+                  <input
+                    type="text"
+                    value={newArtName}
+                    onChange={(e) => setNewArtName(e.target.value)}
+                    placeholder="Artist Name"
+                    className="w-full bg-card rounded-md px-2 py-1 text-xs border border-border/30 focus:outline-none"
+                  />
+                  <input
+                    type="tel"
+                    value={newArtPhone}
+                    onChange={(e) => setNewArtPhone(e.target.value)}
+                    placeholder="Phone number"
+                    className="w-full bg-card rounded-md px-2 py-1 text-xs border border-border/30 focus:outline-none"
+                  />
+                  <div className="flex items-center justify-end gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowNewArtForm(false)}
+                      className="px-2.5 py-1 rounded bg-secondary text-[10px] font-semibold text-muted-foreground cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCreateArtist}
+                      className="px-2.5 py-1 rounded saree-gradient text-white text-[10px] font-bold cursor-pointer"
+                    >
+                      Create & Select
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Multi-Service Items List */}
@@ -3078,7 +3662,36 @@ function EditPanel({
             const disc = Number(discount) || 0;
             const adv = Number(advancePaid) || 0;
             const primarySrv = servicesList[0]?.service === "drape" ? "drape" : "prepleat";
+
+            // If customer name/phone was edited inline, save customer record
+            if (selectedCustomerId && editCustName.trim()) {
+              if (
+                editCustName.trim() !== (selectedCustomer?.name || "") ||
+                editCustPhone.trim() !== (selectedCustomer?.phone || "")
+              ) {
+                updateCustomer(selectedCustomerId, {
+                  name: editCustName.trim(),
+                  phone: editCustPhone.trim(),
+                });
+              }
+            }
+
+            // If artist name/phone was edited inline, save artist record
+            if (selectedArtistId && editArtName.trim()) {
+              if (
+                editArtName.trim() !== (selectedArtist?.name || "") ||
+                editArtPhone.trim() !== (selectedArtist?.phone || "")
+              ) {
+                updateCustomer(selectedArtistId, {
+                  name: editArtName.trim(),
+                  phone: editArtPhone.trim(),
+                });
+              }
+            }
+
             onSave({
+              customerId: selectedCustomerId,
+              artistId: selectedArtistId ? selectedArtistId : undefined,
               service: primarySrv,
               sareeCount: totalSareesCount,
               pricePerSaree: Math.round(baseTotal / (totalSareesCount || 1)),

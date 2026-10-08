@@ -311,6 +311,8 @@ const describeDiff = (prev: Booking, next: Booking): string => {
   if ((prev.notes || "") !== (next.notes || "")) parts.push("notes changed");
   if (prev.advancePaid !== next.advancePaid)
     parts.push(`paid ${prev.advancePaid}→${next.advancePaid}`);
+  if (prev.customerId !== next.customerId) parts.push("customer changed");
+  if (prev.artistId !== next.artistId) parts.push("artist changed");
   return parts.length ? parts.join(", ") : "minor edit";
 };
 
@@ -491,6 +493,13 @@ export const useStore = create<State>()(
           const next = { ...prev, ...b, updatedAt: now };
 
           let payments = s.payments;
+          // Synchronize payment records if customerId was changed
+          if (b.customerId && b.customerId !== prev.customerId) {
+            payments = payments.map((p) =>
+              p.bookingId === id ? { ...p, customerId: b.customerId!, updatedAt: now } : p,
+            );
+          }
+
           // Synchronize payment records if advancePaid was explicitly changed
           if (b.advancePaid !== undefined && b.advancePaid !== prev.advancePaid) {
             const newAdv = Math.max(0, Number(b.advancePaid) || 0);
