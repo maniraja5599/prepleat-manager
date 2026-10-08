@@ -649,7 +649,16 @@ function BookingDetail() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-display font-bold mt-3 truncate">{customer?.name}</h1>
+        <div className="flex items-center justify-between gap-2 mt-3">
+          <h1 className="text-2xl font-display font-bold truncate">{customer?.name}</h1>
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold flex items-center gap-1 active:scale-95 transition shrink-0 cursor-pointer shadow-2xs"
+          >
+            <Pencil className="size-3" /> {editing ? "Close" : "Edit"}
+          </button>
+        </div>
 
         <div className="mt-1 flex items-center gap-2">
           {customer?.phone && (
@@ -701,11 +710,30 @@ function BookingDetail() {
           </div>
         )}
 
-        {artist && (
-          <p className="text-[10px] mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 font-medium">
-            <span className="opacity-80">Artist Reference:</span>{" "}
-            <span className="font-semibold">{artist.name}</span>
-          </p>
+        {artist ? (
+          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 font-medium">
+              <span className="opacity-80">Artist:</span>{" "}
+              <span className="font-semibold">{artist.name}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-[10px] text-white/90 hover:text-white underline cursor-pointer"
+            >
+              Change Artist
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-[10px] inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-white/90 font-medium transition cursor-pointer"
+            >
+              <Palette className="size-2.5" /> + Assign Artist
+            </button>
+          </div>
         )}
 
         <div className="mt-4.5 grid grid-cols-2 gap-4 text-xs pt-3.5 border-t border-white/10">
@@ -742,6 +770,18 @@ function BookingDetail() {
         </div>
       </div>
 
+      {editing && (
+        <EditPanel
+          booking={booking}
+          onCancel={() => setEditing(false)}
+          onSave={(patch) => {
+            updateBooking(booking.id, patch);
+            toast.success("Booking details & pricing updated! ✨");
+            setEditing(false);
+          }}
+        />
+      )}
+
       {/* Itemized Services Breakdown Card (if multiple services or item note) */}
       {booking.items && booking.items.length > 0 && (
         <div className="bg-card card-shadow rounded-2xl p-4 mt-3 border border-border/40 space-y-2.5">
@@ -774,18 +814,6 @@ function BookingDetail() {
             ))}
           </div>
         </div>
-      )}
-
-      {editing && (
-        <EditPanel
-          booking={booking}
-          onCancel={() => setEditing(false)}
-          onSave={(patch) => {
-            updateBooking(booking.id, patch);
-            toast.success("Booking details & pricing updated! ✨");
-            setEditing(false);
-          }}
-        />
       )}
 
       {booking.status !== "cancelled" && (

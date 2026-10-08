@@ -3169,7 +3169,7 @@ function ActivityBlock() {
 
 function AboutBlock() {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [expandedVersion, setExpandedVersion] = useState<string | null>("v1.2.0");
+  const [expandedVersion, setExpandedVersion] = useState<string | null>(`v${APP_VERSION}`);
 
   const handleCheckUpdate = () => {
     setCheckingUpdate(true);
@@ -3185,7 +3185,7 @@ function AboutBlock() {
 
     setTimeout(() => {
       setCheckingUpdate(false);
-      toast.success("App is running the latest production build! (v1.2.0)", {
+      toast.success(`App is running the latest production build! (v${APP_VERSION})`, {
         duration: 2500,
       });
     }, 1200);
