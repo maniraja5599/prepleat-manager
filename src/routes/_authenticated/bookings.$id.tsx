@@ -723,16 +723,16 @@ function BookingDetail() {
                   <span className="font-semibold truncate max-w-[100px]">{artist.name}</span>
                   <button
                     type="button"
-                    onClick={() => openEditSection("edit-customer-section")}
+                    onClick={() => openEditSection("edit-artist-section")}
                     className="ml-0.5 underline opacity-90 hover:opacity-100 cursor-pointer text-[10px]"
                   >
-                    Edit
+                    Change
                   </button>
                 </div>
               ) : (
                 <button
                   type="button"
-                  onClick={() => openEditSection("edit-customer-section")}
+                  onClick={() => openEditSection("edit-artist-section")}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-[10.5px] font-medium transition cursor-pointer"
                 >
                   <Palette className="size-2.5" /> + Artist
@@ -2714,7 +2714,14 @@ function EditPanel({
 
   useEffect(() => {
     if (targetSection) {
-      const el = document.getElementById(targetSection);
+      if (targetSection === "edit-artist-section") {
+        setShowArtPicker(true);
+        setShowCustPicker(false);
+      } else if (targetSection === "edit-customer-section") {
+        setShowCustPicker(true);
+        setShowArtPicker(false);
+      }
+      const el = document.getElementById(targetSection) || document.getElementById("edit-customer-section");
       if (el) {
         setTimeout(() => {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2777,107 +2784,174 @@ function EditPanel({
         </div>
       </div>
 
-      {/* Customer & Artist Quick Row (Compact & Neat) */}
-      <div id="edit-customer-section" className="space-y-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {/* Client Mini Card */}
-          <div className="bg-secondary/40 border border-border/40 rounded-xl p-2.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="size-7 rounded-full saree-gradient text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
-                {(selectedCustomer?.name || "C").charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9.5px] uppercase font-bold text-muted-foreground tracking-wider leading-none">
-                  Client
-                </p>
-                <p className="text-xs font-bold text-foreground truncate mt-0.5">
-                  {selectedCustomer?.name || "Select Client"}
-                </p>
-                {selectedCustomer?.phone && (
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">
-                    {selectedCustomer.phone}
+      {/* Customer & Artist Management Section */}
+      <div id="edit-customer-section" className="space-y-2.5">
+        {/* Scenario 1: Booking does NOT have an Artist (Direct Client Booking) */}
+        {!selectedArtistId ? (
+          <div className="space-y-2">
+            {/* Direct Client Card */}
+            <div className="bg-secondary/40 border border-border/40 rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-full saree-gradient text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                  {(selectedCustomer?.name || "C").charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9.5px] uppercase font-bold text-muted-foreground tracking-wider leading-none">
+                      Direct Client
+                    </span>
+                    <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      Direct
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-foreground truncate mt-0.5">
+                    {selectedCustomer?.name || "Select Client"}
                   </p>
-                )}
+                  {selectedCustomer?.phone && (
+                    <p className="text-[10px] text-muted-foreground font-mono truncate">
+                      {selectedCustomer.phone}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowCustPicker(!showCustPicker);
-                setShowArtPicker(false);
-              }}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer shrink-0 border",
-                showCustPicker
-                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                  : "bg-card hover:bg-card/80 text-foreground border-border/40"
-              )}
-            >
-              <RefreshCw className="size-2.5" />
-              Change
-            </button>
-          </div>
 
-          {/* Artist Mini Card */}
-          <div className="bg-secondary/40 border border-border/40 rounded-xl p-2.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="size-7 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-[11px] shrink-0 border border-purple-500/30 shadow-2xs">
-                <Palette className="size-3.5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9.5px] uppercase font-bold text-muted-foreground tracking-wider leading-none">
-                  Artist
-                </p>
-                <p className="text-xs font-bold text-foreground truncate mt-0.5">
-                  {selectedArtist?.name || "Direct Booking"}
-                </p>
-                {selectedArtist?.phone && (
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">
-                    {selectedArtist.phone}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {selectedArtistId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedArtistId("");
-                    setShowArtPicker(false);
-                  }}
-                  className="size-6 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition cursor-pointer"
-                  title="Remove Artist"
-                >
-                  <X className="size-3" />
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => {
-                  setShowArtPicker(!showArtPicker);
-                  setShowCustPicker(false);
+                  setShowCustPicker(!showCustPicker);
+                  setShowArtPicker(false);
                 }}
                 className={cn(
-                  "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer border",
-                  showArtPicker
-                    ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                  "px-3 py-1.5 rounded-lg text-[10.5px] font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer shrink-0 border",
+                  showCustPicker
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
                     : "bg-card hover:bg-card/80 text-foreground border-border/40"
                 )}
               >
-                {selectedArtistId ? (
-                  <>
-                    <RefreshCw className="size-2.5" /> Change
-                  </>
-                ) : (
-                  <>
-                    <Plus className="size-2.5" /> Artist
-                  </>
-                )}
+                <RefreshCw className="size-2.5" />
+                Change Client
               </button>
             </div>
+
+            {/* In case needed: Option to Add Artist */}
+            {!showArtPicker ? (
+              <div className="flex items-center justify-between px-1 pt-0.5">
+                <span className="text-[10.5px] text-muted-foreground">
+                  Booked via Makeup / Bridal Artist?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowArtPicker(true);
+                    setShowCustPicker(false);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[10.5px] font-bold transition cursor-pointer active:scale-95"
+                >
+                  <Palette className="size-3" /> + Add Artist
+                </button>
+              </div>
+            ) : null}
           </div>
-        </div>
+        ) : (
+          /* Scenario 2: Booking HAS an Artist (Artist Booking) */
+          <div className="space-y-2">
+            {/* Header info badge & Switch to Direct Client action */}
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400 tracking-wider flex items-center gap-1">
+                <Palette className="size-3" /> Booked via Artist
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedArtistId("");
+                  setShowArtPicker(false);
+                  toast.success("Switched to Direct Client Booking 👤");
+                }}
+                className="text-[10.5px] font-semibold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                title="Remove Artist and convert this booking to Direct Client"
+              >
+                <X className="size-3 text-rose-500" /> Switch to Direct Client
+              </button>
+            </div>
+
+            {/* Artist Card & Client Card in 2 columns (or stacked on mobile) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Artist Card */}
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="size-7 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                    <Palette className="size-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase font-bold text-purple-700 dark:text-purple-300 tracking-wider leading-none">
+                      Artist
+                    </p>
+                    <p className="text-xs font-bold text-foreground truncate mt-0.5">
+                      {selectedArtist?.name || "Selected Artist"}
+                    </p>
+                    {selectedArtist?.phone && (
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">
+                        {selectedArtist.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowArtPicker(!showArtPicker);
+                    setShowCustPicker(false);
+                  }}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer border shrink-0",
+                    showArtPicker
+                      ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                      : "bg-card hover:bg-card/80 text-foreground border-border/40"
+                  )}
+                >
+                  <RefreshCw className="size-2.5" /> Change Artist
+                </button>
+              </div>
+
+              {/* Client Card */}
+              <div className="bg-secondary/40 border border-border/40 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="size-7 rounded-full saree-gradient text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
+                    {(selectedCustomer?.name || "C").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider leading-none">
+                      Client / Bride
+                    </p>
+                    <p className="text-xs font-bold text-foreground truncate mt-0.5">
+                      {selectedCustomer?.name || "Select Client"}
+                    </p>
+                    {selectedCustomer?.phone && (
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">
+                        {selectedCustomer.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustPicker(!showCustPicker);
+                    setShowArtPicker(false);
+                  }}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer border shrink-0",
+                    showCustPicker
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-card hover:bg-card/80 text-foreground border-border/40"
+                  )}
+                >
+                  <RefreshCw className="size-2.5" /> Change Client
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Customer Switch & New Client Drawer */}
         {showCustPicker && (
