@@ -429,7 +429,7 @@
     scrollbar-width: none;
   }
   .safe-header-top {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 0.35rem);
+    padding-top: max(env(safe-area-inset-top, 0px), 0.25rem);
     background-color: var(--background) !important;
     background: var(--background) !important;
     -webkit-backdrop-filter: none !important;
@@ -438,24 +438,7 @@
     opacity: 1 !important;
   }
   .safe-header-spacer {
-    height: calc(env(safe-area-inset-top, 0px) + 3.15rem);
-  }
-
-  /* Specific override for iOS PWA standalone mode (Home Screen App) */
-  @supports (-webkit-touch-callout: none) {
-    @media (display-mode: standalone) {
-      .safe-header-top {
-        padding-top: max(calc(env(safe-area-inset-top, 0px) + 0.45rem), 3rem);
-        background-color: var(--background) !important;
-        background: var(--background) !important;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
-        isolation: isolate !important;
-      }
-      .safe-header-spacer {
-        height: max(calc(env(safe-area-inset-top, 0px) + 3.35rem), 5.75rem);
-      }
-    }
+    height: calc(max(env(safe-area-inset-top, 0px), 0.25rem) + 2.75rem);
   }
   .safe-pb {
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
