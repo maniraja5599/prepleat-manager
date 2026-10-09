@@ -507,17 +507,6 @@
       font-size: 16px !important;
     }
   }
-
-  /* Keep focused inputs visible above the mobile keyboard */
-  input,
-  textarea,
-  select {
-    scroll-margin-block: 8rem;
-  }
-  button,
-  a[role="button"] {
-    touch-action: manipulation;
-  }
 }
 
 @keyframes shake {
