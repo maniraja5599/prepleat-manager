@@ -429,16 +429,10 @@
     scrollbar-width: none;
   }
   .safe-header-top {
-    padding-top: max(env(safe-area-inset-top, 0px), 0.25rem);
-    background-color: var(--background) !important;
-    background: var(--background) !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    isolation: isolate !important;
-    opacity: 1 !important;
-  }
-  .safe-header-spacer {
-    height: calc(max(env(safe-area-inset-top, 0px), 0.25rem) + 2.75rem);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.35rem);
+    background-color: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .safe-pb {
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
