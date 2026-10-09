@@ -676,16 +676,22 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
 
   return (
     <div className="min-h-[100dvh] bg-background pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]">
-      <div className={wide ? "w-full max-w-6xl mx-auto px-2 sm:px-6 lg:px-8" : "w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-1 sm:px-6 lg:px-8"}>
-        {/* Uniform brand strip — strictly single-row without wrapping */}
+      {/* 1. Full-width Fixed Top Header - 100% Solid & Opaque to completely override iOS 18 glass effect */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 w-full bg-background border-b border-border/30 safe-header-top shadow-2xs"
+        style={{
+          backgroundColor: "var(--background)",
+          WebkitBackdropFilter: "none",
+          backdropFilter: "none",
+          isolation: "isolate",
+        }}
+      >
         <div
-          className="sticky top-0 z-50 bg-background border-b border-border/30 safe-header-top px-2.5 sm:px-4 pb-1.5 flex items-center justify-between gap-2 flex-nowrap"
-          style={{
-            backgroundColor: "var(--background)",
-            WebkitBackdropFilter: "none",
-            backdropFilter: "none",
-            transform: "translateZ(0)",
-          }}
+          className={
+            wide
+              ? "w-full max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 pb-1.5 flex items-center justify-between gap-2 flex-nowrap"
+              : "w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 pb-1.5 flex items-center justify-between gap-2 flex-nowrap"
+          }
         >
           <div className="flex items-center gap-2 min-w-0 shrink">
             <Link
@@ -701,8 +707,6 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 className="size-8.5 rounded-full object-cover ring-1 ring-primary/25 group-hover:ring-primary/60 shrink-0 select-none"
                 style={{
                   imageRendering: "-webkit-optimize-contrast",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
                 }}
               />
               <div
@@ -710,12 +714,19 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
                 style={{
                   WebkitFontSmoothing: "antialiased",
                   MozOsxFontSmoothing: "grayscale",
-                  textRendering: "geometricPrecision",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
+                  textRendering: "optimizeLegibility",
                 }}
               >
-                <p className="text-[13.5px] font-sans font-bold tracking-tight text-foreground truncate group-hover:text-primary leading-tight">
+                <p
+                  className="text-[13.5px] font-sans font-bold tracking-tight text-foreground truncate group-hover:text-primary leading-tight"
+                  style={{
+                    WebkitFontSmoothing: "antialiased",
+                    MozOsxFontSmoothing: "grayscale",
+                    textRendering: "optimizeLegibility",
+                    filter: "none",
+                    WebkitFilter: "none",
+                  }}
+                >
                   {settings.businessName}
                 </p>
                 <div
@@ -883,7 +894,13 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
             }
           `}</style>
         </div>
+      </header>
 
+      {/* 2. Top Header Height Spacer so page content starts cleanly below the fixed header */}
+      <div className="w-full safe-header-spacer pointer-events-none select-none" aria-hidden="true" />
+
+      {/* 3. Page Content Container */}
+      <div className={wide ? "w-full max-w-6xl mx-auto px-2 sm:px-6 lg:px-8" : "w-full max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-1 sm:px-6 lg:px-8"}>
         {showNotifBanner && (
           <div className="mx-5 mb-2 p-2.5 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-between gap-2 animate-in fade-in duration-300">
             <div className="flex items-center gap-2 min-w-0 flex-1">

@@ -55,6 +55,16 @@ export function ThemeApplier() {
       link.href = logoDataUrl;
     }
 
+    // 3. Dynamic Theme Color Meta Tag for iOS & Android Status Bar
+    let themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (!themeMeta) {
+      themeMeta = document.createElement("meta");
+      themeMeta.setAttribute("name", "theme-color");
+      document.getElementsByTagName("head")[0]?.appendChild(themeMeta);
+    }
+    const isDark = theme === "midnight" || theme === "charcoal";
+    themeMeta.setAttribute("content", isDark ? "#1a1614" : "#faf8f5");
+
     // Apply font size scale
     root.setAttribute("data-font-size", fontSize);
 
