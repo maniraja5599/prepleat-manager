@@ -8,8 +8,11 @@ export function SubscriptionWelcomeModal() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+  // Never open for super admin / lifetime users
+  const isSuper = user?.email && (user.email.toLowerCase().trim() === "manirajankg@gmail.com" || user.email.toLowerCase().trim() === "developer@prepleat.app");
+
   useEffect(() => {
-    if (open) {
+    if (open && !isSuper) {
       const prevOverflow = document.body.style.overflow;
       const prevTouchAction = document.body.style.touchAction;
       document.body.style.overflow = "hidden";
@@ -18,16 +21,23 @@ export function SubscriptionWelcomeModal() {
         document.body.style.overflow = prevOverflow;
         document.body.style.touchAction = prevTouchAction;
       };
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
     }
-  }, [open]);
+  }, [open, isSuper]);
 
   useEffect(() => {
     const unsub = onAppAuthStateChanged((u) => {
       setUser(u);
       if (u && !u.isAnonymous) {
+        const emailLower = (u.email || "").toLowerCase().trim();
+        if (emailLower === "manirajankg@gmail.com" || emailLower === "developer@prepleat.app") {
+          setOpen(false);
+          return;
+        }
         const seen = localStorage.getItem("has_seen_trial_welcome_v2");
         if (!seen) {
-          // Check if trial or active
           setOpen(true);
         }
       }
@@ -44,7 +54,7 @@ export function SubscriptionWelcomeModal() {
     return () => unsub();
   }, [user]);
 
-  if (!open || !user || user.isAnonymous) return null;
+  if (!open || !user || user.isAnonymous || isSuper) return null;
 
   const status = checkSubscriptionStatus(user, profile);
 

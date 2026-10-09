@@ -62,10 +62,16 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "customers" | "bookings" | "payments">("all");
 
-   // Auto-sync exact saree business financials & orders history to cloud profile
+   // Auto-sync exact saree business financials & orders history to cloud profile (debounced & safe)
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    const unsub = onAppAuthStateChanged((u) => {
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+
+    syncTimeoutRef.current = setTimeout(async () => {
+      const u = await waitForAppUser(150);
       if (!u || u.isAnonymous) return;
+
       const state = useStore.getState();
       const currentBookings = state.bookings || [];
       const currentCustomers = state.customers || [];
@@ -173,11 +179,17 @@ export function AppShell({ title, subtitle, children, wide }: Props) {
         recentBookings,
       };
 
-      void syncUserBusinessMetrics(u.id, stats);
-    });
+      try {
+        await syncUserBusinessMetrics(u.id, stats);
+      } catch (err) {
+        console.warn("User business metrics sync error:", err);
+      }
+    }, 4000);
 
-    return () => unsub();
-  }, [bookings, customers, payments, expenses, extraIncomes]);
+    return () => {
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    };
+  }, [bookings.length, customers.length, payments.length, expenses.length, extraIncomes.length]);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
 
   useEffect(() => {
